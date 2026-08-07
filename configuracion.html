@@ -1,0 +1,472 @@
+<!DOCTYPE html> <!-- Declara el tipo de documento como HTML5 -->
+<html lang="es"> <!-- Define el idioma principal de la página como español -->
+<head> <!-- Inicio de la cabecera del documento HTML -->
+    <meta charset="UTF-8"> <!-- Establece la codificación de caracteres a UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Hace la página adaptable y responsiva para dispositivos móviles -->
+    <title>Configuracion - Sistema Maestro</title> <!-- Título que se muestra en la pestaña del navegador -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> <!-- Importa la librería oficial de Supabase para la base de datos -->
+    <style> /* Inicio de los estilos CSS personalizados del sistema */
+        :root { /* Variables globales de colores para el tema claro por defecto */
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        body.dark-mode { /* Variables globales de colores para cuando se activa el modo oscuro */
+            --bg: #121212; --primary: #1e272e; --secondary: #2980b9; --danger: #c0392b;
+            --success: #27ae60; --warning: #f39c12; --info: #2c3e50; --text: #ecf0f1; 
+            --border: #34495e; --card-bg: #1e1e1e; --item-bg: #2d2d2d; --muted: #bdc3c7;
+        }
+        body.hide-bs .moneda-bs { display: none !important; } /* Oculta los elementos en Bolívares si la tasa es 0 */
+        body.hide-cop .moneda-cop { display: none !important; } /* Oculta los elementos en Pesos Colombianos si la tasa es 0 */
+        body.hide-eur .moneda-eur { display: none !important; } /* Oculta los elementos en Euros si la tasa es 0 */
+        * { box-sizing: border-box; } /* Incluye el relleno y bordes dentro del ancho y alto total de los elementos */
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; transition: background 0.3s, color 0.3s; } /* Estilos base tipográficos y de fondo para el cuerpo */
+        .wrapper { display: block; min-height: 100vh; position: relative; } /* Contenedor general que asegura la altura mínima de la pantalla */
+
+        .top-bar { background: var(--primary); color: white; padding: 8px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); } /* Barra superior fija de navegación */
+        
+        /* BOTÓN DE MENÚ PEQUEÑO EN LA ESQUINA (ANCHO DE TRES LETRAS) */
+        .menu-toggle-btn { 
+            background: rgba(255, 255, 255, 0.12); /* Fondo sutil semitransparente */
+            border: none; /* Elimina los bordes del botón */
+            color: white; /* Color blanco para el icono de la hamburguesa */
+            font-size: 1.1rem; /* Tamaño de fuente compacto para el icono */
+            cursor: pointer; /* Cambia el cursor a modo interactivo */
+            width: 30px; /* Ancho compacto equivalente al espacio de unas tres letras */
+            height: 30px; /* Altura proporcional para mantenerlo cuadrado y pequeño */
+            padding: 0; /* Sin relleno interno para aprovechar el tamaño exacto */
+            margin: 0; /* Sin márgenes externos para pegarlo a la esquina */
+            border-radius: 4px; /* Esquinas ligeramente redondeadas */
+            display: flex; /* Centra el contenido usando flexbox */
+            align-items: center; /* Alinea verticalmente el icono */
+            justify-content: center; /* Alinea horizontalmente el icono */
+            transition: background 0.2s; /* Transición suave al pasar el cursor */
+        }
+        .menu-toggle-btn:hover { background: rgba(255, 255, 255, 0.25); } /* Aclara el fondo del botón al pasar el mouse */
+        
+        .top-bar-title { font-size: 1.1rem; font-weight: bold; color: #ecf0f1; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* Título adaptable de la barra superior */
+        
+        /* MENÚ LATERAL ESTRECHO Y COMPACTO DE 200PX */
+        .sidebar { position: fixed; top: 0; left: -200px; width: 200px; height: 100vh; background: var(--primary); color: white; padding: 15px 10px; display: flex; flex-direction: column; gap: 5px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; } /* Panel lateral oculto fuera de pantalla con ancho de 200px */
+        .sidebar.open { left: 0; } /* Muestra el menú lateral deslizándolo hacia la derecha */
+        .sidebar-brand { font-size: 1.1rem; font-weight: bold; text-align: center; padding-bottom: 12px; border-bottom: 1px solid #34495e; margin-bottom: 10px; color: #ecf0f1; } /* Cabecera del menú lateral */
+        .sidebar .tab-btn { background: none; color: #bfc9ca; border: none; text-align: left; padding: 10px 12px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.9rem; display: block; text-decoration: none; transition: all 0.2s; } /* Estilo de los botones de navegación del menú lateral */
+        .sidebar .tab-btn:hover { background: #34495e; color: white; } /* Efecto al pasar el cursor sobre los botones del menú lateral */
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; } /* Estilo visual del botón activo en el menú */
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; } /* Capa oscura de fondo para cuando se abre el menú lateral */
+        .sidebar-overlay.active { display: block; } /* Activa y muestra la capa oscura */
+
+        .main-content { padding: 20px; padding-bottom: 130px; } /* Contenedor principal donde se cargan las tarjetas de configuración */
+        .card { background: var(--card-bg); padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid var(--border); transition: transform 0.2s; } /* Tarjetas visuales para seccionar los formularios */
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; } /* Encabezados internos de cada tarjeta */
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; } /* Estructura de cuadrícula en 2 columnas iguales */
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; } /* Estructura de cuadrícula en 3 columnas iguales */
+        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } } /* Vuelve las cuadrículas de una sola columna en pantallas pequeñas */
+        
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); outline: none; transition: border-color 0.2s; } /* Campos de entrada de texto y selectores */
+        input:focus, select:focus { border-color: var(--secondary); } /* Cambia el borde al hacer foco en un input */
+
+        /* DISEÑO LLAMATIVO Y MODERNO DE LOS BOTONES */
+        button { 
+            background: linear-gradient(135deg, var(--secondary), #2980b9); /* Fondo con degradado elegante */
+            color: white; border: none; padding: 12px 18px; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; 
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); /* Sombra difuminada para dar relieve */
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; /* Transiciones fluidas */
+        }
+        button:hover { 
+            transform: translateY(-2px); /* Eleva ligeramente el botón al pasar el mouse */
+            box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4); /* Intensifica la sombra en hover */
+            opacity: 0.95; 
+        }
+        button:active { transform: translateY(1px); } /* Simula un hundimiento al hacer clic */
+
+        /* ESTILO ELEGANTE DE LAS VENTANAS EMERGENTES (MODALES) */
+        .custom-modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); /* Fondo semitransparente con efecto borroso */
+            z-index: 100000; display: none; align-items: center; justify-content: center; 
+        }
+        .custom-modal-box { 
+            background: var(--card-bg); padding: 30px; border-radius: 16px; 
+            width: 420px; max-width: 90%; text-align: center; position: relative; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            animation: modalScaleUp 0.3s ease-in-out; /* Animación de apertura suave */
+        }
+        @keyframes modalScaleUp { 
+            from { transform: scale(0.85); opacity: 0; } 
+            to { transform: scale(1); opacity: 1; } 
+        }
+        .custom-modal-title { 
+            font-size: 1.4rem; color: var(--primary); margin-bottom: 15px; 
+            font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; 
+        }
+    </style>
+</head>
+<body> <!-- Inicio del cuerpo visible del documento HTML -->
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
+<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px;"> <!-- Contenedor de la pantalla de bloqueo protegida con PIN -->
+    <div style="background: var(--card-bg); width: 100%; max-width: 380px; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border-top: 5px solid var(--danger);"> <!-- Tarjeta interna del formulario de acceso -->
+        <h2 style="color: var(--danger); margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 12px;">🔒 Acceso Protegido</h2> <!-- Título de seguridad -->
+        <p style="font-size: 0.95rem; color: var(--muted); margin: 20px 0;">Introduce el PIN de Administrador para ver este módulo:</p> <!-- Instrucción para el usuario -->
+        
+        <div style="position: relative; margin-bottom: 20px;"> <!-- Contenedor relativo para alinear el input y el botón del monito -->
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid var(--border); border-radius: 8px; outline: none; background: var(--bg); color: var(--text);"> <!-- Campo de contraseña centrado -->
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span> <!-- Icono interactivo para cambiar entre ver contraseña y el monito 🙈 -->
+        </div>
+
+        <div id="mensaje_carga_pin" style="display: none; color: var(--success); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">⏳ Cargando módulo...</div> <!-- Mensaje dinámico de carga antes de entrar -->
+
+        <button id="btn_desbloquear_pin" onclick="verificarPinBody()" style="background: linear-gradient(135deg, var(--primary), #1a252f);">Desbloquear Pantalla</button> <!-- Botón para enviar y comprobar el PIN -->
+        <button id="btn_volver_pin" onclick="window.location.href='principal.html'" style="background: linear-gradient(135deg, var(--danger), #c0392b); margin-top: 10px;">Volver al Inicio</button> <!-- Botón para salir al menú principal -->
+    </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay"> <!-- Capa oscura difuminada para las ventanas emergentes globales del sistema -->
+    <div class="custom-modal-box"> <!-- Caja contenedora de la ventana emergente -->
+        <div id="global_modal_title" class="custom-modal-title">Título</div> <!-- Título dinámico del modal -->
+        <div id="global_modal_body"></div> <!-- Contenedor dinámico para el cuerpo del mensaje o formulario del modal -->
+    </div>
+</div>
+
+<div class="wrapper"> <!-- Contenedor principal que envuelve la estructura de la página -->
+    <!-- NAVEGACIÓN SUPERIOR -->
+    <div class="top-bar"> <!-- Barra superior fija que contiene el botón de menú y el título -->
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button> <!-- Botón de menú miniatura ubicado exactamente en la esquina superior izquierda -->
+        <div class="top-bar-title" id="main_top_title">Cargando...</div> <!-- Título de la barra superior donde se muestra el local y usuario -->
+    </div>
+
+    <!-- MENÚ LATERAL (SIDEBAR) -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn active">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn" style="color: #f1c40f;">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn" style="color: #3498db; font-weight: bold;">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn" style="color: #8e44ad; font-weight: bold;">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">💸 Avances / Retiros</a>
+        <a href="calculadora.html" class="tab-btn">🧮 Calculadora Divisas</a>
+        <a href="facturar.html" class="tab-btn" style="color: #2ecc71; font-weight: bold;">🛒 Facturar Venta</a>
+        <a href="cierre.html" class="tab-btn">🧾 Cierre de Caja</a>
+        <a href="control_inventario.html" class="tab-btn" style="color: #1abc9c; font-weight: bold;">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn" style="color: #3498db;">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn" style="color: #9b59b6; font-weight: bold;">🧾 Pagos Bancarios</a>
+        <a href="conciliacion_pto.html" class="tab-btn" style="color: #3498db; font-weight: bold;">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn" style="color: #2980b9; font-weight: bold;">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn" style="color: #e74c3c; font-weight: bold;">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn" style="background:#27ae60; color:white; margin-top:5px;">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn" style="color:#f39c12; font-weight:bold; margin-top:15px;">⚙️ Configuracion</a>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content"> <!-- Contenedor principal que almacena los diferentes módulos de configuración -->
+        <!-- 1. APARIENCIA E IDENTIDAD -->
+        <div class="card" style="border-top: 4px solid var(--primary);"> <!-- Tarjeta contenedora para la sección de apariencia -->
+            <h2>🖥️ Apariencia e Identidad</h2> <!-- Encabezado de la sección -->
+            <div class="grid-2"> <!-- Cuadrícula de dos columnas -->
+                <div>
+                    <label>Nombre del Local:</label> <!-- Etiqueta descriptiva para el nombre -->
+                    <input type="text" id="config_nombre_local" placeholder="Ej: Refresquería Flor"> <!-- Campo de texto para modificar el nombre del local -->
+                </div>
+                <div>
+                    <label>Tema del Sistema:</label> <!-- Etiqueta descriptiva para el selector de tema -->
+                    <button onclick="toggleDarkMode()" style="background: linear-gradient(135deg, var(--info), #2c3e50); margin-top: 28px;">Activar/Desactivar Modo Oscuro 🌓</button> <!-- Botón para alternar el modo oscuro -->
+                </div>
+            </div>
+            <button onclick="guardarIdentidad()">💾 Guardar Identidad</button> <!-- Botón para ejecutar el guardado del nombre del local -->
+        </div>
+
+        <!-- 2. TASAS DE CAMBIO -->
+        <div class="card" style="border-top: 4px solid var(--warning);"> <!-- Tarjeta contenedora para las tasas de cambio -->
+            <h2>💱 Tasas de Cambio Globales</h2> <!-- Encabezado de la sección de tasas -->
+            <p style="font-size:0.85rem; color:var(--muted); margin-top: 0;">Nota: Si colocas la tasa en 0, la moneda desaparecerá del sistema público de ventas.</p> <!-- Nota explicativa sobre tasas en cero -->
+            <div class="grid-3"> <!-- Cuadrícula de tres columnas para las tres monedas -->
+                <div><label>USD a BS:</label><input type="number" step="0.01" id="tasa_ves" value="1"></div> <!-- Input para la tasa del Bolívar -->
+                <div><label>USD a COP:</label><input type="number" id="tasa_cop" value="1"></div> <!-- Input para la tasa del Peso Colombiano -->
+                <div><label>USD a EUR:</label><input type="number" step="0.01" id="tasa_eur" value="1"></div> <!-- Input para la tasa del Euro -->
+            </div>
+            <button onclick="guardarTasasEstetico()" style="background: linear-gradient(135deg, var(--success), #27ae60);">💾 Guardar Tasas de Cambio</button> <!-- Botón para guardar las tasas de conversión -->
+        </div>
+
+        <!-- 3. INTEGRACIÓN TELEGRAM -->
+        <div class="card" style="border-top: 4px solid var(--info);"> <!-- Tarjeta contenedora para la API de Telegram -->
+            <h2>🤖 Integración API Telegram Global</h2> <!-- Encabezado de la sección de Telegram -->
+            <label>Token del Bot:</label> <!-- Etiqueta para el token del bot -->
+            <input type="text" id="config_tg_token" placeholder="Ej: 123456789:ABCDefghIJKLmnopQRSTuvwxYZ"> <!-- Campo para el token de Telegram -->
+            <div class="grid-2"> <!-- Cuadrícula de dos columnas para los chats -->
+                <div><label>Chat Inventarios/Backups:</label><input type="text" id="config_tg_chat_inv" placeholder="ID del grupo o chat"></div> <!-- Input chat inventarios -->
+                <div><label>Chat Cierres Generales:</label><input type="text" id="config_tg_chat_cierre" placeholder="ID del grupo o chat"></div> <!-- Input chat cierres -->
+            </div>
+            <label>Chat Notificaciones Extras (Gastos/Avances):</label> <!-- Etiqueta chat de notificaciones adicionales -->
+            <input type="text" id="config_tg_chat_notif" placeholder="ID del grupo o chat"> <!-- Input chat notificaciones extras -->
+            <button onclick="guardarConfigTelegram()" style="background: linear-gradient(135deg, var(--info), #2c3e50);">💾 Guardar Enrutamiento</button> <!-- Botón para guardar las configuraciones de Telegram -->
+        </div>
+
+        <!-- 4. PERMISOS Y SEGURIDAD (SOLO PIN) -->
+        <div class="card" style="border-top: 4px solid var(--danger);"> <!-- Tarjeta contenedora de seguridad y PIN -->
+            <h2>🔒 Seguridad (Restricción a Vendedores)</h2> <!-- Encabezado de seguridad -->
+            <div class="grid-2"> <!-- Cuadrícula de dos columnas -->
+                <div>
+                    <label>PIN Interno de Administrador:</label> <!-- Etiqueta para cambiar el PIN -->
+                    <input type="password" id="config_admin_pin" placeholder="Introduce el Nuevo PIN"> <!-- Input para ingresar el nuevo código PIN -->
+                </div>
+                <div>
+                    <button onclick="guardarPinAdmin()" style="background: linear-gradient(135deg, var(--danger), #c0392b); margin-top: 28px;">💾 Cambiar PIN</button> <!-- Botón para actualizar el PIN maestro -->
+                </div>
+            </div>
+            <p style="font-size:0.85rem; color:var(--muted); margin-top:15px;">Nota: La ventana de "Configuraciones" siempre estará bloqueada por defecto para evitar vulneración de accesos.</p> <!-- Nota informativa de seguridad -->
+        </div>
+    </div>
+</div>
+
+<script> /* Inicio del bloque de código JavaScript para la lógica funcional */
+    // ==========================================
+    // INICIALIZACIÓN DE MOTOR SUPABASE (UNIFICADO)
+    // ==========================================
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co'; /* Almacena la URL oficial del proyecto Supabase */
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i'; /* Almacena la llave pública anon de Supabase */
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY); /* Crea e inicializa la instancia global del cliente Supabase */
+
+    let CURRENT_LOCAL_ID = null; /* Variable local para registrar el identificador único del local activo */
+    let CONFIG_GLOBAL = {}; /* Objeto contenedor global para las configuraciones obtenidas de la base de datos */
+
+    // Evento que se dispara automáticamente al terminar de cargar todo el DOM del documento
+    window.addEventListener('DOMContentLoaded', async () => {
+        try { /* Bloque de control de excepciones para la autenticación inicial */
+            const { data } = await window.supabaseClient.auth.getSession(); /* Consulta si existe una sesión activa en Supabase */
+            if (!data || !data.session) { /* Evalúa si la sesión es nula o no existe */
+                alert("No hay una sesión administrativa activa. Vuelve a la pantalla principal para iniciar sesión."); /* Muestra aviso de advertencia */
+                window.location.href = 'index.html'; /* Redirige al usuario a la página principal o de login */
+                return; /* Detiene la ejecución posterior */
+            }
+            await inicializarDatos(data.session); /* Ejecuta la función de carga inicial pasando los datos de la sesión */
+        } catch (err) { /* Captura cualquier error imprevisto de red o de servidor */
+            console.error(err); /* Imprime el error detallado en la consola del navegador */
+            alert("Error de red conectando con el servidor."); /* Alerta visual al operador */
+        }
+    });
+
+    // Función asíncrona encargada de enlazar el perfil del usuario con su respectivo local y cargar la data
+    async function inicializarDatos(session) {
+        const userId = session.user.id; /* Obtiene el identificador único (UUID) del usuario autenticado */
+        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single(); /* Consulta en la tabla perfiles el local asociado */
+        
+        if (perfil && perfil.local_id) { /* Comprueba si se encontró un local válido vinculado al perfil */
+            CURRENT_LOCAL_ID = perfil.local_id; /* Asigna el identificador del local a la variable global */
+        } else { /* En caso de no tener local asignado directamente en su perfil */
+            let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1); /* Obtiene el primer local registrado como respaldo */
+            if(localesList && localesList.length > 0) { /* Valida si la lista contiene al menos un local */
+                CURRENT_LOCAL_ID = localesList[0].id; /* Asigna el ID del primer local disponible por defecto */
+            } else { /* Si la base de datos no arroja ningún local */
+                return alert("Error: Perfil no vinculado a un local."); /* Detiene el proceso con un mensaje de error crítico */
+            }
+        }
+
+        // Realiza la consulta a la tabla configuraciones filtrando por el ID del local actual
+        let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+        if (conf) { /* Verifica si se obtuvieron registros de configuración */
+            CONFIG_GLOBAL = conf; /* Almacena la configuración en la variable global */
+            
+            let nombreLocal = conf.identidad?.nombre || 'Sistema'; /* Extrae el nombre del local configurado o asigna uno predeterminado */
+            let nombreUsuario = perfil?.nombre || session.user.email; /* Extrae el nombre del perfil o el correo de la sesión */
+            document.getElementById('main_top_title').innerHTML = `🏪 ${nombreLocal} <span style="font-size:0.8rem; font-weight:normal; color:#bdc3c7; margin-left:15px;">👋 Bienvenido, <strong>${nombreUsuario}</strong></span>`; /* Renderiza el título y bienvenida en la barra superior */
+            
+            // Asigna los valores recuperados de la base de datos a los campos de entrada correspondientes
+            document.getElementById('config_nombre_local').value = conf.identidad?.nombre || '';
+            document.getElementById('tasa_ves').value = conf.tasas?.ves || 1;
+            document.getElementById('tasa_cop').value = conf.tasas?.cop || 1;
+            document.getElementById('tasa_eur').value = conf.tasas?.eur || 1;
+            
+            document.getElementById('config_tg_token').value = conf.config_tg?.token || '';
+            document.getElementById('config_tg_chat_inv').value = conf.config_tg?.inv || '';
+            document.getElementById('config_tg_chat_cierre').value = conf.config_tg?.cierre || '';
+            document.getElementById('config_tg_chat_notif').value = conf.config_tg?.notif || '';
+        }
+    }
+
+    // ==========================================
+    // MENU LATERAL (SIDEBAR)
+    // ==========================================
+    function toggleSidebar() { /* Función para alternar el estado de apertura o cierre del menú lateral */
+        document.getElementById('sidebar').classList.toggle('open'); /* Agrega o remueve la clase open en el contenedor del menú */
+        document.getElementById('sidebar-overlay').classList.toggle('active'); /* Activa o desactiva la capa oscura de fondo */
+    }
+
+    // ==========================================
+    // CONTROL DE ACCESO RESTRINGIDO POR CONTRASEÑA
+    // ==========================================
+    function toggleVerPin() { /* Función interactiva para mostrar u ocultar los caracteres del PIN y cambiar el icono del monito */
+        let input = document.getElementById('pin_ingreso_body'); /* Captura el elemento input de contraseña */
+        let icono = document.getElementById('icono_ojo_pin'); /* Captura el elemento visual del icono */
+        
+        if (input.type === 'password') { /* Comprueba si el campo está oculto como contraseña */
+            input.type = 'text'; /* Cambia el tipo de input a texto plano para hacerlo visible */
+            icono.innerText = '🙈'; /* Cambia el icono al monito tapándose los ojos */
+        } else { /* Si el texto ya se encuentra visible */
+            input.type = 'password'; /* Vuelve a ocultar el texto en modo contraseña segura */
+            icono.innerText = '👁️'; /* Restaura el icono de ojo normal */
+        }
+    }
+
+    async function verificarPinBody() { /* Función encargada de validar el PIN ingresado por el usuario */
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim(); /* Obtiene el valor escrito eliminando espacios sobrantes */
+        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016'; /* Obtiene el PIN administrativo configurado o utiliza uno predeterminado de respaldo */
+
+        if (pinIngresado === pinReal) { /* Compara si el PIN ingresado coincide con el PIN real */
+            document.getElementById('btn_desbloquear_pin').style.display = 'none'; /* Oculta el botón de desbloqueo para evitar múltiples clics */
+            document.getElementById('btn_volver_pin').style.display = 'none'; /* Oculta el botón de retorno */
+            document.getElementById('mensaje_carga_pin').style.display = 'block'; /* Muestra el mensaje visual de carga del módulo */
+            
+            setTimeout(() => { /* Establece un temporizador de retraso de 2 segundos antes de permitir el ingreso */
+                document.getElementById('pantalla_bloqueo_admin').style.display = 'none'; /* Oculta completamente la capa de bloqueo de pantalla */
+                
+                // Restaura los elementos internos del formulario por si se bloquea nuevamente en la misma sesión
+                document.getElementById('btn_desbloquear_pin').style.display = 'block';
+                document.getElementById('btn_volver_pin').style.display = 'block';
+                document.getElementById('mensaje_carga_pin').style.display = 'none';
+                document.getElementById('pin_ingreso_body').value = '';
+                document.getElementById('pin_ingreso_body').type = 'password';
+                document.getElementById('icono_ojo_pin').innerText = '👁️';
+            }, 2000); /* Define un retraso exacto de 2000 milisegundos (2 segundos) */
+        } else { /* Si el PIN ingresado es incorrecto */
+            alert("❌ PIN Incorrecto."); /* Muestra una alerta informando el fallo */
+            document.getElementById('pin_ingreso_body').value = ''; /* Limpia el campo de texto del PIN */
+        }
+    }
+
+    // ==========================================
+    // MOTOR DE GUARDADO EN BASE DE DATOS
+    // ==========================================
+    async function guardarConfiguracionParcial(columna, objetoJson) { /* Función reutilizable para actualizar bloques JSON en la tabla configuraciones de Supabase */
+        if (!CURRENT_LOCAL_ID) return false; /* Valida que el ID del local esté disponible */
+        let payload = { [columna]: objetoJson }; /* Construye dinámicamente el objeto de datos a actualizar */
+        let { data, error } = await window.supabaseClient.from('configuraciones').update(payload).eq('local_id', CURRENT_LOCAL_ID).select(); /* Envía la solicitud de actualización */
+        if (error) { alert("Error actualizando: " + error.message); return false; } /* Muestra alerta si ocurre un error de base de datos */
+        
+        if (!data || data.length === 0) { /* Comprueba si el registro de configuración no existía previamente para ese local */
+            payload.local_id = CURRENT_LOCAL_ID; /* Añade el local_id al paquete de inserción */
+            let { error: errInsert } = await window.supabaseClient.from('configuraciones').insert([payload]); /* Inserta un nuevo registro de configuración */
+            if (errInsert) { alert("Error inicializando config: " + errInsert.message); return false; } /* Muestra alerta si falla la inserción */
+        }
+        return true; /* Retorna verdadero si la operación se completó con éxito */
+    }
+
+    async function guardarIdentidad() { /* Función para procesar y guardar los cambios del nombre del local */
+        let nuevoNombreLocal = document.getElementById('config_nombre_local').value.trim(); /* Captura el valor del input del nombre */
+        if(!nuevoNombreLocal) return alert("⚠️ El nombre del local no puede estar vacío."); /* Valida que no esté vacío */
+
+        mostrarModalLocal("Guardando", "Actualizando el nombre del local..."); /* Despliega el modal informando el proceso */
+        try { /* Bloque try-catch para manejar errores durante la actualización */
+            let { error } = await window.supabaseClient.from('locales').update({ nombre: nuevoNombreLocal }).eq('id', CURRENT_LOCAL_ID); /* Actualiza el nombre en la tabla principal locales */
+            if(error) throw error; /* Lanza una excepción si Supabase retorna error */
+
+            let identidad = CONFIG_GLOBAL.identidad || {}; /* Obtiene la estructura actual de identidad o inicializa un objeto vacío */
+            identidad.nombre = nuevoNombreLocal; /* Actualiza la propiedad del nombre dentro del objeto */
+            await guardarConfiguracionParcial('identidad', identidad); /* Guarda los cambios en la columna JSON correspondiente */
+            
+            CONFIG_GLOBAL.identidad = identidad; /* Actualiza la variable global con la nueva identidad */
+            mostrarAnimacionGuardando("¡Nombre Actualizado con Éxito!"); /* Muestra la animación de éxito */
+            
+            let textActual = document.getElementById('main_top_title').innerHTML; /* Obtiene el HTML actual del título superior */
+            document.getElementById('main_top_title').innerHTML = textActual.replace(/🏪 .*? </, `🏪 ${nuevoNombreLocal} <`); /* Actualiza el nombre del local en tiempo real sin recargar */
+        } catch(err) { /* Captura el error en caso de fallo */
+            cerrarModalGlobal(); /* Cierra el modal de espera */
+            alert("❌ Error al actualizar: " + err.message); /* Notifica al usuario del error ocurrido */
+        }
+    }
+
+    async function guardarTasasEstetico() { /* Función para recolectar y guardar las tasas de cambio de divisas */
+        let tasas = { /* Crea el objeto con los valores numéricos convertidos desde los inputs */
+            ves: parseFloat(document.getElementById('tasa_ves').value) || 1,
+            cop: parseFloat(document.getElementById('tasa_cop').value) || 1,
+            eur: parseFloat(document.getElementById('tasa_eur').value) || 1
+        };
+        mostrarModalLocal("Guardando", "Actualizando tasas de conversión..."); /* Muestra el modal de procesamiento */
+        let exito = await guardarConfiguracionParcial('tasas', tasas); /* Guarda el objeto de tasas en la base de datos */
+        if (exito) { /* Si la operación fue exitosa */
+            CONFIG_GLOBAL.tasas = tasas; /* Actualiza las tasas globales */
+            mostrarAnimacionGuardando("Tasas Guardadas"); /* Muestra la animación de éxito */
+        } else { /* Si ocurrió un error */
+            cerrarModalGlobal(); /* Cierra el modal activo */
+        }
+    }
+
+    async function guardarConfigTelegram() { /* Función para recolectar y guardar las credenciales y chats de la API de Telegram */
+        let configTg = { /* Agrupa los valores ingresados en los campos de Telegram */
+            token: document.getElementById('config_tg_token').value.trim(),
+            inv: document.getElementById('config_tg_chat_inv').value.trim(),
+            cierre: document.getElementById('config_tg_chat_cierre').value.trim(),
+            notif: document.getElementById('config_tg_chat_notif').value.trim()
+        };
+        mostrarModalLocal("Guardando", "Actualizando enrutamiento de bots Telegram..."); /* Muestra el modal de espera */
+        let exito = await guardarConfiguracionParcial('config_tg', configTg); /* Guarda la configuración de Telegram en la base de datos */
+        if (exito) { /* Si se guardó correctamente */
+            CONFIG_GLOBAL.config_tg = configTg; /* Actualiza la configuración global de Telegram */
+            mostrarAnimacionGuardando("Telegram Configurado"); /* Muestra la animación de éxito */
+        } else { /* Si hubo un fallo */
+            cerrarModalGlobal(); /* Cierra el modal */
+        }
+    }
+
+    async function guardarPinAdmin() { /* Función para validar y actualizar el PIN de administrador */
+        let nuevoPin = document.getElementById('config_admin_pin').value.trim(); /* Obtiene el PIN escrito */
+        if(!nuevoPin || nuevoPin.length < 4) return alert("⚠️ El PIN debe tener al menos 4 caracteres."); /* Valida que tenga una longitud mínima de 4 dígitos */
+        
+        let identidad = CONFIG_GLOBAL.identidad || {}; /* Obtiene el objeto identidad actual */
+        identidad.admin_pass = nuevoPin; /* Asigna el nuevo PIN dentro de la propiedad admin_pass */
+        
+        mostrarModalLocal("Guardando", "Actualizando PIN de seguridad maestro..."); /* Muestra el modal de proceso */
+        let exito = await guardarConfiguracionParcial('identidad', identidad); /* Guarda la identidad actualizada en Supabase */
+        if (exito) { /* Si el guardado fue exitoso */
+            CONFIG_GLOBAL.identidad = identidad; /* Actualiza el objeto global */
+            mostrarAnimacionGuardando("PIN Actualizado"); /* Muestra la animación de éxito */
+            document.getElementById('config_admin_pin').value = ''; /* Limpia el campo del input de PIN */
+        } else { /* Si falló */
+            cerrarModalGlobal(); /* Cierra el modal */
+        }
+    }
+
+    // ==========================================
+    // UTILIDADES DE INTERFAZ
+    // ==========================================
+    function toggleDarkMode() { /* Función para activar o desactivar el modo oscuro visual */
+        document.body.classList.toggle('dark-mode'); /* Alterna la clase CSS dark-mode en el cuerpo de la página */
+        let mode = document.body.classList.contains('dark-mode') ? 'dark' : 'light'; /* Determina si el modo actual es oscuro o claro */
+        localStorage.setItem('theme', mode); /* Almacena la preferencia del usuario en el almacenamiento local del navegador */
+    }
+
+    if(localStorage.getItem('theme') === 'dark') { /* Comprueba al iniciar si el usuario guardó previamente el modo oscuro */
+        document.body.classList.add('dark-mode'); /* Aplica el modo oscuro de forma automática al cargar la vista */
+    }
+
+    function abrirModalGlobal(titulo, htmlContent) { /* Función para configurar y desplegar cualquier ventana emergente global */
+        document.getElementById('global_modal_title').innerText = titulo; /* Asigna el texto del título recibido al modal */
+        document.getElementById('global_modal_body').innerHTML = htmlContent; /* Inserta el contenido HTML personalizado en el cuerpo del modal */
+        document.getElementById('global_modal').style.display = 'flex'; /* Cambia el visor a flex para centrar y mostrar el modal */
+    }
+    
+    function cerrarModalGlobal() { /* Función para ocultar y cerrar la ventana emergente global */
+        document.getElementById('global_modal').style.display = 'none'; /* Oculta el contenedor del modal cambiando su display a none */
+    }
+    
+    function mostrarModalLocal(titulo, msg) { /* Función rápida para mostrar un modal de espera con un mensaje */
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem; color:var(--text);">⏳ ${msg}</div>`); /* Genera la estructura visual de espera */
+    }
+    
+    function mostrarAnimacionGuardando(msj) { /* Función que gestiona la secuencia visual de guardado exitoso */
+        abrirModalGlobal("Procesando...", `<div style="text-align:center; font-size:1.2rem; padding:20px; color:var(--text);">⏳ Guardando...</div>`); /* Muestra el estado inicial de guardado */
+        setTimeout(() => { /* Temporizador para transicionar al mensaje de éxito */
+            abrirModalGlobal("Éxito", `<div style="text-align:center; font-size:1.3rem; color:var(--success); padding:20px; font-weight:bold;">✅ ${msj}</div>`); /* Muestra el mensaje de éxito con color verde */
+            setTimeout(cerrarModalGlobal, 1200); /* Cierra automáticamente el modal tras 1.2 segundos */
+        }, 600); /* Espera 600 milisegundos antes de mostrar el éxito */
+    }
+</script>
+</body>
+</html>
