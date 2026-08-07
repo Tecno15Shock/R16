@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario - Sistema Maestro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Librería jsPDF nativa para generación de comprobantes en PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
         :root {
@@ -31,7 +32,7 @@
         .menu-toggle-btn:hover { background: rgba(255, 255, 255, 0.25); }
         .top-bar-title { font-size: 1.1rem; font-weight: bold; color: #ecf0f1; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* MENÚ LATERAL CORREGIDO (EVITA QUE LOS BOTONES SE APLASTEN VERTICALMENTE) */
+        /* MENÚ LATERAL */
         .sidebar { 
             position: fixed; top: 0; left: -320px; width: 320px; height: 100vh; 
             background: var(--primary); color: white; padding: 20px 15px; 
@@ -46,7 +47,7 @@
             padding: 10px 12px; width: 100%; border-radius: 6px; cursor: pointer; 
             font-size: 0.95rem; display: block; text-decoration: none; transition: all 0.2s;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            flex-shrink: 0; /* IMPIDE QUE EL TEXTO SE AMONTONE O SE APLASTE */
+            flex-shrink: 0;
         }
         .sidebar .tab-btn:hover { background: #34495e; color: white; }
         .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; }
@@ -141,7 +142,7 @@
             <select id="sel_pdf_stock" style="border: 2px solid var(--warning);">
                 <option value="" disabled selected>Seleccionar</option>
                 <option value="todos">Mostrar Todo el Catálogo</option>
-                <option value="con_stock">Ocultar Mercancía Agotada</option>
+                <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
             </select>
             
             <div class="grid-vertical" style="margin-top:15px;">
@@ -158,11 +159,25 @@
                 <div class="moneda-cop"><label>Fondo (COP):</label><input type="text" id="inv_fondo_cop" readonly></div>
                 <div class="moneda-eur"><label>Fondo (EUR):</label><input type="text" id="inv_fondo_eur" readonly></div>
             </div>
+            
             <h3>Existencias en Tiempo Real</h3>
-            <select id="orden_inv_fisico" onchange="renderInventarioFisico()" style="margin-bottom: 10px;">
-                <option value="cat">Ordenar por Categorías</option>
-                <option value="az">Ordenar Alfabéticamente</option>
-            </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size:0.8rem; margin:0;">Orden:</label>
+                    <select id="orden_inv_fisico" onchange="renderInventarioFisico()" style="margin-top:2px;">
+                        <option value="cat">Ordenar por Categorías</option>
+                        <option value="az">Ordenar Alfabéticamente</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; margin:0;">Filtro de Agotados:</label>
+                    <select id="filtro_stock_fisico" onchange="renderInventarioFisico()" style="margin-top:2px;">
+                        <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
+                        <option value="todos">Mostrar Todo el Catálogo</option>
+                    </select>
+                </div>
+            </div>
+
             <div id="inv_lista_readonly" class="zebra-list"></div>
         </div>
     </div>
@@ -233,15 +248,22 @@
 
     function renderInventarioFisico() {
         let ord = document.getElementById('orden_inv_fisico').value; 
+        let filtroStock = document.getElementById('filtro_stock_fisico').value;
         let arr = [...CATALOGO]; 
+
+        if (filtroStock === 'con_stock') {
+            arr = arr.filter(p => parseFloat(p.stock) > 0);
+        }
+
         arr.sort((a,b) => ord==='cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom))); 
         
         let html = ""; let lC = "";
         arr.forEach(p => { 
             if(ord === 'cat' && p.cat !== lC) { html += `<div class="cat-header">${p.cat.toUpperCase()}</div>`; lC = p.cat; } 
-            html += `<div class="consulta-item"><span><strong>${limpiarNombre(p.nom)}</strong><br><small>Categoría: ${p.cat}</small></span><span style="font-weight:bold; color:var(--success);">Stock: ${formatearNumero(p.stock, 2)}</span></div>`; 
+            let colorStock = p.stock > 0 ? 'var(--success)' : 'var(--danger)';
+            html += `<div class="consulta-item"><span><strong>${limpiarNombre(p.nom)}</strong><br><small>Categoría: ${p.cat}</small></span><span style="font-weight:bold; color:${colorStock};">Stock: ${formatearNumero(p.stock, 2)}</span></div>`; 
         });
-        document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--muted); text-align:center;">No hay inventario registrado.</p>';
+        document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--muted); text-align:center;">No hay inventario registrado con los filtros seleccionados.</p>';
     }
 
     function actualizarSelectoresMonedaExportacion() {
@@ -254,59 +276,134 @@
         let modMon = document.getElementById('sel_pdf_moneda').value;
         let ordPdf = document.getElementById('sel_pdf_orden').value;
         let filtroStock = document.getElementById('sel_pdf_stock').value; 
-        if(!valDoc || !modMon || !ordPdf) return alert("Seleccione todos los filtros obligatorios.");
+        if(!valDoc || !modMon || !ordPdf || !filtroStock) return alert("Seleccione todos los filtros obligatorios.");
         
-        let html = generarHtmlInventarioPDF(valDoc, modMon, ordPdf, filtroStock);
-        if (accion === 'descargar') exportarHtml(html, `Inventario_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`);
+        if (accion === 'descargar') {
+            generarPDFInventarioNativo(valDoc, modMon, ordPdf, filtroStock);
+        }
     }
 
-    function generarHtmlInventarioPDF(valDoc, modMoneda, ordPdf, filtroStock) {
-        let tv = parseFloat(CONFIG_GLOBAL.tasas?.ves) || 1; let tc = parseFloat(CONFIG_GLOBAL.tasas?.cop) || 1; let te = parseFloat(CONFIG_GLOBAL.tasas?.eur) || 1;
-        let d = new Date().toLocaleDateString(); 
-        let header = `<h2 style="color:#2c3e50; text-align:center; font-family:Arial, sans-serif; margin-bottom:20px;">Reporte de Inventario - ${d}</h2>`;
-        
+    // =======================================================
+    // GENERACIÓN DE PDF NATIVO CON jsPDF (MONEDAS APILADAS VERTICALMENTE)
+    // =======================================================
+    function generarPDFInventarioNativo(valDoc, modMoneda, ordPdf, filtroStock) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Refresquería Flor';
+        let tasasObj = CONFIG_GLOBAL.tasas || {};
+        let tasaBs = parseFloat(tasasObj.ves) || 1; 
+        let tasaCop = parseFloat(tasasObj.cop) || 1; 
+        let tasaEur = parseFloat(tasasObj.eur) || 1;
+
         let showCaja = ["detallado", "caja", "inv_caja", "caja_venta"].includes(valDoc);
         let showVenta = ["detallado", "venta", "inv_venta", "caja_venta"].includes(valDoc);
 
         let arr = [...CATALOGO];
         if (filtroStock === 'con_stock') arr = arr.filter(p => parseFloat(p.stock) > 0);
         arr.sort((a,b) => ordPdf === 'cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)));
-        
-        let genValStr = (usd) => { 
-            let s = `<div style="text-align: right; line-height: 1.4; font-family: Arial, sans-serif;">`;
-            if(["ALL", "USD"].includes(modMoneda)) s += `<div style="font-weight: bold; color: #2c3e50; font-size: 14px;">$${formatearNumero(usd)}</div>`;
-            if(["ALL", "BS"].includes(modMoneda) && tv > 0) s += `<div style="font-weight: bold; color: #27ae60; font-size: 11px;">${formatearNumero(usd*tv)} BS</div>`;
-            if(["ALL", "COP"].includes(modMoneda) && tc > 0) s += `<div style="font-weight: bold; color: #f39c12; font-size: 11px;">${formatearNumero(usd*tc, 0)} COP</div>`;
-            if(["ALL", "EUR"].includes(modMoneda) && te > 0) s += `<div style="font-weight: bold; color: #8e44ad; font-size: 11px;">${formatearNumero(usd*te)} EUR</div>`;
-            s += `</div>`;
-            return s; 
-        };
 
-        let trHtml = ""; let lC = ""; 
-        arr.forEach(p => {
-            if(ordPdf === 'cat' && p.cat !== lC) { 
-                trHtml += `<tr><td colspan="3" style="background:#2c3e50; color:white; font-weight:bold; padding:6px 12px; text-align:left; font-size:12px; text-transform:uppercase;">${p.cat}</td></tr>`; 
-                lC = p.cat; 
+        // Encabezado institucional
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(44, 62, 80);
+        doc.text(nombreLocal, 14, 18);
+
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(127, 140, 141);
+        doc.text(`Reporte de Inventario (${valDoc.toUpperCase()}) - ${new Date().toLocaleDateString()}`, 14, 24);
+
+        doc.setDrawColor(52, 152, 219);
+        doc.setLineWidth(0.5);
+        doc.line(14, 28, 196, 28);
+
+        let posY = 34;
+        let lC = "";
+
+        arr.forEach((p, index) => {
+            if (ordPdf === 'cat' && p.cat !== lC) {
+                if (posY > 265) { doc.addPage(); posY = 20; }
+                doc.setFillColor(44, 62, 80);
+                doc.rect(14, posY, 182, 7, "F");
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(9);
+                doc.setTextColor(255, 255, 255);
+                doc.text(p.cat.toUpperCase(), 18, posY + 4.5);
+                posY += 7;
+                lC = p.cat;
             }
-            let colorStock = p.stock > 0 ? '#27ae60' : '#c0392b';
-            let tdProd = `<td style="border-bottom:1px solid #ecf0f1; padding:12px 10px; font-family:Arial, sans-serif; width:50%; vertical-align:middle;">
-                            <div style="font-weight:bold; font-size:13px; color:#2c3e50;">${limpiarNombre(p.nom)}</div>
-                            <div style="font-size:11px; color:#7f8c8d; margin-top:4px;">📦 Stock Disp: <span style="color:${colorStock}; font-weight:bold;">${p.stock}</span></div>
-                          </td>`;
-            let tdCaja = showCaja ? `<td style="border-bottom:1px solid #ecf0f1; padding:12px 10px; vertical-align:middle; width:25%;"><div style="font-size:9px; color:#95a5a6; text-align:right; margin-bottom:3px; letter-spacing:1px;">PRECIO CAJA</div>${genValStr(convertirA_USD(p.base, p.mBase))}</td>` : '';
-            let tdVenta = showVenta ? `<td style="border-bottom:1px solid #ecf0f1; padding:12px 10px; vertical-align:middle; width:25%;"><div style="font-size:9px; color:#95a5a6; text-align:right; margin-bottom:3px; letter-spacing:1px;">PRECIO PÚBLICO</div>${genValStr(convertirA_USD(p.ventaRef, p.mVenta))}</td>` : '';
-            trHtml += `<tr>${tdProd}${tdCaja}${tdVenta}</tr>`;
+
+            // Calcular cuántas líneas ocuparán los bloques de precios para calcular la altura del renglón dinámicamente
+            let arrayCaja = showCaja ? obtenerLineasMonedas(convertirA_USD(p.base, p.mBase), modMoneda, tasaBs, tasaCop, tasaEur) : [];
+            let arrayVenta = showVenta ? obtenerLineasMonedas(convertirA_USD(p.ventaRef, p.mVenta), modMoneda, tasaBs, tasaCop, tasaEur) : [];
+            let maxLineas = Math.max(arrayCaja.length, arrayVenta.length, 1);
+            let alturaCelda = Math.max(12, 6 + (maxLineas * 4.5));
+
+            if (posY + alturaCelda > 280) { doc.addPage(); posY = 20; }
+
+            if (index % 2 === 0) {
+                doc.setFillColor(249, 249, 249);
+                doc.rect(14, posY, 182, alturaCelda, "F");
+            }
+
+            // Nombre y Stock del producto
+            let pNom = limpiarNombre(p.nom);
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(44, 62, 80);
+            doc.text(pNom, 18, posY + 5);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(127, 140, 141);
+            doc.text(`Stock: ${p.stock}`, 18, posY + 10);
+
+            // Imprimir bloque de Precio de Caja apilado verticalmente
+            if (showCaja) {
+                let colX = 125;
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(44, 62, 80);
+                doc.text("Caja:", colX, posY + 5);
+                
+                doc.setFont("Helvetica", "normal");
+                let offsetV = posY + 9;
+                arrayCaja.forEach(linea => {
+                    doc.text(linea, colX, offsetV);
+                    offsetV += 4.5;
+                });
+            }
+
+            // Imprimir bloque de Precio de Venta apilado verticalmente
+            if (showVenta) {
+                let colX2 = 162;
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(44, 62, 80);
+                doc.text("Venta:", colX2, posY + 5);
+                
+                doc.setFont("Helvetica", "normal");
+                let offsetV2 = posY + 9;
+                arrayVenta.forEach(linea => {
+                    doc.text(linea, colX2, offsetV2);
+                    offsetV2 += 4.5;
+                });
+            }
+
+            posY += alturaCelda;
         });
-        
-        return `<div style="background:#fff; padding:10px;">${header}<table style="width:100%; border-collapse:collapse; background:#fcfcfc;"><tbody>${trHtml}</tbody></table></div>`;
+
+        doc.save(`Inventario_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`);
     }
 
-    function exportarHtml(htmlStr, filename) {
-        if(typeof html2pdf === 'undefined') return alert("Error: Librería html2pdf no cargada.");
-        let container = document.createElement('div'); container.innerHTML = htmlStr;
-        container.style.padding = '20px'; container.style.fontFamily = 'Arial, sans-serif'; container.style.color = '#000000'; container.style.background = '#ffffff'; container.style.width = '720px';
-        document.body.appendChild(container);
-        html2pdf().set({ margin: 10, filename: filename, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(container).save().then(() => document.body.removeChild(container));
+    function obtenerLineasMonedas(usd, modMoneda, tv, tc, te) {
+        let lineas = [];
+        if(["ALL", "USD"].includes(modMoneda)) lineas.push(`$${formatearNumero(usd)}`);
+        if(["ALL", "BS"].includes(modMoneda) && tv > 0) lineas.push(`${formatearNumero(usd*tv)} BS`);
+        if(["ALL", "COP"].includes(modMoneda) && tc > 0) lineas.push(`${formatearNumero(usd*tc, 0)} COP`);
+        if(["ALL", "EUR"].includes(modMoneda) && te > 0) lineas.push(`${formatearNumero(usd*te)} EUR`);
+        return lineas;
     }
 
     function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
