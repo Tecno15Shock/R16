@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Balance Financiero y Lotes - Sistema Maestro</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --input-bg: #ffffff; --muted: #7f8c8d;
+        }
+        body.dark-mode {
+            --bg: #121212; --primary: #1e272e; --secondary: #2980b9; --danger: #c0392b;
+            --success: #27ae60; --warning: #f39c12; --info: #2c3e50; --text: #ecf0f1; 
+            --border: #34495e; --card-bg: #1e1e1e; --input-bg: #2d2d2d; --muted: #bdc3c7;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; transition: background 0.3s, color 0.3s; }
+        
+        /* ANIMACIONES Y EFECTOS TRANSLÚCIDOS */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #pantalla_bloqueo_admin {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(18, 18, 18, 0.75); backdrop-filter: blur(10px);
+            z-index: 99999; display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .custom-modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); 
+            z-index: 100000; display: none; align-items: center; justify-content: center; 
+            animation: fadeIn 0.25s ease-in-out;
+        }
+        .custom-modal-box { 
+            background: var(--card-bg); padding: 25px; border-radius: 12px; 
+            width: 500px; max-width: 90%; text-align: center; position: relative; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4); 
+            animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 90vh; overflow-y: auto;
+        }
+        .custom-modal-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+
+        .top-bar { background: var(--primary); color: white; padding: 12px 15px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { 
+            background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.1rem; 
+            cursor: pointer; width: 30px; height: 30px; padding: 0; margin: 0; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; transition: background 0.2s; 
+        }
+        .menu-toggle-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .top-bar-title { font-size: 1.1rem; font-weight: bold; color: #ecf0f1; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .sidebar { position: fixed; top: 0; left: -320px; width: 320px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 5px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 15px; color: #ecf0f1; }
+        .sidebar .tab-btn { background: none; color: #bfc9ca; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; transition: all 0.2s; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { max-width: 1100px; margin: 0 auto; padding: 20px; padding-bottom: 130px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        @media (max-width: 768px) { .grid-4, .grid-2 { grid-template-columns: 1fr; } }
+        
+        label { font-size: 0.95rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted); }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); }
+        
+        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: opacity 0.2s, transform 0.1s; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        .btn-danger { background: var(--danger); }
+        .btn-warning { background: var(--warning); color: #fff; }
+        .btn-success { background: var(--success); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+        th { background: var(--primary); color: white; }
+
+        .lote-stat-box { background: var(--input-bg); padding: 12px; border: 1px solid var(--border); border-radius: 6px; text-align: center; }
+        .lote-stat-title { font-size: 0.85rem; color: var(--muted); }
+        .lote-stat-val { font-size: 1.3rem; font-weight: bold; margin-top: 5px; }
+
+        .chart-container { position: relative; width: 100%; height: 300px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (TRANSLÚCIDA Y ANIMADA) -->
+<div id="pantalla_bloqueo_admin">
+    <div class="card" style="width: 350px; text-align: center; border-top: 4px solid var(--danger); margin: 0; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+        <h2 style="color: var(--danger);">🔒 Acceso Protegido</h2>
+        <p style="font-size: 0.9rem; color: var(--muted);">Introduce el PIN de Administrador para ver este módulo:</p>
+        <div style="position: relative; margin-bottom: 15px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px; width: 100%; padding-right: 45px; margin-top: 0;" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
+        </div>
+        <button id="btn_desbloquear" onclick="verificarPinBody()" style="background: var(--primary); margin-top: 0;">Desbloquear Pantalla</button>
+        <button onclick="window.history.back()" style="background: var(--danger); margin-top: 8px;">Volver Atrás</button>
+    </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <!-- NAVEGACIÓN SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn" style="color: #f1c40f;">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn" style="color: #3498db; font-weight: bold;">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn" style="color: #8e44ad; font-weight: bold;">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">💸 Avances / Retiros</a>
+        <a href="calculadora.html" class="tab-btn">🧮 Calculadora Divisas</a>
+        <a href="facturar.html" class="tab-btn" style="color: #2ecc71; font-weight: bold;">🛒 Facturar Venta</a>
+        <a href="cierre.html" class="tab-btn">🧾 Cierre de Caja</a>
+        <a href="control_inventario.html" class="tab-btn" style="color: #1abc9c; font-weight: bold;">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn active" style="background:var(--primary); border: 1px solid #bdc3c7; color: white;">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn" style="color: #3498db;">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn" style="color: #9b59b6; font-weight: bold;">🧾 Pagos Bancarios</a>
+        <a href="conciliacion_pto.html" class="tab-btn" style="color: #3498db; font-weight: bold;">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn" style="color: #2980b9; font-weight: bold;">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn" style="color: #e74c3c; font-weight: bold;">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn" style="color:#27ae60; font-weight:bold; margin-top:5px;">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn" style="color:#f39c12; font-weight:bold; margin-top:15px;">⚙️ Configuracion</a>
+    </div>
+
+    <div class="main-content" id="pdf_export_container">
+        <!-- FILTRO DE FECHA -->
+        <div class="card">
+            <div class="grid-2">
+                <div><label>Filtrar por fecha específica:</label><input type="date" id="balance_filtro_fecha" onchange="renderBalanceLotes()"></div>
+                <div><label>&nbsp;</label><button class="btn-warning" onclick="document.getElementById('balance_filtro_fecha').value=''; renderBalanceLotes();" style="margin-top:5px; width:100%;">Ver Historial Completo</button></div>
+            </div>
+        </div>
+        
+        <!-- TARJETAS DE RESUMEN -->
+        <div class="grid-4" style="margin-bottom: 20px;">
+            <div class="lote-stat-box"><div class="lote-stat-title">Ventas Totales ($)</div><div class="lote-stat-val" id="st_ventas" style="color:var(--info);">$0.00</div></div>
+            <div class="lote-stat-box"><div class="lote-stat-title">Recuperación Capital</div><div class="lote-stat-val" id="st_capital" style="color:var(--primary);">$0.00</div></div>
+            <div class="lote-stat-box"><div class="lote-stat-title">Ganancia Lotes</div><div class="lote-stat-val" id="st_ganancia" style="color:var(--success);">$0.00</div></div>
+            <div class="lote-stat-box"><div class="lote-stat-title">Gastos Totales (Operativos + Avances)</div><div class="lote-stat-val" id="st_gastos" style="color:var(--danger);">$0.00</div></div>
+        </div>
+
+        <!-- SECCIÓN DE GRÁFICAS ESTADÍSTICAS -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 5px; margin-bottom: 10px;">
+                <h2 style="margin: 0; border: none;">📈 Gráficas de Rendimiento</h2>
+                <select id="selector_periodo_grafica" style="width: 180px; margin: 0; padding: 6px;" onchange="actualizarGraficaVentas()">
+                    <option value="diario" selected>Diario</option>
+                    <option value="semanal">Semanal</option>
+                    <option value="mensual">Mensual</option>
+                    <option value="anual">Anual</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="chartVentas"></canvas>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- PRODUCTOS MÁS VENDIDOS CON BOTÓN "VER MÁS" -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 5px; margin-bottom: 10px;">
+                    <h2 style="margin: 0; border: none;">🏆 Productos Más Vendidos</h2>
+                    <button class="btn-warning" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin: 0;" onclick="abrirModalDetalleProductos()">Ver más</button>
+                </div>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="chartProductos"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🧑‍💼 Vendedores con Mayor Ganancia</h2>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="chartVendedores"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLAS DE HISTORIAL -->
+        <div class="card">
+            <h3 style="border-bottom: 1px solid var(--border); padding-bottom:5px;">📋 Historial de Lotes / Cierres de Turno</h3>
+            <div style="overflow-x:auto; margin-bottom:10px;">
+                <table id="tabla_lotes_diarios">
+                    <tr><th>Fecha</th><th>Turno</th><th>Vendedor</th><th>Venta Total</th><th>Capital</th><th>Ganancia</th><th>Acción</th></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="border-bottom: 1px solid var(--border); padding-bottom:5px; color: var(--danger);">💸 Historial de Gastos Operativos y Avances de Cierre</h3>
+            <div style="overflow-x:auto;">
+                <table id="tabla_gastos_operativos">
+                    <tr><th>Fecha</th><th>Concepto / Tipo</th><th>Monto (USD)</th><th>Referencia / Detalle</th></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div style="max-width: 1100px; margin: 0 auto; padding: 0 20px;">
+        <button class="btn-warning" style="margin-bottom: 10px; background: #9b59b6; width: 100%;" onclick="generarPDFBalanceLotes()">📄 Descargar PDF de Balance y Gráficas</button>
+        <!-- BOTÓN MODIFICADO PARA ABRIR EL MENÚ DE BORRADO ESTRUCTURADO -->
+        <button class="btn-success" style="background:var(--danger);" onclick="abrirMenuOpcionesEliminacion()">🗑️ Opciones de Borrado de Historial</button>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let DATOS_LOTES_CACHE = [];
+    let DATOS_GASTOS_CACHE = [];
+    let DATOS_DETALLES_CACHE = [];
+
+    let chartVentasInstancia = null;
+    let chartProductosInstancia = null;
+    let chartVendedoresInstancia = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        abrirModalGlobal("Autenticando", "Verificando sesión activa...");
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) {
+                cerrarModalGlobal();
+                alert("No hay una sesión activa.");
+                window.location.href = 'index.html';
+                return;
+            }
+            await inicializarDatos(data.session.user.id);
+        } catch (err) { 
+            console.error(err);
+            cerrarModalGlobal();
+            alert("Error de red conectando con el servidor.");
+        }
+    });
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    // VERIFICACIÓN DE PIN CON ANIMACIÓN DE CARGA DE 1 SEGUNDO
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
+        let btn = document.getElementById('btn_desbloquear');
+
+        btn.innerHTML = "⏳ Cargando...";
+        btn.disabled = true;
+
+        // Esperar exactamente 1 segundo para mostrar la animación de carga
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (pinIngresado === pinReal) {
+            let pantalla = document.getElementById('pantalla_bloqueo_admin');
+            pantalla.style.animation = 'fadeIn 0.3s reverse';
+            setTimeout(() => {
+                pantalla.style.display = 'none';
+            }, 300);
+        } else {
+            alert("❌ PIN Incorrecto.");
+            document.getElementById('pin_ingreso_body').value = '';
+            btn.innerHTML = "Desbloquear Pantalla";
+            btn.disabled = false;
+        }
+    }
+
+    async function inicializarDatos(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+            let { data: conf } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+                let nombreLocal = conf.identidad?.nombre || 'Sistema';
+                document.getElementById('main_top_title').innerHTML = `🏪 ${nombreLocal} <span style="font-size:0.8rem; font-weight:normal; color:#bdc3c7; margin-left:15px;">👋 Bienvenido, <strong>${perfil.nombre}</strong></span>`;
+            }
+        } else {
+            cerrarModalGlobal();
+            return alert("Error: Perfil no vinculado a un local.");
+        }
+
+        cerrarModalGlobal();
+        await renderBalanceLotes();
+    }
+
+    async function renderBalanceLotes() {
+        let filtroFecha = document.getElementById('balance_filtro_fecha').value;
+        
+        const [resLotes, resGastos, resDetalles] = await Promise.all([
+            supabaseClient.from('lotes_diarios').select('*, empleados(nombre, apellido)').eq('local_id', CURRENT_LOCAL_ID).order('creado_en', { ascending: false }),
+            supabaseClient.from('historial_pagos_servicios').select('*, servicios_bancarios(nombre)').eq('local_id', CURRENT_LOCAL_ID).order('fecha', { ascending: false }),
+            supabaseClient.from('detalle_ventas').select('*, catalogo(nombre)')
+        ]);
+
+        DATOS_LOTES_CACHE = resLotes.data || [];
+        DATOS_GASTOS_CACHE = resGastos.data || [];
+        DATOS_DETALLES_CACHE = resDetalles.data || [];
+
+        let lotesFiltrados = DATOS_LOTES_CACHE;
+        let gastosFiltrados = DATOS_GASTOS_CACHE;
+
+        if(filtroFecha) {
+            lotesFiltrados = lotesFiltrados.filter(l => l.fecha === filtroFecha);
+            gastosFiltrados = gastosFiltrados.filter(g => g.fecha === filtroFecha);
+        }
+
+        let totVentas = lotesFiltrados.reduce((acc, l) => acc + (parseFloat(l.total_vendido_usd) || 0), 0);
+        let totCapital = lotesFiltrados.reduce((acc, l) => acc + (parseFloat(l.capital_invertido) || 0), 0);
+        let totGanancia = lotesFiltrados.reduce((acc, l) => acc + (parseFloat(l.ganancia_neta) || 0), 0);
+        
+        let totGastosOperativos = gastosFiltrados.reduce((acc, g) => acc + (parseFloat(g.monto_usd) || 0), 0);
+        let totAvancesCierre = 0;
+        lotesFiltrados.forEach(l => {
+            if(l.ingresos && l.ingresos.avances) {
+                totAvancesCierre += parseFloat(l.ingresos.avances) || 0;
+            }
+        });
+
+        let totGastos = totGastosOperativos + totAvancesCierre;
+       
+        document.getElementById('st_ventas').innerText = `$${totVentas.toFixed(2)}`;
+        document.getElementById('st_capital').innerText = `$${totCapital.toFixed(2)}`;
+        document.getElementById('st_ganancia').innerText = `$${totGanancia.toFixed(2)}`;
+        document.getElementById('st_gastos').innerText = `$${totGastos.toFixed(2)}`;
+
+        let htmlLotes = `<tr><th>Fecha</th><th>Turno</th><th>Vendedor</th><th>Venta Total</th><th>Capital</th><th>Ganancia</th><th>Acción</th></tr>`;
+        lotesFiltrados.forEach(l => {
+            let empNom = l.empleados ? `${l.empleados.nombre} ${l.empleados.apellido}` : 'Desconocido';
+            htmlLotes += `
+            <tr>
+                <td>${l.fecha}</td>
+                <td>${l.turno || 'N/A'}</td>
+                <td>${empNom}</td>
+                <td style="color:var(--info); font-weight:bold;">$${parseFloat(l.total_vendido_usd).toFixed(2)}</td>
+                <td>$${parseFloat(l.capital_invertido).toFixed(2)}</td>
+                <td style="color:var(--success); font-weight:bold;">$${parseFloat(l.ganancia_neta).toFixed(2)}</td>
+                <td><button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="eliminarLoteSupabase('${l.id}')">🗑️ Reintegrar y Borrar</button></td>
+            </tr>`;
+        });
+        document.getElementById('tabla_lotes_diarios').innerHTML = htmlLotes;
+
+        let htmlGastos = `<tr><th>Fecha</th><th>Concepto / Tipo</th><th>Monto (USD)</th><th>Referencia / Detalle</th></tr>`;
+        gastosFiltrados.forEach(g => {
+            let nombreServicio = g.servicios_bancarios ? g.servicios_bancarios.nombre : (g.nota || 'Gasto Operativo');
+            htmlGastos += `
+            <tr>
+                <td>${g.fecha}</td>
+                <td><strong>${nombreServicio}</strong><br><small>Gasto Operativo</small></td>
+                <td style="text-align:right;"><strong style="color:var(--danger);">$${parseFloat(g.monto_usd).toFixed(2)}</strong></td>
+                <td>${g.referencia || 'N/A'}</td>
+            </tr>`;
+        });
+
+        lotesFiltrados.forEach(l => {
+            if(l.ingresos && l.ingresos.avances && parseFloat(l.ingresos.avances) > 0) {
+                htmlGastos += `
+                <tr>
+                    <td>${l.fecha}</td>
+                    <td><strong>Avance / Retiro de Caja</strong><br><small>Cierre Turno: ${l.turno || 'N/A'}</small></td>
+                    <td style="text-align:right;"><strong style="color:var(--danger);">$${parseFloat(l.ingresos.avances).toFixed(2)}</strong></td>
+                    <td>Registrado en Cierre de Caja</td>
+                </tr>`;
+            }
+        });
+
+        document.getElementById('tabla_gastos_operativos').innerHTML = htmlGastos || '<tr><td colspan="4" style="text-align:center;">No hay gastos ni avances registrados.</td></tr>';
+
+        renderizarGraficas();
+    }
+
+    // ELIMINACIÓN INDIVIDUAL DE LOTE CON REINTEGRO DE STOCK
+    async function eliminarLoteSupabase(loteId) {
+        if(!confirm("⚠️ ¿Estás seguro de eliminar este lote? \n\nAl hacerlo, el sistema reintegrará automáticamente al inventario físico (catálogo) las cantidades exactas de los productos vendidos.")) return;
+        
+        abrirModalGlobal("Procesando", "Reintegrando stock y eliminando lote...");
+        try {
+            let detallesLote = DATOS_DETALLES_CACHE.filter(d => d.lote_id === loteId);
+            for (let item of detallesLote) {
+                if (item.producto_id && item.cantidad > 0) {
+                    let { data: prodData } = await supabaseClient.from('catalogo').select('stock').eq('id', item.producto_id).single();
+                    if (prodData) {
+                        let nuevoStock = (parseFloat(prodData.stock) || 0) + parseFloat(item.cantidad);
+                        await supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', item.producto_id);
+                    }
+                }
+            }
+            await supabaseClient.from('detalle_ventas').delete().eq('lote_id', loteId);
+            await supabaseClient.from('lotes_diarios').delete().eq('id', loteId);
+
+            cerrarModalGlobal();
+            alert("✅ Lote eliminado correctamente y stock reintegrado.");
+            await renderBalanceLotes();
+        } catch(e) {
+            cerrarModalGlobal();
+            alert("❌ Error al procesar la eliminación: " + e.message);
+        }
+    }
+
+    // --- MENÚ DE OPCIONES DE BORRADO ESTRUCTURADO (DÍA, MES, AÑO, TODO) ---
+    function abrirMenuOpcionesEliminacion() {
+        let html = `
+            <div style="text-align: left; display: flex; flex-direction: column; gap: 12px;">
+                <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">Selecciona el criterio de borrado. Cada opción reintegrará automáticamente el stock al inventario:</p>
+                
+                <div style="background: var(--input-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                    <label style="margin-top:0;">Borrar por Día Específico:</label>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <input type="date" id="del_fecha" style="margin:0;">
+                        <button class="btn-danger" style="margin:0; width: auto; padding: 6px 12px;" onclick="ejecutarBorradoPorCriterio('dia')">Borrar Día</button>
+                    </div>
+                </div>
+
+                <div style="background: var(--input-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                    <label style="margin-top:0;">Borrar por Mes (YYYY-MM):</label>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <input type="month" id="del_mes" style="margin:0;">
+                        <button class="btn-danger" style="margin:0; width: auto; padding: 6px 12px;" onclick="ejecutarBorradoPorCriterio('mes')">Borrar Mes</button>
+                    </div>
+                </div>
+
+                <div style="background: var(--input-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                    <label style="margin-top:0;">Borrar por Año (YYYY):</label>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <input type="number" id="del_anio" placeholder="2026" style="margin:0;" min="2020" max="2050">
+                        <button class="btn-danger" style="margin:0; width: auto; padding: 6px 12px;" onclick="ejecutarBorradoPorCriterio('anio')">Borrar Año</button>
+                    </div>
+                </div>
+
+                <div style="background: rgba(231, 76, 60, 0.1); padding: 10px; border-radius: 6px; border: 1px solid var(--danger); text-align: center;">
+                    <button class="btn-danger" style="margin:0; width: 100%;" onclick="ejecutarBorradoPorCriterio('todo')">⚠️ BORRAR TODO EL HISTORIAL</button>
+                </div>
+            </div>
+            <button class="btn-warning" style="margin-top: 15px;" onclick="cerrarModalGlobal()">Cancelar</button>
+        `;
+        abrirModalGlobal("🗑️ Opciones de Borrado de Historial", html);
+    }
+
+    async function ejecutarBorradoPorCriterio(tipo) {
+        let lotesAEliminar = [];
+        if (tipo === 'dia') {
+            let val = document.getElementById('del_fecha').value;
+            if (!val) return alert("Seleccione una fecha válida.");
+            lotesAEliminar = DATOS_LOTES_CACHE.filter(l => l.fecha === val);
+        } else if (tipo === 'mes') {
+            let val = document.getElementById('del_mes').value;
+            if (!val) return alert("Seleccione un mes válido.");
+            lotesAEliminar = DATOS_LOTES_CACHE.filter(l => l.fecha && l.fecha.startsWith(val));
+        } else if (tipo === 'anio') {
+            let val = document.getElementById('del_anio').value;
+            if (!val) return alert("Ingrese un año válido.");
+            lotesAEliminar = DATOS_LOTES_CACHE.filter(l => l.fecha && l.fecha.startsWith(val));
+        } else if (tipo === 'todo') {
+            lotesAEliminar = DATOS_LOTES_CACHE;
+        }
+
+        if (lotesAEliminar.length === 0) {
+            return alert("⚠️ No se encontraron registros de lotes para el criterio seleccionado.");
+        }
+
+        if (!confirm(`⚠️ ATENCIÓN: Está a punto de eliminar ${lotesAEliminar.length} lote(s). \n\n¿Está seguro de continuar? Se reintegrará el stock correspondiente al inventario.`)) {
+            return;
+        }
+
+        cerrarModalGlobal();
+        abrirModalGlobal("Procesando Borrado", "Reintegrando stock y eliminando registros seleccionados...");
+
+        try {
+            for (let l of lotesAEliminar) {
+                let detallesLote = DATOS_DETALLES_CACHE.filter(d => d.lote_id === l.id);
+                for (let item of detallesLote) {
+                    if (item.producto_id && item.cantidad > 0) {
+                        let { data: prodData } = await supabaseClient.from('catalogo').select('stock').eq('id', item.producto_id).single();
+                        if (prodData) {
+                            let nuevoStock = (parseFloat(prodData.stock) || 0) + parseFloat(item.cantidad);
+                            await supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', item.producto_id);
+                        }
+                    }
+                }
+                await supabaseClient.from('detalle_ventas').delete().eq('lote_id', l.id);
+                await supabaseClient.from('lotes_diarios').delete().eq('id', l.id);
+            }
+
+            cerrarModalGlobal();
+            alert("✅ Registros eliminados exitosamente y stock reintegrado.");
+            await renderBalanceLotes();
+        } catch (e) {
+            cerrarModalGlobal();
+            alert("❌ Error durante el proceso de borrado: " + e.message);
+        }
+    }
+
+    // --- GRÁFICAS ESTADÍSTICAS Y VENTANA DETALLADA HORIZONTAL ---
+    function renderizarGraficas() {
+        actualizarGraficaVentas();
+        renderizarGraficaProductosResumen();
+        renderizarGraficaVendedores();
+    }
+
+    function actualizarGraficaVentas() {
+        let periodo = document.getElementById('selector_periodo_grafica').value;
+        let agrupado = {};
+
+        DATOS_LOTES_CACHE.forEach(l => {
+            let fechaObj = new Date(l.fecha + 'T00:00:00');
+            let clave = l.fecha;
+
+            if (periodo === 'semanal') {
+                let ano = fechaObj.getFullYear();
+                let sem = Math.ceil((((fechaObj - new Date(ano, 0, 1)) / 86400000) + new Date(ano, 0, 1).getDay() + 1) / 7);
+                clave = `Sem ${sem} (${ano})`;
+            } else if (periodo === 'mensual') {
+                clave = l.fecha.substring(0, 7);
+            } else if (periodo === 'anual') {
+                clave = l.fecha.substring(0, 4);
+            }
+
+            if (!agrupado[clave]) agrupado[clave] = 0;
+            agrupado[clave] += parseFloat(l.total_vendido_usd) || 0;
+        });
+
+        let clavesOrdenadas = Object.keys(agrupado).sort();
+        let valores = clavesOrdenadas.map(k => agrupado[k]);
+
+        let ctx = document.getElementById('chartVentas').getContext('2d');
+        if (chartVentasInstancia) chartVentasInstancia.destroy();
+
+        chartVentasInstancia = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: clavesOrdenadas,
+                datasets: [{
+                    label: 'Ventas Totales ($)',
+                    data: valores,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    function renderizarGraficaProductosResumen() {
+        let conteoProd = {};
+        DATOS_DETALLES_CACHE.forEach(d => {
+            let nombre = d.catalogo ? d.catalogo.nombre : 'Producto';
+            if (!conteoProd[nombre]) conteoProd[nombre] = 0;
+            conteoProd[nombre] += parseFloat(d.cantidad) || 0;
+        });
+
+        let ordenados = Object.keys(conteoProd).map(k => ({ nombre: k, cant: conteoProd[k] }))
+                            .sort((a, b) => b.cant - a.cant).slice(0, 5);
+
+        let ctx = document.getElementById('chartProductos').getContext('2d');
+        if (chartProductosInstancia) chartProductosInstancia.destroy();
+
+        chartProductosInstancia = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ordenados.map(o => o.nombre),
+                datasets: [{
+                    label: 'Unidades Vendidas',
+                    data: ordenados.map(o => o.cant),
+                    backgroundColor: '#2ecc71',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // MODAL DETALLADO DE PRODUCTOS (GRÁFICA HORIZONTAL: MÁS LARGA = MAYOR VENTA)
+    function abrirModalDetalleProductos() {
+        let html = `
+            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;">Gráfica detallada de todos los productos ordenados por volumen de ventas (la barra más larga indica mayor venta):</p>
+            <div style="position: relative; width: 100%; height: 420px; max-height: 60vh;">
+                <canvas id="chartProductosDetalle"></canvas>
+            </div>
+            <button class="btn-success" style="margin-top: 15px;" onclick="cerrarModalGlobal()">Cerrar</button>
+        `;
+        abrirModalGlobal("Detalle Completo de Productos Más Vendidos", html);
+        
+        setTimeout(() => {
+            let conteoProd = {};
+            DATOS_DETALLES_CACHE.forEach(d => {
+                let nombre = d.catalogo ? d.catalogo.nombre : 'Producto';
+                if (!conteoProd[nombre]) conteoProd[nombre] = 0;
+                conteoProd[nombre] += parseFloat(d.cantidad) || 0;
+            });
+            let ordenados = Object.keys(conteoProd).map(k => ({ nombre: k, cant: conteoProd[k] }))
+                                .sort((a, b) => b.cant - a.cant);
+
+            let ctx = document.getElementById('chartProductosDetalle').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ordenados.map(o => o.nombre),
+                    datasets: [{
+                        label: 'Unidades Vendidas',
+                        data: ordenados.map(o => o.cant),
+                        backgroundColor: '#2ecc71',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Gráfica de barras horizontales
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true } }
+                }
+            });
+        }, 150);
+    }
+
+    function renderizarGraficaVendedores() {
+        let gananciaVendedor = {};
+        DATOS_LOTES_CACHE.forEach(l => {
+            let nomVendedor = l.empleados ? `${l.empleados.nombre} ${l.empleados.apellido}` : 'Desconocido';
+            if (!gananciaVendedor[nomVendedor]) gananciaVendedor[nomVendedor] = 0;
+            gananciaVendedor[nomVendedor] += parseFloat(l.ganancia_neta) || 0;
+        });
+
+        let ordenados = Object.keys(gananciaVendedor).map(k => ({ nombre: k, ganancia: gananciaVendedor[k] }))
+                            .sort((a, b) => b.ganancia - a.ganancia);
+
+        let ctx = document.getElementById('chartVendedores').getContext('2d');
+        if (chartVendedoresInstancia) chartVendedoresInstancia.destroy();
+
+        chartVendedoresInstancia = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ordenados.map(o => o.nombre),
+                datasets: [{
+                    data: ordenados.map(o => o.ganancia),
+                    backgroundColor: ['#3498db', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    function generarPDFBalanceLotes() {
+        let element = document.getElementById('pdf_export_container');
+        let opt = { 
+            margin: 5, 
+            filename: 'Balance_Financiero_Y_Graficas.pdf', 
+            image: { type: 'jpeg', quality: 0.98 }, 
+            html2canvas: { scale: 2, useCORS: true }, 
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    function abrirModalGlobal(titulo, htmlContent) { 
+        document.getElementById('global_modal_title').innerText = titulo; 
+        document.getElementById('global_modal_body').innerHTML = htmlContent; 
+        document.getElementById('global_modal').style.display = 'flex'; 
+    }
+    function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
+</script>
+</body>
+</html>
