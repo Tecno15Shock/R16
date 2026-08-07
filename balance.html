@@ -7,7 +7,8 @@
     <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Librería jsPDF nativa para exportación basada en texto y vectores -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
         :root {
@@ -98,7 +99,7 @@
 </head>
 <body>
 
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (TRANSLÚCIDA Y ANIMADA) -->
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
 <div id="pantalla_bloqueo_admin">
     <div class="card" style="width: 350px; text-align: center; border-top: 4px solid var(--danger); margin: 0; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
         <h2 style="color: var(--danger);">🔒 Acceso Protegido</h2>
@@ -141,8 +142,8 @@
         <a href="facturar.html" class="tab-btn" style="color: #2ecc71; font-weight: bold;">🛒 Facturar Venta</a>
         <a href="cierre.html" class="tab-btn">🧾 Cierre de Caja</a>
         <a href="control_inventario.html" class="tab-btn" style="color: #1abc9c; font-weight: bold;">📋 Control Inventario</a>
-        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
-        <a href="capital.html" class="tab-btn active" style="background:var(--primary); border: 1px solid #bdc3c7; color: white;">📈 Capital e Inventario</a>
+        <a href="balance.html" class="tab-btn active">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn" style="background:var(--primary); border: 1px solid #bdc3c7; color: white;">📈 Capital e Inventario</a>
         <a href="proveedores.html" class="tab-btn" style="color: #3498db;">🚚 Proveedores</a>
         <a href="pagos_servicios.html" class="tab-btn" style="color: #9b59b6; font-weight: bold;">🧾 Pagos Bancarios</a>
         <a href="conciliacion_pto.html" class="tab-btn" style="color: #3498db; font-weight: bold;">💳 Conciliación Pto</a>
@@ -153,7 +154,7 @@
         <a href="configuracion.html" class="tab-btn" style="color:#f39c12; font-weight:bold; margin-top:15px;">⚙️ Configuracion</a>
     </div>
 
-    <div class="main-content" id="pdf_export_container">
+    <div class="main-content">
         <!-- FILTRO DE FECHA -->
         <div class="card">
             <div class="grid-2">
@@ -187,7 +188,7 @@
         </div>
 
         <div class="grid-2">
-            <!-- PRODUCTOS MÁS VENDIDOS CON BOTÓN "VER MÁS" -->
+            <!-- PRODUCTOS MÁS VENDIDOS -->
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 5px; margin-bottom: 10px;">
                     <h2 style="margin: 0; border: none;">🏆 Productos Más Vendidos</h2>
@@ -227,7 +228,6 @@
 
     <div style="max-width: 1100px; margin: 0 auto; padding: 0 20px;">
         <button class="btn-warning" style="margin-bottom: 10px; background: #9b59b6; width: 100%;" onclick="generarPDFBalanceLotes()">📄 Descargar PDF de Balance y Gráficas</button>
-        <!-- BOTÓN MODIFICADO PARA ABRIR EL MENÚ DE BORRADO ESTRUCTURADO -->
         <button class="btn-success" style="background:var(--danger);" onclick="abrirMenuOpcionesEliminacion()">🗑️ Opciones de Borrado de Historial</button>
     </div>
 </div>
@@ -275,7 +275,6 @@
         input.type = input.type === 'password' ? 'text' : 'password';
     }
 
-    // VERIFICACIÓN DE PIN CON ANIMACIÓN DE CARGA DE 1 SEGUNDO
     async function verificarPinBody() {
         let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
         let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
@@ -284,7 +283,6 @@
         btn.innerHTML = "⏳ Cargando...";
         btn.disabled = true;
 
-        // Esperar exactamente 1 segundo para mostrar la animación de carga
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         if (pinIngresado === pinReal) {
@@ -354,7 +352,7 @@
         });
 
         let totGastos = totGastosOperativos + totAvancesCierre;
-       
+        
         document.getElementById('st_ventas').innerText = `$${totVentas.toFixed(2)}`;
         document.getElementById('st_capital').innerText = `$${totCapital.toFixed(2)}`;
         document.getElementById('st_ganancia').innerText = `$${totGanancia.toFixed(2)}`;
@@ -405,7 +403,6 @@
         renderizarGraficas();
     }
 
-    // ELIMINACIÓN INDIVIDUAL DE LOTE CON REINTEGRO DE STOCK
     async function eliminarLoteSupabase(loteId) {
         if(!confirm("⚠️ ¿Estás seguro de eliminar este lote? \n\nAl hacerlo, el sistema reintegrará automáticamente al inventario físico (catálogo) las cantidades exactas de los productos vendidos.")) return;
         
@@ -433,7 +430,6 @@
         }
     }
 
-    // --- MENÚ DE OPCIONES DE BORRADO ESTRUCTURADO (DÍA, MES, AÑO, TODO) ---
     function abrirMenuOpcionesEliminacion() {
         let html = `
             <div style="text-align: left; display: flex; flex-direction: column; gap: 12px;">
@@ -526,7 +522,6 @@
         }
     }
 
-    // --- GRÁFICAS ESTADÍSTICAS Y VENTANA DETALLADA HORIZONTAL ---
     function renderizarGraficas() {
         actualizarGraficaVentas();
         renderizarGraficaProductosResumen();
@@ -593,7 +588,7 @@
         });
 
         let ordenados = Object.keys(conteoProd).map(k => ({ nombre: k, cant: conteoProd[k] }))
-                            .sort((a, b) => b.cant - a.cant).slice(0, 5);
+                                        .sort((a, b) => b.cant - a.cant).slice(0, 5);
 
         let ctx = document.getElementById('chartProductos').getContext('2d');
         if (chartProductosInstancia) chartProductosInstancia.destroy();
@@ -618,10 +613,9 @@
         });
     }
 
-    // MODAL DETALLADO DE PRODUCTOS (GRÁFICA HORIZONTAL: MÁS LARGA = MAYOR VENTA)
     function abrirModalDetalleProductos() {
         let html = `
-            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;">Gráfica detallada de todos los productos ordenados por volumen de ventas (la barra más larga indica mayor venta):</p>
+            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;">Gráfica detallada de todos los productos ordenados por volumen de ventas:</p>
             <div style="position: relative; width: 100%; height: 420px; max-height: 60vh;">
                 <canvas id="chartProductosDetalle"></canvas>
             </div>
@@ -637,7 +631,7 @@
                 conteoProd[nombre] += parseFloat(d.cantidad) || 0;
             });
             let ordenados = Object.keys(conteoProd).map(k => ({ nombre: k, cant: conteoProd[k] }))
-                                .sort((a, b) => b.cant - a.cant);
+                                            .sort((a, b) => b.cant - a.cant);
 
             let ctx = document.getElementById('chartProductosDetalle').getContext('2d');
             new Chart(ctx, {
@@ -652,7 +646,7 @@
                     }]
                 },
                 options: {
-                    indexAxis: 'y', // Gráfica de barras horizontales
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
@@ -671,7 +665,7 @@
         });
 
         let ordenados = Object.keys(gananciaVendedor).map(k => ({ nombre: k, ganancia: gananciaVendedor[k] }))
-                            .sort((a, b) => b.ganancia - a.ganancia);
+                                        .sort((a, b) => b.ganancia - a.ganancia);
 
         let ctx = document.getElementById('chartVendedores').getContext('2d');
         if (chartVendedoresInstancia) chartVendedoresInstancia.destroy();
@@ -693,16 +687,200 @@
         });
     }
 
-    function generarPDFBalanceLotes() {
-        let element = document.getElementById('pdf_export_container');
-        let opt = { 
-            margin: 5, 
-            filename: 'Balance_Financiero_Y_Graficas.pdf', 
-            image: { type: 'jpeg', quality: 0.98 }, 
-            html2canvas: { scale: 2, useCORS: true }, 
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-        };
-        html2pdf().set(opt).from(element).save();
+    // =========================================================================
+    // GENERACIÓN DE PDF NATIVO BASADO EN TEXTO Y VECTORES CON jsPDF
+    // =========================================================================
+    async function generarPDFBalanceLotes() {
+        abrirModalGlobal("Generando PDF", "Construyendo documento estructurado con datos nativos...");
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // 1. Obtención de fechas para el nombre del archivo y el reporte
+            let fechaFiltro = document.getElementById('balance_filtro_fecha').value;
+            let fechaHoy = new Date().toISOString().split('T')[0];
+            let fechaStr = fechaFiltro || fechaHoy;
+            let nombreArchivo = `Balance_Financiero_${fechaStr}.pdf`;
+
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Refresquería Flor';
+            let stVentas = document.getElementById('st_ventas').innerText;
+            let stCapital = document.getElementById('st_capital').innerText;
+            let stGanancia = document.getElementById('st_ganancia').innerText;
+            let stGastos = document.getElementById('st_gastos').innerText;
+
+            // 2. Encabezado institucional con fuentes y vectores nativos
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(16);
+            doc.setTextColor(44, 62, 80);
+            doc.text(nombreLocal, 14, 18);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(127, 140, 141);
+            doc.text("Reporte Consolidado de Balance Financiero", 14, 24);
+            doc.text(`Fecha de Emisión / Filtro: ${fechaStr}`, 14, 30);
+
+            doc.setDrawColor(52, 152, 219);
+            doc.setLineWidth(0.5);
+            doc.line(14, 34, 196, 34);
+
+            // 3. Cajas de Resumen (Métricas Clave)
+            doc.setFillColor(248, 249, 250);
+            doc.roundedRect(14, 40, 43, 18, 2, 2, "F");
+            doc.roundedRect(61, 40, 43, 18, 2, 2, "F");
+            doc.roundedRect(108, 40, 43, 18, 2, 2, "F");
+            doc.roundedRect(155, 40, 41, 18, 2, 2, "F");
+
+            doc.setFontSize(7);
+            doc.setTextColor(127, 140, 141);
+            doc.text("VENTAS TOTALES", 17, 45);
+            doc.text("RECUP. CAPITAL", 64, 45);
+            doc.text("GANANCIA NETA", 111, 45);
+            doc.text("GASTOS TOTALES", 158, 45);
+
+            doc.setFontSize(10);
+            doc.setFont("Helvetica", "bold");
+            doc.setTextColor(41, 128, 185);
+            doc.text(stVentas, 17, 53);
+            doc.setTextColor(44, 62, 80);
+            doc.text(stCapital, 64, 53);
+            doc.setTextColor(39, 174, 96);
+            doc.text(stGanancia, 111, 53);
+            doc.setTextColor(192, 57, 43);
+            doc.text(stGastos, 158, 53);
+
+            let posY = 68;
+
+            // 4. Inyección de Tabla de Lotes / Cierres de Turno (Con columna de Capital incluida)
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(44, 62, 80);
+            doc.text("Historial de Cierres de Turno (Lotes)", 14, posY);
+
+            posY += 5;
+            doc.setFontSize(8.5);
+            doc.setFillColor(44, 62, 80);
+            doc.setTextColor(255, 255, 255);
+            doc.rect(14, posY, 182, 7, "F");
+            doc.text("Fecha", 15, posY + 5);
+            doc.text("Turno", 38, posY + 5);
+            doc.text("Vendedor", 62, posY + 5);
+            doc.text("Venta Total", 112, posY + 5);
+            doc.text("Capital", 138, posY + 5);
+            doc.text("Ganancia", 168, posY + 5);
+
+            posY += 7;
+            doc.setFont("Helvetica", "normal");
+            doc.setTextColor(44, 62, 80);
+
+            let lotesFiltrados = fechaFiltro ? DATOS_LOTES_CACHE.filter(l => l.fecha === fechaFiltro) : DATOS_LOTES_CACHE;
+
+            if (lotesFiltrados.length === 0) {
+                posY += 6;
+                doc.text("No hay lotes registrados para este periodo.", 15, posY);
+                posY += 8;
+            } else {
+                lotesFiltrados.forEach((l, idx) => {
+                    if (posY > 270) {
+                        doc.addPage();
+                        posY = 20;
+                    }
+                    if (idx % 2 === 0) {
+                        doc.setFillColor(249, 249, 249);
+                        doc.rect(14, posY, 182, 6.5, "F");
+                    }
+                    let empNom = l.empleados ? `${l.empleados.nombre} ${l.empleados.apellido}` : 'Desconocido';
+                    doc.text(String(l.fecha || ''), 15, posY + 4.5);
+                    doc.text(String(l.turno || 'N/A'), 38, posY + 4.5);
+                    doc.text(String(empNom), 62, posY + 4.5);
+                    doc.text(`$${parseFloat(l.total_vendido_usd || 0).toFixed(2)}`, 112, posY + 4.5);
+                    doc.text(`$${parseFloat(l.capital_invertido || 0).toFixed(2)}`, 138, posY + 4.5);
+                    doc.text(`$${parseFloat(l.ganancia_neta || 0).toFixed(2)}`, 168, posY + 4.5);
+                    posY += 6.5;
+                });
+            }
+
+            posY += 10;
+
+            // 5. Inyección de Tabla de Gastos Operativos y Avances
+            if (posY > 250) {
+                doc.addPage();
+                posY = 20;
+            }
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(192, 57, 43);
+            doc.text("Historial de Gastos Operativos y Avances de Cierre", 14, posY);
+
+            posY += 5;
+            doc.setFontSize(8.5);
+            doc.setFillColor(192, 57, 43);
+            doc.setTextColor(255, 255, 255);
+            doc.rect(14, posY, 182, 7, "F");
+            doc.text("Fecha", 16, posY + 5);
+            doc.text("Concepto / Tipo", 50, posY + 5);
+            doc.text("Monto (USD)", 120, posY + 5);
+            doc.text("Detalle / Ref", 150, posY + 5);
+
+            posY += 7;
+            doc.setFont("Helvetica", "normal");
+            doc.setTextColor(44, 62, 80);
+
+            let gastosFiltrados = fechaFiltro ? DATOS_GASTOS_CACHE.filter(g => g.fecha === fechaFiltro) : DATOS_GASTOS_CACHE;
+
+            // Integrar también los avances de caja contenidos en los lotes filtrados
+            let listaGastosConsolidados = [];
+            gastosFiltrados.forEach(g => {
+                listaGastosConsolidados.push({
+                    fecha: g.fecha,
+                    concepto: g.servicios_bancarios ? g.servicios_bancarios.nombre : (g.nota || 'Gasto Operativo'),
+                    monto: parseFloat(g.monto_usd || 0),
+                    ref: g.referencia || 'N/A'
+                });
+            });
+
+            lotesFiltrados.forEach(l => {
+                if (l.ingresos && l.ingresos.avances && parseFloat(l.ingresos.avances) > 0) {
+                    listaGastosConsolidados.push({
+                        fecha: l.fecha,
+                        concepto: `Avance / Retiro de Caja (Turno: ${l.turno || 'N/A'})`,
+                        monto: parseFloat(l.ingresos.avances),
+                        ref: 'Cierre de Caja'
+                    });
+                }
+            });
+
+            if (listaGastosConsolidados.length === 0) {
+                posY += 6;
+                doc.text("No hay gastos ni avances registrados para este periodo.", 16, posY);
+            } else {
+                listaGastosConsolidados.forEach((item, idx) => {
+                    if (posY > 270) {
+                        doc.addPage();
+                        posY = 20;
+                    }
+                    if (idx % 2 === 0) {
+                        doc.setFillColor(249, 249, 249);
+                        doc.rect(14, posY, 182, 6.5, "F");
+                    }
+                    doc.text(String(item.fecha || ''), 16, posY + 4.5);
+                    doc.text(String(item.concepto), 50, posY + 4.5);
+                    doc.text(`$${item.monto.toFixed(2)}`, 120, posY + 4.5);
+                    doc.text(String(item.ref), 150, posY + 4.5);
+                    posY += 6.5;
+                });
+            }
+
+            // 6. Descarga directa del PDF
+            doc.save(nombreArchivo);
+            cerrarModalGlobal();
+        } catch (e) {
+            cerrarModalGlobal();
+            alert("❌ Error al generar el PDF estructurado: " + e.message);
+            console.error(e);
+        }
     }
 
     function abrirModalGlobal(titulo, htmlContent) { 
