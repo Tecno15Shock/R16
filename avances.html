@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avances / Retiros - Sistema Maestro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        .top-bar { background: var(--primary); color: white; padding: 12px 15px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { background: none; border: none; color: white; font-size: 1.6rem; cursor: pointer; padding: 0; margin: 0; display: inline-block; }
+        .top-bar-title { font-size: 1.2rem; font-weight: bold; color: #ecf0f1; flex-grow: 1; }
+        
+        .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 5px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 15px; color: #ecf0f1; }
+        .sidebar .tab-btn { background: none; color: #bfc9ca; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; transition: all 0.2s; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { padding: 20px; max-width: 800px; margin: 0 auto; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border);}
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 5px; color: var(--muted);}
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 1.1rem; }
+        
+        .calc-display { background:var(--primary); padding:20px; border-radius:8px; text-align:center; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+        .calc-display .title { font-size: 0.9rem; color: #bdc3c7; margin-bottom: 10px; }
+        .calc-res.main { font-size:2.2rem; color:#2ecc71; font-weight:bold; margin-bottom: 5px; }
+        .calc-res.sub { font-size:1.2rem; color:#bdc3c7; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn" style="color: #f1c40f;">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn" style="color: #3498db; font-weight: bold;">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn" style="color: #8e44ad; font-weight: bold;">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">💸 Avances / Retiros</a>
+        <a href="calculadora.html" class="tab-btn">🧮 Calculadora Divisas</a>
+        <a href="facturar.html" class="tab-btn" style="color: #2ecc71; font-weight: bold;">🛒 Facturar Venta</a>
+        <a href="cierre.html" class="tab-btn">🧾 Cierre de Caja</a>
+        <a href="control_inventario.html" class="tab-btn" style="color: #1abc9c; font-weight: bold;">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn active" style="background:var(--primary); border: 1px solid #bdc3c7; color: white;">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn" style="color: #3498db;">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn" style="color: #9b59b6; font-weight: bold;">🧾 Pagos Bancarios</a>
+        <a href="conciliacion_pto.html" class="tab-btn" style="color: #3498db; font-weight: bold;">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn" style="color: #2980b9; font-weight: bold;">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn" style="color: #e74c3c; font-weight: bold;">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn" style="color:#27ae60; font-weight:bold; margin-top:5px;">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn" style="color:#f39c12; font-weight:bold; margin-top:15px;">⚙️ Configuracion</a>
+    </div>
+
+    <div class="main-content">
+        <div class="card" style="border-top: 4px solid #e67e22;">
+            <h2>💸 Retiro / Avance Efectivo</h2>
+            <div class="grid-2">
+                <div>
+                    <label>Moneda Solicitada (Retiro):</label>
+                    <select id="avance_moneda" onchange="calcularAvance()">
+                        <option value="BS">Bolívares (BS)</option>
+                        <option value="USD">Dólares (USD)</option>
+                        <option value="COP">Pesos (COP)</option>
+                        <option value="EUR">Euros (EUR)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Monto Solicitado:</label>
+                    <input type="number" step="0.01" id="avance_monto" oninput="calcularAvance()" placeholder="0.00">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label>Porcentaje de Cobro (Comisión %):</label>
+                <input type="number" step="0.1" id="avance_porcentaje" oninput="calcularAvance()" placeholder="Ej: 10">
+            </div>
+
+            <div class="calc-display">
+                <div class="title">DEBES COBRAR AL CLIENTE (INCLUYE COMISIÓN):</div>
+                <div class="calc-res main" id="avance_res_usd">$ 0.00</div>
+                <div class="calc-res sub" id="avance_res_bs">0.00 BS</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data } = await window.supabaseClient.auth.getSession();
+        if (data && data.session) await sincronizarSesionSupabase(data.session);
+        else window.location.href = 'index.html';
+    });
+
+    async function sincronizarSesionSupabase(session) {
+        const userId = session.user.id;
+        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
+        else {
+            let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
+            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        }
+        await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
+    }
+
+    async function cargarTodoDesdeSupabase(email, nombrePerfil) {
+        if(!CURRENT_LOCAL_ID) return;
+        try {
+            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+                let nombreLocal = conf.identidad?.nombre || 'Sistema';
+                document.getElementById('main_top_title').innerHTML = `🏪 ${nombreLocal} <span style="font-size:0.8rem; font-weight:normal; color:#bdc3c7; margin-left:15px;">👋 Bienvenido, <strong>${nombrePerfil || email}</strong></span>`;
+                calcularAvance();
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    function calcularAvance() {
+        let monto = parseFloat(document.getElementById('avance_monto').value) || 0;
+        let moneda = document.getElementById('avance_moneda').value;
+        let porcentaje = parseFloat(document.getElementById('avance_porcentaje').value) || 0;
+        
+        let t = CONFIG_GLOBAL.tasas || { ves: 1, cop: 1, eur: 1 };
+        let tv = parseFloat(t.ves) || 1, tc = parseFloat(t.cop) || 1, te = parseFloat(t.eur) || 1;
+        
+        // Conversión a USD base
+        let montoUsd = parseFloat(moneda === 'BS' ? monto / tv : moneda === 'COP' ? monto / tc : moneda === 'EUR' ? monto / te : monto);
+        
+        let comisionUsd = montoUsd * (porcentaje / 100);
+        let totalCobrarUsd = montoUsd + comisionUsd;
+        
+        document.getElementById('avance_res_usd').innerText = `$ ${formatearNumero(totalCobrarUsd)}`;
+        document.getElementById('avance_res_bs').innerText = `${formatearNumero(totalCobrarUsd * tv)} BS`;
+    }
+
+    function formatearNumero(v, d = 2) { 
+        if (isNaN(v) || v == null) return "0"; 
+        let num = parseFloat(v); if (d === 0) num = Math.round(num); 
+        let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+        if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
+    }
+</script>
+</body>
+</html>
