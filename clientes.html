@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👥 Clientes y Fiados - Sistema Maestro</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root { --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c; --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; --border: #ddd; --card-bg: #ffffff; --input-bg: #ffffff; --muted: #7f8c8d; }
+        body.dark-mode { --bg: #121212; --primary: #1e272e; --secondary: #2980b9; --danger: #c0392b; --success: #27ae60; --warning: #f39c12; --info: #2c3e50; --text: #ecf0f1; --border: #34495e; --card-bg: #1e1e1e; --input-bg: #2d2d2d; --muted: #bdc3c7; }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; transition: background 0.3s, color 0.3s; }
+        
+        /* ANIMACIONES Y EFECTOS TRANSLÚCIDOS */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #pantalla_bloqueo_admin {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(18, 18, 18, 0.75); backdrop-filter: blur(10px);
+            z-index: 99999; display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .top-bar { background: var(--primary); color: white; padding: 12px 15px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { 
+            background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.1rem; 
+            cursor: pointer; width: 30px; height: 30px; padding: 0; margin: 0; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; transition: background 0.2s; 
+        }
+        .menu-toggle-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .top-bar-title { font-size: 1.1rem; font-weight: bold; color: #ecf0f1; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .sidebar { position: fixed; top: 0; left: -320px; width: 320px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 5px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 15px; color: #ecf0f1; }
+        .sidebar .tab-btn { background: none; color: #bfc9ca; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; transition: all 0.2s; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { max-width: 900px; margin: 0 auto; padding: 20px; padding-bottom: 130px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+        label { font-size: 0.95rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted); }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); }
+        
+        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; transition: opacity 0.2s, transform 0.1s; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        .btn-danger { background: var(--danger); }
+        .btn-warning { background: var(--warning); color: #fff; }
+        .btn-info { background: var(--info); }
+        .btn-success { background: var(--success); }
+
+        .pending-header { background: var(--card-bg); padding: 15px; border-radius: 8px; text-align: center; border: 2px solid var(--warning); margin-bottom: 20px; font-size: 1.2rem; font-weight: bold; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .pending-header span { font-size: 1.6rem; color: var(--danger); display: block; margin-top: 5px; }
+        
+        .zebra-item { border-bottom: 1px solid var(--border); padding: 12px 15px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; }
+        .zebra-item:nth-child(even) { background-color: rgba(0,0,0,0.02); }
+        
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 600px; max-width: 90%; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 15px 35px rgba(0,0,0,0.4); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    </style>
+</head>
+<body>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (TRANSLÚCIDA Y ANIMADA) -->
+<div id="pantalla_bloqueo_admin">
+    <div class="card" style="width: 350px; text-align: center; border-top: 4px solid var(--danger); margin: 0; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+        <h2 style="color: var(--danger);">🔒 Acceso Protegido</h2>
+        <p style="font-size: 0.9rem; color: var(--muted);">Introduce el PIN de Administrador para ver este módulo:</p>
+        <div style="position: relative; margin-bottom: 15px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px; width: 100%; padding-right: 45px; margin-top: 0;" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
+        </div>
+        <button id="btn_desbloquear" onclick="verificarPinBody()" style="background: var(--primary); margin-top: 0;">Desbloquear Pantalla</button>
+        <button onclick="window.history.back()" style="background: var(--danger); margin-top: 8px;">Volver Atrás</button>
+    </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <div id="global_modal_title" style="font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px;">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <!-- NAVEGACIÓN SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">👥 Clientes y Fiados</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn" style="color: #f1c40f;">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn" style="color: #3498db; font-weight: bold;">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn" style="color: #8e44ad; font-weight: bold;">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">💸 Avances / Retiros</a>
+        <a href="calculadora.html" class="tab-btn">🧮 Calculadora Divisas</a>
+        <a href="facturar.html" class="tab-btn" style="color: #2ecc71; font-weight: bold;">🛒 Facturar Venta</a>
+        <a href="cierre.html" class="tab-btn">🧾 Cierre de Caja</a>
+        <a href="control_inventario.html" class="tab-btn" style="color: #1abc9c; font-weight: bold;">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn active" style="background:var(--primary); border: 1px solid #bdc3c7; color: white;">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn" style="color: #3498db;">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn" style="color: #9b59b6; font-weight: bold;">🧾 Pagos Bancarios</a>
+        <a href="conciliacion_pto.html" class="tab-btn" style="color: #3498db; font-weight: bold;">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn" style="color: #2980b9; font-weight: bold;">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn" style="color: #e74c3c; font-weight: bold;">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn" style="color:#27ae60; font-weight:bold; margin-top:5px;">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn" style="color:#f39c12; font-weight:bold; margin-top:15px;">⚙️ Configuracion</a>
+    </div>
+
+    <div class="main-content">
+        <div class="pending-header">
+            Total Pendiente por Cobrar (Clientes)
+            <span id="tot_pendiente_clientes">$0.00</span>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #e74c3c;">
+            <h2>Registro de Clientes y Deudas (Alfabético)</h2>
+            <button onclick="abrirModalNuevoCliente()" style="background: var(--primary); margin-bottom:10px;">+ Añadir Cliente Nuevo</button>
+            <input type="text" id="buscar_cliente" placeholder="🔍 Buscar cliente por nombre..." oninput="renderClientes()">
+            <div id="lista_clientes_container" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CLIENTES = [];
+    let CATALOGO = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        abrirModalGlobal("Autenticando", "Verificando sesión activa...");
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) {
+                cerrarModalGlobal();
+                alert("No hay una sesión activa.");
+                window.location.href = 'index.html';
+                return;
+            }
+            await inicializarDatos(data.session.user.id);
+        } catch (err) { 
+            console.error(err);
+            cerrarModalGlobal();
+            alert("Error de red conectando con el servidor.");
+        }
+    });
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
+        let btn = document.getElementById('btn_desbloquear');
+
+        btn.innerHTML = "⏳ Cargando...";
+        btn.disabled = true;
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (pinIngresado === pinReal) {
+            let pantalla = document.getElementById('pantalla_bloqueo_admin');
+            pantalla.style.animation = 'fadeIn 0.3s reverse';
+            setTimeout(() => {
+                pantalla.style.display = 'none';
+            }, 300);
+        } else {
+            alert("❌ PIN Incorrecto.");
+            document.getElementById('pin_ingreso_body').value = '';
+            btn.innerHTML = "Desbloquear Pantalla";
+            btn.disabled = false;
+        }
+    }
+
+    async function inicializarDatos(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+            let { data: conf } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+                let nombreLocal = conf.identidad?.nombre || 'Sistema';
+                document.getElementById('main_top_title').innerHTML = `👥 ${nombreLocal} - Clientes`;
+            }
+        } else {
+            cerrarModalGlobal();
+            return alert("Error: Perfil no vinculado a un local.");
+        }
+
+        await cargarDatosSupabase();
+        cerrarModalGlobal();
+    }
+
+    async function cargarDatosSupabase() {
+        const [reqCli, reqCat] = await Promise.all([
+            supabaseClient.from('clientes').select('*').eq('local_id', CURRENT_LOCAL_ID),
+            supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID)
+        ]);
+
+        if (reqCli.data) {
+            CLIENTES = reqCli.data.map(c => ({ 
+                id: c.id, 
+                nom: c.nombre, 
+                ced: c.cedula || '', 
+                dir: c.direccion || '', 
+                deudaUsd: parseFloat(c.deuda_usd) || 0, 
+                historial: c.historial || []
+            })).sort((a, b) => a.nom.localeCompare(b.nom));
+        }
+
+        if (reqCat.data) {
+            CATALOGO = reqCat.data.map(p => ({
+                uuid: p.id, 
+                nom: p.nombre, 
+                stock: p.stock || 0, 
+                base: p.precio_base || 0, 
+                ventaRef: p.precio_venta || 0
+            }));
+        }
+        renderClientes();
+    }
+
+    function renderClientes() {
+        let q = document.getElementById('buscar_cliente').value.toLowerCase();
+        let html = "";
+        let filtrados = CLIENTES.filter(c => c.nom.toLowerCase().includes(q));
+
+        filtrados.forEach((c) => {
+            html += `
+            <div class="zebra-item">
+                <div style="flex:1;"><strong>${c.nom}</strong><br><small>C.I: ${c.ced || 'N/A'} | Dir: ${c.dir || 'N/A'}</small></div>
+                <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                    <span style="color:var(--danger); font-weight:bold; font-size:1.1rem;">$${c.deudaUsd.toFixed(2)}</span>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn-info" style="padding:4px 8px; margin:0;" onclick="editarCliente('${c.id}')">✏️</button>
+                        <button class="btn-warning" style="padding:4px 8px; margin:0; font-weight:bold;" onclick="gestionarCuentaCliente('${c.id}')">👁️ Gestión / Deuda</button>
+                        <button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="eliminarClienteSupabase('${c.id}')">🗑️</button>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('lista_clientes_container').innerHTML = html || '<p style="color:var(--muted); text-align:center;">No hay clientes almacenados o registrados.</p>';
+        
+        let tC = CLIENTES.reduce((acc, c) => acc + (c.deudaUsd || 0), 0);
+        document.getElementById('tot_pendiente_clientes').innerText = `$${tC.toFixed(2)}`;
+    }
+
+    function abrirModalNuevoCliente() {
+        abrirModalGlobal("Añadir Cliente Nuevo", `
+            <div class="grid-2">
+                <div><label>Nombres y Apellidos:</label><input type="text" id="c_nom"></div>
+                <div><label>Cédula:</label><input type="text" id="c_ced"></div>
+            </div>
+            <label>Dirección:</label><input type="text" id="c_dir">
+            <button onclick="guardarClienteNuevo()" style="background:var(--success); margin-top:15px;">💾 Guardar Cliente</button>
+            <button class="btn-warning" style="margin-top:5px;" onclick="cerrarModalGlobal()">Cancelar</button>
+        `);
+    }
+
+    async function guardarClienteNuevo() {
+        let n = document.getElementById('c_nom').value.trim();
+        let c = document.getElementById('c_ced').value.trim();
+        let d = document.getElementById('c_dir').value.trim();
+        if (!n) return alert("El nombre del cliente es obligatorio.");
+
+        let payload = { local_id: CURRENT_LOCAL_ID, nombre: n, cedula: c, direccion: d, deuda_usd: 0, historial: [] };
+        mostrarModalLocal("Guardando", "Registrando cliente en la base de datos...");
+        try {
+            await supabaseClient.from('clientes').insert([payload]);
+            await cargarDatosSupabase();
+            cerrarModalGlobal();
+        } catch(err) { cerrarModalGlobal(); alert("Error: " + err.message); }
+    }
+
+    function editarCliente(id) {
+        let cli = CLIENTES.find(c => c.id === id); if(!cli) return;
+        abrirModalGlobal("Editar Datos de Cliente", `
+            <div class="grid-2">
+                <div><label>Nombres y Apellidos:</label><input type="text" id="edit_c_nom" value="${cli.nom}"></div>
+                <div><label>Cédula:</label><input type="text" id="edit_c_ced" value="${cli.ced}"></div>
+            </div>
+            <label>Dirección:</label><input type="text" id="edit_c_dir" value="${cli.dir}">
+            <button onclick="guardarEdicionCliente('${id}')" style="background:var(--success); margin-top:15px;">💾 Actualizar Datos</button>
+            <button class="btn-warning" style="margin-top:5px;" onclick="cerrarModalGlobal()">Cancelar</button>
+        `);
+    }
+
+    async function guardarEdicionCliente(id) {
+        let n = document.getElementById('edit_c_nom').value.trim();
+        let c = document.getElementById('edit_c_ced').value.trim();
+        let d = document.getElementById('edit_c_dir').value.trim();
+        if(!n) return alert("El nombre no puede estar vacío.");
+
+        mostrarModalLocal("Actualizando", "Guardando cambios...");
+        try {
+            await supabaseClient.from('clientes').update({ nombre: n, cedula: c, direccion: d }).eq('id', id);
+            await cargarDatosSupabase();
+            cerrarModalGlobal();
+        } catch(err) { cerrarModalGlobal(); alert("Error: " + err.message); }
+    }
+
+    async function eliminarClienteSupabase(id) {
+        if(!confirm("⚠️ ¿Estás seguro de eliminar este cliente del sistema? Se perderá su registro y deudas asociadas.")) return;
+        mostrarModalLocal("Eliminando", "Borrando cliente...");
+        try {
+            await supabaseClient.from('clientes').delete().eq('id', id);
+            await cargarDatosSupabase();
+            cerrarModalGlobal();
+        } catch(err) { cerrarModalGlobal(); alert("Error: " + err.message); }
+    }
+
+    function gestionarCuentaCliente(id) {
+        let cli = CLIENTES.find(c => c.id === id); if(!cli) return;
+        
+        let optCatalogo = CATALOGO.map(p => `<option value="${p.uuid}" data-venta="${p.ventaRef}" data-caja="${p.base}">[Stock: ${p.stock}] ${p.nom}</option>`).join('');
+
+        let html = `
+            <div style="text-align:center; margin-bottom:15px; font-size:1.2rem;">Deuda Actual: <strong style="color:var(--danger);">$${cli.deudaUsd.toFixed(2)}</strong></div>
+            <button class="btn-info" style="width:100%; margin-bottom:15px; padding:10px;" onclick="generarPDFEstadoCuenta('${id}')">📄 Generar Estado de Cuenta PDF (Formal)</button>
+            
+            <div style="background:var(--input-bg); padding:10px; border:1px solid var(--border); border-radius:6px; margin-bottom:10px;">
+                <h4 style="margin:0 0 10px 0; color:var(--primary);">1. Cargar Deuda con Inventario</h4>
+                <div class="grid-2">
+                    <select id="gc_prod_id"><option value="">Seleccionar Mercancía...</option>${optCatalogo}</select>
+                    <input type="number" id="gc_prod_cant" placeholder="Cantidad" value="1">
+                </div>
+                <div class="grid-2" style="margin-top:8px;">
+                    <select id="gc_prod_tipo"><option value="venta">Precio Público</option><option value="caja">Precio Interno</option></select>
+                    <input type="text" id="gc_prod_nota" placeholder="Nota opcional...">
+                </div>
+                <button class="btn-primary" style="width:100%; padding:8px; margin-top:8px; background:var(--primary);" onclick="ejecutarDeudaProducto('${id}')">Fiar Producto (Descuenta Stock)</button>
+            </div>
+
+            <div style="background:var(--input-bg); padding:10px; border:1px solid var(--border); border-radius:6px; margin-bottom:10px;">
+                <h4 style="margin:0 0 10px 0; color:var(--primary);">2. Cargo o Abono Manual</h4>
+                <div class="grid-3">
+                    <select id="gc_man_accion"><option value="sumar">➕ Añadir Deuda</option><option value="restar">➖ Abonar/Pagar</option></select>
+                    <input type="number" step="0.01" id="gc_man_monto" placeholder="Monto ($)">
+                    <input type="text" id="gc_man_nota" placeholder="Motivo">
+                </div>
+                <button class="btn-info" style="width:100%; padding:8px; margin-top:8px;" onclick="ejecutarDeudaManual('${id}')">Ejecutar Acción Manual</button>
+            </div>
+
+            <h4 style="margin:0 0 5px 0; border-bottom:1px solid var(--border);">Historial de Movimientos</h4>
+            <div style="max-height:220px; overflow-y:auto; border:1px solid var(--border);">
+                <table style="width:100%; font-size:0.8rem; text-align:left;">
+                    <tr style="background:var(--primary); color:#fff;"><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Saldo</th></tr>
+                    ${cli.historial && cli.historial.length > 0 ? cli.historial.map(h => `<tr><td>${h.fecha}</td><td><strong>${h.tipo}</strong><br><span style="color:var(--muted)">${h.nota||''}</span></td><td style="color:${parseFloat(h.monto)<0?'var(--success)':'var(--danger)'}">$${parseFloat(h.monto).toFixed(2)}</td><td><strong>$${parseFloat(h.saldo_resultante).toFixed(2)}</strong></td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center; color:var(--muted);">Sin movimientos registrados.</td></tr>'}
+                </table>
+            </div>
+            <button class="btn-warning" style="margin-top:15px;" onclick="cerrarModalGlobal()">Cerrar</button>
+        `;
+        abrirModalGlobal(`Gestión: ${cli.nom}`, html);
+    }
+
+    async function ejecutarDeudaProducto(clienteId) {
+        let sel = document.getElementById('gc_prod_id'); 
+        let prodUuid = sel.value; 
+        let cant = parseFloat(document.getElementById('gc_prod_cant').value); 
+        let tipo = document.getElementById('gc_prod_tipo').value; 
+        let nota = document.getElementById('gc_prod_nota').value.trim();
+        
+        if(!prodUuid || isNaN(cant) || cant <= 0) return alert("Selecciona un producto y cantidad válida.");
+        let pRef = CATALOGO.find(x => x.uuid === prodUuid);
+        if(pRef.stock < cant) return alert("No hay stock suficiente en inventario.");
+        
+        let precio = tipo === 'venta' ? pRef.ventaRef : pRef.base; 
+        let cargoTotal = precio * cant;
+        
+        mostrarModalLocal("Procesando", "Cargando deuda...");
+        await transaccionCliente(clienteId, cargoTotal, `Fío: ${cant}x ${pRef.nom} (${tipo})`, nota);
+        pRef.stock -= cant;
+        await supabaseClient.from('catalogo').update({ stock: pRef.stock }).eq('id', prodUuid);
+        await cargarDatosSupabase(); 
+        gestionarCuentaCliente(clienteId);
+    }
+
+    async function ejecutarDeudaManual(clienteId) {
+        let accion = document.getElementById('gc_man_accion').value; 
+        let monto = parseFloat(document.getElementById('gc_man_monto').value); 
+        let nota = document.getElementById('gc_man_nota').value.trim();
+        
+        if(isNaN(monto) || monto <= 0 || !nota) return alert("Monto y justificación requeridos.");
+        let valorFinal = accion === 'restar' ? -monto : monto; 
+        let etiqueta = accion === 'restar' ? "Abono / Pago" : "Cargo Manual Extra";
+        
+        mostrarModalLocal("Procesando", "Registrando...");
+        await transaccionCliente(clienteId, valorFinal, etiqueta, nota);
+        await cargarDatosSupabase(); 
+        gestionarCuentaCliente(clienteId);
+    }
+
+    async function transaccionCliente(clienteId, montoCambio, tipoTx, nota) {
+        let cli = CLIENTES.find(c => c.id === clienteId);
+        let hist = cli.historial || []; 
+        let nDeuda = (parseFloat(cli.deudaUsd) || 0) + montoCambio;
+        hist.unshift({ fecha: new Date().toLocaleString(), tipo: tipoTx, monto: montoCambio, nota: nota, saldo_resultante: nDeuda });
+        await supabaseClient.from('clientes').update({ deuda_usd: nDeuda, historial: hist }).eq('id', clienteId);
+    }
+
+    // =========================================================================
+    // EXPORTACIÓN A PDF CORPORATIVO / FORMAL DEL ESTADO DE CUENTA
+    // =========================================================================
+    function generarPDFEstadoCuenta(clienteId) {
+        let cli = CLIENTES.find(c => c.id === clienteId);
+        if (!cli) return;
+
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) {
+            return alert("Error: La librería jsPDF no está cargada correctamente.");
+        }
+
+        let doc = new jsPDF();
+        let nombreLocal = CONFIG_GLOBAL?.identidad?.nombre || 'Sistema Comercial';
+
+        // Título Principal del Reporte
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        doc.setTextColor(41, 128, 185); 
+        doc.text("ESTADO DE CUENTA Y RELACIÓN DE DEUDA", 105, 18, { align: "center" });
+
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Establecimiento: " + nombreLocal, 105, 24, { align: "center" });
+        doc.text("Fecha de Emisión: " + new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), 105, 29, { align: "center" });
+
+        // Línea divisoria
+        doc.setDrawColor(200, 200, 200);
+        doc.line(14, 33, 196, 33);
+
+        // Datos del Cliente
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(44, 62, 80);
+        doc.text("DATOS DEL CLIENTE / TITULAR:", 14, 40);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(50, 50, 50);
+        doc.text(`Nombre / Razón Social: ${cli.nom}`, 14, 46);
+        doc.text(`Cédula / C.I.: ${cli.ced || 'N/A'}`, 14, 52);
+        doc.text(`Dirección: ${cli.dir || 'N/A'}`, 14, 58);
+
+        // Resumen de Deuda Destacado (Caja)
+        doc.setFillColor(245, 247, 250);
+        doc.rect(14, 64, 182, 16, "F");
+        doc.setDrawColor(210, 220, 230);
+        doc.rect(14, 64, 182, 16);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(41, 128, 185);
+        doc.text("BALANCE TOTAL PENDIENTE:", 18, 74);
+        doc.setFontSize(13);
+        doc.setTextColor(231, 76, 60); 
+        doc.text(`$${cli.deudaUsd.toFixed(2)}`, 185, 74, { align: "right" });
+
+        // Tabla de Historial
+        let startY = 88;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(44, 62, 80);
+        doc.text("HISTORIAL DETALLADO DE MOVIMIENTOS", 14, startY);
+        startY += 4;
+
+        function dibujarCabeceraTabla(yPos) {
+            doc.setFillColor(41, 128, 185);
+            doc.rect(14, yPos, 182, 7, "F");
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.setTextColor(255, 255, 255);
+            doc.text("Fecha", 16, yPos + 4.8);
+            doc.text("Concepto y Observaciones", 46, yPos + 4.8);
+            doc.text("Monto", 150, yPos + 4.8, { align: "right" });
+            doc.text("Saldo Ref.", 190, yPos + 4.8, { align: "right" });
+        }
+
+        dibujarCabeceraTabla(startY);
+        startY += 7;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(50, 50, 50);
+
+        let historial = cli.historial || [];
+        if (historial.length === 0) {
+            startY += 8;
+            doc.text("No se registran movimientos ni deudas previas en el historial del cliente.", 105, startY, { align: "center" });
+        } else {
+            historial.forEach((h, index) => {
+                let fechaStr = String(h.fecha || '');
+                let tipoStr = String(h.tipo || '');
+                let notaStr = h.nota ? ` - ${h.nota}` : '';
+                let conceptoCompleto = tipoStr + notaStr;
+                let montoNum = parseFloat(h.monto) || 0;
+                let saldoNum = parseFloat(h.saldo_resultante) || 0;
+
+                let montoStr = (montoNum > 0 ? "+$" : "$") + montoNum.toFixed(2);
+                let saldoStr = "$" + saldoNum.toFixed(2);
+
+                // Márgenes y saltos de línea estrictos por bloques para evitar colisiones
+                let lineasFecha = doc.splitTextToSize(fechaStr, 28);
+                let lineasConcepto = doc.splitTextToSize(conceptoCompleto, 100);
+                
+                let maxLines = Math.max(lineasFecha.length, lineasConcepto.length, 1);
+                let rowHeight = (maxLines * 4.5) + 4;
+
+                if (startY + rowHeight > 275) {
+                    doc.addPage();
+                    startY = 20;
+                    dibujarCabeceraTabla(startY);
+                    startY += 7;
+                }
+
+                if (index % 2 === 0) {
+                    doc.setFillColor(248, 249, 250);
+                    doc.rect(14, startY, 182, rowHeight, "F");
+                }
+
+                doc.setDrawColor(220, 220, 220);
+                doc.rect(14, startY, 182, rowHeight);
+
+                let textY = startY + 4.5;
+                doc.text(lineasFecha, 16, textY);
+                doc.text(lineasConcepto, 46, textY);
+                
+                if (montoNum < 0) {
+                    doc.setTextColor(39, 174, 96); // Verde para abonos/pagos
+                } else {
+                    doc.setTextColor(231, 76, 60); // Rojo para cargos/fíos
+                }
+                doc.text(montoStr, 150, textY, { align: "right" });
+
+                doc.setTextColor(50, 50, 50);
+                doc.text(saldoStr, 190, textY, { align: "right" });
+
+                startY += rowHeight;
+            });
+        }
+
+        // Bloque de Aviso de Cobranza Formal
+        let textoAviso = "NOTIFICACIÓN DE COBRANZA: El presente documento constituye un estado de cuenta informativo y formal sobre las obligaciones financieras pendientes con nuestro establecimiento. Solicitamos verificar su saldo y proceder con la cancelación a la brevedad posible.";
+        let lineasAviso = doc.splitTextToSize(textoAviso, 174);
+        let avisoHeight = (lineasAviso.length * 4) + 8;
+
+        if (startY + avisoHeight + 10 > 275) {
+            doc.addPage();
+            startY = 20;
+        }
+
+        startY += 6;
+        doc.setFillColor(253, 246, 227);
+        doc.rect(14, startY, 182, avisoHeight, "F");
+        doc.setDrawColor(241, 196, 15);
+        doc.rect(14, startY, 182, avisoHeight);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(211, 84, 0);
+        doc.text("AVISO IMPORTANTE DE COBRANZA:", 17, startY + 4);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(60, 60, 60);
+        doc.text(lineasAviso, 17, startY + 9);
+
+        doc.save(`Estado_de_Cuenta_${cli.nom.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    function abrirModalGlobal(titulo, htmlContent) { 
+        document.getElementById('global_modal_title').innerText = titulo; 
+        document.getElementById('global_modal_body').innerHTML = htmlContent; 
+        document.getElementById('global_modal').style.display = 'flex'; 
+    }
+    function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
+    function mostrarModalLocal(titulo, msg) { abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px;">⏳ ${msg}</div>`); }
+</script>
+</body>
+</html>
