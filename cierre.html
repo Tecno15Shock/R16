@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cierre de Turno - Sistema Maestro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        body.hide-bs .moneda-bs { display: none !important; }
+        body.hide-cop .moneda-cop { display: none !important; }
+        body.hide-eur .moneda-eur { display: none !important; }
+
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        /* BARRA SUPERIOR Y BOTÓN DE MENÚ EN LA ESQUINA */
+        .top-bar { background: var(--primary); color: white; padding: 12px 15px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { 
+            background: rgba(255, 255, 255, 0.12);
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            margin: 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .menu-toggle-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .top-bar-title { font-size: 1.1rem; font-weight: bold; color: #ecf0f1; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* MENÚ LATERAL CORREGIDO */
+        .sidebar { 
+            position: fixed; top: 0; left: -320px; width: 320px; height: 100vh; 
+            background: var(--primary); color: white; padding: 20px 15px; 
+            display: flex; flex-direction: column; gap: 8px; z-index: 1002; 
+            transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; 
+        }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 12px; border-bottom: 1px solid #34495e; margin-bottom: 5px; color: #ecf0f1; flex-shrink: 0; }
+        
+        .sidebar .tab-btn { 
+            background: none; color: #bfc9ca; border: none; text-align: left; 
+            padding: 10px 12px; width: 100%; border-radius: 6px; cursor: pointer; 
+            font-size: 0.95rem; display: block; text-decoration: none; transition: all 0.2s;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            flex-shrink: 0;
+        }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; }
+        
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        /* CONTENEDOR PRINCIPAL CENTRADO */
+        .main-content { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            padding-bottom: 150px; 
+        }
+
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: 1px solid var(--border);}
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; }
+        @media (max-width: 768px) {
+            .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            .main-content { padding: 10px; padding-bottom: 120px; }
+        }
+
+        label { font-size: 0.9rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted);}
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
+        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px;}
+        button.btn-danger { background: var(--danger); width: auto; padding: 8px 12px; margin-top: 0; }
+        button.btn-success { background: var(--success); font-size: 1.1rem; padding: 15px; margin-bottom: 20px;}
+        button.btn-add { background: var(--primary); width: auto; padding: 8px 12px; margin-top: 10px; display: inline-block; }
+        button.btn-warning { background: var(--warning); color: white; }
+        button.btn-info { background: var(--info); color: white; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+        th { background: var(--primary); color: white; }
+        
+        .total-box-multi { display: flex; flex-direction: column; align-items: flex-end; margin-top: 15px; font-size: 1.1rem; font-weight: bold; padding: 10px; background: var(--item-bg); border-radius: 6px; border: 1px solid var(--border); line-height: 1.5; }
+        .txt-success { color: var(--success); font-size: 1.3rem;}
+        .input-group { background: var(--item-bg); padding: 12px; border: 1px solid var(--border); border-radius: 5px; margin-top: 12px; }
+        
+        .flex-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+
+        .flex-row-justificado { 
+            display: grid; 
+            grid-template-columns: 2fr 1fr 1fr auto; 
+            gap: 8px; 
+            align-items: center; 
+            margin-top: 8px; 
+            background: #fff; 
+            padding: 8px; 
+            border: 1px solid var(--border); 
+            border-radius: 6px; 
+        }
+        @media (max-width: 768px) {
+            .flex-row-justificado { grid-template-columns: 1fr; }
+        }
+
+        .sticky-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 5px; font-size: 1rem; font-weight: bold; z-index: 1000; text-align: center; border-top: 1px solid var(--border); }
+        .monedas-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; max-width: 900px; margin: 0 auto; width: 100%; }
+        .moneda-box { padding: 6px; border-radius: 4px; background: var(--item-bg); border: 1px solid var(--border); font-size: 0.9rem;}
+        .resta-positiva { color: var(--danger); } 
+        .resta-cero { color: var(--success); font-weight: bold; } 
+        .resta-negativa { color: var(--warning); } 
+
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 100000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; min-width: 320px; max-width: 90%; width: 550px; position: relative; max-height: 90vh; display: flex; flex-direction: column; }
+        .pdf-fullscreen { width: 95vw !important; height: 95vh !important; max-width: none !important; }
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px;}
+        .modal-close-btn { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .custom-modal-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; margin-top: 5px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; text-align: center; }
+
+        .menu-grid { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding-right: 5px; text-align: left; }
+        .menu-item-card { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid var(--secondary); border-bottom: 1px solid var(--border); }
+        .menu-item-info { display: flex; flex-direction: column; width: 50%; }
+        .menu-item-nom { font-weight: bold; font-size: 0.9rem; color: var(--primary); }
+        .menu-item-precio { font-size: 0.8rem; color: var(--muted); }
+        .menu-item-controls { display: flex; align-items: center; gap: 6px; width: 45%; justify-content: flex-end; }
+        .menu-btn { background: var(--border); color: var(--text); border: none; width: 32px; height: 32px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .menu-btn.add { background: var(--success); color: white; }
+        .menu-btn.sub { background: var(--danger); color: white; }
+        .menu-input { width: 50px; text-align: center; padding: 4px; margin: 0; border: 1px solid var(--border); border-radius: 4px; height: 32px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <!-- NAVEGACIÓN SUPERIOR CON BOTÓN DE MENÚ COMPACTO EN LA ESQUINA -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn" style="color: #f1c40f;">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn" style="color: #3498db; font-weight: bold;">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn" style="color: #8e44ad; font-weight: bold;">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">💸 Avances / Retiros</a>
+        <a href="calculadora.html" class="tab-btn">🧮 Calculadora Divisas</a>
+        <a href="facturar.html" class="tab-btn" style="color: #2ecc71; font-weight: bold;">🛒 Facturar Venta</a>
+        <a href="cierre.html" class="tab-btn active" style="background:var(--secondary); color: white; font-weight: bold;">🧾 Cierre de Caja</a>
+        <a href="control_inventario.html" class="tab-btn" style="color: #1abc9c; font-weight: bold;">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn" style="background:var(--primary); border: 1px solid #bdc3c7; color: white;">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn" style="color: #3498db;">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn" style="color: #9b59b6; font-weight: bold;">🧾 Pagos Bancarios</a>
+        <a href="conciliacion_pto.html" class="tab-btn" style="color: #3498db; font-weight: bold;">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn" style="color: #2980b9; font-weight: bold;">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn" style="color: #e74c3c; font-weight: bold;">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn" style="color:#27ae60; font-weight:bold; margin-top:5px;">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn" style="color:#f39c12; font-weight:bold; margin-top:15px;">⚙️ Configuracion</a>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL CENTRADO -->
+    <div class="main-content">
+        <div class="card" style="border: 2px solid var(--danger);">
+            <h2>Datos Obligatorios del Turno</h2>
+            <div class="grid-3">
+                <div><label style="color:var(--danger)">QUIÉN CIERRA CAJA:</label><select id="cierre_quien_cerro" style="border:1px solid var(--danger)"></select></div>
+                <div><label>Quién recibe / Supervisor:</label><select id="cierre_quien_recibe"></select></div>
+                <div><label style="color:var(--warning)">Fiar Faltante a Cliente (Opc.):</label><select id="cierre_cliente_deuda" style="border:1px solid var(--warning)"></select></div>
+            </div>
+            <label>Turno Laboral:</label>
+            <select id="cierre_turno_seleccionado">
+                <option value="Diurno">Diurno</option><option value="Nocturno">Nocturno</option><option value="24 Horas">24 Horas</option><option value="Pelones">Pelones</option>
+            </select>
+        </div>
+        
+        <div class="card">
+            <h2>1. Declaración Mercancía Manual (Cierre de Caja)</h2>
+            
+            <div style="margin-bottom: 15px; background: var(--item-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--info);">
+                <label style="margin-top: 0; color: var(--info);">🏷️ TIPO DE PRECIO A DECLARAR:</label>
+                <select id="cierre_tipo_precio" style="border: 2px solid var(--info);" onchange="recalcularPreciosCierrePorTipo()">
+                    <option value="caja" selected>Precio de Caja (Base/Capital)</option>
+                    <option value="venta">Precio de Venta con Ganancia (Público)</option>
+                </select>
+            </div>
+
+            <button class="btn-add" style="width:100%; margin:0 0 10px 0; padding:15px; font-size:1.1rem; border-radius:8px;" onclick="abrirMenuFullscreen()">🛒 Abrir Selector de Productos</button>
+            <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top:15px;">📋 Lista Consolidada de Cierre</h3>
+            <div style="overflow-x:auto;"><table id="tabla_productos"><tr><th>Cant</th><th>Prod</th><th>Sub $</th><th>Acción</th></tr></table></div>
+            
+            <!-- BOTÓN PROTEGIDO POR PIN PARA DESCUENTOS -->
+            <button class="btn-warning" style="width:100%; margin:15px 0 5px 0; padding:12px; font-size:1.05rem;" onclick="solicitarPinDescuento('ticket')">🏷️ Aplicar Descuentos o Editar Precios (Requiere PIN)</button>
+
+            <div class="total-box-multi">
+                <div>Deuda Base Exigida: <span id="tot_usd_tick" class="txt-success">$0,00</span></div>
+                <div class="moneda-bs">BS: <span id="tot_bs_tick">0,00 BS</span></div>
+                <div class="moneda-cop">COP: <span id="tot_cop_tick">0 COP</span></div>
+                <div class="moneda-eur">EUR: <span id="tot_eur_tick">0 EUR</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>2. Soportes Físicos y Transacciones del Turno</h2>
+            
+            <!-- AVANCES RETIRADOS CON JUSTIFICACIÓN MANUAL -->
+            <div class="input-group">
+                <label>Avances Retirados (Justifica el por qué y la moneda):</label>
+                <div id="lista_avances"></div>
+                <button class="btn-add" onclick="agregarCampoJustificado('lista_avances')">+ Añadir Avance Retirado</button>
+            </div>
+
+            <!-- GASTOS OPERATIVOS CON JUSTIFICACIÓN MANUAL -->
+            <div class="input-group">
+                <label>Gastos Operativos (Justifica el por qué y la moneda):</label>
+                <div id="lista_gastos"></div>
+                <button class="btn-add" onclick="agregarCampoJustificado('lista_gastos')">+ Añadir Gasto Operativo</button>
+            </div>
+
+            <div class="input-group"><label>Pago Móvil (BS), Ref y % Restar:</label><div id="lista_pagomovil"></div><button class="btn-add" onclick="agregarCampoTransaccion('lista_pagomovil', 'pm_val')">+ Añadir PM</button></div>
+            <div class="input-group"><label>Punto (BS), Ref y % Restar:</label><div id="lista_punto"></div><button class="btn-add" onclick="agregarCampoTransaccion('lista_punto', 'punto_val')">+ Añadir Punto</button></div>
+            <div class="input-group"><label>BioPago (BS), Ref y % Restar:</label><div id="lista_biopago"></div><button class="btn-add" onclick="agregarCampoTransaccion('lista_biopago', 'biopago_val')">+ Añadir Bio</button></div>
+            
+            <div class="input-group grid-4">
+                <div class="moneda-bs"><label>Físico (BS):</label><input type="number" step="0.01" id="val_bs" oninput="calcularRestaReal()"></div>
+                <div><label>Físico ($):</label><input type="number" step="0.01" id="val_usd" oninput="calcularRestaReal()"></div>
+                <div class="moneda-cop"><label>Físico (COP):</label><input type="number" id="val_cop" oninput="calcularRestaReal()"></div>
+                <div class="moneda-eur"><label>Físico (EUR):</label><input type="number" step="0.01" id="val_eur" oninput="calcularRestaReal()"></div>
+            </div>
+            <hr style="margin: 20px 0;">
+            <div id="seccion-vueltos">
+                <label style="font-weight: bold; color: var(--danger);">Vueltos Entregados Extra:</label>
+                <div id="contenedor-vueltos-ticket"></div>
+                <button class="btn-danger" onclick="agregarVuelto('contenedor-vueltos-ticket')" style="margin-top: 5px;">+ Añadir Vuelto</button>
+            </div>
+        </div>
+        <button id="btn_ejecutar_cierre" class="btn-success" onclick="procesarCierre()">📤 PROCESAR LOTE FINANCIERO Y DESCONTAR INVENTARIO</button>
+    </div>
+</div>
+
+<div id="sticky-resta" class="sticky-bottom">
+    <div style="font-size: 0.9rem; color: var(--muted);" id="sticky_modo_txt">DIFERENCIA DE CAJA / EXIGENCIA DE CUADRE</div>
+    <div class="monedas-grid">
+        <div class="moneda-box"><span id="resta_usd_txt" class="resta-positiva">$0,00</span></div>
+        <div class="moneda-box moneda-bs"><span id="resta_bs_txt" class="resta-positiva">0,00 BS</span></div>
+        <div class="moneda-box moneda-cop"><span id="resta_cop_txt" class="resta-positiva">0 COP</span></div>
+        <div class="moneda-box moneda-eur"><span id="resta_eur_txt" class="resta-positiva">0 EUR</span></div>
+    </div>
+</div>
+
+<script>
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+    let EMPLEADOS = [];
+    let CLIENTES = [];
+    let productosTicket = [];
+    window.diferenciaActual = 0;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data } = await window.supabaseClient.auth.getSession();
+        if (data && data.session) await sincronizarSesionSupabase(data.session);
+        else window.location.href = 'index.html';
+    });
+
+    async function sincronizarSesionSupabase(session) {
+        const userId = session.user.id;
+        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
+        else {
+            let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
+            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        }
+        await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
+    }
+
+    async function cargarTodoDesdeSupabase(email, nombrePerfil) {
+        if(!CURRENT_LOCAL_ID) return;
+        try {
+            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+                let nombreLocal = conf.identidad?.nombre || 'Sistema';
+                document.getElementById('main_top_title').innerHTML = `🏪 ${nombreLocal} <span style="font-size:0.8rem; font-weight:normal; color:#bdc3c7; margin-left:15px;">👋 Bienvenido, <strong>${nombrePerfil || email}</strong></span>`;
+                actualizarVisibilidadMonedas();
+            }
+
+            const [reqCat, reqEmp, reqCli] = await Promise.all([
+                window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID),
+                window.supabaseClient.from('empleados').select('*').eq('local_id', CURRENT_LOCAL_ID),
+                window.supabaseClient.from('clientes').select('*').eq('local_id', CURRENT_LOCAL_ID)
+            ]);
+
+            if(reqCat.data) {
+                CATALOGO = reqCat.data.map(p => ({ 
+                    uuid: p.id, 
+                    nom: p.nombre, 
+                    base: p.precio_base || 0, 
+                    mBase: p.moneda_base || 'USD',
+                    ventaRef: p.precio_venta || 0, 
+                    mVenta: p.moneda_venta || 'USD',
+                    fuente: p.costo_fuente || 0, 
+                    stock: p.stock || 0 
+                }));
+            }
+            if(reqEmp.data) EMPLEADOS = reqEmp.data.map(e => ({ id: e.id, nombre: e.nombre, apellido: e.apellido }));
+            if(reqCli.data) CLIENTES = reqCli.data.map(c => ({ id: c.id, nom: c.nombre }));
+
+            actualizarSelectoresEmpleados();
+            actualizarSelectorClientes();
+            fusionarVentasPendientesEnCierre();
+        } catch(e) { console.error(e); }
+    }
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    function abrirModalGlobal(titulo, htmlContent, isFullscreen = false) { 
+        document.getElementById('global_modal_title').innerText = titulo; 
+        document.getElementById('global_modal_body').innerHTML = htmlContent; 
+        let modalBox = document.querySelector('.custom-modal-box'); 
+        if (isFullscreen) modalBox.classList.add('pdf-fullscreen'); else modalBox.classList.remove('pdf-fullscreen');
+        document.getElementById('global_modal').style.display = 'flex'; 
+    }
+    function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
+    function mostrarModalLocal(titulo, msg) { abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem;">⏳ ${msg}</div>`); }
+
+    function actualizarSelectoresEmpleados() {
+        let opts = '<option value="">-- SELECCIONAR VENDEDOR --</option>' + EMPLEADOS.map(e => `<option value="${e.id}">${e.nombre} ${e.apellido}</option>`).join('');
+        document.getElementById('cierre_quien_cerro').innerHTML = opts; document.getElementById('cierre_quien_recibe').innerHTML = opts;
+    }
+    function actualizarSelectorClientes() {
+        let opts = '<option value="">-- Ninguno / Caja Cuadrada --</option>' + CLIENTES.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+        document.getElementById('cierre_cliente_deuda').innerHTML = opts;
+    }
+
+    function recalcularPreciosCierrePorTipo() {
+        if(productosTicket.length > 0) {
+            alert("⚠️ Al cambiar el tipo de precio, las bases de los productos seleccionados se ajustarán a la nueva modalidad.");
+            let tipoPrecio = document.getElementById('cierre_tipo_precio').value;
+            productosTicket.forEach(p => {
+                delete p.precioUnitarioFinal;
+                p.base = (tipoPrecio === 'caja') ? p.pBaseReal : p.pVentaReal;
+            });
+        }
+        actualizarTablaVentas();
+    }
+
+    function fusionarVentasPendientesEnCierre() {
+        let pendientes = CONFIG_GLOBAL.ventas_pendientes || [];
+        if(pendientes.length === 0) return;
+        pendientes.forEach(vp => {
+            vp.productos.forEach(prodPendiente => {
+                let existente = productosTicket.find(x => x.uuid === prodPendiente.uuid && x.precioUnitarioFinal === prodPendiente.precioUnitarioFinal);
+                if(existente) { existente.cant += prodPendiente.cant; } else { productosTicket.push({...prodPendiente}); }
+            });
+        });
+        actualizarTablaVentas();
+    }
+
+    function abrirMenuFullscreen() {
+        let tipoPrecio = document.getElementById('cierre_tipo_precio').value;
+        CATALOGO.sort((a,b) => limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)));
+        let htmlContent = `<div class="menu-grid" style="max-height:60vh; overflow-y:auto;">
+            ${CATALOGO.map((p, i) => {
+                let itemCart = productosTicket.find(x => x.uuid === p.uuid); let cantEnCarrito = itemCart ? itemCart.cant : 0; 
+                let pBase = convertirA_USD(p.base, p.mBase);
+                let pVenta = convertirA_USD(p.ventaRef, p.mVenta);
+                let precioVisible = (tipoPrecio === 'caja') ? pBase : pVenta;
+                return `<div class="menu-item-card">
+                    <div class="menu-item-info"><span class="menu-item-nom">${limpiarNombre(p.nom)}</span><span class="menu-item-precio">$${formatearNumero(precioVisible)}</span><span style="font-size:0.75rem; color:${p.stock > 0 ? 'var(--success)' : 'var(--danger)'}">Stock: ${p.stock}</span></div>
+                    <div class="menu-item-controls">
+                        <button class="menu-btn sub" onclick="modificarCantidadItem(${i}, -1)">-</button>
+                        <input type="number" id="input_cant_${i}" class="menu-input" value="${cantEnCarrito}" onchange="cambiarCantidadDirecta(${i}, this.value)">
+                        <button class="menu-btn add" onclick="modificarCantidadItem(${i}, 1)">+</button>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div><button class="btn-success" style="width:100%; margin-top:15px;" onclick="cerrarModalGlobal()">Aceptar y Volver</button>`;
+        abrirModalGlobal("Seleccionar Productos", htmlContent, true);
+    }
+
+    function modificarCantidadItem(idx, delta) {
+        let p = CATALOGO[idx]; let exist = productosTicket.find(x => x.uuid === p.uuid);
+        let tipoPrecio = document.getElementById('cierre_tipo_precio').value;
+        let pBase = convertirA_USD(p.base, p.mBase);
+        let pVenta = convertirA_USD(p.ventaRef, p.mVenta);
+        let precioSeleccionado = (tipoPrecio === 'caja') ? pBase : pVenta;
+
+        if (exist) { 
+            exist.cant += delta; 
+            if (exist.cant <= 0) { productosTicket = productosTicket.filter(x => x.uuid !== p.uuid); exist.cant = 0; }
+        } else if (delta > 0) { 
+            productosTicket.push({ uuid: p.uuid, nom: p.nom, base: precioSeleccionado, pBaseReal: pBase, pVentaReal: pVenta, fuente: p.fuente, cant: 1 }); 
+            exist = { cant: 1 }; 
+        }
+        let inputEl = document.getElementById(`input_cant_${idx}`); if(inputEl) inputEl.value = exist ? exist.cant : 0;
+        actualizarTablaVentas();
+    }
+
+    function cambiarCantidadDirecta(idx, val) {
+        let p = CATALOGO[idx]; let nuevaCant = parseFloat(val) || 0; let exist = productosTicket.find(x => x.uuid === p.uuid);
+        let tipoPrecio = document.getElementById('cierre_tipo_precio').value;
+        let pBase = convertirA_USD(p.base, p.mBase);
+        let pVenta = convertirA_USD(p.ventaRef, p.mVenta);
+        let precioSeleccionado = (tipoPrecio === 'caja') ? pBase : pVenta;
+
+        if (nuevaCant <= 0) { productosTicket = productosTicket.filter(x => x.uuid !== p.uuid); } 
+        else if (exist) { exist.cant = nuevaCant; } 
+        else { productosTicket.push({ uuid: p.uuid, nom: p.nom, base: precioSeleccionado, pBaseReal: pBase, pVentaReal: pVenta, fuente: p.fuente, cant: nuevaCant }); }
+        actualizarTablaVentas();
+    }
+
+    function cambiarCantidadTicketDirecta(idx, val) { 
+        let cant = parseFloat(val) || 0; 
+        if(cant <= 0) { productosTicket.splice(idx, 1); } else { productosTicket[idx].cant = cant; } 
+        actualizarTablaVentas(); 
+    }
+
+    function actualizarTablaVentas() {
+        let html = "<tr><th>Cant</th><th>Prod</th><th>Sub $</th><th>Acción</th></tr>"; let totalBaseGlobal = 0;
+        productosTicket.forEach((p, idx) => {
+            let precioUsar = p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base;
+            let sub = precioUsar * p.cant; 
+            let capital = (parseFloat(p.fuente) || 0) * p.cant; 
+            let colorStyle = sub < capital ? 'color: red; font-weight:bold;' : 'font-weight:bold;';
+            totalBaseGlobal += sub;
+            html += `<tr>
+                <td><input type="number" step="0.01" value="${p.cant}" style="width:60px; padding:2px; text-align:center;" onchange="cambiarCantidadTicketDirecta(${idx}, this.value)"></td>
+                <td>${limpiarNombre(p.nom)}</td>
+                <td style="${colorStyle}">$${formatearNumero(sub)}</td>
+                <td><button class="btn-danger" style="padding:2px 6px; margin:0;" onclick="productosTicket.splice(${idx},1); actualizarTablaVentas();">🗑️</button></td>
+            </tr>`;
+        });
+        document.getElementById('tabla_productos').innerHTML = html;
+        
+        let tv = parseFloat(CONFIG_GLOBAL.tasas?.ves) || 1; let tc = parseFloat(CONFIG_GLOBAL.tasas?.cop) || 1; let te = parseFloat(CONFIG_GLOBAL.tasas?.eur) || 1;
+        document.getElementById('tot_usd_tick').innerText = "$" + formatearNumero(totalBaseGlobal);
+        document.getElementById('tot_bs_tick').innerText = formatearNumero(totalBaseGlobal * tv) + " BS";
+        document.getElementById('tot_cop_tick').innerText = formatearNumero(totalBaseGlobal * tc, 0) + " COP";
+        document.getElementById('tot_eur_tick').innerText = formatearNumero(totalBaseGlobal * te) + " EUR";
+        calcularRestaReal();
+    }
+
+    /* SISTEMA DE PIN Y DESCUENTOS */
+    function solicitarPinDescuento(tipo) {
+        let html = `
+            <div style="text-align:center; padding:10px;">
+                <p style="color:var(--danger); font-weight:bold; margin-bottom:15px;">Autorización Requerida para Descuentos</p>
+                <input type="password" id="input_pin_descuento" placeholder="XXXXXX" style="text-align:center; font-size:2rem; letter-spacing:8px; padding:10px;" onkeyup="if(event.key==='Enter') validarPinDescuento('${tipo}')">
+                <button class="btn-success" style="margin-top:20px; background:var(--primary);" onclick="validarPinDescuento('${tipo}')">🔓 Verificar PIN y Aplicar Descuento</button>
+            </div>`;
+        abrirModalGlobal("🔒 Control de Seguridad", html);
+        setTimeout(() => document.getElementById('input_pin_descuento')?.focus(), 100);
+    }
+
+    function validarPinDescuento(tipo) {
+        let pinIngresado = document.getElementById('input_pin_descuento').value.trim();
+        let pinReal = CONFIG_GLOBAL.identidad?.admin_pass || '151016';
+        if (pinIngresado === pinReal) {
+            abrirModalDescuentos(tipo);
+        } else {
+            alert("❌ PIN Incorrecto. Acceso denegado.");
+            document.getElementById('input_pin_descuento').value = '';
+        }
+    }
+
+    function abrirModalDescuentos(tipo) {
+        let lista = productosTicket;
+        if (lista.length === 0) return alert("El carrito está vacío. Agregue productos primero.");
+
+        let html = `
+            <div style="background: var(--item-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px;">
+                <h3 style="margin-top:0; color: var(--primary);">Descuento Global (Porcentaje)</h3>
+                <div style="display:flex; gap:10px; justify-content:center; flex-wrap: wrap;">
+                    <button class="btn-info" style="width:auto; margin:0;" onclick="aplicarDescuentoGlobal('${tipo}', 5)">-5%</button>
+                    <button class="btn-info" style="width:auto; margin:0;" onclick="aplicarDescuentoGlobal('${tipo}', 10)">-10%</button>
+                    <button class="btn-info" style="width:auto; margin:0;" onclick="aplicarDescuentoGlobal('${tipo}', 15)">-15%</button>
+                    <button class="btn-info" style="width:auto; margin:0;" onclick="aplicarDescuentoGlobal('${tipo}', 20)">-20%</button>
+                    <button class="btn-danger" style="width:auto; margin:0; background: #e74c3c;" onclick="restaurarPrecios('${tipo}')">🔄 Restaurar Precios</button>
+                </div>
+            </div>
+            
+            <h3 style="color: var(--primary); text-align: left; border-bottom: 2px solid var(--border); padding-bottom: 5px;">Ajuste por Producto / Mercancía (Subtotal Individual)</h3>
+            <p style="text-align:left; font-size:0.85rem; color:var(--muted); margin-top:0;">Edita el subtotal directamente para cada producto o mercancía en específico.</p>
+            <div style="overflow-x: auto;">
+                <table style="width:100%; border-collapse:collapse; font-size: 0.95rem; text-align: left;">
+                    <tr>
+                        <th style="background:var(--primary); color:white; padding:8px;">Producto y Capital</th>
+                        <th style="background:var(--primary); color:white; padding:8px; width:60px; text-align:center;">Cant.</th>
+                        <th style="background:var(--warning); color:white; padding:8px; width:130px; text-align:center;">Nuevo Subtotal ($)</th>
+                    </tr>
+        `;
+
+        lista.forEach((p, idx) => {
+            let precioOriginal = p.base;
+            let precioActual = p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : precioOriginal;
+            let subtotalActual = precioActual * p.cant;
+            let capitalTotal = (parseFloat(p.fuente) || 0) * p.cant; 
+            
+            let colorSub = subtotalActual < capitalTotal ? 'color: red; font-weight: bold;' : 'color: var(--success); font-weight: bold;';
+            let advertencia = subtotalActual < capitalTotal ? `<br><small style="color:red;">⚠️ Pérdida: Por debajo del costo</small>` : '';
+
+            html += `
+                    <tr>
+                        <td style="border:1px solid var(--border); padding:8px;">
+                            <strong>${limpiarNombre(p.nom)}</strong><br>
+                            <small style="color:var(--muted)">Costo Invertido: $${formatearNumero(capitalTotal)}</small>${advertencia}
+                        </td>
+                        <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:bold;">${p.cant}</td>
+                        <td style="border:1px solid var(--border); padding:8px;">
+                            <input type="number" step="0.01" value="${subtotalActual.toFixed(2)}" 
+                                  style="width:100%; padding:8px; text-align:center; font-size:1.1rem; ${colorSub}; border: 2px solid var(--border);" 
+                                  onchange="modificarSubtotalManual(${idx}, this.value)">
+                        </td>
+                    </tr>
+            `;
+        });
+
+        html += `</table></div>
+        <button class="btn-success" style="width:100%; margin-top:20px; padding:15px; font-size:1.1rem;" onclick="cerrarModalGlobal()">✅ Confirmar y Volver</button>`;
+
+        abrirModalGlobal("🏷️ Gestión de Descuentos por Mercancía", html, true);
+    }
+
+    function modificarSubtotalManual(idx, nuevoSubtotal) {
+        let val = parseFloat(nuevoSubtotal);
+        if (isNaN(val) || val < 0) return alert("Monto inválido.");
+        let p = productosTicket[idx];
+        p.precioUnitarioFinal = val / p.cant;
+        actualizarTablaVentas();
+        abrirModalDescuentos('ticket');
+    }
+
+    function aplicarDescuentoGlobal(tipo, porcentaje) {
+        productosTicket.forEach(p => {
+            let precioOriginal = p.base;
+            p.precioUnitarioFinal = precioOriginal - (precioOriginal * (porcentaje / 100));
+        });
+        actualizarTablaVentas();
+        abrirModalDescuentos(tipo);
+    }
+
+    function restaurarPrecios(tipo) {
+        productosTicket.forEach(p => { delete p.precioUnitarioFinal; });
+        actualizarTablaVentas();
+        abrirModalDescuentos(tipo);
+    }
+
+    function agregarCampoJustificado(containerId) {
+        let cont = document.getElementById(containerId); 
+        if(!cont) return; 
+        let rowId = 'row_justificado_' + Date.now();
+        cont.insertAdjacentHTML('beforeend', `
+            <div class="flex-row-justificado" id="${rowId}">
+                <input type="text" placeholder="📝 Justifica el por qué (Motivo)..." class="justificacion_motivo" style="width:100%;">
+                <input type="number" step="0.01" placeholder="Monto" class="monto_multi" oninput="calcularRestaReal()" style="width:100%;">
+                <select class="moneda_multi" onchange="calcularRestaReal()" style="width:100%;">
+                    <option value="USD">USD ($)</option>
+                    <option value="BS">BS</option>
+                    <option value="COP">COP</option>
+                    <option value="EUR">EUR</option>
+                </select>
+                <button class="btn-danger" style="padding:8px 12px; margin:0;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">X</button>
+            </div>
+        `);
+    }
+
+    function agregarCampoTransaccion(containerId, inputClass) {
+        let cont = document.getElementById(containerId); if(!cont) return; let rowId = 'row_' + Date.now();
+        cont.insertAdjacentHTML('beforeend', `
+            <div class="flex-row trans-row" id="${rowId}" style="margin-bottom:5px;">
+                <input type="number" step="0.01" placeholder="Monto BS" class="${inputClass}" oninput="calcularRestaReal()" style="flex:2;">
+                <input type="text" placeholder="Ref" class="ref_val" style="flex:1;">
+                <input type="number" step="0.1" placeholder="% Rest" class="trans_pct" oninput="calcularRestaReal()" style="width: 75px; flex: none;" title="Porcentaje a restar del monto">
+                <button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">X</button>
+            </div>
+        `);
+    }
+
+    function agregarVuelto(containerId) {
+        let cont = document.getElementById(containerId); if(!cont) return; let rowId = 'vuelto_row_' + Date.now();
+        cont.insertAdjacentHTML('beforeend', `<div class="flex-row" id="${rowId}" style="margin-bottom:5px;"><input type="number" step="0.01" placeholder="Monto Vuelto" class="vuelto_val" oninput="calcularRestaReal()" style="flex:2;"><select class="vuelto_moneda" onchange="calcularRestaReal()" style="flex:1;"><option value="USD">USD ($)</option><option value="BS">BS</option><option value="COP">COP</option><option value="EUR">EUR</option></select><button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">X</button></div>`);
+    }
+
+    function calcularRestaReal() {
+        let totalExigidoEl = document.getElementById('tot_usd_tick');
+        let totalExigido = totalExigidoEl ? parseFloat(totalExigidoEl.innerText.replace('$','').replace(/\./g,'').replace(',','.')) : 0;
+        
+        let bs = parseFloat(document.getElementById('val_bs')?.value) || 0;
+        let usd = parseFloat(document.getElementById('val_usd')?.value) || 0;
+        let cop = parseFloat(document.getElementById('val_cop')?.value) || 0;
+        let eur = parseFloat(document.getElementById('val_eur')?.value) || 0;
+        
+        let totalIngresadoUsd = usd + convertirA_USD(bs, 'BS') + convertirA_USD(cop, 'COP') + convertirA_USD(eur, 'EUR');
+        
+        document.querySelectorAll('.trans-row').forEach(row => {
+            let inputMonto = row.querySelector('input[type="number"]');
+            let inputPct = row.querySelector('.trans_pct');
+            let monto = parseFloat(inputMonto?.value) || 0;
+            let pct = parseFloat(inputPct?.value) || 0;
+            let montoNeto = monto * (1 - (pct / 100));
+            totalIngresadoUsd += convertirA_USD(montoNeto, 'BS');
+        });
+        
+        document.querySelectorAll('#lista_avances .flex-row-justificado').forEach(row => { 
+            let montoVal = parseFloat(row.querySelector('.monto_multi')?.value) || 0; 
+            let monedaVal = row.querySelector('.moneda_multi')?.value || 'USD'; 
+            totalIngresadoUsd += convertirA_USD(montoVal, monedaVal); 
+        });
+
+        document.querySelectorAll('#lista_gastos .flex-row-justificado').forEach(row => { 
+            let montoVal = parseFloat(row.querySelector('.monto_multi')?.value) || 0; 
+            let monedaVal = row.querySelector('.moneda_multi')?.value || 'USD'; 
+            totalIngresadoUsd += convertirA_USD(montoVal, monedaVal); 
+        });
+
+        document.querySelectorAll('#contenedor-vueltos-ticket .flex-row').forEach(row => { let vVal = parseFloat(row.querySelector('.vuelto_val')?.value) || 0; let vMon = row.querySelector('.vuelto_moneda')?.value || 'USD'; totalIngresadoUsd += convertirA_USD(vVal, vMon); });
+        
+        let diferencia = totalIngresadoUsd - totalExigido; 
+        window.diferenciaActual = diferencia;
+        
+        let tv = parseFloat(CONFIG_GLOBAL.tasas?.ves) || 1; let tc = parseFloat(CONFIG_GLOBAL.tasas?.cop) || 1; let te = parseFloat(CONFIG_GLOBAL.tasas?.eur) || 1;
+        
+        let estadoTxt = diferencia >= -0.01 ? "VUELTO A ENTREGAR AL CLIENTE:" : "FALTA POR COBRAR (RESTA):";
+        let colorCls = diferencia >= -0.01 ? "resta-cero" : "resta-positiva";
+        let absDif = Math.abs(diferencia);
+        
+        document.getElementById('sticky_modo_txt').innerText = estadoTxt;
+        document.getElementById('resta_usd_txt').className = colorCls; document.getElementById('resta_usd_txt').innerHTML = `🇺🇸 $${formatearNumero(absDif)}`;
+        document.getElementById('resta_bs_txt').className = colorCls; document.getElementById('resta_bs_txt').innerHTML = `🇻🇪 ${formatearNumero(absDif * tv)} BS`;
+        document.getElementById('resta_cop_txt').className = colorCls; document.getElementById('resta_cop_txt').innerHTML = `🇨🇴 ${formatearNumero(absDif * tc, 0)} COP`;
+        document.getElementById('resta_eur_txt').className = colorCls; document.getElementById('resta_eur_txt').innerHTML = `🇪🇺 ${formatearNumero(absDif * te)} EUR`;
+    }
+
+    async function procesarCierre() {
+        if(productosTicket.length === 0) return alert("❌ No hay mercancía declarada para el cierre.");
+        let vendedorId = document.getElementById('cierre_quien_cerro').value;
+        let empleadoRecibe = document.getElementById('cierre_quien_recibe').value;
+        let turno = document.getElementById('cierre_turno_seleccionado').value;
+        let clienteIdDeuda = document.getElementById('cierre_cliente_deuda').value;
+
+        if(!vendedorId) return alert("❌ Seleccione el vendedor que entrega el turno.");
+        if(clienteIdDeuda && window.diferenciaActual >= -0.01) return alert("❌ La caja cuadró sin faltantes. Desmarca al cliente fiado.");
+
+        mostrarModalLocal("Procesando Lote", "Registrando cierre y ajustando inventarios...");
+        try {
+            let totalVenta = 0; let totalCapital = 0;
+            for(let p of productosTicket) { 
+                let precioCobrado = p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base;
+                totalVenta += (precioCobrado * p.cant); 
+                totalCapital += ((p.fuente || 0) * p.cant); 
+            }
+            let gananciaNeta = totalVenta - totalCapital;
+            let fechaHoy = new Date().toISOString().slice(0,10);
+
+            let { data: loteRes, error: errLote } = await window.supabaseClient.from('lotes_diarios').insert([{
+                local_id: CURRENT_LOCAL_ID, vendedor_id: vendedorId, fecha: fechaHoy, turno: turno, 
+                total_vendido_usd: totalVenta, capital_invertido: totalCapital, ganancia_neta: gananciaNeta, tasa_bs: CONFIG_GLOBAL.tasas?.ves || 1
+            }]).select().single();
+            if(errLote) throw errLote;
+
+            let totalPuntoBs = 0;
+            document.querySelectorAll('#lista_punto .punto_val').forEach(el => { totalPuntoBs += parseFloat(el.value) || 0; });
+
+            let totalBioPagoBs = 0;
+            document.querySelectorAll('#lista_biopago .biopago_val').forEach(el => { totalBioPagoBs += parseFloat(el.value) || 0; });
+
+            if(totalPuntoBs > 0) {
+                await window.supabaseClient.from('conciliacion_punto').insert([{
+                    local_id: CURRENT_LOCAL_ID,
+                    lote_id: loteRes.id,
+                    fecha: fechaHoy,
+                    monto_esperado: totalPuntoBs,
+                    monto_ingresado: 0,
+                    estado: 'Pendiente Siguiente Día',
+                    referencia: '',
+                    notas: `Generado automáticamente en cierre turno ${turno}`
+                }]);
+            }
+
+            if(totalBioPagoBs > 0) {
+                await window.supabaseClient.from('conciliacion_biopago').insert([{
+                    local_id: CURRENT_LOCAL_ID,
+                    lote_id: loteRes.id,
+                    fecha: fechaHoy,
+                    monto_esperado: totalBioPagoBs,
+                    monto_ingresado: 0,
+                    estado: 'Pendiente Siguiente Día',
+                    referencia: '',
+                    notas: `Generado automáticamente en cierre turno ${turno}`
+                }]);
+            }
+
+            let detalles = [];
+            let snapshotInventario = CATALOGO.map(prod => {
+                let itemVendido = productosTicket.find(x => x.uuid === prod.uuid);
+                let cantVendida = itemVendido ? itemVendido.cant : 0;
+                let precioInstante = itemVendido && itemVendido.precioUnitarioFinal !== undefined ? itemVendido.precioUnitarioFinal : prod.base;
+                let stockFinal = Math.max(0, prod.stock - cantVendida);
+                return { uuid: prod.uuid, nombre: prod.nom, E: prod.stock, S: stockFinal, VP: cantVendida, PI: precioInstante, VT: cantVendida * precioInstante };
+            });
+
+            for(let p of productosTicket) {
+                let precioCobrado = p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base;
+                detalles.push({ lote_id: loteRes.id, producto_id: p.uuid, cantidad: p.cant, subtotal_usd: precioCobrado * p.cant });
+                let prodCat = CATALOGO.find(x => x.uuid === p.uuid);
+                if(prodCat) await window.supabaseClient.from('catalogo').update({ stock: Math.max(0, prodCat.stock - p.cant) }).eq('id', p.uuid);
+            }
+            if(detalles.length > 0) { const { error: errDet } = await window.supabaseClient.from('detalle_ventas').insert(detalles); if(errDet) throw errDet; }
+            
+            await window.supabaseClient.from('control_inventario_cierres').insert([{
+                local_id: CURRENT_LOCAL_ID, lote_id: loteRes.id, empleado_cierra: vendedorId, empleado_recibe: empleadoRecibe || null,
+                tasa_usd_bs: CONFIG_GLOBAL.tasas?.ves || 1, total_usd: totalVenta, detalles_json: snapshotInventario
+            }]);
+
+            if(clienteIdDeuda && window.diferenciaActual < -0.01) {
+                let faltanteReal = Math.abs(window.diferenciaActual); let cliente = CLIENTES.find(c => c.id === clienteIdDeuda);
+                if (cliente) {
+                    let { data: cData } = await window.supabaseClient.from('clientes').select('deuda_usd, historial').eq('id', clienteIdDeuda).single();
+                    let nDeuda = (cData.deuda_usd || 0) + faltanteReal; let hist = cData.historial || [];
+                    hist.unshift({ fecha: new Date().toLocaleString(), tipo: "Deuda Faltante en Cierre", monto: faltanteReal, nota: `Turno: ${turno}`, saldo_resultante: nDeuda });
+                    await window.supabaseClient.from('clientes').update({ deuda_usd: nDeuda, historial: hist }).eq('id', clienteIdDeuda);
+                }
+            }
+
+            await window.supabaseClient.from('configuraciones').update({ ventas_pendientes: [] }).eq('local_id', CURRENT_LOCAL_ID);
+            CONFIG_GLOBAL.ventas_pendientes = [];
+            
+            productosTicket = []; actualizarTablaVentas(); 
+            document.getElementById('cierre_cliente_deuda').value = "";
+            ['val_bs', 'val_usd', 'val_cop', 'val_eur'].forEach(id => { let el = document.getElementById(id); if(el) el.value = ''; });
+            document.querySelectorAll('#lista_avances, #lista_gastos, #lista_pagomovil, #lista_punto, #lista_biopago, #contenedor-vueltos-ticket').forEach(el => el.innerHTML = '');
+
+            cerrarModalGlobal(); 
+            alert("✅ Lote de cierre procesado, inventario cuadrado y registros de Punto/BioPago inyectados automáticamente."); 
+            await cargarTodoDesdeSupabase();
+        } catch(e) { cerrarModalGlobal(); alert("❌ Error registrando cierre: " + e.message); }
+    }
+
+    function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
+    function formatearNumero(v, d = 2) { if (isNaN(v) || v == null) return "0"; let num = parseFloat(v); if (d === 0) num = Math.round(num); let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; }
+    function convertirA_USD(m, mon) { let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 }; return parseFloat(mon === 'BS' ? m / t.ves : mon === 'COP' ? m / t.cop : mon === 'EUR' ? m / t.eur : m); }
+    function actualizarVisibilidadMonedas() { let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 }; parseFloat(t.ves) === 0 ? document.body.classList.add('hide-bs') : document.body.classList.remove('hide-bs'); parseFloat(t.cop) === 0 ? document.body.classList.add('hide-cop') : document.body.classList.remove('hide-cop'); parseFloat(t.eur) === 0 ? document.body.classList.add('hide-eur') : document.body.classList.remove('hide-eur'); }
+</script>
+</body>
+</html>
