@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧾 Pagos y Servicios Bancarios - Sistema Maestro</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --input-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        body.dark-mode {
+            --bg: #121212; --primary: #1e272e; --secondary: #2980b9; --danger: #c0392b;
+            --success: #27ae60; --warning: #f39c12; --info: #2c3e50; --text: #ecf0f1; 
+            --border: #34495e; --card-bg: #1e1e1e; --input-bg: #2d2d2d; --item-bg: #252525; --muted: #bdc3c7;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
+
+        /* BARRA SUPERIOR Y MENÚ LATERAL */
+        .top-bar { background: var(--primary); color: white; padding: 12px 15px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { 
+            background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.1rem; 
+            cursor: pointer; width: 30px; height: 30px; padding: 0; margin: 0; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; transition: background 0.2s; 
+        }
+        .menu-toggle-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .top-bar-title { font-size: 1.1rem; font-weight: bold; color: #ecf0f1; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .sidebar { position: fixed; top: 0; left: -320px; width: 320px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 5px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 15px; color: #ecf0f1; }
+        .sidebar .tab-btn { background: none; color: #bfc9ca; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; transition: all 0.2s; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border);}
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        h3 { color: var(--primary); margin-top: 25px; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+        label { font-size: 0.95rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted);}
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); }
+        
+        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: opacity 0.2s, transform 0.1s; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        button.btn-danger { background: var(--danger); width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9rem;}
+        button.btn-warning { background: var(--warning); width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9rem; color: #fff;}
+        button.btn-info { background: var(--info); width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9rem; color: white;}
+        button.btn-success { background: var(--success); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; }
+        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+        th { background: var(--primary); color: white; }
+        
+        .zebra-item { border-bottom: 1px solid var(--border); padding: 12px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; background: var(--item-bg);}
+        .zebra-item:nth-child(even) { background-color: rgba(0,0,0,0.03); }
+
+        /* Modal Global */
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; min-width: 320px; max-width: 90%; width: 550px; position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.4); max-height: 90vh; display: flex; flex-direction: column; animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .custom-modal-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; text-align: center;}
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+        .modal-close-btn { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; padding: 0; margin: 0; }
+    </style>
+</head>
+<body>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
+<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(18, 18, 18, 0.75); backdrop-filter: blur(10px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px; animation: fadeIn 0.3s ease-in-out;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 380px; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-top: 5px solid var(--danger);">
+        <h2 style="color: var(--danger); margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 12px;">🔒 Acceso Protegido</h2>
+        <p style="font-size: 0.95rem; color: var(--muted); margin: 20px 0;">Introduce el PIN de Administrador para abrir este módulo:</p>
+        
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid var(--border); border-radius: 8px; outline: none; background: var(--bg); color: var(--text);" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span>
+        </div>
+
+        <button id="btn_desbloquear_pin" onclick="verificarPinBody()" style="background: linear-gradient(135deg, var(--primary), #1a252f); margin-top: 0;">Desbloquear Pantalla</button>
+        <button id="btn_volver_pin" onclick="window.location.href='principal.html'" style="background: linear-gradient(135deg, var(--danger), #c0392b); margin-top: 10px;">Volver al Inicio</button>
+    </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">
+            <span>🧾 Pagos y Servicios Bancarios</span>
+            <span style="font-size:0.8rem; font-weight:normal; color:#bdc3c7;" id="usuario_logueado_txt"></span>
+        </div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn" style="color: #f1c40f;">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn" style="color: #3498db; font-weight: bold;">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn" style="color: #8e44ad; font-weight: bold;">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">💸 Avances / Retiros</a>
+        <a href="calculadora.html" class="tab-btn">🧮 Calculadora Divisas</a>
+        <a href="facturar.html" class="tab-btn" style="color: #2ecc71; font-weight: bold;">🛒 Facturar Venta</a>
+        <a href="cierre.html" class="tab-btn">🧾 Cierre de Caja</a>
+        <a href="control_inventario.html" class="tab-btn" style="color: #1abc9c; font-weight: bold;">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn" style="background:var(--primary); border: 1px solid #bdc3c7; color: white;">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn" style="color: #3498db;">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn active" style="color: #9b59b6; font-weight: bold;">🧾 Pagos Bancarios</a>
+        <a href="conciliacion_pto.html" class="tab-btn" style="color: #3498db; font-weight: bold;">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn" style="color: #2980b9; font-weight: bold;">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn" style="color: #e74c3c; font-weight: bold;">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn" style="color:#27ae60; font-weight:bold; margin-top:5px;">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn" style="color:#f39c12; font-weight:bold; margin-top:15px;">⚙️ Configuracion</a>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <!-- 1. DEFINICIÓN DE SERVICIOS Y FACTURAS -->
+        <div class="card" style="border-top: 4px solid #9b59b6;">
+            <h2>⚙️ Definir Servicios Recurrentes o Pago Único (Facturas)</h2>
+            <div class="grid-2">
+                <div><label>Nombre del Servicio / Factura de Proveedor:</label><input type="text" id="ps_nombre" placeholder="Ej: Factura Proveedor X o Alquiler"></div>
+                <div><label>Costo / Monto Base ($):</label><input type="number" step="0.01" id="ps_costo_usd" placeholder="0.00"></div>
+            </div>
+            <div class="grid-2">
+                <div>
+                    <label>Tipo / Frecuencia de Cobro:</label>
+                    <select id="ps_frecuencia" onchange="actualizarContenedorFrecuencia(this.value)">
+                        <option value="pago_unico" selected>Pago Único (Factura de Mercancía)</option>
+                        <option value="diario">Todos los días</option>
+                        <option value="semanal">1 Día a la semana</option>
+                        <option value="quincenal">Quincenal (Cada 15 días)</option>
+                        <option value="mensual">1 Día al mes</option>
+                    </select>
+                </div>
+                <div id="ps_dia_container" style="display:none;">
+                    <label id="lbl_dia_especifico">Día de cobro específico:</label>
+                    <div id="input_dia_wrapper"></div>
+                </div>
+            </div>
+            <button onclick="guardarServicioFijo()" style="background: #9b59b6;">💾 Guardar Registro</button>
+            <div id="lista_servicios_fijos" style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px;"></div>
+        </div>
+
+        <!-- 2. REGISTRO Y AUDITORÍA BANCARIA (GASTOS OPERATIVOS) -->
+        <div class="card" style="border-top: 4px solid var(--info);" id="pdf_auditoria_zona">
+            <h2>📝 Registrar Movimiento Bancario (Gastos Operativos)</h2>
+            <p style="font-size:0.85rem; color:var(--muted);">Nota: Los pagos de servicios recurrentes impactan en gastos operativos. Las facturas de mercancía se registran abajo por separado.</p>
+            <div class="grid-2">
+                <div><label>Servicio o Destino:</label><select id="mov_servicio_id"></select></div>
+                <div><label>Fecha del movimiento:</label><input type="date" id="mov_fecha"></div>
+            </div>
+            <div class="grid-3">
+                <div><label>Monto Pagado (BS):</label><input type="number" step="0.01" id="mov_monto_bs" placeholder="0.00"></div>
+                <div><label>Eq. en Dólares ($):</label><input type="number" step="0.01" id="mov_monto_usd" oninput="calcularDiscrepanciaServicio()" placeholder="0.00"></div>
+                <div><label>Nro. Referencia:</label><input type="text" id="mov_ref" placeholder="000000"></div>
+            </div>
+            <div id="mov_alerta_discrepancia" style="margin-top: 15px; font-weight: bold;"></div>
+            
+            <label>Notas Adicionales:</label>
+            <input type="text" id="mov_nota" placeholder="Motivo o detalle extra...">
+            <button onclick="registrarMovimientoServicio()" class="btn-success" style="margin-top: 20px;">✅ Anotar Pago en Libro Mayor</button>
+            
+            <h3>📊 Historial de Auditoría Bancaria (Gastos Operativos)</h3>
+            <div class="grid-2" style="margin-bottom: 15px;">
+                <div><label>Filtrar historial por servicio:</label><select id="filtro_historial_servicio" onchange="renderPagosServicios()"></select></div>
+                <div><br><button class="btn-warning" onclick="generarPDFHistorialServicio()" style="margin-top: 5px; width:100%;">📄 Generar PDF (Auditoría con Notificación)</button></div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table id="tabla_movimientos_servicios"></table>
+            </div>
+        </div>
+
+        <!-- 3. HISTORIAL APARTE: FACTURAS DE MERCANCÍA / PAGO ÚNICO -->
+        <div class="card" style="border-top: 4px solid #e74c3c;">
+            <h2>📦 Historial de Facturas de Mercancía y Pagos Únicos</h2>
+            <p style="font-size:0.85rem; color:var(--muted);">Registro aislado de despachos y mercancías (capital reinvertido, no computable como gasto operativo corriente).</p>
+            <div style="overflow-x: auto;">
+                <table id="tabla_facturas_unicas"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let SERVICIOS_BANCARIOS = [];
+    let HISTORIAL_PAGOS_SERVICIOS = [];
+    let ADMIN_PASS_DB = '151016'; 
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        mostrarModalLocal("Autenticando", "Verificando sesión activa...");
+        document.getElementById('mov_fecha').value = new Date().toISOString().slice(0,10);
+        actualizarContenedorFrecuencia('pago_unico');
+        
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) {
+                cerrarModalGlobal();
+                alert("No hay una sesión administrativa activa.");
+                window.location.href = 'index.html';
+                return;
+            }
+            await inicializarDatos(data.session.user.id);
+        } catch (err) { 
+            console.error(err);
+            cerrarModalGlobal();
+            alert("Error de red conectando con el servidor.");
+        }
+    });
+
+    async function inicializarDatos(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+            if (perfil.nombre) {
+                document.getElementById('usuario_logueado_txt').innerHTML = `👋 <strong>${perfil.nombre}</strong>`;
+            }
+        } else {
+            cerrarModalGlobal();
+            return alert("Error: Perfil no vinculado a un local.");
+        }
+
+        let { data: confData } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+        if(confData && confData.identidad && confData.identidad.admin_pass) {
+            ADMIN_PASS_DB = confData.identidad.admin_pass;
+        }
+
+        let { data: localInfo } = await supabaseClient.from('locales').select('nombre, password_admin').eq('id', CURRENT_LOCAL_ID).single();
+        if(localInfo) {
+            let nombreLocal = localInfo.nombre || 'Refresquería Flor';
+            let tituloBarra = document.querySelector('.top-bar-title span:first-child');
+            if(tituloBarra) tituloBarra.innerText = "🧾 Pagos: " + nombreLocal;
+
+            if (localInfo.password_admin) {
+                ADMIN_PASS_DB = localInfo.password_admin;
+            }
+        }
+
+        await cargarBasesDeDatos();
+        cerrarModalGlobal();
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('active');
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        let icono = document.getElementById('icono_ojo_pin');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icono.innerText = '🙈';
+        } else {
+            input.type = 'password';
+            icono.innerText = '👁️';
+        }
+    }
+
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let pinReal = ADMIN_PASS_DB;
+        let btn = document.getElementById('btn_desbloquear_pin');
+
+        btn.innerHTML = "⏳ Cargando...";
+        btn.disabled = true;
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (pinIngresado === pinReal) {
+            let pantalla = document.getElementById('pantalla_bloqueo_admin');
+            pantalla.style.animation = 'fadeIn 0.3s reverse';
+            setTimeout(() => {
+                pantalla.style.display = 'none';
+                btn.innerHTML = "Desbloquear Pantalla";
+                btn.disabled = false;
+            }, 300);
+        } else {
+            alert("❌ PIN Incorrecto.");
+            document.getElementById('pin_ingreso_body').value = '';
+            btn.innerHTML = "Desbloquear Pantalla";
+            btn.disabled = false;
+        }
+    }
+
+    async function cargarBasesDeDatos() {
+        try {
+            const [reqServ, reqHist] = await Promise.all([
+                supabaseClient.from('servicios_bancarios').select('*').eq('local_id', CURRENT_LOCAL_ID),
+                supabaseClient.from('historial_pagos_servicios').select('*, servicios_bancarios(nombre, frecuencia)').eq('local_id', CURRENT_LOCAL_ID)
+            ]);
+
+            if(reqServ.data) {
+                SERVICIOS_BANCARIOS = reqServ.data.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+            }
+            if(reqHist.data) HISTORIAL_PAGOS_SERVICIOS = reqHist.data;
+
+            renderServiciosFijos();
+            renderPagosServicios();
+        } catch(e) {
+            console.error("Error sincronizando DB:", e); 
+            alert("Error al cargar datos desde el servidor.");
+        }
+    }
+
+    function actualizarContenedorFrecuencia(frecVal, valorActual = '') {
+        let container = document.getElementById('ps_dia_container');
+        let wrapper = document.getElementById('input_dia_wrapper');
+        let lbl = document.getElementById('lbl_dia_especifico');
+
+        if (frecVal === 'diario' || frecVal === 'pago_unico') {
+            container.style.display = 'none';
+            wrapper.innerHTML = '';
+            return;
+        }
+
+        container.style.display = 'block';
+
+        if (frecVal === 'semanal') {
+            lbl.innerText = "Día de la semana:";
+            let dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+            let opts = dias.map(d => `<option value="${d}" ${valorActual === d ? 'selected' : ''}>${d}</option>`).join('');
+            wrapper.innerHTML = `<select id="ps_dia">${opts}</select>`;
+        } 
+        else if (frecVal === 'quincenal') {
+            lbl.innerText = "Patrón quincenal:";
+            let opcionesQuincena = ['1 y 15', '1 y 16', '15 y 30'];
+            let opts = opcionesQuincena.map(o => `<option value="${o}" ${valorActual === o ? 'selected' : ''}>${o}</option>`).join('');
+            wrapper.innerHTML = `<select id="ps_dia">${opts}</select>`;
+        } 
+        else if (frecVal === 'mensual') {
+            lbl.innerText = "Día del mes (1 - 31):";
+            let opts = "";
+            for(let i=1; i<=31; i++) {
+                opts += `<option value="${i}" ${valorActual == i ? 'selected' : ''}>Día ${i}</option>`;
+            }
+            wrapper.innerHTML = `<select id="ps_dia">${opts}</select>`;
+        }
+    }
+
+    async function guardarServicioFijo() {
+        let nom = document.getElementById('ps_nombre').value.trim();
+        let costo = parseFloat(document.getElementById('ps_costo_usd').value) || 0;
+        let frec = document.getElementById('ps_frecuencia').value;
+        let diaInput = document.getElementById('ps_dia');
+        let dia = diaInput ? diaInput.value.trim() : null;
+
+        if(!nom) return alert("❌ El nombre del servicio o factura es obligatorio.");
+
+        mostrarModalLocal("Guardando", "Registrando en la base de datos...");
+        try {
+            let payload = {
+                local_id: CURRENT_LOCAL_ID,
+                nombre: nom,
+                costo_fijo_usd: costo,
+                frecuencia: frec,
+                dia_cobro: (frec === 'diario' || frec === 'pago_unico') ? null : dia
+            };
+            const { error } = await supabaseClient.from('servicios_bancarios').insert([payload]);
+            if(error) throw error;
+
+            document.getElementById('ps_nombre').value = '';
+            document.getElementById('ps_costo_usd').value = '';
+            if(diaInput) diaInput.value = '';
+
+            await cargarBasesDeDatos();
+            cerrarModalGlobal();
+        } catch (err) {
+            cerrarModalGlobal();
+            alert("❌ Error al guardar: " + err.message);
+        }
+    }
+
+    function renderServiciosFijos() {
+        let htmlLista = "";
+        let htmlSelect = '<option value="" disabled selected>-- Seleccione un Servicio o Factura --</option>';
+        let htmlFiltro = '<option value="todos">Todos los Servicios</option>';
+
+        SERVICIOS_BANCARIOS.forEach(s => {
+            let infoFrec = s.frecuencia === 'diario' ? 'Diario' : (s.frecuencia === 'pago_unico' ? 'Pago Único (Factura)' : `${s.frecuencia} (${s.dia_cobro || 'N/A'})`);
+            htmlLista += `
+            <div class="zebra-item" style="border-left: 4px solid ${s.frecuencia === 'pago_unico' ? 'var(--danger)' : 'var(--secondary)'};">
+                <div style="flex:1;">
+                    <strong>${s.nombre}</strong> ${s.frecuencia === 'pago_unico' ? '<span style="background:var(--danger); color:#fff; font-size:0.75rem; padding:2px 6px; border-radius:4px;">Factura</span>' : ''}<br>
+                    <small>Monto Base: $${formatearNumero(s.costo_fijo_usd)} | Frecuencia: ${infoFrec}</small>
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-info" style="padding:6px 10px; margin:0;" onclick="abrirEstadoCuentaServicio('${s.id}')">👁️ Ver Cuenta</button>
+                    <button class="btn-warning" style="padding:6px 10px; margin:0;" onclick="editarServicioBancario('${s.id}')">✏️</button>
+                    <button class="btn-danger" style="padding:6px 10px; margin:0;" onclick="eliminarServicioBancario('${s.id}')">🗑️</button>
+                </div>
+            </div>`;
+            
+            if (s.frecuencia !== 'pago_unico') {
+                htmlSelect += `<option value="${s.id}" data-costo="${s.costo_fijo_usd}">${s.nombre}</option>`;
+                htmlFiltro += `<option value="${s.id}">${s.nombre}</option>`;
+            }
+        });
+
+        document.getElementById('lista_servicios_fijos').innerHTML = htmlLista || '<p style="color:var(--muted); font-size:0.9rem; text-align:center;">No hay servicios o facturas definidos.</p>';
+        
+        let selMov = document.getElementById('mov_servicio_id');
+        selMov.innerHTML = htmlSelect;
+        selMov.removeEventListener('change', calcularDiscrepanciaServicio);
+        selMov.addEventListener('change', calcularDiscrepanciaServicio);
+
+        let filtroSrv = document.getElementById('filtro_historial_servicio');
+        if(filtroSrv) filtroSrv.innerHTML = htmlFiltro;
+    }
+
+    async function editarServicioBancario(id) {
+        let s = SERVICIOS_BANCARIOS.find(x => x.id === id);
+        if(!s) return;
+
+        let html = `
+            <input type="hidden" id="edit_srv_id" value="${s.id}">
+            <label>Nombre del Servicio / Factura:</label>
+            <input type="text" id="edit_srv_nombre" value="${s.nombre}">
+            
+            <label>Costo / Monto Base ($):</label>
+            <input type="number" step="0.01" id="edit_srv_costo" value="${s.costo_fijo_usd}">
+
+            <label>Frecuencia de Cobro:</label>
+            <select id="edit_srv_frecuencia" onchange="actualizarContenedorFrecuenciaEdit(this.value, '${s.dia_cobro || ''}')">
+                <option value="pago_unico" ${s.frecuencia === 'pago_unico' ? 'selected' : ''}>Pago Único (Factura de Mercancía)</option>
+                <option value="diario" ${s.frecuencia === 'diario' ? 'selected' : ''}>Todos los días</option>
+                <option value="semanal" ${s.frecuencia === 'semanal' ? 'selected' : ''}>1 Día a la semana</option>
+                <option value="quincenal" ${s.frecuencia === 'quincenal' ? 'selected' : ''}>Quincenal (Cada 15 días)</option>
+                <option value="mensual" ${s.frecuencia === 'mensual' ? 'selected' : ''}>1 Día al mes</option>
+            </select>
+
+            <div id="edit_srv_dia_container" style="display: ${s.frecuencia === 'diario' || s.frecuencia === 'pago_unico' ? 'none' : 'block'}; margin-top: 10px;">
+                <label id="edit_lbl_dia">Día / Patrón:</label>
+                <div id="edit_input_dia_wrapper"></div>
+            </div>
+
+            <button class="btn-success" style="margin-top:20px; width:100%;" onclick="guardarEdicionServicioBancario()">💾 Guardar Cambios</button>
+        `;
+        abrirModalGlobal("Modificar Servicio / Factura", html);
+        actualizarContenedorFrecuenciaEdit(s.frecuencia, s.dia_cobro || '');
+    }
+
+    function actualizarContenedorFrecuenciaEdit(frecVal, valorActual) {
+        let container = document.getElementById('edit_srv_dia_container');
+        let wrapper = document.getElementById('edit_input_dia_wrapper');
+        let lbl = document.getElementById('edit_lbl_dia');
+
+        if (!container || !wrapper) return;
+
+        if (frecVal === 'diario' || frecVal === 'pago_unico') {
+            container.style.display = 'none';
+            wrapper.innerHTML = '';
+            return;
+        }
+
+        container.style.display = 'block';
+
+        if (frecVal === 'semanal') {
+            lbl.innerText = "Día de la semana:";
+            let dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+            let opts = dias.map(d => `<option value="${d}" ${valorActual === d ? 'selected' : ''}>${d}</option>`).join('');
+            wrapper.innerHTML = `<select id="edit_ps_dia">${opts}</select>`;
+        } 
+        else if (frecVal === 'quincenal') {
+            lbl.innerText = "Patrón quincenal:";
+            let opcionesQuincena = ['1 y 15', '1 y 16', '15 y 30'];
+            let opts = opcionesQuincena.map(o => `<option value="${o}" ${valorActual === o ? 'selected' : ''}>${o}</option>`).join('');
+            wrapper.innerHTML = `<select id="edit_ps_dia">${opts}</select>`;
+        } 
+        else if (frecVal === 'mensual') {
+            lbl.innerText = "Día del mes (1 - 31):";
+            let opts = "";
+            for(let i=1; i<=31; i++) {
+                opts += `<option value="${i}" ${valorActual == i ? 'selected' : ''}>Día ${i}</option>`;
+            }
+            wrapper.innerHTML = `<select id="edit_ps_dia">${opts}</select>`;
+        }
+    }
+
+    async function guardarEdicionServicioBancario() {
+        let id = document.getElementById('edit_srv_id').value;
+        let nom = document.getElementById('edit_srv_nombre').value.trim();
+        let costo = parseFloat(document.getElementById('edit_srv_costo').value) || 0;
+        let frec = document.getElementById('edit_srv_frecuencia').value;
+        let diaInput = document.getElementById('edit_ps_dia');
+        let dia = diaInput ? diaInput.value.trim() : null;
+
+        if(!nom) return alert("❌ El nombre no puede estar vacío.");
+
+        mostrarModalLocal("Actualizando", "Guardando cambios...");
+        try {
+            let payload = {
+                nombre: nom,
+                costo_fijo_usd: costo,
+                frecuencia: frec,
+                dia_cobro: (frec === 'diario' || frec === 'pago_unico') ? null : dia
+            };
+            const { error } = await supabaseClient.from('servicios_bancarios').update(payload).eq('id', id);
+            if(error) throw error;
+
+            await cargarBasesDeDatos();
+            cerrarModalGlobal();
+            alert("✅ Registro actualizado correctamente.");
+        } catch (err) {
+            cerrarModalGlobal();
+            alert("❌ Error al actualizar: " + err.message);
+        }
+    }
+
+    async function eliminarServicioBancario(id) {
+        if(!confirm("⚠️ ¿Eliminar este registro? Se borrará permanentemente.")) return;
+        mostrarModalLocal("Eliminando", "Borrando de la base de datos...");
+        try {
+            const { error } = await supabaseClient.from('servicios_bancarios').delete().eq('id', id);
+            if(error) throw error;
+            await cargarBasesDeDatos();
+            cerrarModalGlobal();
+        } catch (err) {
+            cerrarModalGlobal();
+            alert("❌ Error eliminando registro: " + err.message);
+        }
+    }
+
+    async function registrarMovimientoServicio() {
+        let servicioId = document.getElementById('mov_servicio_id').value;
+        let fecha = document.getElementById('mov_fecha').value;
+        let montoBs = parseFloat(document.getElementById('mov_monto_bs').value) || 0;
+        let montoUsd = parseFloat(document.getElementById('mov_monto_usd').value);
+        let ref = document.getElementById('mov_ref').value.trim();
+        let nota = document.getElementById('mov_nota').value.trim();
+
+        if(!servicioId || !fecha || isNaN(montoUsd)) {
+            return alert("❌ El Servicio, la fecha y el monto equivalente en dólares son estrictamente obligatorios.");
+        }
+
+        mostrarModalLocal("Procesando", "Anotando pago en el libro mayor...");
+        try {
+            let payload = {
+                local_id: CURRENT_LOCAL_ID,
+                servicio_id: servicioId,
+                fecha: fecha,
+                monto_bs: montoBs,
+                monto_usd: montoUsd,
+                referencia: ref,
+                nota: nota
+            };
+            
+            const { error } = await supabaseClient.from('historial_pagos_servicios').insert([payload]);
+            if(error) throw error;
+
+            document.getElementById('mov_monto_bs').value = '';
+            document.getElementById('mov_monto_usd').value = '';
+            document.getElementById('mov_ref').value = '';
+            document.getElementById('mov_nota').value = '';
+            document.getElementById('mov_alerta_discrepancia').innerHTML = '';
+
+            await cargarBasesDeDatos();
+            cerrarModalGlobal();
+            alert("✅ Movimiento bancario asentado exitosamente.");
+        } catch (err) {
+            cerrarModalGlobal();
+            alert("❌ Fallo en registro de base de datos: " + err.message);
+        }
+    }
+
+    function renderPagosServicios() {
+        let filtroSelect = document.getElementById('filtro_historial_servicio');
+        let filtro = filtroSelect ? filtroSelect.value : 'todos';
+        
+        let pagosGastosOperativos = [];
+        let pagosFacturasUnicas = [];
+
+        HISTORIAL_PAGOS_SERVICIOS.forEach(p => {
+            let srv = SERVICIOS_BANCARIOS.find(s => s.id === p.servicio_id);
+            if (srv && srv.frecuencia === 'pago_unico') {
+                pagosFacturasUnicas.push(p);
+            } else {
+                pagosGastosOperativos.push(p);
+            }
+        });
+
+        let filtradosGastos = pagosGastosOperativos;
+        if(filtro && filtro !== 'todos') {
+            filtradosGastos = pagosGastosOperativos.filter(p => p.servicio_id === filtro);
+        }
+        filtradosGastos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        let htmlGastos = `<tr><th>Fecha</th><th>Servicio y Concepto</th><th>Monto Pagado</th><th>Ref.</th><th>Acción</th></tr>`;
+        if (filtradosGastos.length === 0) {
+            htmlGastos += `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding: 15px;">No hay movimientos de gastos operativos registrados.</td></tr>`;
+        } else {
+            filtradosGastos.forEach(p => {
+                let nombreSrv = p.servicios_bancarios ? p.servicios_bancarios.nombre : '<span style="color:var(--danger)">Servicio Borrado</span>';
+                htmlGastos += `
+                <tr>
+                    <td style="text-align:center;">${p.fecha}</td>
+                    <td><strong>${nombreSrv}</strong><br><small style="color:var(--muted)">${p.nota || 'Sin notas'}</small></td>
+                    <td style="text-align:right;">
+                        <strong style="color:var(--danger);">$${formatearNumero(p.monto_usd)}</strong><br>
+                        <small style="color:#27ae60; font-weight:bold;">🇻🇪 ${formatearNumero(p.monto_bs)} BS</small>
+                    </td>
+                    <td style="text-align:center;">${p.referencia || 'N/A'}</td>
+                    <td style="text-align:center; display:flex; gap:4px; justify-content:center;">
+                        <button class="btn-info" style="padding:6px 10px; margin:0;" onclick="editarMovimientoBancario('${p.id}')">✏️</button>
+                        <button class="btn-danger" style="padding:6px 10px; margin:0;" onclick="eliminarMovimientoBancario('${p.id}')">🗑️</button>
+                    </td>
+                </tr>`;
+            });
+        }
+        document.getElementById('tabla_movimientos_servicios').innerHTML = htmlGastos;
+
+        pagosFacturasUnicas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        let htmlFacturas = `<tr><th>Fecha</th><th>Factura / Proveedor</th><th>Monto Invertido</th><th>Ref.</th><th>Acción</th></tr>`;
+        if (pagosFacturasUnicas.length === 0) {
+            htmlFacturas += `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding: 15px;">No hay facturas de mercancía registradas.</td></tr>`;
+        }
+        pagosFacturasUnicas.forEach(p => {
+            let nombreSrv = p.servicios_bancarios ? p.servicios_bancarios.nombre : '<span style="color:var(--danger)">Factura Eliminada</span>';
+            htmlFacturas += `
+            <tr>
+                <td style="text-align:center;">${p.fecha}</td>
+                <td><strong>${nombreSrv}</strong><br><small style="color:var(--muted)">${p.nota || 'Pago Único de Mercancía'}</small></td>
+                <td style="text-align:right;">
+                    <strong style="color:var(--success);">$${formatearNumero(p.monto_usd)}</strong><br>
+                    <small style="color:#27ae60; font-weight:bold;">🇻🇪 ${formatearNumero(p.monto_bs)} BS</small>
+                </td>
+                <td style="text-align:center;">${p.referencia || 'N/A'}</td>
+                <td style="text-align:center; display:flex; gap:4px; justify-content:center;">
+                    <button class="btn-info" style="padding:6px 10px; margin:0;" onclick="editarMovimientoBancario('${p.id}')">✏️</button>
+                    <button class="btn-danger" style="padding:6px 10px; margin:0;" onclick="eliminarMovimientoBancario('${p.id}')">🗑️</button>
+                </td>
+            </tr>`;
+        });
+        let tablaFacturasEl = document.getElementById('tabla_facturas_unicas');
+        if(tablaFacturasEl) tablaFacturasEl.innerHTML = htmlFacturas;
+    }
+
+    function calcularDiscrepanciaServicio() {
+        let sel = document.getElementById('mov_servicio_id');
+        if(!sel || !sel.value) return;
+        
+        let opcionActiva = sel.options[sel.selectedIndex];
+        let costoFijo = parseFloat(opcionActiva.getAttribute('data-costo')) || 0;
+        
+        let inputUsd = document.getElementById('mov_monto_usd');
+        if (inputUsd && !inputUsd.value && costoFijo > 0) {
+            inputUsd.value = costoFijo;
+        }
+
+        let montoUsd = parseFloat(inputUsd.value) || 0;
+        let alertaCont = document.getElementById('mov_alerta_discrepancia');
+
+        if (costoFijo > 0) {
+            if (montoUsd > costoFijo) {
+                let sobrepago = montoUsd - costoFijo;
+                alertaCont.innerHTML = `<span style="color:var(--warning);">⚠️ Sobrepago: Estás ingresando $${formatearNumero(sobrepago)} por encima de la cuota fijada ($${formatearNumero(costoFijo)}).</span>`;
+            } else if (montoUsd < costoFijo) {
+                let resta = costoFijo - montoUsd;
+                alertaCont.innerHTML = `<span style="color:var(--danger);">⚠️ Deuda Generada: Quedará un saldo pendiente de $${formatearNumero(resta)}.</span>`;
+            } else {
+                alertaCont.innerHTML = `<span style="color:var(--success);">✅ Auditoría: Pago exacto a la cuota establecida.</span>`;
+            }
+        } else {
+            alertaCont.innerHTML = '';
+        }
+    }
+
+    function abrirEstadoCuentaServicio(servicioId) {
+        let servicio = SERVICIOS_BANCARIOS.find(s => s.id === servicioId);
+        if(!servicio) return;
+
+        let historial = HISTORIAL_PAGOS_SERVICIOS.filter(h => h.servicio_id === servicioId);
+        historial.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        let totalPagadoUsd = historial.reduce((acc, mov) => acc + parseFloat(mov.monto_usd), 0);
+        let totalPagadoBs = historial.reduce((acc, mov) => acc + (parseFloat(mov.monto_bs) || 0), 0);
+
+        let reseñaCorteTexto = "";
+        let estadoDeudaTxt = "";
+        let etiquetaFrecuencia = "";
+
+        if (servicio.frecuencia === 'pago_unico') {
+            etiquetaFrecuencia = "Pago Único / Factura de Mercancía";
+            reseñaCorteTexto = `Registro correspondiente a un <strong>Pago Único o Factura de Proveedor</strong> de mercancía. Capital reinvertido no sujeto a cortes periódicos. Total invertido: <strong>$${formatearNumero(totalPagadoUsd)}</strong> (${formatearNumero(totalPagadoBs)} BS) en ${historial.length} transacción(es).`;
+            estadoDeudaTxt = `<span style="color:var(--success);">Inversión de Mercancía / Sin Deuda Recurrente</span>`;
+        } else {
+            let fechaHoy = new Date();
+            let mesActual = fechaHoy.getMonth();
+            let añoActual = fechaHoy.getFullYear();
+
+            let pagosMesEnCurso = historial.filter(h => {
+                let fMov = new Date(h.fecha + 'T00:00:00');
+                return fMov.getMonth() === mesActual && fMov.getFullYear() === añoActual;
+            });
+
+            let totalMesUsd = pagosMesEnCurso.reduce((acc, mov) => acc + parseFloat(mov.monto_usd), 0);
+            let costoEsperadoMes = servicio.costo_fijo_usd || 0;
+            let diferenciaMes = totalMesUsd - costoEsperadoMes;
+
+            if (servicio.frecuencia === 'mensual') {
+                etiquetaFrecuencia = `Corte Mensual (Cuota programada: $${formatearNumero(costoEsperadoMes)})`;
+                
+                if (costoEsperadoMes > 0) {
+                    if (diferenciaMes > 0) {
+                        reseñaCorteTexto = `Se registran débitos por <strong>$${formatearNumero(totalMesUsd)}</strong> frente a una cuota programada de <strong>$${formatearNumero(costoEsperadoMes)}</strong>. <strong>NOTIFICACIÓN:</strong> Se detecta un sobregiro o excedente de <strong>+$${formatearNumero(diferenciaMes)}</strong> por encima del cargo mensual establecido.`;
+                        estadoDeudaTxt = `<span style="color:var(--danger);">⚠️ Sobregiro / Excedente: <strong>+$${formatearNumero(diferenciaMes)}</strong></span>`;
+                    } else if (diferenciaMes < 0) {
+                        let falta = Math.abs(diferenciaMes);
+                        reseñaCorteTexto = `Se registran débitos por <strong>$${formatearNumero(totalMesUsd)}</strong> frente a una cuota programada de <strong>$${formatearNumero(costoEsperadoMes)}</strong>. <strong>NOTIFICACIÓN:</strong> Se mantiene un saldo pendiente de <strong>$${formatearNumero(falta)}</strong> para completar la obligación del período.`;
+                        estadoDeudaTxt = `<span style="color:var(--warning);">⚠️ Saldo pendiente: <strong>$${formatearNumero(falta)}</strong></span>`;
+                    } else {
+                        reseñaCorteTexto = `Se registran débitos por <strong>$${formatearNumero(totalMesUsd)}</strong> frente a una cuota programada de <strong>$${formatearNumero(costoEsperadoMes)}</strong>. <strong>NOTIFICACIÓN:</strong> Obligación del mes totalmente saldada sin adeudos.`;
+                        estadoDeudaTxt = `<span style="color:var(--success);">✅ Obligación mensual al día.</span>`;
+                    }
+                } else {
+                    reseñaCorteTexto = `No consta cuota base programada ($) para este servicio mensual. Total histórico acumulado: $${formatearNumero(totalPagadoUsd)}.`;
+                    estadoDeudaTxt = `<span style="color:var(--muted);">Sin Costo Base Configurado</span>`;
+                }
+            } 
+            else if (servicio.frecuencia === 'quincenal') {
+                etiquetaFrecuencia = `Corte Quincenal (Cuota: $${formatearNumero(costoEsperadoMes)})`;
+                reseñaCorteTexto = `Débitos en el período: $${formatearNumero(totalMesUsd)}. Cuota base: $${formatearNumero(costoEsperadoMes)}.`;
+                estadoDeudaTxt = diferenciaMes > 0 ? `<span style="color:var(--danger);">Excedente quincenal de $${formatearNumero(diferenciaMes)}</span>` : (diferenciaMes < 0 ? `<span style="color:var(--warning);">Faltan $${formatearNumero(Math.abs(diferenciaMes))} para la quincena</span>` : `<span style="color:var(--success);">Quincena al día</span>`);
+            }
+            else if (servicio.frecuencia === 'semanal') {
+                etiquetaFrecuencia = `Corte Semanal (Cuota: $${formatearNumero(costoEsperadoMes)})`;
+                reseñaCorteTexto = `Débitos en la semana: $${formatearNumero(totalMesUsd)}. Cuota base: $${formatearNumero(costoEsperadoMes)}.`;
+                estadoDeudaTxt = diferenciaMes > 0 ? `<span style="color:var(--danger);">Excedente semanal de $${formatearNumero(diferenciaMes)}</span>` : (diferenciaMes < 0 ? `<span style="color:var(--warning);">Faltan $${formatearNumero(Math.abs(diferenciaMes))} para la semana</span>` : `<span style="color:var(--success);">Semana al día</span>`);
+            }
+            else {
+                etiquetaFrecuencia = `Corte Diario`;
+                reseñaCorteTexto = `Acumulado total de débitos: $${formatearNumero(totalPagadoUsd)}.`;
+                estadoDeudaTxt = `<span style="color:var(--success);">Control diario activo</span>`;
+            }
+        }
+
+        let html = `
+            <div style="text-align:left; margin-bottom:15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                <h3 style="margin: 0 0 5px 0; color: var(--primary); text-align:center;">${servicio.nombre}</h3>
+                <p style="margin: 5px 0; text-align:center;">Cuota Programada: <strong>$${formatearNumero(servicio.costo_fijo_usd)}</strong> | Modalidad: <strong>${etiquetaFrecuencia}</strong></p>
+                
+                <div style="background: rgba(52, 152, 219, 0.08); border-left: 4px solid var(--secondary); padding: 12px; border-radius: 4px; margin-top: 12px; font-size: 0.93rem; line-height: 1.4;">
+                    <strong style="color: var(--primary); display: block; margin-bottom: 4px;">📋 Estado de Cuenta y Notificación:</strong>
+                    ${reseñaCorteTexto}
+                </div>
+
+                <div style="font-size: 1.05rem; margin-top: 12px; text-align:center;">Total Histórico Pagado: <strong style="color:var(--success);">$${formatearNumero(totalPagadoUsd)} (${formatearNumero(totalPagadoBs)} BS)</strong></div>
+                <div style="font-size: 1.05rem; margin-top: 8px; text-align:center;">${estadoDeudaTxt}</div>
+            </div>
+
+            <h4 style="margin:0 0 5px 0; text-align:left;">Movimientos Registrados</h4>
+            <div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border);">
+                <table style="width:100%; text-align:left; font-size: 0.85rem;">
+                    <tr>
+                        <th style="padding: 6px; border:1px solid var(--border);">Fecha</th>
+                        <th style="padding: 6px; border:1px solid var(--border);">Ref / Nota</th>
+                        <th style="padding: 6px; border:1px solid var(--border); text-align:right;">Monto (BS y USD)</th>
+                    </tr>
+                    ${historial.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding:10px;">No hay pagos registrados</td></tr>' : ''}
+                    ${historial.map(h => `
+                    <tr>
+                        <td style="padding: 6px; border:1px solid var(--border);">${h.fecha}</td>
+                        <td style="padding: 6px; border:1px solid var(--border);"><strong>${h.referencia || 'S/R'}</strong><br><small>${h.nota || ''}</small></td>
+                        <td style="padding: 6px; border:1px solid var(--border); text-align:right; font-weight:bold;">
+                            $${formatearNumero(h.monto_usd)}<br><small style="color:#27ae60;">🇻🇪 ${formatearNumero(h.monto_bs)} BS</small>
+                        </td>
+                    </tr>`).join('')}
+                </table>
+            </div>
+            <button class="btn-success" style="margin-top:15px; width: 100%;" onclick="cerrarModalGlobal()">Cerrar Ventana</button>
+        `;
+        abrirModalGlobal(`Estado de Cuenta y Notificación`, html);
+    }
+
+    async function eliminarMovimientoBancario(id) {
+        if(!confirm("⚠️ Acción irreversible: ¿Confirmas la anulación de este registro de pago?")) return;
+        mostrarModalLocal("Anulando", "Eliminando movimiento...");
+        try {
+            const { error } = await supabaseClient.from('historial_pagos_servicios').delete().eq('id', id);
+            if(error) throw error;
+            await cargarBasesDeDatos();
+            cerrarModalGlobal();
+        } catch (err) {
+            cerrarModalGlobal();
+            alert("❌ Error al anular registro: " + err.message);
+        }
+    }
+
+    function editarMovimientoBancario(id) {
+        let mov = HISTORIAL_PAGOS_SERVICIOS.find(h => h.id === id);
+        if(!mov) return alert("❌ Movimiento no encontrado.");
+
+        let optServicios = SERVICIOS_BANCARIOS.map(s => `
+            <option value="${s.id}" ${s.id === mov.servicio_id ? 'selected' : ''}>${s.nombre}</option>
+        `).join('');
+
+        let html = `
+            <input type="hidden" id="edit_mov_id" value="${mov.id}">
+            <label>Servicio / Factura:</label>
+            <select id="edit_mov_servicio">${optServicios}</select>
+            
+            <div class="grid-2">
+                <div><label>Fecha:</label><input type="date" id="edit_mov_fecha" value="${mov.fecha}"></div>
+                <div><label>Referencia:</label><input type="text" id="edit_mov_ref" value="${mov.referencia || ''}"></div>
+            </div>
+
+            <div class="grid-2">
+                <div><label>Monto BS:</label><input type="number" step="0.01" id="edit_mov_bs" value="${mov.monto_bs || 0}"></div>
+                <div><label>Eq. Dólares ($):</label><input type="number" step="0.01" id="edit_mov_usd" value="${mov.monto_usd || 0}"></div>
+            </div>
+
+            <label>Notas / Descripción:</label>
+            <input type="text" id="edit_mov_nota" value="${mov.nota || ''}">
+
+            <button class="btn-success" style="margin-top:15px; width:100%;" onclick="actualizarMovimientoBancarioSupabase()">💾 Guardar Cambios</button>
+        `;
+        abrirModalGlobal("Editar Movimiento Bancario", html);
+    }
+
+    async function actualizarMovimientoBancarioSupabase() {
+        let id = document.getElementById('edit_mov_id').value;
+        let servicioId = document.getElementById('edit_mov_servicio').value;
+        let fecha = document.getElementById('edit_mov_fecha').value;
+        let montoBs = parseFloat(document.getElementById('edit_mov_bs').value) || 0;
+        let montoUsd = parseFloat(document.getElementById('edit_mov_usd').value) || 0;
+        let ref = document.getElementById('edit_mov_ref').value.trim();
+        let nota = document.getElementById('edit_mov_nota').value.trim();
+
+        if(!servicioId || !fecha || isNaN(montoUsd)) {
+            return alert("❌ El Servicio, la fecha y el monto en USD son obligatorios.");
+        }
+
+        mostrarModalLocal("Actualizando", "Guardando cambios en el servidor...");
+        try {
+            let payload = {
+                servicio_id: servicioId,
+                fecha: fecha,
+                monto_bs: montoBs,
+                monto_usd: montoUsd,
+                referencia: ref,
+                nota: nota
+            };
+
+            const { error } = await supabaseClient.from('historial_pagos_servicios').update(payload).eq('id', id);
+            if(error) throw error;
+
+            await cargarBasesDeDatos();
+            cerrarModalGlobal();
+            alert("✅ Registro actualizado correctamente.");
+        } catch (err) {
+            cerrarModalGlobal();
+            alert("❌ Error al actualizar: " + err.message);
+        }
+    }
+
+    // =========================================================================
+    // EXPORTACIÓN A PDF CON NOTIFICACIÓN BANCARIA FORMAL POR CORTE
+    // =========================================================================
+    function generarPDFHistorialServicio() {
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) {
+            return alert("Error: La librería jsPDF no está cargada correctamente.");
+        }
+
+        let doc = new jsPDF();
+
+        let filtroSelect = document.getElementById('filtro_historial_servicio');
+        let filtro = filtroSelect ? filtroSelect.value : 'todos';
+        let filtroTexto = filtroSelect && filtroSelect.selectedIndex >= 0 ? filtroSelect.options[filtroSelect.selectedIndex].text : "Todos";
+        
+        let filtrados = HISTORIAL_PAGOS_SERVICIOS.filter(p => {
+            let srv = SERVICIOS_BANCARIOS.find(s => s.id === p.servicio_id);
+            return !srv || srv.frecuencia !== 'pago_unico';
+        });
+
+        if(filtro && filtro !== 'todos') {
+            filtrados = filtrados.filter(p => p.servicio_id === filtro);
+        }
+        filtrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        // Título Principal del Reporte
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        doc.setTextColor(41, 128, 185); 
+        doc.text("Estado de Cuenta y Notificaciones de Cortes", 105, 18, { align: "center" });
+
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Filtro Aplicado: " + filtroTexto, 105, 25, { align: "center" });
+
+        // Agrupar movimientos por Mes (YYYY-MM)
+        let gruposPorMes = {};
+        filtrados.forEach(p => {
+            let mesKey = p.fecha.slice(0, 7);
+            if (!gruposPorMes[mesKey]) gruposPorMes[mesKey] = [];
+            gruposPorMes[mesKey].push(p);
+        });
+
+        let mesesKeys = Object.keys(gruposPorMes).sort((a, b) => b.localeCompare(a));
+        let currentY = 32;
+
+        if (mesesKeys.length === 0) {
+            currentY += 15;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(50, 50, 50);
+            doc.text("No hay registros disponibles para este filtro.", 105, currentY, { align: "center" });
+        } else {
+            mesesKeys.forEach(mesKey => {
+                let movimientosMes = gruposPorMes[mesKey];
+                
+                let [anio, mesNum] = mesKey.split('-');
+                let nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                let nombreMesLegible = `${nombresMeses[parseInt(mesNum, 10) - 1]} ${anio}`;
+
+                if (currentY + 25 > 275) {
+                    doc.addPage();
+                    currentY = 20;
+                }
+
+                // Subtítulo del Corte / Mes
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(44, 62, 80);
+                doc.text(`Corte / Período: ${nombreMesLegible}`, 14, currentY);
+                currentY += 6;
+
+                // Cabecera de Tabla
+                doc.setFillColor(41, 128, 185);
+                doc.rect(14, currentY, 182, 7, "F");
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(255, 255, 255);
+                doc.text("Fecha", 17, currentY + 4.8);
+                doc.text("Servicio y Concepto", 43, currentY + 4.8);
+                doc.text("Monto Pagado", 140, currentY + 4.8, { align: "right" });
+                doc.text("Referencia", 177, currentY + 4.8, { align: "center" });
+
+                currentY += 7;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8.5);
+                doc.setTextColor(50, 50, 50);
+
+                let totalMesUsd = 0;
+                let costoBaseReferencia = 0;
+
+                movimientosMes.forEach((p, index) => {
+                    let srv = SERVICIOS_BANCARIOS.find(s => s.id === p.servicio_id);
+                    if(srv && srv.costo_fijo_usd) costoBaseReferencia = srv.costo_fijo_usd;
+                    
+                    totalMesUsd += parseFloat(p.monto_usd) || 0;
+
+                    let nombreSrv = srv ? srv.nombre : (p.servicios_bancarios?.nombre || 'Desconocido');
+                    let notaTxt = p.nota ? ` (${p.nota})` : '';
+                    let textoCompleto = nombreSrv + notaTxt;
+                    let montoStr = `$${formatearNumero(p.monto_usd)} (${formatearNumero(p.monto_bs)} BS)`;
+                    let refStr = String(p.referencia || 'N/A');
+
+                    let lineasConcepto = doc.splitTextToSize(textoCompleto, 67);
+                    let lineasMonto = doc.splitTextToSize(montoStr, 40);
+                    let lineasRef = doc.splitTextToSize(refStr, 30);
+
+                    let maxLines = Math.max(lineasConcepto.length, lineasMonto.length, lineasRef.length, 1);
+                    let rowHeight = (maxLines * 4.5) + 4; 
+
+                    if (currentY + rowHeight > 275) {
+                        doc.addPage();
+                        currentY = 20;
+                    }
+
+                    if (index % 2 === 0) {
+                        doc.setFillColor(248, 249, 250);
+                        doc.rect(14, currentY, 182, rowHeight, "F");
+                    }
+
+                    doc.setDrawColor(220, 220, 220);
+                    doc.rect(14, currentY, 182, rowHeight);
+
+                    let textY = currentY + 4.5;
+                    doc.text(String(p.fecha), 17, textY);
+                    doc.text(lineasConcepto, 43, textY);
+                    doc.text(lineasMonto, 140, textY, { align: "right" });
+                    doc.text(lineasRef, 177, textY, { align: "center" });
+
+                    currentY += rowHeight;
+                });
+
+                // --- NOTIFICACIÓN BANCARIA FORMAL EN EL PDF ---
+                let diferencia = totalMesUsd - costoBaseReferencia;
+                let textoReseñaPDF = "";
+
+                if (costoBaseReferencia > 0) {
+                    if (diferencia > 0) {
+                        textoReseñaPDF = `Estado de Cuenta (${nombreMesLegible}): Se registraron débitos por $${formatearNumero(totalMesUsd)} frente a una cuota programada de $${formatearNumero(costoBaseReferencia)}. NOTIFICACIÓN: Se registra un excedente o sobregiro por $${formatearNumero(diferencia)} en el período.`;
+                    } else if (diferencia < 0) {
+                        textoReseñaPDF = `Estado de Cuenta (${nombreMesLegible}): Se registraron débitos por $${formatearNumero(totalMesUsd)} frente a una cuota programada de $${formatearNumero(costoBaseReferencia)}. NOTIFICACIÓN: Se mantiene un saldo pendiente de $${formatearNumero(Math.abs(diferencia))} para completar la obligación del mes.`;
+                    } else {
+                        textoReseñaPDF = `Estado de Cuenta (${nombreMesLegible}): Se registraron débitos por $${formatearNumero(totalMesUsd)} frente a una cuota programada de $${formatearNumero(costoBaseReferencia)}. NOTIFICACIÓN: Obligación del mes totalmente saldada sin adeudos.`;
+                    }
+                } else {
+                    textoReseñaPDF = `Estado de Cuenta (${nombreMesLegible}): Total acumulado de débitos en el período: $${formatearNumero(totalMesUsd)} (Sin cuota base programada).`;
+                }
+
+                let lineasReseña = doc.splitTextToSize(textoReseñaPDF, 174);
+                let boxHeight = (lineasReseña.length * 4) + 6;
+
+                if (currentY + boxHeight + 8 > 275) {
+                    doc.addPage();
+                    currentY = 20;
+                }
+
+                currentY += 2;
+                doc.setFillColor(238, 245, 250);
+                doc.rect(14, currentY, 182, boxHeight, "F");
+                doc.setDrawColor(180, 205, 225);
+                doc.rect(14, currentY, 182, boxHeight);
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8);
+                doc.setTextColor(41, 128, 185);
+                doc.text("📋 NOTIFICACIÓN OFICIAL DE ESTE CORTE:", 17, currentY + 4);
+
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(50, 50, 50);
+                doc.text(lineasReseña, 17, currentY + 9);
+
+                currentY += boxHeight + 10;
+            });
+        }
+
+        doc.save(`Auditoria_Gastos_Operativos_${filtroTexto.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    function formatearNumero(v, d = 2) { 
+        if (isNaN(v) || v === null || v === undefined) return "0"; 
+        let num = parseFloat(v); 
+        if (d === 0) num = Math.round(num); 
+        let p = num.toFixed(d).split('.'); 
+        p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+        if (d > 0 && p[1] === "00") return p[0]; 
+        return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
+    }
+
+    function abrirModalGlobal(titulo, htmlContent) { 
+        document.getElementById('global_modal_title').innerText = titulo; 
+        document.getElementById('global_modal_body').innerHTML = htmlContent; 
+        document.getElementById('global_modal').style.display = 'flex'; 
+    }
+    
+    function cerrarModalGlobal() { 
+        document.getElementById('global_modal').style.display = 'none'; 
+    }
+    
+    function mostrarModalLocal(titulo, msg) { 
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem; color:var(--text);">⏳ ${msg}</div>`); 
+    }
+</script>
+</body>
+</html>
