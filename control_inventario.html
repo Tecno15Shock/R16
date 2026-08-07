@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Control de Inventario - Sistema Maestro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --input-bg: #ffffff; --muted: #7f8c8d;
+        }
+        body.dark-mode {
+            --bg: #121212; --primary: #1e272e; --secondary: #2980b9; --danger: #c0392b;
+            --success: #27ae60; --warning: #f39c12; --info: #2c3e50; --text: #ecf0f1; 
+            --border: #34495e; --card-bg: #1e1e1e; --input-bg: #2d2d2d; --muted: #bdc3c7;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; transition: background 0.3s, color 0.3s; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #pantalla_bloqueo_admin {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(18, 18, 18, 0.75); backdrop-filter: blur(10px);
+            z-index: 99999; display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        .top-bar { background: var(--primary); color: white; padding: 12px 15px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { 
+            background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.1rem; 
+            cursor: pointer; width: 30px; height: 30px; padding: 0; margin: 0; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; transition: background 0.2s; 
+        }
+        .menu-toggle-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .top-bar-title { font-size: 1.1rem; font-weight: bold; color: #ecf0f1; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .sidebar { 
+            position: fixed; top: 0; left: -320px; width: 320px; height: 100vh; 
+            background: var(--primary); color: white; padding: 20px 15px; 
+            display: flex; flex-direction: column; gap: 8px; z-index: 1002; 
+            transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; 
+        }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 12px; border-bottom: 1px solid #34495e; margin-bottom: 5px; color: #ecf0f1; flex-shrink: 0; }
+        
+        .sidebar .tab-btn { 
+            background: none; color: #bfc9ca; border: none; text-align: left; 
+            padding: 10px 12px; width: 100%; border-radius: 6px; cursor: pointer; 
+            font-size: 0.95rem; display: block; text-decoration: none; transition: all 0.2s;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            flex-shrink: 0;
+        }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; }
+        
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+        
+        .main-content { max-width: 1100px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        
+        label { font-size: 0.95rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted); }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); }
+        
+        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: opacity 0.2s, transform 0.1s; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        .btn-danger { background: var(--danger); }
+        .btn-warning { background: var(--warning); color: #fff; }
+        .btn-success { background: var(--success); }
+        .btn-info { background: var(--info); color: #fff; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+        th { background: var(--primary); color: white; }
+
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 800px; max-width: 95%; text-align: center; position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto; animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .custom-modal-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
+<div id="pantalla_bloqueo_admin">
+    <div class="card" style="width: 350px; text-align: center; border-top: 4px solid var(--danger); margin: 0; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+        <h2 style="color: var(--danger);">🔒 Acceso Protegido</h2>
+        <p style="font-size: 0.9rem; color: var(--muted);">Introduce el PIN de Administrador para ver este módulo:</p>
+        <div style="position: relative; margin-bottom: 15px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px; width: 100%; padding-right: 45px; margin-top: 0;" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
+        </div>
+        <button id="btn_desbloquear" onclick="verificarPinBody()" style="background: var(--primary); margin-top: 0;">Desbloquear Pantalla</button>
+        <button onclick="window.history.back()" style="background: var(--danger); margin-top: 8px;">Volver Atrás</button>
+    </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <!-- NAVEGACIÓN SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">📋 Control de Inventario</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn" style="color: #f1c40f;">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn" style="color: #3498db; font-weight: bold;">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn" style="color: #8e44ad; font-weight: bold;">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">💸 Avances / Retiros</a>
+        <a href="calculadora.html" class="tab-btn">🧮 Calculadora Divisas</a>
+        <a href="facturar.html" class="tab-btn" style="color: #2ecc71; font-weight: bold;">🛒 Facturar Venta</a>
+        <a href="cierre.html" class="tab-btn">🧾 Cierre de Caja</a>
+        <a href="control_inventario.html" class="tab-btn active" style="color: #1abc9c; font-weight: bold;">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn" style="background:var(--primary); border: 1px solid #bdc3c7; color: white;">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn" style="color: #3498db;">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn" style="color: #9b59b6; font-weight: bold;">🧾 Pagos Bancarios</a>
+        <a href="conciliacion_pto.html" class="tab-btn" style="color: #3498db; font-weight: bold;">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn" style="color: #2980b9; font-weight: bold;">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn" style="color: #e74c3c; font-weight: bold;">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn" style="color:#27ae60; font-weight:bold; margin-top:5px;">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn" style="color:#f39c12; font-weight:bold; margin-top:15px;">⚙️ Configuracion</a>
+    </div>
+
+    <div class="main-content">
+        <div class="card" style="border-top: 4px solid #1abc9c;">
+            <h2>📋 Control de Inventario (Auditoría de Cierres)</h2>
+            <p style="font-size:0.85rem; color:var(--muted);">Historial de cierres sincronizado con todos los productos del catálogo en orden alfabético.</p>
+            
+            <div style="overflow-x:auto; margin-top: 15px;">
+                <table id="tabla_control_inventario_cierres">
+                    <tr><th>Fecha</th><th>Entregó</th><th>Recibió</th><th>Tasa BS</th><th>Total Venta ($)</th><th>Acciones</th></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+    let datosControlInventario = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        abrirModalGlobal("Autenticando", "Verificando sesión activa...");
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) { 
+                cerrarModalGlobal(); 
+                alert("Sin sesión activa."); 
+                window.location.href = 'index.html';
+                return; 
+            }
+            await inicializarDatos(data.session.user.id);
+        } catch (err) { 
+            console.error(err); 
+            cerrarModalGlobal(); 
+        }
+    });
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
+        let btn = document.getElementById('btn_desbloquear');
+
+        btn.innerHTML = "⏳ Cargando...";
+        btn.disabled = true;
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (pinIngresado === pinReal) {
+            let pantalla = document.getElementById('pantalla_bloqueo_admin');
+            pantalla.style.animation = 'fadeIn 0.3s reverse';
+            setTimeout(() => { pantalla.style.display = 'none'; }, 300);
+        } else {
+            alert("❌ PIN Incorrecto.");
+            document.getElementById('pin_ingreso_body').value = '';
+            btn.innerHTML = "Desbloquear Pantalla";
+            btn.disabled = false;
+        }
+    }
+
+    async function inicializarDatos(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+            let { data: conf } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+                let nombreLocal = conf.identidad?.nombre || 'Sistema';
+                document.getElementById('main_top_title').innerHTML = `📋 ${nombreLocal} - Control de Inventario`;
+            }
+
+            // Cargamos el catálogo general de la sucursal
+            let { data: catData } = await supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
+            if (catData) {
+                CATALOGO = catData;
+            }
+        }
+        cerrarModalGlobal();
+        cargarHistorialControlInventario();
+    }
+
+    async function cargarHistorialControlInventario() {
+        let tablaEl = document.getElementById('tabla_control_inventario_cierres');
+        if(!tablaEl) return;
+        try {
+            let { data: empData } = await supabaseClient
+                .from('empleados')
+                .select('id, nombre, apellido')
+                .eq('local_id', CURRENT_LOCAL_ID);
+            
+            let empleadosMap = {};
+            if (empData) {
+                empData.forEach(e => { empleadosMap[e.id] = `${e.nombre} ${e.apellido}`; });
+            }
+
+            let { data, error } = await supabaseClient
+                .from('control_inventario_cierres')
+                .select('*')
+                .eq('local_id', CURRENT_LOCAL_ID)
+                .order('fecha', { ascending: false });
+                
+            if(error) throw error;
+
+            let html = `<tr><th>Fecha</th><th>Entregó</th><th>Recibió</th><th>Tasa BS</th><th>Total Venta ($)</th><th>Acciones</th></tr>`;
+            
+            if(!data || data.length === 0) {
+                html += `<tr><td colspan="6" style="text-align:center;">No hay controles registrados en Supabase.</td></tr>`;
+            } else {
+                datosControlInventario = data;
+                data.forEach((c, idx) => {
+                    let nomCierra = empleadosMap[c.empleado_cierra] || 'N/A';
+                    let nomRecibe = empleadosMap[c.empleado_recibe] || 'N/A';
+                    
+                    html += `<tr>
+                        <td style="text-align:center;">${new Date(c.fecha).toLocaleString()}</td>
+                        <td>${nomCierra}</td>
+                        <td>${nomRecibe}</td>
+                        <td style="text-align:center;">${c.tasa_usd_bs || 1}</td>
+                        <td style="text-align:right; font-weight:bold; color:var(--success);">$${parseFloat(c.total_usd || 0).toFixed(2)}</td>
+                        <td style="text-align:center; display:flex; gap:4px; justify-content:center;">
+                            <button class="btn-info" style="padding:4px 8px; margin:0; font-size:0.8rem;" onclick="abrirAuditoria(${idx})">🔒 Ver / Editar</button>
+                            <button class="btn-danger" style="padding:4px 8px; margin:0; font-size:0.8rem;" onclick="eliminarControlInventario('${c.id}')">🗑️</button>
+                        </td>
+                    </tr>`;
+                });
+            }
+            tablaEl.innerHTML = html;
+        } catch (e) { 
+            console.error("Error cargando inventario:", e);
+            alert("❌ Error al conectar con Supabase: " + e.message);
+        }
+    }
+
+    // =======================================================
+    // FUSIÓN INTELIGENTE: INCLUYE TODOS LOS PRODUCTOS Y ORDEN ALFABÉTICO
+    // =======================================================
+    function obtenerDetallesCompletos(registro) {
+        let detallesGuardados = registro.detalles_json || [];
+        let mapaGuardados = {};
+
+        detallesGuardados.forEach(d => {
+            let nombreLimpio = limpiarNombre(d.nombre || 'Producto');
+            mapaGuardados[nombreLimpio.toLowerCase()] = {
+                nombre: nombreLimpio,
+                E: d.E ?? d.entrada ?? 0,
+                S: d.S ?? d.salida ?? 0,
+                VP: d.VP ?? d.cantidad ?? 0,
+                PI: d.PI ?? d.precio_interno ?? 0,
+                VT: d.VT ?? d.subtotal_usd ?? 0
+            };
+        });
+
+        let listaFinal = [];
+
+        // Aseguramos que estén todos los productos del catálogo general
+        CATALOGO.forEach(cat => {
+            let nombreCat = limpiarNombre(cat.nombre);
+            let key = nombreCat.toLowerCase();
+            if (mapaGuardados[key]) {
+                listaFinal.push(mapaGuardados[key]);
+                delete mapaGuardados[key]; // Ya procesado
+            } else {
+                // Producto del catálogo que no estaba en el JSON de este cierre (se añade con ceros)
+                listaFinal.push({
+                    nombre: nombreCat,
+                    E: 0,
+                    S: 0,
+                    VP: 0,
+                    PI: parseFloat(cat.precio_venta || cat.precio_base || 0),
+                    VT: 0
+                });
+            }
+        });
+
+        // Añadir cualquier otro producto adicional que estuviera guardado en el JSON pero ya no esté en el catálogo activo
+        for (let k in mapaGuardados) {
+            listaFinal.push(mapaGuardados[k]);
+        }
+
+        // Orden alfabético estricto por nombre de producto
+        listaFinal.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+
+        return listaFinal;
+    }
+
+    function abrirAuditoria(idx) {
+        let registro = datosControlInventario[idx];
+        let detalles = obtenerDetallesCompletos(registro);
+        
+        let empMap = window.empleadosMap || {};
+        let nomCierra = empMap[registro.empleado_cierra] || 'Roily Jose Avila Vera';
+        let nomRecibe = empMap[registro.empleado_recibe] || 'Mayibeth Carolina Briceño Briceño';
+        
+        window.currentAuditoriaEditIndex = idx;
+        window.currentDetallesEditados = detalles;
+
+        let htmlTabla = `<table style="width:100%; border-collapse:collapse; text-align:center; font-size:0.9rem;">
+            <tr>
+                <th style="background:var(--primary); color:white; padding:8px; text-align:left;">Producto</th>
+                <th style="width:10%;">E</th>
+                <th style="width:10%;">S</th>
+                <th style="width:12%;">V.P</th>
+                <th style="width:15%;">P. Interno</th>
+                <th style="width:15%;">V. Total</th>
+            </tr>`;
+        
+        detalles.forEach((d, i) => {
+            htmlTabla += `<tr>
+                <td style="text-align:left;">${d.nombre}</td>
+                <td><input type="number" id="input_e_${i}" value="${d.E}" style="width:100%; text-align:center; padding:4px;" onchange="recalcularFilaAuditoria(${i})"></td>
+                <td><input type="number" id="input_s_${i}" value="${d.S}" style="width:100%; text-align:center; padding:4px;" onchange="recalcularFilaAuditoria(${i})"></td>
+                <td><input type="number" id="input_vp_${i}" value="${d.VP}" step="any" style="width:100%; text-align:center; padding:4px; font-weight:bold; color:var(--success);" onchange="recalcularFilaAuditoria(${i})"></td>
+                <td><input type="number" id="input_pi_${i}" value="${d.PI}" step="any" style="width:100%; text-align:right; padding:4px;" onchange="recalcularFilaAuditoria(${i})"></td>
+                <td id="td_vt_${i}" style="text-align:right; font-weight:bold; color:var(--success);">$${parseFloat(d.VT).toFixed(2)}</td>
+            </tr>`;
+        });
+        htmlTabla += `</table>`;
+
+        let htmlVista = `
+            <div style="margin-bottom:12px; font-size:0.9rem; text-align:left; background:var(--input-bg); padding:10px; border-radius:6px; border:1px solid var(--border);">
+                <p style="margin:2px 0;"><strong>Vendedor Entregó:</strong> ${nomCierra}</p>
+                <p style="margin:2px 0;"><strong>Vendedor Recibió:</strong> ${nomRecibe}</p>
+                <p style="margin:2px 0;"><strong>Tasa USD/BS:</strong> ${registro.tasa_usd_bs || 800}</p>
+            </div>
+            <p style="font-size:0.8rem; color:var(--warning); text-align:left; margin-bottom:5px;">ℹ️ Todos los productos están ordenados alfabéticamente. Modifica lo que necesites y guarda.</p>
+            <div style="background:var(--card-bg); border:1px solid var(--border); padding:5px; max-height:280px; overflow-y:auto; border-radius:6px;">${htmlTabla}</div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+                <button class="btn-success" style="margin:0; width:48%; background:var(--secondary);" onclick="guardarCambiosAuditoriaManual()">💾 Guardar en Supabase</button>
+                <button class="btn-warning" style="margin:0; width:48%; background:#9b59b6;" onclick="descargarAuditoriaPDF(${idx})">📄 Descargar PDF</button>
+            </div>
+            <button class="btn-success" style="background:var(--danger); margin-top:8px; width:100%;" onclick="cerrarModalGlobal()">Cerrar</button>
+        `;
+        abrirModalGlobal("Auditoría: " + new Date(registro.fecha).toLocaleString(), htmlVista);
+    }
+
+    function recalcularFilaAuditoria(i) {
+        let vp = parseFloat(document.getElementById(`input_vp_${i}`).value) || 0;
+        let pi = parseFloat(document.getElementById(`input_pi_${i}`).value) || 0;
+        let vt = vp * pi;
+        document.getElementById(`td_vt_${i}`).innerText = `$${vt.toFixed(2)}`;
+        if (window.currentDetallesEditados && window.currentDetallesEditados[i]) {
+            window.currentDetallesEditados[i].VT = vt;
+        }
+    }
+
+    async function guardarCambiosAuditoriaManual() {
+        let idx = window.currentAuditoriaEditIndex;
+        let registro = datosControlInventario[idx];
+        let detalles = window.currentDetallesEditados || [];
+        
+        let nuevosDetalles = [];
+        let totalGeneralUsd = 0;
+
+        detalles.forEach((d, i) => {
+            let eVal = parseFloat(document.getElementById(`input_e_${i}`).value) || 0;
+            let sVal = parseFloat(document.getElementById(`input_s_${i}`).value) || 0;
+            let vpVal = parseFloat(document.getElementById(`input_vp_${i}`).value) || 0;
+            let piVal = parseFloat(document.getElementById(`input_pi_${i}`).value) || 0;
+            let vtVal = vpVal * piVal;
+
+            totalGeneralUsd += vtVal;
+
+            nuevosDetalles.push({
+                nombre: d.nombre,
+                E: eVal,
+                S: sVal,
+                VP: vpVal,
+                PI: piVal,
+                VT: vtVal
+            });
+        });
+
+        mostrarModalLocal("Guardando", "Sincronizando cambios con Supabase...");
+        try {
+            let { error } = await supabaseClient
+                .from('control_inventario_cierres')
+                .update({
+                    detalles_json: nuevosDetalles,
+                    total_usd: totalGeneralUsd
+                })
+                .eq('id', registro.id);
+
+            if(error) throw error;
+
+            cerrarModalGlobal();
+            alert("✅ Cambios actualizados correctamente en Supabase.");
+            await cargarHistorialControlInventario();
+        } catch (e) {
+            cerrarModalGlobal();
+            alert("❌ Error al guardar en base de datos: " + e.message);
+        }
+    }
+
+    async function eliminarControlInventario(id) {
+        if(!confirm("⚠️ ¿Estás seguro de eliminar este registro de control de inventario de Supabase?")) return;
+        mostrarModalLocal("Eliminando", "Borrando registro...");
+        try {
+            let { error } = await supabaseClient.from('control_inventario_cierres').delete().eq('id', id);
+            if(error) throw error;
+            cerrarModalGlobal();
+            alert("✅ Registro eliminado correctamente.");
+            await cargarHistorialControlInventario();
+        } catch(e) {
+            cerrarModalGlobal();
+            alert("❌ Error: " + e.message);
+        }
+    }
+
+    function descargarAuditoriaPDF(idx) {
+        let registro = datosControlInventario[idx];
+        let detalles = obtenerDetallesCompletos(registro);
+        let empMap = window.empleadosMap || {};
+        let nomCierra = empMap[registro.empleado_cierra] || 'Roily Jose Avila Vera';
+        let nomRecibe = empMap[registro.empleado_recibe] || 'Mayibeth Carolina Briceño Briceño';
+        let fechaStr = new Date(registro.fecha).toLocaleString();
+        let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Refresquería Flor';
+
+        let container = document.createElement('div');
+        container.style.padding = '20px';
+        container.style.fontFamily = 'Arial, sans-serif';
+        container.style.color = '#333';
+        container.innerHTML = `
+            <h2 style="text-align:center; color:#2c3e50; border-bottom:2px solid #3498db; padding-bottom:10px;">📋 ${nombreLocal} - Reporte de Auditoría de Inventario</h2>
+            <div style="margin: 15px 0; font-size: 0.95rem;">
+                <p><strong>Fecha del Cierre:</strong> ${fechaStr}</p>
+                <p><strong>Vendedor que Entregó:</strong> ${nomCierra}</p>
+                <p><strong>Vendedor que Recibió:</strong> ${nomRecibe}</p>
+                <p><strong>Tasa USD/BS:</strong> ${registro.tasa_usd_bs || 800}</p>
+            </div>
+            <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:0.85rem;">
+                <thead>
+                    <tr style="background:#2c3e50; color:white;">
+                        <th style="border:1px solid #ddd; padding:6px; text-align:left;">Producto</th>
+                        <th style="border:1px solid #ddd; padding:6px; text-align:center;">E</th>
+                        <th style="border:1px solid #ddd; padding:6px; text-align:center;">S</th>
+                        <th style="border:1px solid #ddd; padding:6px; text-align:center;">V.P</th>
+                        <th style="border:1px solid #ddd; padding:6px; text-align:right;">P. Interno</th>
+                        <th style="border:1px solid #ddd; padding:6px; text-align:right;">V. Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${detalles.map(d => `
+                        <tr>
+                            <td style="border:1px solid #ddd; padding:6px;">${d.nombre}</td>
+                            <td style="border:1px solid #ddd; padding:6px; text-align:center;">${d.E}</td>
+                            <td style="border:1px solid #ddd; padding:6px; text-align:center;">${d.S}</td>
+                            <td style="border:1px solid #ddd; padding:6px; text-align:center; font-weight:bold; color:#27ae60;">${d.VP}</td>
+                            <td style="border:1px solid #ddd; padding:6px; text-align:right;">$${parseFloat(d.PI).toFixed(2)}</td>
+                            <td style="border:1px solid #ddd; padding:6px; text-align:right; font-weight:bold; color:#27ae60;">$${parseFloat(d.VT).toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <div style="margin-top:20px; text-align:right; font-size:1.1rem; font-weight:bold;">
+                Total General Vendido: <span style="color:#27ae60;">$${parseFloat(registro.total_usd || 0).toFixed(2)}</span>
+            </div>
+        `;
+
+        let opt = {
+            margin: 10,
+            filename: `Auditoria_Inventario_${registro.fecha.substring(0,10)}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(container).save();
+    }
+
+    function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
+    function abrirModalGlobal(t, h) { 
+        document.getElementById('global_modal_title').innerText = t; 
+        document.getElementById('global_modal_body').innerHTML = h; 
+        document.getElementById('global_modal').style.display = 'flex'; 
+    }
+    function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
+    function mostrarModalLocal(t, m) { abrirModalGlobal(t, `<div>⏳ ${m}</div>`); }
+</script>
+</body>
+</html>
