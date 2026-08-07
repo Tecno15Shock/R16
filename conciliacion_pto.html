@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💳 Conciliación de Punto - Sistema Maestro</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --input-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
+
+        /* BARRA SUPERIOR Y MENÚ LATERAL */
+        .top-bar { background: var(--primary); color: white; padding: 12px 15px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { 
+            background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.1rem; 
+            cursor: pointer; width: 30px; height: 30px; padding: 0; margin: 0; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; transition: background 0.2s; 
+        }
+        .menu-toggle-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .top-bar-title { font-size: 1.1rem; font-weight: bold; color: #ecf0f1; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .sidebar { position: fixed; top: 0; left: -320px; width: 320px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 5px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 15px; color: #ecf0f1; }
+        .sidebar .tab-btn { background: none; color: #bfc9ca; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; transition: all 0.2s; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border);}
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        h3 { color: var(--primary); margin-top: 25px; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+        label { font-size: 0.95rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted);}
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); }
+        .search-input { width: 100%; margin-top: 5px; padding: 10px; font-size: 1rem; border: 2px solid var(--secondary); border-radius: 6px;}
+
+        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: opacity 0.2s, transform 0.1s; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        button.btn-danger { background: var(--danger); width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9rem;}
+        button.btn-warning { background: var(--warning); width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9rem; color: #fff;}
+        button.btn-info { background: var(--info); width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9rem; color: white;}
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; }
+        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+        th { background: var(--primary); color: white; }
+
+        /* Modal Global */
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; min-width: 320px; max-width: 90%; width: 550px; position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.4); max-height: 90vh; display: flex; flex-direction: column; animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .custom-modal-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; text-align: center;}
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+        .modal-close-btn { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; padding: 0; margin: 0; }
+    </style>
+</head>
+<body>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
+<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(18, 18, 18, 0.75); backdrop-filter: blur(10px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px; animation: fadeIn 0.3s ease-in-out;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 380px; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-top: 5px solid var(--secondary);">
+        <h2 style="color: var(--secondary); margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 12px;">🔒 Acceso Protegido</h2>
+        <p style="font-size: 0.95rem; color: var(--muted); margin: 20px 0;">Introduce el PIN de Administrador para abrir Conciliación de Punto:</p>
+        
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid var(--border); border-radius: 8px; outline: none; background: var(--bg); color: var(--text);" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span>
+        </div>
+
+        <button id="btn_desbloquear_pin" onclick="verificarPinBody()" style="background: linear-gradient(135deg, var(--primary), #1a252f); margin-top: 0;">Desbloquear Pantalla</button>
+        <button id="btn_volver_pin" onclick="window.location.href='principal.html'" style="background: linear-gradient(135deg, var(--danger), #c0392b); margin-top: 10px;">Volver al Inicio</button>
+    </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">
+            <span>💳 Conciliación de Lotes (Punto de Venta) - Generado por Cierre</span>
+            <span style="font-size:0.8rem; font-weight:normal; color:#bdc3c7;" id="usuario_logueado_txt"></span>
+        </div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn" style="color: #f1c40f;">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn" style="color: #3498db; font-weight: bold;">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn" style="color: #8e44ad; font-weight: bold;">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">💸 Avances / Retiros</a>
+        <a href="calculadora.html" class="tab-btn">🧮 Calculadora Divisas</a>
+        <a href="facturar.html" class="tab-btn" style="color: #2ecc71; font-weight: bold;">🛒 Facturar Venta</a>
+        <a href="cierre.html" class="tab-btn">🧾 Cierre de Caja</a>
+        <a href="control_inventario.html" class="tab-btn" style="color: #1abc9c; font-weight: bold;">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn" style="background:var(--primary); border: 1px solid #bdc3c7; color: white;">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn" style="color: #3498db;">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn" style="color: #9b59b6; font-weight: bold;">🧾 Pagos Bancarios</a>
+        <a href="conciliacion_pto.html" class="tab-btn active" style="background: var(--secondary); color: white; font-weight: bold;">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn" style="color: #2980b9; font-weight: bold;">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn" style="color: #e67e22; font-weight: bold;">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn" style="color: #e74c3c; font-weight: bold;">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn" style="color:#27ae60; font-weight:bold; margin-top:5px;">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn" style="color:#f39c12; font-weight:bold; margin-top:15px;">⚙️ Configuracion</a>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        
+        <!-- PANEL DE ACTUALIZACIÓN / VERIFICACIÓN DE LOTE SELECCIONADO -->
+        <div class="card" style="border-top: 4px solid var(--secondary); display:none;" id="panel_edicion_lote">
+            <h2>✏️ Actualizar Estado de Acreditación (Punto)</h2>
+            <p style="font-size:0.9rem; color:var(--muted);">Selecciona un lote del historial abajo para confirmar su entrada o verificar si abonaron por partes.</p>
+            
+            <input type="hidden" id="pto_id_activo">
+            <div class="grid-2">
+                <div><label>Fecha de Operación:</label><input type="date" id="pto_fecha" disabled></div>
+                <div><label>Monto Esperado (Declarado en Cierre):</label><input type="number" step="0.01" id="pto_monto_esperado" disabled></div>
+            </div>
+            
+            <div class="grid-2">
+                <div><label>Monto Efectivamente Ingresado al Banco (BS):</label><input type="number" step="0.01" id="pto_monto_ingresado" placeholder="Ej: Monto acreditado real"></div>
+                <div>
+                    <label>Estado de Acreditación:</label>
+                    <select id="pto_estado">
+                        <option value="Pendiente Siguiente Día">Pendiente (Verificar próximo día)</option>
+                        <option value="Acreditado Completo">Acreditado Completo</option>
+                        <option value="Acreditado por Partes">Acreditado por Partes (Fraccionado)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div><label>Referencia Bancaria o Lote:</label><input type="text" id="pto_referencia" placeholder="Ej: Lote 1234 o Ref..."></div>
+                <div><label>Observaciones / Notas:</label><input type="text" id="pto_notas" placeholder="Ej: Entró 50% hoy y 50% mañana..."></div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="guardarActualizacionPunto()" style="background:var(--secondary); margin-top:15px; flex:2;">💾 Guardar Cambios de Conciliación</button>
+                <button onclick="cancelarEdicionPunto()" class="btn-danger" style="margin-top:15px; flex:1;">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- GENERAR PDF -->
+        <div class="card" style="border-top: 4px solid var(--info);">
+            <h2>📄 Generar Reportes PDF Oficiales (Mensual o Anual)</h2>
+            <div class="grid-3">
+                <div>
+                    <label>Tipo de Reporte:</label>
+                    <select id="pdf_tipo_periodo" onchange="toggleSelectorPeriodo()">
+                        <option value="mensual">Mensual</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                </div>
+                <div id="contenedor_mes">
+                    <label>Mes:</label>
+                    <select id="pdf_mes">
+                        <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+                        <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+                        <option value="07">Julio</option><option value="08" selected>Agosto</option><option value="09">Septiembre</option>
+                        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Año:</label>
+                    <input type="number" id="pdf_anio" value="2026">
+                </div>
+            </div>
+            <button onclick="generarPdfConciliacionPunto()" style="background:var(--info); margin-top:15px;">📥 Descargar Estado de Cuenta PDF (Conciliación Punto)</button>
+        </div>
+
+        <!-- HISTORIAL DE LOTES -->
+        <div class="card" style="border-top: 4px solid var(--primary);">
+            <h2>📋 Historial de Lotes de Punto (Generados Automáticamente por Cierres)</h2>
+            <div class="grid-2" style="margin-bottom: 10px;">
+                <input type="text" id="buscar_pto_input" class="search-input" placeholder="🔍 Buscar por referencia o nota..." oninput="renderHistorialPunto()" style="margin-top:0;">
+                <select id="filtro_estado_pto" class="search-input" onchange="renderHistorialPunto()" style="margin-top:0;">
+                    <option value="todos">Todos los Estados</option>
+                    <option value="Pendiente Siguiente Día">Pendientes</option>
+                    <option value="Acreditado Completo">Acreditados Completos</option>
+                    <option value="Acreditado por Partes">Acreditados por Partes</option>
+                </select>
+            </div>
+            <div style="overflow-x:auto;">
+                <table id="tabla_historial_punto"></table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let ADMIN_PASS_DB = '151016';
+    let HISTORIAL_PUNTO = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        mostrarModalLocal("Autenticando", "Verificando sesión activa...");
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) {
+                cerrarModalGlobal();
+                window.location.href = 'index.html';
+                return;
+            }
+            await inicializarDatos(data.session.user.id);
+        } catch (err) { 
+            console.error(err);
+            cerrarModalGlobal();
+            alert("Error conectando con el servidor.");
+        }
+    });
+
+    async function inicializarDatos(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+            if (perfil.nombre) document.getElementById('usuario_logueado_txt').innerHTML = `👋 <strong>${perfil.nombre}</strong>`;
+            
+            let { data: conf } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+            }
+        } else {
+            cerrarModalGlobal();
+            return alert("Error: Perfil no vinculado a un local.");
+        }
+
+        let { data: confData } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+        if (confData && confData.identidad && confData.identidad.admin_pass) {
+            ADMIN_PASS_DB = confData.identidad.admin_pass;
+        }
+
+        await cargarLotesPunto();
+        cerrarModalGlobal();
+    }
+
+    async function cargarLotesPunto() {
+        if(!CURRENT_LOCAL_ID) return;
+        try {
+            let { data, error } = await supabaseClient.from('conciliacion_punto').select('*').eq('local_id', CURRENT_LOCAL_ID).order('fecha', { ascending: false });
+            if(error) throw error;
+            HISTORIAL_PUNTO = data || [];
+            renderHistorialPunto();
+        } catch(e) {
+            console.error(e);
+            HISTORIAL_PUNTO = [];
+            renderHistorialPunto();
+        }
+    }
+
+    // ==========================================
+    // SEGURIDAD Y ACCESO PIN
+    // ==========================================
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('active');
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        let icono = document.getElementById('icono_ojo_pin');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icono.innerText = '🙈';
+        } else {
+            input.type = 'password';
+            icono.innerText = '👁️';
+        }
+    }
+
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let btn = document.getElementById('btn_desbloquear_pin');
+
+        btn.innerHTML = "⏳ Cargando...";
+        btn.disabled = true;
+
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        if (pinIngresado === ADMIN_PASS_DB) {
+            let pantalla = document.getElementById('pantalla_bloqueo_admin');
+            pantalla.style.animation = 'fadeIn 0.3s reverse';
+            setTimeout(() => {
+                pantalla.style.display = 'none';
+                btn.innerHTML = "Desbloquear Pantalla";
+                btn.disabled = false;
+            }, 300);
+        } else {
+            alert("❌ PIN Incorrecto.");
+            document.getElementById('pin_ingreso_body').value = '';
+            btn.innerHTML = "Desbloquear Pantalla";
+            btn.disabled = false;
+        }
+    }
+
+    // ==========================================
+    // GESTIÓN Y SEGUIMIENTO DE LOTES AUTOMÁTICOS
+    // ==========================================
+    function editarLotePunto(id) {
+        let item = HISTORIAL_PUNTO.find(x => x.id === id);
+        if(!item) return;
+        
+        document.getElementById('pto_id_activo').value = item.id;
+        document.getElementById('pto_fecha').value = item.fecha;
+        document.getElementById('pto_monto_esperado').value = item.monto_esperado;
+        document.getElementById('pto_monto_ingresado').value = item.monto_ingresado || '';
+        document.getElementById('pto_estado').value = item.estado || 'Pendiente Siguiente Día';
+        document.getElementById('pto_referencia').value = item.referencia || '';
+        document.getElementById('pto_notas').value = item.notas || '';
+        
+        document.getElementById('panel_edicion_lote').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicionPunto() {
+        document.getElementById('pto_id_activo').value = '';
+        document.getElementById('panel_edicion_lote').style.display = 'none';
+    }
+
+    async function guardarActualizacionPunto() {
+        let id = document.getElementById('pto_id_activo').value;
+        let ingresado = parseFloat(document.getElementById('pto_monto_ingresado').value) || 0;
+        let estado = document.getElementById('pto_estado').value;
+        let ref = document.getElementById('pto_referencia').value.trim();
+        let notas = document.getElementById('pto_notas').value.trim();
+
+        if(!id) return alert("No hay lote seleccionado.");
+
+        let payload = {
+            monto_ingresado: ingresado,
+            estado: estado,
+            referencia: ref,
+            notas: notas
+        };
+
+        mostrarModalLocal("Actualizando", "Guardando estado de acreditación...");
+        try {
+            let { error } = await supabaseClient.from('conciliacion_punto').update(payload).eq('id', id);
+            if(error) throw error;
+
+            await cargarLotesPunto();
+            cancelarEdicionPunto();
+            cerrarModalGlobal();
+            alert("✅ Lote de punto conciliado exitosamente.");
+        } catch(err) {
+            cerrarModalGlobal();
+            alert("❌ Error al guardar en la base de datos.");
+        }
+    }
+
+    async function eliminarLotePunto(id) {
+        if(!confirm("¿Deseas eliminar este registro de conciliación de punto?")) return;
+        mostrarModalLocal("Eliminando", "Borrando registro...");
+        try {
+            await supabaseClient.from('conciliacion_punto').delete().eq('id', id);
+            HISTORIAL_PUNTO = HISTORIAL_PUNTO.filter(x => x.id !== id);
+            renderHistorialPunto();
+            cerrarModalGlobal();
+        } catch(e) {
+            cerrarModalGlobal();
+            alert("❌ No se pudo eliminar el registro.");
+        }
+    }
+
+    function renderHistorialPunto() {
+        let q = document.getElementById('buscar_pto_input').value.toLowerCase();
+        let filtroEstado = document.getElementById('filtro_estado_pto').value;
+
+        let arr = [...HISTORIAL_PUNTO];
+        if(filtroEstado !== 'todos') {
+            arr = arr.filter(x => x.estado === filtroEstado);
+        }
+        if(q) {
+            arr = arr.filter(x => (x.referencia && x.referencia.toLowerCase().includes(q)) || (x.notas && x.notas.toLowerCase().includes(q)));
+        }
+
+        let html = "<tr><th>Fecha</th><th>Esperado (Cierre)</th><th>Ingresado (Banco)</th><th>Estado / Verif. Día Siguiente</th><th>Ref / Notas</th><th>Acciones</th></tr>";
+        arr.forEach(item => {
+            let colorEstado = item.estado === 'Acreditado Completo' ? 'var(--success)' : (item.estado === 'Acreditado por Partes' ? 'var(--warning)' : 'var(--danger)');
+            html += `<tr>
+                <td>${item.fecha}</td>
+                <td><strong>${formatearNumero(item.monto_esperado)} BS</strong></td>
+                <td style="color:var(--success); font-weight:bold;">${formatearNumero(item.monto_ingresado)} BS</td>
+                <td><span style="color:${colorEstado}; font-weight:bold;">${item.estado}</span></td>
+                <td><small><strong>Ref:</strong> ${item.referencia || 'N/A'}</small><br><small style="color:var(--muted);">${item.notas || ''}</small></td>
+                <td style="text-align:right;">
+                    <button class="btn-info" style="padding:4px 8px; margin:0; margin-right:4px;" onclick="editarLotePunto('${item.id}')" title="Conciliar / Verificar">✏️</button>
+                    <button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="eliminarLotePunto('${item.id}')">🗑️</button>
+                </td>
+            </tr>`;
+        });
+        let t = document.getElementById('tabla_historial_punto');
+        if(t) t.innerHTML = html || '<tr><td colspan="6" style="text-align:center; color:var(--muted);">No hay lotes de punto generados por cierres todavía.</td></tr>';
+    }
+
+    // ==========================================
+    // GENERACIÓN DE PDF FORMAL (TEXTO ESTRUCTURADO)
+    // ==========================================
+    function toggleSelectorPeriodo() {
+        let tipo = document.getElementById('pdf_tipo_periodo').value;
+        document.getElementById('contenedor_mes').style.display = tipo === 'mensual' ? 'block' : 'none';
+    }
+
+    function generarPdfConciliacionPunto() {
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) {
+            return alert("Error: La librería jsPDF no está cargada correctamente.");
+        }
+
+        let tipo = document.getElementById('pdf_tipo_periodo').value;
+        let anio = document.getElementById('pdf_anio').value;
+        let mes = document.getElementById('pdf_mes').value;
+        let mesNombre = document.getElementById('pdf_mes').options[document.getElementById('pdf_mes').selectedIndex].text;
+        let nombreLocal = CONFIG_GLOBAL?.identidad?.nombre || 'Establecimiento Comercial';
+
+        let filtrados = HISTORIAL_PUNTO.filter(x => {
+            if(!x.fecha) return false;
+            let partes = x.fecha.split('-');
+            let anioItem = partes[0];
+            let mesItem = partes[1];
+            if(tipo === 'mensual') {
+                return anioItem === anio && mesItem === mes;
+            } else {
+                return anioItem === anio;
+            }
+        });
+
+        filtrados.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+
+        let totalEsperado = filtrados.reduce((acc, x) => acc + (parseFloat(x.monto_esperado) || 0), 0);
+        let totalIngresado = filtrados.reduce((acc, x) => acc + (parseFloat(x.monto_ingresado) || 0), 0);
+        let tituloPeriodo = tipo === 'mensual' ? `Período Mensual: ${mesNombre} ${anio}` : `Período Anual: ${anio}`;
+
+        let doc = new jsPDF();
+
+        // Encabezado institucional formal
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(41, 128, 185); 
+        doc.text("ESTADO DE CONCILIACIÓN - LOTES DE PUNTO DE VENTA", 105, 18, { align: "center" });
+
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Establecimiento: " + nombreLocal, 105, 24, { align: "center" });
+        doc.text("Fecha de Emisión: " + new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), 105, 29, { align: "center" });
+        doc.text(tituloPeriodo, 105, 34, { align: "center" });
+
+        // Línea divisoria
+        doc.setDrawColor(200, 200, 200);
+        doc.line(14, 38, 196, 38);
+
+        // Resumen Financiero Ejecutivo (Caja)
+        doc.setFillColor(245, 247, 250);
+        doc.rect(14, 43, 182, 16, "F");
+        doc.setDrawColor(210, 220, 230);
+        doc.rect(14, 43, 182, 16);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(41, 128, 185);
+        doc.text("TOTAL ESPERADO (CIERRES):", 18, 51);
+        doc.text("TOTAL INGRESADO BANCO:", 110, 51);
+
+        doc.setFontSize(11);
+        doc.setTextColor(44, 62, 80);
+        doc.text(`${formatearNumero(totalEsperado)} BS`, 18, 56);
+        doc.setTextColor(39, 174, 96);
+        doc.text(`${formatearNumero(totalIngresado)} BS`, 110, 56);
+
+        // Tabla de Historial Estructurada por Texto y Coordenadas
+        let startY = 67;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(44, 62, 80);
+        doc.text("DETALLE DE MOVIMIENTOS Y LOTES", 14, startY);
+        startY += 4;
+
+        function dibujarCabeceraTabla(yPos) {
+            doc.setFillColor(41, 128, 185);
+            doc.rect(14, yPos, 182, 7, "F");
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.setTextColor(255, 255, 255);
+            doc.text("Fecha", 16, yPos + 4.8);
+            doc.text("Esperado", 50, yPos + 4.8, { align: "right" });
+            doc.text("Ingresado", 85, yPos + 4.8, { align: "right" });
+            doc.text("Estado", 100, yPos + 4.8);
+            doc.text("Referencia / Observaciones", 145, yPos + 4.8);
+        }
+
+        dibujarCabeceraTabla(startY);
+        startY += 7;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(50, 50, 50);
+
+        if (filtrados.length === 0) {
+            startY += 8;
+            doc.text("No se registran lotes de punto conciliados para el período seleccionado.", 105, startY, { align: "center" });
+        } else {
+            filtrados.forEach((item, index) => {
+                let fechaStr = String(item.fecha || '');
+                let esperadoStr = `${formatearNumero(item.monto_esperado)} BS`;
+                let ingresadoStr = `${formatearNumero(item.monto_ingresado)} BS`;
+                let estadoStr = String(item.estado || 'Pendiente');
+                let refNotas = `Ref: ${item.referencia || 'N/A'}` + (item.notas ? ` - ${item.notas}` : '');
+
+                let lineasRef = doc.splitTextToSize(refNotas, 50);
+                let lineasEstado = doc.splitTextToSize(estadoStr, 42);
+                let maxLines = Math.max(lineasRef.length, lineasEstado.length, 1);
+                let rowHeight = (maxLines * 4.5) + 4;
+
+                if (startY + rowHeight > 275) {
+                    doc.addPage();
+                    startY = 20;
+                    dibujarCabeceraTabla(startY);
+                    startY += 7;
+                }
+
+                if (index % 2 === 0) {
+                    doc.setFillColor(248, 249, 250);
+                    doc.rect(14, startY, 182, rowHeight, "F");
+                }
+
+                doc.setDrawColor(220, 220, 220);
+                doc.rect(14, startY, 182, rowHeight);
+
+                let textY = startY + 4.5;
+                doc.text(fechaStr, 16, textY);
+                doc.text(esperadoStr, 50, textY, { align: "right" });
+                
+                doc.setTextColor(39, 174, 96);
+                doc.text(ingresadoStr, 85, textY, { align: "right" });
+                
+                doc.setTextColor(50, 50, 50);
+                doc.text(lineasEstado, 100, textY);
+                doc.text(lineasRef, 145, textY);
+
+                startY += rowHeight;
+            });
+        }
+
+        // Bloque de Aviso / Nota Formal al Pie
+        let textoAviso = "NOTIFICACIÓN DE AUDITORÍA: Este reporte detalla la correlación entre los montos declarados en los cierres de caja y los fondos efectivamente acreditados por la institución bancaria en las cuentas del establecimiento comercial.";
+        let lineasAviso = doc.splitTextToSize(textoAviso, 174);
+        let avisoHeight = (lineasAviso.length * 4) + 8;
+
+        if (startY + avisoHeight + 10 > 275) {
+            doc.addPage();
+            startY = 20;
+        }
+
+        startY += 6;
+        doc.setFillColor(238, 245, 250);
+        doc.rect(14, startY, 182, avisoHeight, "F");
+        doc.setDrawColor(180, 205, 225);
+        doc.rect(14, startY, 182, avisoHeight);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(41, 128, 185);
+        doc.text("AVISO OFICIAL DE CONCILIACIÓN:", 17, startY + 4);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(60, 60, 60);
+        doc.text(lineasAviso, 17, startY + 9);
+
+        let nombreArchivo = `Conciliacion_Punto_${tipo === 'mensual' ? mesNombre + '_' + anio : anio}.pdf`;
+        doc.save(nombreArchivo);
+    }
+
+    // ==========================================
+    // UTILIDADES
+    // ==========================================
+    function abrirModalGlobal(titulo, htmlContent) { 
+        document.getElementById('global_modal_title').innerText = titulo; 
+        document.getElementById('global_modal_body').innerHTML = htmlContent; 
+        document.getElementById('global_modal').style.display = 'flex'; 
+    }
+    
+    function cerrarModalGlobal() { 
+        document.getElementById('global_modal').style.display = 'none'; 
+    }
+    
+    function mostrarModalLocal(titulo, msg) { 
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem; color:var(--text);">⏳ ${msg}</div>`); 
+    }
+    
+    function formatearNumero(v, d = 2) { 
+        if (isNaN(v) || v === null || v === undefined) return "0"; 
+        let num = parseFloat(v); 
+        if (d === 0) num = Math.round(num); 
+        let p = num.toFixed(d).split('.'); 
+        p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+        if (d > 0 && p[1] === "00") return p[0]; 
+        return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
+    }
+</script>
+</body>
+</html>
