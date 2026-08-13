@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Precios - Sistema Maestro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        body.hide-bs .moneda-bs { display: none !important; }
+        body.hide-cop .moneda-cop { display: none !important; }
+        body.hide-eur .moneda-eur { display: none !important; }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        /* ========================================================= */
+        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
+        /* ========================================================= */
+        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* ========================================================= */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
+        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
+        .sidebar-overlay { fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { padding: 20px; padding-bottom: 130px; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border);}
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+        @media (max-width: 900px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .grid-4 { grid-template-columns: 1fr; } }
+
+        input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
+        .search-input { border: 2px solid var(--secondary); }
+        
+        .zebra-list .consulta-item { border-bottom: 1px solid var(--border); padding: 12px 15px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .zebra-list .consulta-item:nth-child(even) { background-color: rgba(0,0,0,0.03); }
+        
+        .precio-stack { text-align: right; line-height: 1.4; }
+        .precio-stack strong { color: var(--secondary); font-size: 1.1rem; }
+        .precio-stack .bs { font-size: 0.85rem; color: #27ae60; font-weight: bold; }
+        .precio-stack .cop { font-size: 0.85rem; color: #f39c12; font-weight: bold; }
+        .precio-stack .eur { font-size: 0.85rem; color: #8e44ad; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn active">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn">💸 Avances / Retiros</a>
+        <a href="conversor.html" class="tab-btn">🧮 Conversor Monetario</a>
+        <a href="facturar.html" class="tab-btn">🛒 Facturar Venta</a>
+        <a href="caja_registradora.html" class="tab-btn">🧾 Caja Registradora</a>
+        <a href="control_inventario.html" class="tab-btn">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn">🧾 Pagos y Servicios</a>
+        <a href="conciliacion_pto.html" class="tab-btn">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <div class="card" style="border-top: 4px solid var(--secondary);">
+            <h2>💰 Consulta General de Precios</h2>
+            <div class="grid-4" style="margin-bottom: 15px;">
+                <input type="text" id="buscar_caja" class="search-input" placeholder="🔍 Buscar producto..." oninput="renderConsultaInicial()">
+                <select id="orden_inicial" class="search-input" onchange="renderConsultaInicial()">
+                    <option value="az" selected>Ordenar Alfabéticamente</option>
+                    <option value="cat">Ordenar por Categoría</option>
+                </select>
+                <select id="filtro_stock_caja" class="search-input" style="border-color: var(--warning);" onchange="renderConsultaInicial()">
+                    <option value="con_stock" selected>Ocultar Agotados (Stock > 0)</option>
+                    <option value="todos">Mostrar Todo el Catálogo</option>
+                </select>
+            </div>
+            <div id="lista_inicial_contenido" class="zebra-list">
+                <p style="text-align:center; color:var(--muted);">Cargando catálogo desde Supabase...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data } = await window.supabaseClient.auth.getSession();
+        if (data && data.session) await sincronizarSesionSupabase(data.session);
+        else window.location.href = 'index.html';
+    });
+
+    async function sincronizarSesionSupabase(session) {
+        const userId = session.user.id;
+        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        } else {
+            let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
+            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        }
+
+        let conf = null, localData = null;
+        try {
+            let resConf = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+            conf = resConf.data;
+        } catch(e) { console.warn("Sin configuración"); }
+
+        try {
+            let resLocal = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+            localData = resLocal.data;
+        } catch(e) { console.warn("Sin local"); }
+
+        if (conf) {
+            CONFIG_GLOBAL = conf;
+            actualizarVisibilidadMonedas();
+        }
+
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
+        let etiquetaModulo = "Precios"; 
+
+        document.getElementById('main_top_title').innerHTML = `
+            🏪 ${nombreLocal} 
+            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                📌 Módulo: ${etiquetaModulo}
+            </span>
+        `;
+
+        await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
+    }
+
+    async function cargarTodoDesdeSupabase(email, nombrePerfil) {
+        if(!CURRENT_LOCAL_ID) return;
+        try {
+            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+                actualizarVisibilidadMonedas();
+            }
+
+            let { data: reqCat } = await window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
+            if(reqCat) {
+                CATALOGO = reqCat.map(p => ({
+                    uuid: p.id, nom: p.nombre, cat: p.categoria || "General", 
+                    base: p.precio_base || 0, mBase: p.moneda_base || 'USD', 
+                    stock: p.stock || 0, umbral_rojo: p.umbral_rojo || 0
+                }));
+            }
+            renderConsultaInicial();
+        } catch(e) { console.error(e); }
+    }
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    function renderConsultaInicial() {
+        let q = document.getElementById('buscar_caja').value.toLowerCase();
+        let ord = document.getElementById('orden_inicial').value;
+        let filtroStock = document.getElementById('filtro_stock_caja').value;
+        
+        let arr = CATALOGO.filter(p => p.nom.toLowerCase().includes(q));
+        if (filtroStock === 'con_stock') arr = arr.filter(p => parseFloat(p.stock) > 0);
+        
+        arr.sort((a,b) => ord === 'cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom))); 
+        
+        let html = "";
+        let tasas = CONFIG_GLOBAL.tasas || { ves: 1, cop: 1, eur: 1 };
+        let tv = parseFloat(tasas.ves) || 1, tc = parseFloat(tasas.cop) || 1, te = parseFloat(tasas.eur) || 1;
+        let categoriaActual = "";
+
+        arr.forEach(p => { 
+            if (ord === 'cat' && p.cat !== categoriaActual) {
+                categoriaActual = p.cat;
+                html += `<div style="background: var(--primary); color: white; padding: 10px 15px; font-weight: bold; font-size: 0.95rem; margin-top: 10px; border-radius: 4px;">📂 ${categoriaActual}</div>`;
+            }
+
+            let b = convertirA_USD(p.base, p.mBase || 'USD'); 
+            
+            // Lógica de colores según el umbral de Supabase
+            let stockVal = parseFloat(p.stock) || 0;
+            let umbralVal = parseFloat(p.umbral_rojo) || 0;
+            let colorStock = '#27ae60'; // Verde por defecto
+            if (stockVal <= 0) {
+                colorStock = '#e74c3c'; // Rojo si se agotó
+            } else if (stockVal <= umbralVal) {
+                colorStock = '#f39c12'; // Amarillo si está en o por debajo del umbral
+            }
+            
+            let precioHtml = `<span class="precio-stack">
+                <div style="font-size:0.75rem; color:var(--warning); font-weight:bold;">💰 PRECIO</div>
+                <strong>$${formatearNumero(b)}</strong>
+                <div class="bs moneda-bs">${formatearNumero(b * tv)} BS</div>
+                <div class="cop moneda-cop">${formatearNumero(b * tc, 0)} COP</div>
+                <div class="eur moneda-eur">${formatearNumero(b * te)} EUR</div>
+            </span>`;
+
+            html += `<div class="consulta-item">
+                <span>
+                    <strong>${limpiarNombre(p.nom)}</strong><br>
+                    <small>${ord !== 'cat' ? 'Categoría: ' + p.cat + ' | ' : ''}📦 Stock: <strong style="color:${colorStock};">${p.stock}</strong></small>
+                </span>
+                ${precioHtml}
+            </div>`; 
+        });
+        
+        document.getElementById('lista_inicial_contenido').innerHTML = html || '<p style="color:var(--muted); text-align:center;">No hay productos que coincidan con los filtros.</p>';
+    }
+
+    function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
+    function formatearNumero(v, d = 2) { 
+        if (isNaN(v) || v == null) return "0"; 
+        let num = parseFloat(v); if (d === 0) num = Math.round(num); 
+        let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+        if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
+    }
+    function convertirA_USD(m, mon) { 
+        let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 };
+        return parseFloat(mon === 'BS' ? m / t.ves : mon === 'COP' ? m / t.cop : mon === 'EUR' ? m / t.eur : m); 
+    }
+    function actualizarVisibilidadMonedas() { 
+        let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 };
+        parseFloat(t.ves) === 0 ? document.body.classList.add('hide-bs') : document.body.classList.remove('hide-bs');
+        parseFloat(t.cop) === 0 ? document.body.classList.add('hide-cop') : document.body.classList.remove('hide-cop');
+        parseFloat(t.eur) === 0 ? document.body.classList.add('hide-eur') : document.body.classList.remove('hide-eur'); 
+    }
+</script>
+</body>
+</html>

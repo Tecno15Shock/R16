@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📁 Gestión de Catálogo - Sistema Maestro</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --bg: #f8f9fa; 
+            --primary: #2d3748; /* Gris pizarra oscuro moderno */
+            --secondary: #e53e3e; /* Rojo moderno */
+            --danger: #e53e3e; /* Rojo institucional */
+            --success: #38a169; 
+            --warning: #d69e2e; 
+            --info: #3182ce; 
+            --text: #2d3748; 
+            --border: #e2e8f0; 
+            --card-bg: #ffffff; 
+            --input-bg: #ffffff; 
+            --item-bg: #f7fafc; 
+            --muted: #718096;
+            --topbar-bg: #000000; /* Franja superior negra */
+            --sidebar-bg: #000000; /* Menú lateral negro */
+            --active-gold: #D4AF37; /* Dorado institucional para el menú activo */
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
+
+        /* ========================================================= */
+        /* BARRA SUPERIOR: Negro con letras blancas                  */
+        /* ========================================================= */
+        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL: Negro con letras blancas y activo dorado    */
+        /* ========================================================= */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 1px; color: white; }
+        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
+        .sidebar .tab-btn:hover { background: #222222; color: white; }
+        .sidebar .tab-btn.active { background: var(--active-gold) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        
+        .card { 
+            background: var(--card-bg); 
+            padding: 22px; 
+            border-radius: 10px; 
+            margin-bottom: 22px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); 
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--danger); 
+        }
+        
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.25rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        h3 { color: var(--primary); margin-top: 25px; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+        @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+        label { font-size: 0.95rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted); }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); }
+        .search-input { width: 100%; margin-top: 5px; padding: 10px; font-size: 1rem; border: 2px solid var(--primary); border-radius: 6px; }
+        .flex-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+
+        button { background: var(--primary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: opacity 0.2s, transform 0.1s; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        button.btn-danger { background: var(--danger); width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9rem; }
+        button.btn-warning { background: var(--warning); width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9rem; color: #fff; }
+        button.btn-info { background: var(--primary); width: auto; padding: 8px 12px; margin-top: 0; font-size: 0.9rem; color: white; }
+        button.btn-success { background: var(--success); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; }
+        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+        th { background: var(--primary); color: white; }
+
+        /* Modal Global */
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; min-width: 320px; max-width: 90%; width: 550px; position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.4); max-height: 90vh; display: flex; flex-direction: column; animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .custom-modal-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; text-align: center; }
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+        .modal-close-btn { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; padding: 0; margin: 0; }
+    </style>
+</head>
+<body>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
+<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(12px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px; animation: fadeIn 0.3s ease-in-out;">
+    <div style="background: linear-gradient(145deg, #161922, #0d0f15); width: 100%; max-width: 380px; padding: 35px 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(229, 62, 62, 0.25); border: 1px solid rgba(212, 175, 55, 0.4); border-top: 5px solid #e53e3e;">
+        
+        <h2 style="color: #f7fafc; margin-top: 0; font-size: 1.5rem; border-bottom: 2px solid rgba(212, 175, 55, 0.3); padding-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+            <span style="color: #e53e3e;">⚡</span> Acceso Protegido
+        </h2>
+        
+        <p style="font-size: 0.95rem; color: #a0aec0; margin: 20px 0; line-height: 1.4;">Introduce el PIN de Administrador para abrir este módulo:</p>
+        
+        <div style="position: relative; margin-bottom: 25px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid rgba(212, 175, 55, 0.4); border-radius: 8px; outline: none; background: #08090c; color: #f7fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span>
+        </div>
+
+        <button id="btn_desbloquear_pin" onclick="verificarPinBody()" style="background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: #ffffff; border: 1px solid #fc8181; box-shadow: 0 4px 15px rgba(229, 62, 62, 0.4); text-transform: uppercase; letter-spacing: 0.8px; font-weight: bold; margin-top: 0; padding: 12px; border-radius: 8px;">Desbloquear Pantalla</button>
+        
+        <button id="btn_volver_pin" onclick="window.location.href='principal.html'" style="background: linear-gradient(135deg, #1a202c, #111827); color: #D4AF37; border: 1px solid rgba(212, 175, 55, 0.5); box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-transform: uppercase; letter-spacing: 0.8px; font-weight: bold; margin-top: 12px; padding: 12px; border-radius: 8px;">Volver al Inicio</button>
+    </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<div class="wrapper">
+    
+    <!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn">💸 Avances / Retiros</a>
+        <a href="conversor.html" class="tab-btn">🧮 Conversor Monetario</a>
+        <a href="facturar.html" class="tab-btn">🛒 Facturar Venta</a>
+        <a href="caja_registradora.html" class="tab-btn">🧾 Caja Registradora</a>
+        <a href="control_inventario.html" class="tab-btn">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn">🧾 Pagos y Servicios</a>
+        <a href="conciliacion_pto.html" class="tab-btn">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn active">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        
+        <div class="card">
+            <h2>🏦 Fondo de Caja Manual</h2>
+            <div class="grid-4">
+                <div><label>Fondo ($):</label><input type="number" step="0.01" id="caja_fondo_usd"></div>
+                <div><label>Fondo (BS):</label><input type="number" step="0.01" id="caja_fondo_bs"></div>
+                <div><label>Fondo (COP):</label><input type="number" id="caja_fondo_cop"></div>
+                <div><label>Fondo (EUR):</label><input type="number" step="0.01" id="caja_fondo_eur"></div>
+            </div>
+            <button onclick="guardarFondoCaja()" style="background: var(--primary);">Guardar Fondo</button>
+        </div>
+        
+        <div class="card">
+            <h2>📦 Recargas Telefónica.</h2>
+            <div class="grid-2">
+                <div>
+                    <label>Operadora:</label>
+                    <select id="form_recarga_op"><option value="Digitel">Digitel</option><option value="Movistar">Movistar</option><option value="Movilnet">Movilnet</option></select>
+                </div>
+                <div><label>Monto a Recargar (BS):</label><input type="number" step="0.01" id="form_recarga_monto"></div>
+            </div>
+            <div class="grid-2">
+                <div><label>Cobranza Fija (BS):</label><input type="number" step="0.01" id="form_recarga_cobro"></div>
+                <div><label>O % de Recargo automático:</label><input type="number" step="0.01" id="form_recarga_porcentaje"></div>
+            </div>
+            <button onclick="guardarRecarga()" style="background: var(--primary);">Añadir Plan Recarga</button>
+            <div style="overflow-x: auto;">
+                <table id="tabla_gestion_recargas" style="margin-top:15px;"></table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📶 Planes de WiFi</h2>
+            <div class="grid-2">
+                <div>
+                    <label>Categoría:</label>
+                    <select id="form_wifi_cat"><option value="Eventual">Eventual</option><option value="Frecuente">Frecuente</option></select>
+                </div>
+                <div><label>Descripción del Tiempo:</label><input type="text" id="form_wifi_tiempo" placeholder="Ej: 1 Hora"></div>
+            </div>
+            <label>Costo de Cobranza ($):</label><input type="number" step="0.01" id="form_wifi_cobro">
+            <button onclick="guardarWifi()" style="background: var(--primary);">Añadir Plan Wifi</button>
+            <div style="overflow-x: auto;">
+                <table id="tabla_gestion_wifi" style="margin-top:15px;"></table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📁 Categorías de Productos</h2>
+            <input type="hidden" id="edit_categoria_index" value="-1">
+            <div class="flex-row">
+                <input type="text" id="nueva_categoria_input" style="flex:1;" placeholder="Nombre de categoría... Ej: Dulces">
+                <button id="btn_guardar_categoria" onclick="guardarCategoria()" style="background: var(--primary); width:auto; margin:0;">Crear Categoría</button>
+                <button id="btn_cancelar_categoria" onclick="cancelarEdicionCategoria()" style="background:var(--danger); width:auto; margin:0; display:none;">Cancelar</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table id="tabla_gestion_categorias" style="margin-top:15px;"></table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📦 Crear / Modificar Mercancía en Catálogo</h2>
+            <input type="hidden" id="edit_prod_uuid" value="">
+            
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Tipo de Producto:</label>
+                <select id="form_prod_tipo" onchange="alternarTipoProducto()">
+                    <option value="simple">📦 Unitario</option>
+                    <option value="preparado">☕ Compuesto</option>
+                </select>
+            </div>
+            
+            <div class="grid-2">
+                <div><label>Nombre Comercial:</label><input type="text" id="form_prod_nom"></div>
+                <div><label>Categoría:</label><select id="form_prod_cat"></select></div>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <label>Moneda Original del Costo:</label>
+                    <select id="form_prod_moneda">
+                        <option value="USD">Dólares</option><option value="BS">Bolívares</option><option value="COP">Pesos</option><option value="EUR">Euros</option>
+                    </select>
+                </div>
+                <div><label style="color:var(--primary);">Costo de Compra (Base Real Invertida):</label><input type="number" step="0.01" id="form_prod_fuente"></div>
+            </div>
+            
+            <div class="grid-2">
+                <div><label>Precio:</label><input type="number" step="0.01" id="form_prod_base"></div>
+                <div></div>
+            </div>
+            
+            <div class="grid-2" id="contenedor_stock_directo">
+                <div>
+                    <label>Unidad de Medida:</label>
+                    <select id="form_prod_unidad"><option value="Unidad">Unidad</option><option value="Gramo">Gramo</option><option value="Mililitro">Mililitro</option></select>
+                </div>
+                <div><label>Stock Físico Inicial:</label><input type="number" step="0.01" id="form_prod_stock"></div>
+            </div>
+            
+            <div class="grid-2" id="contenedor_umbrales" style="margin-top:10px; padding: 10px; border: 1px solid var(--border); background: var(--item-bg);">
+                <div><label style="color:var(--warning);">Alerta Amarilla (Poco Stock):</label><input type="number" id="form_prod_u_amarillo" value="5"></div>
+                <div><label style="color:var(--danger);">Alerta Roja (Sin Stock):</label><input type="number" id="form_prod_u_rojo" value="0"></div>
+            </div>
+            
+            <div id="contenedor_receta" style="display:none; margin-top:15px; padding:15px; border:1px solid var(--warning); background:var(--item-bg);">
+                <label style="color:var(--warning);">Ingredientes / Insumos que lo componen</label>
+                <div id="ingredientes-container"></div>
+                <button class="btn-warning" onclick="agregarFilaIngrediente()" style="margin-top: 10px;">+ Agregar Insumo</button>
+            </div>
+            
+            <button id="btn_guardar_producto" onclick="guardarProductoSupabase()" style="background:var(--primary); margin-top:15px;">💾 Guardar Producto en Catálogo</button>
+            <button id="btn_cancelar_edit" onclick="limpiarFormProducto()" style="background:var(--danger); display:none;">Cancelar Edición</button>
+            
+            <h3 style="margin-top:25px; border-bottom: 1px solid var(--border); padding-bottom:5px;">Catálogo Actual Registrado</h3>
+            <div class="grid-2" style="margin-bottom: 10px;">
+                <input type="text" id="buscar_gestion_prod" class="search-input" placeholder="🔍 Buscar producto..." oninput="renderTablaGestionProductos()" style="margin-top:0;">
+                <select id="orden_gestion_prod" class="search-input" onchange="renderTablaGestionProductos()" style="margin-top:0;">
+                    <option value="az">Orden Alfabético</option><option value="cat">Orden por Categoría</option>
+                </select>
+            </div>
+            <div style="overflow-x:auto;">
+                <table id="tabla_gestion_productos"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+    let CATEGORIAS = [];
+    let ADMIN_PASS_DB = '151016'; 
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        mostrarModalLocal("Autenticando", "Verificando sesión activa...");
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) {
+                cerrarModalGlobal();
+                alert("No hay una sesión activa.");
+                window.location.href = 'index.html';
+                return;
+            }
+            await inicializarDatos(data.session.user.id);
+        } catch (err) { 
+            console.error(err);
+            cerrarModalGlobal();
+            alert("Error conectando con el servidor.");
+        }
+    });
+
+    async function inicializarDatos(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        } else {
+            cerrarModalGlobal();
+            return alert("Error: Perfil no vinculado a un local.");
+        }
+
+        let conf = null, localData = null;
+        try {
+            let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+            conf = resConf.data;
+        } catch(e) { console.warn("Sin configuración"); }
+
+        try {
+            let resLocal = await supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+            localData = resLocal.data;
+        } catch(e) { console.warn("Sin local"); }
+
+        if (conf) {
+            CONFIG_GLOBAL = conf;
+        }
+
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
+        let etiquetaModulo = "Gestión de Catálogo"; 
+
+        document.getElementById('main_top_title').innerHTML = `
+            🏪 ${nombreLocal} 
+            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                📌 Módulo: ${etiquetaModulo}
+            </span>
+        `;
+
+        await cargarTodoDesdeSupabase();
+        cerrarModalGlobal();
+    }
+
+    async function cargarTodoDesdeSupabase() {
+        if(!CURRENT_LOCAL_ID) return;
+        try {
+            let { data: conf } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+                CATEGORIAS = conf.categorias || [];
+                CATEGORIAS.sort((a, b) => a.localeCompare(b));
+                if(conf.identidad && conf.identidad.admin_pass) ADMIN_PASS_DB = conf.identidad.admin_pass;
+
+                if (conf.caja_fondo) {
+                    document.getElementById('caja_fondo_usd').value = conf.caja_fondo.usd || 0;
+                    document.getElementById('caja_fondo_bs').value = conf.caja_fondo.bs || 0;
+                    document.getElementById('caja_fondo_cop').value = conf.caja_fondo.cop || 0;
+                    document.getElementById('caja_fondo_eur').value = conf.caja_fondo.eur || 0;
+                }
+            }
+
+            let { data: reqCat } = await supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
+            if(reqCat) {
+                CATALOGO = reqCat.map(p => ({
+                    uuid: p.id, nom: p.nombre, cat: p.categoria || "General", tipo: p.tipo || "simple",
+                    base: p.precio_base || 0, mBase: p.moneda_base || 'USD',
+                    fuente: p.costo_fuente || 0, unidad: p.unidad || 'Unidad', stock: p.stock || 0, 
+                    umbralAmarillo: p.umbral_amarillo || 5, umbralRojo: p.umbral_rojo || 0, receta: p.receta || []
+                }));
+            }
+
+            renderCategorias();
+            renderTablaGestionProductos();
+            renderTablaGestionRecargas();
+            renderTablaGestionWifi();
+        } catch(e) {
+            console.error(e);
+            alert("Error cargando base de datos.");
+        }
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('active');
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        let icono = document.getElementById('icono_ojo_pin');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icono.innerText = '🙈';
+        } else {
+            input.type = 'password';
+            icono.innerText = '👁️';
+        }
+    }
+
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let btn = document.getElementById('btn_desbloquear_pin');
+
+        btn.innerHTML = "⏳ Cargando...";
+        btn.disabled = true;
+
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        if (pinIngresado === ADMIN_PASS_DB) {
+            let pantalla = document.getElementById('pantalla_bloqueo_admin');
+            pantalla.style.animation = 'fadeIn 0.3s reverse';
+            setTimeout(() => {
+                pantalla.style.display = 'none';
+                btn.innerHTML = "Desbloquear Pantalla";
+                btn.disabled = false;
+            }, 300);
+        } else {
+            alert("❌ PIN Incorrecto.");
+            document.getElementById('pin_ingreso_body').value = '';
+            btn.innerHTML = "Desbloquear Pantalla";
+            btn.disabled = false;
+        }
+    }
+
+    async function guardarConfiguracionParcial(columna, objetoJson) {
+        if (!CURRENT_LOCAL_ID) return false;
+        let payload = { [columna]: objetoJson };
+        let { data, error } = await supabaseClient.from('configuraciones').update(payload).eq('local_id', CURRENT_LOCAL_ID).select();
+        if (error) { alert("Error actualizando: " + error.message); return false; }
+        if (!data || data.length === 0) {
+            payload.local_id = CURRENT_LOCAL_ID;
+            let { error: errInsert } = await supabaseClient.from('configuraciones').insert([payload]);
+            if (errInsert) { alert("Error inicializando config: " + errInsert.message); return false; }
+        }
+        return true;
+    }
+
+    async function guardarFondoCaja() {
+        let fondo = {
+            usd: parseFloat(document.getElementById('caja_fondo_usd').value) || 0,
+            bs: parseFloat(document.getElementById('caja_fondo_bs').value) || 0,
+            cop: parseFloat(document.getElementById('caja_fondo_cop').value) || 0,
+            eur: parseFloat(document.getElementById('caja_fondo_eur').value) || 0
+        };
+        mostrarModalLocal("Guardando", "Actualizando fondo de caja en Supabase...");
+        let exito = await guardarConfiguracionParcial('caja_fondo', fondo);
+        if(exito) {
+            CONFIG_GLOBAL.caja_fondo = fondo;
+            cerrarModalGlobal();
+            alert("✅ Fondo de caja actualizado.");
+        }
+    }
+
+    async function guardarRecarga() {
+        let op = document.getElementById('form_recarga_op').value;
+        let monto = parseFloat(document.getElementById('form_recarga_monto').value) || 0;
+        let cobro = parseFloat(document.getElementById('form_recarga_cobro').value) || 0;
+        let porcentaje = parseFloat(document.getElementById('form_recarga_porcentaje').value) || 0;
+
+        if(monto <= 0) return alert("El monto debe ser mayor a 0.");
+
+        let recargas = CONFIG_GLOBAL.recargas || { Digitel: [], Movistar: [], Movilnet: [] };
+        if(Array.isArray(recargas)) {
+            let viejas = recargas;
+            recargas = { Digitel: [], Movistar: [], Movilnet: [] };
+            viejas.forEach(v => { if(recargas[v.operadora]) recargas[v.operadora].push(v); });
+        }
+        
+        if(!recargas[op]) recargas[op] = [];
+        recargas[op].push({ id: 'rec_' + Date.now(), operadora: op, monto: monto, cobro: cobro, porcentaje: porcentaje });
+        
+        mostrarModalLocal("Guardando", "Guardando plan de recarga...");
+        let exito = await guardarConfiguracionParcial('recargas', recargas);
+        if(exito) {
+            CONFIG_GLOBAL.recargas = recargas;
+            document.getElementById('form_recarga_monto').value = '';
+            document.getElementById('form_recarga_cobro').value = '';
+            document.getElementById('form_recarga_porcentaje').value = '';
+            renderTablaGestionRecargas();
+            cerrarModalGlobal();
+        }
+    }
+
+    function renderTablaGestionRecargas() {
+        let recargas = CONFIG_GLOBAL.recargas || { Digitel: [], Movistar: [], Movilnet: [] };
+        let arr = [];
+        if(Array.isArray(recargas)) { arr = recargas; } 
+        else { Object.values(recargas).forEach(lista => arr = arr.concat(lista)); }
+
+        let html = "<tr><th>Operadora</th><th>Monto BS</th><th>Cobranza BS / %</th><th>Acción</th></tr>";
+        arr.forEach(r => {
+            html += `<tr>
+                <td>${r.operadora}</td>
+                <td>${r.monto} BS</td>
+                <td>${r.cobro} BS (${r.porcentaje}%)</td>
+                <td><button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="eliminarRecarga('${r.id}', '${r.operadora}')">🗑️</button></td>
+            </tr>`;
+        });
+        let t = document.getElementById('tabla_gestion_recargas');
+        if(t) t.innerHTML = html;
+    }
+
+    async function eliminarRecarga(id, op) {
+        let recargas = CONFIG_GLOBAL.recargas;
+        if(Array.isArray(recargas)) { recargas = recargas.filter(r => r.id !== id); }
+        else if(recargas[op]) { recargas[op] = recargas[op].filter(r => r.id !== id); }
+        
+        mostrarModalLocal("Borrando", "Eliminando plan...");
+        let exito = await guardarConfiguracionParcial('recargas', recargas);
+        if(exito) { CONFIG_GLOBAL.recargas = recargas; renderTablaGestionRecargas(); cerrarModalGlobal(); }
+    }
+
+    async function guardarWifi() {
+        let cat = document.getElementById('form_wifi_cat').value;
+        let tiempo = document.getElementById('form_wifi_tiempo').value.trim();
+        let cobro = parseFloat(document.getElementById('form_wifi_cobro').value) || 0;
+
+        if(!tiempo || cobro <= 0) return alert("Completa los datos correctamente.");
+
+        let planes = CONFIG_GLOBAL.wifi || { Eventual: [], Frecuente: [] };
+        if(Array.isArray(planes)) {
+            let viejos = planes; planes = { Eventual: [], Frecuente: [] };
+            viejos.forEach(v => { if(planes[v.categoria]) planes[v.categoria].push(v); });
+        }
+        
+        if(!planes[cat]) planes[cat] = [];
+        planes[cat].push({ id: 'wifi_' + Date.now(), categoria: cat, tiempo: tiempo, cobro: cobro });
+
+        mostrarModalLocal("Guardando", "Guardando plan WiFi...");
+        let exito = await guardarConfiguracionParcial('wifi', planes);
+        if(exito) {
+            CONFIG_GLOBAL.wifi = planes;
+            document.getElementById('form_wifi_tiempo').value = '';
+            document.getElementById('form_wifi_cobro').value = '';
+            renderTablaGestionWifi();
+            cerrarModalGlobal();
+        }
+    }
+
+    function renderTablaGestionWifi() {
+        let planes = CONFIG_GLOBAL.wifi || { Eventual: [], Frecuente: [] };
+        let arr = [];
+        if(Array.isArray(planes)) { arr = planes; } 
+        else { Object.values(planes).forEach(lista => arr = arr.concat(lista)); }
+
+        let html = "<tr><th>Categoría</th><th>Tiempo</th><th>Costo ($)</th><th>Acción</th></tr>";
+        arr.forEach(p => {
+            html += `<tr>
+                <td>${p.categoria}</td>
+                <td>${p.tiempo}</td>
+                <td>$${p.cobro}</td>
+                <td><button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="eliminarWifi('${p.id}', '${p.categoria}')">🗑️</button></td>
+            </tr>`;
+        });
+        let t = document.getElementById('tabla_gestion_wifi');
+        if(t) t.innerHTML = html;
+    }
+
+    async function eliminarWifi(id, cat) {
+        let planes = CONFIG_GLOBAL.wifi;
+        if(Array.isArray(planes)) { planes = planes.filter(p => p.id !== id); }
+        else if(planes[cat]) { planes[cat] = planes[cat].filter(p => p.id !== id); }
+        
+        mostrarModalLocal("Borrando", "Eliminando plan...");
+        let exito = await guardarConfiguracionParcial('wifi', planes);
+        if(exito) { CONFIG_GLOBAL.wifi = planes; renderTablaGestionWifi(); cerrarModalGlobal(); }
+    }
+
+    function renderCategorias() {
+        CATEGORIAS.sort((a, b) => a.localeCompare(b));
+
+        let html = "<tr><th>Nombre de la Categoría</th><th>Acción</th></tr>";
+        CATEGORIAS.forEach((c, i) => {
+            html += `<tr>
+                        <td>${c}</td>
+                        <td style="text-align:right;">
+                            <button class="btn-info" style="padding:4px 10px; margin:0; margin-right:5px;" onclick="editarCategoria(${i})">✏️</button>
+                            <button class="btn-danger" style="padding:4px 10px; margin:0;" onclick="eliminarCategoria(${i})">🗑️</button>
+                        </td>
+                    </tr>`;
+        });
+        let t = document.getElementById('tabla_gestion_categorias'); 
+        if(t) t.innerHTML = html;
+        
+        let catOpts = CATEGORIAS.map(c => `<option value="${c}">${c}</option>`).join(''); 
+        let el = document.getElementById('form_prod_cat'); 
+        if(el) el.innerHTML = catOpts;
+    }
+
+    async function guardarCategoria() { 
+        let n = document.getElementById('nueva_categoria_input').value.trim(); 
+        let idx = parseInt(document.getElementById('edit_categoria_index').value);
+
+        if(!n) return alert("El nombre no puede estar vacío.");
+
+        if(idx >= 0) {
+            if (CATEGORIAS[idx] !== n && CATEGORIAS.includes(n)) {
+                return alert("Ya existe una categoría con ese nombre.");
+            }
+            CATEGORIAS[idx] = n;
+        } else {
+            if(CATEGORIAS.includes(n)) {
+                return alert("La categoría ya existe.");
+            }
+            CATEGORIAS.push(n); 
+        }
+
+        mostrarModalLocal("Guardando", idx >= 0 ? "Actualizando categoría..." : "Registrando categoría...");
+        await guardarConfiguracionParcial('categorias', CATEGORIAS); 
+        renderCategorias(); 
+        cancelarEdicionCategoria();
+        cerrarModalGlobal();
+    }
+
+    function editarCategoria(i) {
+        document.getElementById('nueva_categoria_input').value = CATEGORIAS[i];
+        document.getElementById('edit_categoria_index').value = i;
+        document.getElementById('btn_guardar_categoria').innerText = "Guardar Cambios";
+        document.getElementById('btn_cancelar_categoria').style.display = "inline-block";
+        document.getElementById('nueva_categoria_input').focus();
+    }
+
+    function cancelarEdicionCategoria() {
+        document.getElementById('nueva_categoria_input').value = '';
+        document.getElementById('edit_categoria_index').value = "-1";
+        document.getElementById('btn_guardar_categoria').innerText = "Crear Categoría";
+        document.getElementById('btn_cancelar_categoria').style.display = "none";
+    }
+
+    async function eliminarCategoria(i) {
+        if(!confirm(`¿Borrar la categoría "${CATEGORIAS[i]}"?`)) return;
+        CATEGORIAS.splice(i,1);
+        mostrarModalLocal("Borrando", "Eliminando categoría...");
+        await guardarConfiguracionParcial('categorias', CATEGORIAS);
+        renderCategorias();
+        cancelarEdicionCategoria();
+        cerrarModalGlobal();
+    }
+
+    function alternarTipoProducto() {
+        let tipo = document.getElementById('form_prod_tipo').value;
+        document.getElementById('contenedor_stock_directo').style.display = tipo === 'simple' ? 'grid' : 'none';
+        document.getElementById('contenedor_umbrales').style.display = tipo === 'simple' ? 'grid' : 'none';
+        document.getElementById('contenedor_receta').style.display = tipo === 'preparado' ? 'block' : 'none';
+    }
+
+    function agregarFilaIngrediente() {
+        let cont = document.getElementById('ingredientes-container');
+        let rowId = 'ing_' + Date.now();
+        let optCatalogo = CATALOGO.filter(p => p.tipo === 'simple').map(p => `<option value="${p.uuid}">${p.nom}</option>`).join('');
+        
+        if(!optCatalogo) return alert("Debe crear productos simples (insumos) primero para hacer recetas.");
+
+        cont.insertAdjacentHTML('beforeend', `
+            <div class="flex-row" id="${rowId}" style="margin-bottom:5px;">
+                <select class="ing_sel" style="flex:2;">${optCatalogo}</select>
+                <input type="number" step="0.01" placeholder="Cant. usada" class="ing_cant" style="flex:1;">
+                <button class="btn-danger" style="margin:0; padding: 4px 10px;" onclick="document.getElementById('${rowId}').remove()">X</button>
+            </div>
+        `);
+    }
+
+    async function guardarProductoSupabase() {
+        let nom = document.getElementById('form_prod_nom').value.trim(); 
+        let cat = document.getElementById('form_prod_cat').value; 
+        if(!nom) return alert("El nombre del producto es obligatorio.");
+        
+        let uuid = document.getElementById('edit_prod_uuid').value;
+        let tipoProd = document.getElementById('form_prod_tipo').value;
+        
+        let recetaArr = [];
+        if(tipoProd === 'preparado') {
+            document.querySelectorAll('#ingredientes-container .flex-row').forEach(row => {
+                let idIng = row.querySelector('.ing_sel').value;
+                let cantIng = parseFloat(row.querySelector('.ing_cant').value) || 0;
+                if(idIng && cantIng > 0) recetaArr.push({ uuid: idIng, cant: cantIng });
+            });
+        }
+
+        let precioBaseVal = parseFloat(document.getElementById('form_prod_base').value) || 0;
+
+        let payload = { 
+            local_id: CURRENT_LOCAL_ID, 
+            nombre: nom, 
+            categoria: cat || "General", 
+            tipo: tipoProd, 
+            precio_base: precioBaseVal, 
+            moneda_base: document.getElementById('form_prod_moneda').value || 'USD',
+            precio_venta: precioBaseVal, 
+            moneda_venta: document.getElementById('form_prod_moneda').value || 'USD',
+            costo_fuente: parseFloat(document.getElementById('form_prod_fuente').value) || 0, 
+            stock: tipoProd === 'simple' ? (parseFloat(document.getElementById('form_prod_stock').value) || 0) : 0,
+            unidad: document.getElementById('form_prod_unidad').value || 'Unidad',
+            umbral_amarillo: parseFloat(document.getElementById('form_prod_u_amarillo').value) || 5,
+            umbral_rojo: parseFloat(document.getElementById('form_prod_u_rojo').value) || 0,
+            receta: recetaArr,
+            activo: true 
+        };
+
+        mostrarModalLocal("Sincronizando", "Guardando producto en Supabase...");
+        try { 
+            let res;
+            if (uuid && uuid !== "") {
+                res = await supabaseClient.from('catalogo').update(payload).eq('id', uuid);
+            } else {
+                res = await supabaseClient.from('catalogo').insert([payload]);
+            }
+
+            if (res.error) throw res.error; 
+            
+            await cargarTodoDesdeSupabase(); 
+            limpiarFormProducto(); 
+            cerrarModalGlobal(); 
+            alert("✅ Producto guardado correctamente."); 
+        } catch(err) { 
+            cerrarModalGlobal(); 
+            alert("❌ Error de guardado: " + err.message); 
+        }
+    }
+
+    function editarProducto(idx) {
+        let p = CATALOGO[idx]; 
+        document.getElementById('edit_prod_uuid').value = p.uuid || ''; 
+        document.getElementById('form_prod_tipo').value = p.tipo || 'simple'; 
+        alternarTipoProducto();
+        document.getElementById('form_prod_nom').value = p.nom; 
+        document.getElementById('form_prod_cat').value = p.cat; 
+        document.getElementById('form_prod_moneda').value = p.mBase || 'USD';
+        document.getElementById('form_prod_base').value = p.base; 
+        document.getElementById('form_prod_fuente').value = p.fuente; 
+        document.getElementById('form_prod_stock').value = p.stock; 
+        document.getElementById('form_prod_unidad').value = p.unidad || 'Unidad'; 
+        document.getElementById('form_prod_u_amarillo').value = p.umbralAmarillo || 5; 
+        document.getElementById('form_prod_u_rojo').value = p.umbralRojo || 0; 
+        
+        let contReceta = document.getElementById('ingredientes-container');
+        contReceta.innerHTML = '';
+        if(p.tipo === 'preparado' && p.receta) {
+            p.receta.forEach(ing => {
+                let rowId = 'ing_' + Date.now() + Math.random();
+                let optCatalogo = CATALOGO.filter(x => x.tipo === 'simple').map(x => `<option value="${x.uuid}" ${x.uuid === ing.uuid ? 'selected' : ''}>${x.nom}</option>`).join('');
+                contReceta.insertAdjacentHTML('beforeend', `
+                    <div class="flex-row" id="${rowId}" style="margin-bottom:5px;">
+                        <select class="ing_sel" style="flex:2;">${optCatalogo}</select>
+                        <input type="number" step="0.01" class="ing_cant" value="${ing.cant}" style="flex:1;">
+                        <button class="btn-danger" style="margin:0; padding: 4px 10px;" onclick="document.getElementById('${rowId}').remove()">X</button>
+                    </div>
+                `);
+            });
+        }
+
+        document.getElementById('btn_cancelar_edit').style.display = "inline-block"; 
+        window.scrollTo({ top: document.querySelector('.card:nth-child(5)').offsetTop, behavior: 'smooth' });
+    }
+
+    function limpiarFormProducto() { 
+        ['edit_prod_uuid','form_prod_nom','form_prod_base','form_prod_stock','form_prod_fuente'].forEach(id => { 
+            let el = document.getElementById(id); if(el) el.value = ""; 
+        }); 
+        document.getElementById('ingredientes-container').innerHTML = '';
+        document.getElementById('btn_cancelar_edit').style.display = "none"; 
+        document.getElementById('form_prod_tipo').value = 'simple';
+        alternarTipoProducto();
+    }
+
+    async function eliminarProductoSupabase(uuid) { 
+        if(!confirm("¿Deseas eliminar este producto por completo del catálogo?")) return; 
+        mostrarModalLocal("Borrando", "Eliminando de la base de datos..."); 
+        try { 
+            const { error } = await supabaseClient.from('catalogo').delete().eq('id', uuid); 
+            if (error) throw error; 
+            await cargarTodoDesdeSupabase(); 
+            cerrarModalGlobal(); 
+        } catch(err) { 
+            cerrarModalGlobal(); 
+            alert("❌ Error al borrar: " + err.message); 
+        } 
+    }
+
+    function renderTablaGestionProductos() {
+        let ord = document.getElementById('orden_gestion_prod') ? document.getElementById('orden_gestion_prod').value : "az";
+        let arr = [...CATALOGO];
+        
+        arr.sort((a,b) => ord === 'cat' ? a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom) : a.nom.localeCompare(b.nom)); 
+        
+        let q = document.getElementById('buscar_gestion_prod') ? document.getElementById('buscar_gestion_prod').value.toLowerCase() : ""; 
+        let html = `<tr><th>Nombre</th><th>Cat.</th><th>Precio</th><th>Stock</th><th>Acción</th></tr>`;
+        
+        arr.filter(p => p.nom.toLowerCase().includes(q)).forEach((p) => { 
+            let idxOriginal = CATALOGO.findIndex(x => x.uuid === p.uuid);
+            html += `
+            <tr>
+                <td><strong>${p.nom}</strong><br><small style="color:var(--muted)">${p.tipo==='preparado'?'Receta':'Simple'}</small></td>
+                <td>${p.cat}</td>
+                <td>$${p.base}</td>
+                <td style="color:${p.stock > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${p.tipo==='preparado'?'N/A':p.stock}</td>
+                <td>
+                    <button class="btn-info" style="padding:6px; margin-bottom:4px;" onclick="editarProducto(${idxOriginal})">✏️</button> 
+                    <button class="btn-danger" style="padding:6px;" onclick="eliminarProductoSupabase('${p.uuid}')">🗑️</button>
+                </td>
+            </tr>`; 
+        });
+        let t = document.getElementById('tabla_gestion_productos'); 
+        if(t) t.innerHTML = html;
+    }
+
+    function abrirModalGlobal(titulo, htmlContent, isFullscreen = false) { 
+        document.getElementById('global_modal_title').innerText = titulo; 
+        document.getElementById('global_modal_body').innerHTML = htmlContent; 
+        let modalBox = document.querySelector('.custom-modal-box'); 
+        if (isFullscreen) modalBox.style.width = "95vw"; 
+        else modalBox.style.width = "550px"; 
+        document.getElementById('global_modal').style.display = 'flex'; 
+    }
+    
+    function cerrarModalGlobal() { 
+        document.getElementById('global_modal').style.display = 'none'; 
+    }
+    
+    function mostrarModalLocal(titulo, msg) { 
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem; color:var(--text);">⏳ ${msg}</div>`); 
+    }
+    
+    function formatearNumero(v, d = 2) { 
+        if (isNaN(v) || v === null || v === undefined) return "0"; 
+        let num = parseFloat(v); 
+        if (d === 0) num = Math.round(num); 
+        let p = num.toFixed(d).split('.'); 
+        p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+        if (d > 0 && p[1] === "00") return p[0]; 
+        return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
+    }
+</script>
+</body>
+</html>

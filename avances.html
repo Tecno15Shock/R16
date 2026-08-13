@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avances / Retiros</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        /* ========================================================= */
+        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
+        /* ========================================================= */
+        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* ========================================================= */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
+        .sidebar .tab-btn { background: none; color: white; /* <-- Cambiado a blanco */border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        /* Etiqueta para diferenciar la página activa en el menú */
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { padding: 20px; max-width: 800px; margin: 0 auto; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border);}
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 5px; color: var(--muted);}
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 1.1rem; }
+        
+        .calc-display { background:var(--primary); padding:20px; border-radius:8px; text-align:center; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+        .calc-display .title { font-size: 0.9rem; color: #bdc3c7; margin-bottom: 10px; }
+        .calc-res.main { font-size:2.2rem; color:#2ecc71; font-weight:bold; margin-bottom: 5px; }
+        .calc-res.sub { font-size:1.2rem; color:#bdc3c7; }
+    </style>
+</head>
+<body>
+
+    <!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <!-- SOLO UN ENLACE DEBE TENER LA CLASE "active" POR PÁGINA -->
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn active">💸 Avances / Retiros</a>
+        <a href="conversor.html" class="tab-btn">🧮 Conversor Monetario</a>
+        <a href="facturar.html" class="tab-btn">🛒 Facturar Venta</a>
+        <a href="caja_registradora.html" class="tab-btn">🧾 Caja Registradora</a>
+        <a href="control_inventario.html" class="tab-btn">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn">🧾 Pagos y Servicios</a>
+        <a href="conciliacion_pto.html" class="tab-btn">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
+    </div>
+
+    <div class="main-content">
+        <div class="card" style="border-top: 4px solid #e67e22;">
+            <h2>💸 Retiro / Avance Efectivo</h2>
+            <div class="grid-2">
+                <div>
+                    <label>Moneda Solicitada (Retiro):</label>
+                    <select id="avance_moneda" onchange="calcularAvance()">
+                        <option value="BS">Bolívares (BS)</option>
+                        <option value="USD">Dólares (USD)</option>
+                        <option value="COP">Pesos (COP)</option>
+                        <option value="EUR">Euros (EUR)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Monto Solicitado:</label>
+                    <input type="number" step="0.01" id="avance_monto" oninput="calcularAvance()" placeholder="0.00">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label>Porcentaje de Cobro (Comisión %):</label>
+                <input type="number" step="0.1" id="avance_porcentaje" oninput="calcularAvance()" placeholder="Ej: 10">
+            </div>
+
+            <div class="calc-display">
+                <div class="title">DEBES COBRAR AL CLIENTE (INCLUYE COMISIÓN):</div>
+                <div class="calc-res main" id="avance_res_usd">$ 0.00</div>
+                <div class="calc-res sub" id="avance_res_bs">0.00 BS</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data } = await window.supabaseClient.auth.getSession();
+        if (data && data.session) await sincronizarSesionSupabase(data.session);
+        else window.location.href = 'index.html';
+    });
+
+    async function sincronizarSesionSupabase(session) {
+        const userId = session.user.id;
+        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
+        else {
+            let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
+            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        }
+        await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
+    }
+
+    async function cargarTodoDesdeSupabase(email, nombrePerfil) {
+        if(!CURRENT_LOCAL_ID) return;
+        try {
+            let { data: localData } = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).single();
+            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+            }
+
+            // =================================================================
+            // MODIFICA SOLO ESTA ETIQUETA SEGÚN EL ARCHIVO HTML EN EL QUE ESTÉS
+            // Ejemplo: "Avances / Retiros", "Inventario Físico", "Precios", etc.
+            let nombreLocal = localData?.nombre || CONFIG_GLOBAL.identidad?.nombre || 'Sistema';
+            let etiquetaModulo = "Avances / Retiros"; 
+
+            document.getElementById('main_top_title').innerHTML = `
+                🏪 ${nombreLocal} 
+                <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    📌 Módulo: ${etiquetaModulo}
+                </span>
+            `;
+
+            if (typeof calcularAvance === 'function') calcularAvance();
+        } catch(e) { console.error(e); }
+    }
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    function calcularAvance() {
+        let monto = parseFloat(document.getElementById('avance_monto').value) || 0;
+        let moneda = document.getElementById('avance_moneda').value;
+        let porcentaje = parseFloat(document.getElementById('avance_porcentaje').value) || 0;
+        
+        let t = CONFIG_GLOBAL.tasas || { ves: 1, cop: 1, eur: 1 };
+        let tv = parseFloat(t.ves) || 1, tc = parseFloat(t.cop) || 1, te = parseFloat(t.eur) || 1;
+        
+        // Conversión a USD base
+        let montoUsd = parseFloat(moneda === 'BS' ? monto / tv : moneda === 'COP' ? monto / tc : moneda === 'EUR' ? monto / te : monto);
+        
+        let comisionUsd = montoUsd * (porcentaje / 100);
+        let totalCobrarUsd = montoUsd + comisionUsd;
+        
+        document.getElementById('avance_res_usd').innerText = `$ ${formatearNumero(totalCobrarUsd)}`;
+        document.getElementById('avance_res_bs').innerText = `${formatearNumero(totalCobrarUsd * tv)} BS`;
+    }
+
+    function formatearNumero(v, d = 2) { 
+        if (isNaN(v) || v == null) return "0"; 
+        let num = parseFloat(v); if (d === 0) num = Math.round(num); 
+        let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+        if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
+    }
+</script>
+</body>
+</html>

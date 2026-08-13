@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - Sistema Maestro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Librería jsPDF nativa para generación de comprobantes en PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        body.hide-bs .moneda-bs { display: none !important; }
+        body.hide-cop .moneda-cop { display: none !important; }
+        body.hide-eur .moneda-eur { display: none !important; }
+
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+        
+        /* ========================================================= */
+        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
+        /* ========================================================= */
+        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* ========================================================= */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
+        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        /* CONTENEDOR PRINCIPAL */
+        .main-content { 
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px; 
+            padding-bottom: 130px; 
+        }
+
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: 1px solid var(--border);}
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        
+        .grid-vertical { display: flex; flex-direction: column; gap: 10px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+        @media (max-width: 768px) {
+            .grid-4 { grid-template-columns: 1fr; }
+            .main-content { padding: 10px; padding-bottom: 100px; } 
+        }
+
+        label { font-size: 0.9rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted);}
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
+        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; }
+        
+        .cat-header { background: var(--primary); color: white; padding: 8px 12px; margin-top: 10px; margin-bottom: 5px; border-radius: 4px; font-weight: bold; width: 100%; }
+        .consulta-item { border-bottom: 1px solid var(--border); padding: 12px 15px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;}
+        .zebra-list .consulta-item:nth-child(even) { background-color: rgba(0,0,0,0.03); }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    
+    <!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn active">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn">💸 Avances / Retiros</a>
+        <a href="conversor.html" class="tab-btn">🧮 Conversor Monetario</a>
+        <a href="facturar.html" class="tab-btn">🛒 Facturar Venta</a>
+        <a href="caja_registradora.html" class="tab-btn">🧾 Caja Registradora</a>
+        <a href="control_inventario.html" class="tab-btn">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn">🧾 Pagos y Servicios</a>
+        <a href="conciliacion_pto.html" class="tab-btn">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
+    </div>
+
+    <div class="main-content">
+        <div class="card" style="border-top: 4px solid #9b59b6;">
+            <h2>📄 Exportación de Reportes PDF</h2>
+            <label>Tipo de documento:</label>
+            <select id="sel_pdf_exportar" style="border: 2px solid #9b59b6; margin-bottom: 10px;">
+                <option value="" disabled selected>Seleccionar Tipo de documento</option>
+                <option value="inv">Inventario Físico</option>
+                <option value="caja">Precio</option>
+                <option value="inv_caja">Inventario + Precio</option>
+            </select>
+            <label>Moneda:</label>
+            <select id="sel_pdf_moneda" style="border: 2px solid var(--secondary); margin-bottom: 10px;"></select>
+            <label>Orden (PDF):</label>
+            <select id="sel_pdf_orden" style="border: 2px solid var(--primary); margin-bottom: 10px;">
+                <option value="" disabled selected>Seleccionar Orden (PDF)</option>
+                <option value="az">Alfabético</option>
+                <option value="cat">Categorías</option>
+            </select>
+            <label>Filtro de Stock:</label>
+            <select id="sel_pdf_stock" style="border: 2px solid var(--warning);">
+                <option value="" disabled selected>Seleccionar</option>
+                <option value="todos">Mostrar Todo el Catálogo</option>
+                <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
+            </select>
+            
+            <div class="grid-vertical" style="margin-top:15px;">
+                <button onclick="ejecutarAccionPDF('descargar')" style="background:#9b59b6; margin-top:0;">Descargar PDF</button>
+                <button onclick="alert('Lógica de envío API Telegram por integrar')" style="background:#2980b9; margin-top:0;">Enviar PDF (Bot)</button>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #f1c40f;">
+            <h2>📦 Inventario y Caja</h2>
+            <div class="grid-4" style="background:var(--item-bg); padding:10px; border-radius:8px; margin-bottom:15px;">
+                <div><label>Fondo ($):</label><input type="text" id="inv_fondo_usd" readonly></div>
+                <div class="moneda-bs"><label>Fondo (BS):</label><input type="text" id="inv_fondo_bs" readonly></div>
+                <div class="moneda-cop"><label>Fondo (COP):</label><input type="text" id="inv_fondo_cop" readonly></div>
+                <div class="moneda-eur"><label>Fondo (EUR):</label><input type="text" id="inv_fondo_eur" readonly></div>
+            </div>
+            
+            <h3>Existencias en Tiempo Real</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size:0.8rem; margin:0;">Orden:</label>
+                    <select id="orden_inv_fisico" onchange="renderInventarioFisico()" style="margin-top:2px;">
+                        <option value="cat">Ordenar por Categorías</option>
+                        <option value="az">Ordenar Alfabéticamente</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; margin:0;">Filtro de Agotados:</label>
+                    <select id="filtro_stock_fisico" onchange="renderInventarioFisico()" style="margin-top:2px;">
+                        <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
+                        <option value="todos">Mostrar Todo el Catálogo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="inv_lista_readonly" class="zebra-list"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data } = await window.supabaseClient.auth.getSession();
+        if (data && data.session) await sincronizarSesionSupabase(data.session);
+        else window.location.href = 'index.html';
+    });
+
+    async function sincronizarSesionSupabase(session) {
+        const userId = session.user.id;
+        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        } else {
+            let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
+            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        }
+
+        let conf = null, localData = null;
+        try {
+            let resConf = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+            conf = resConf.data;
+        } catch(e) { console.warn("Sin configuración"); }
+
+        try {
+            let resLocal = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+            localData = resLocal.data;
+        } catch(e) { console.warn("Sin local"); }
+
+        if (conf) {
+            CONFIG_GLOBAL = conf;
+            actualizarVisibilidadMonedas();
+            actualizarSelectoresMonedaExportacion();
+            cargarFondos();
+        }
+
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
+        let etiquetaModulo = "Inventario Físico"; 
+
+        document.getElementById('main_top_title').innerHTML = `
+            🏪 ${nombreLocal} 
+            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                📌 Módulo: ${etiquetaModulo}
+            </span>
+        `;
+
+        await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
+    }
+
+    async function cargarTodoDesdeSupabase(email, nombrePerfil) {
+        if(!CURRENT_LOCAL_ID) return;
+        try {
+            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+                actualizarVisibilidadMonedas();
+                actualizarSelectoresMonedaExportacion();
+                cargarFondos();
+            }
+
+            let { data: reqCat } = await window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
+            if(reqCat) {
+                CATALOGO = reqCat.map(p => ({
+                    uuid: p.id, nom: p.nombre, cat: p.categoria || "General", base: p.precio_base || 0, 
+                    mBase: p.moneda_base || 'USD', stock: p.stock || 0, umbral_rojo: p.umbral_rojo || 0
+                }));
+            }
+            renderInventarioFisico();
+        } catch(e) { console.error(e); }
+    }
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    function cargarFondos() {
+        let f = CONFIG_GLOBAL.fondos_caja || { usd:0, bs:0, cop:0, eur:0 };
+        document.getElementById('inv_fondo_usd').value = `$${formatearNumero(f.usd)}`;
+        document.getElementById('inv_fondo_bs').value = `${formatearNumero(f.bs)}`;
+        document.getElementById('inv_fondo_cop').value = `${formatearNumero(f.cop, 0)}`;
+        document.getElementById('inv_fondo_eur').value = `${formatearNumero(f.eur)}`;
+    }
+
+    function renderInventarioFisico() {
+        let ord = document.getElementById('orden_inv_fisico').value; 
+        let filtroStock = document.getElementById('filtro_stock_fisico').value;
+        let arr = [...CATALOGO]; 
+
+        if (filtroStock === 'con_stock') {
+            arr = arr.filter(p => parseFloat(p.stock) > 0);
+        }
+
+        arr.sort((a,b) => ord==='cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom))); 
+        
+        let html = ""; let lC = "";
+        arr.forEach(p => { 
+            if(ord === 'cat' && p.cat !== lC) { 
+                html += `<div class="cat-header">${p.cat.toUpperCase()}</div>`; 
+                lC = p.cat; 
+            } 
+
+            let stockVal = parseFloat(p.stock) || 0;
+            let umbralVal = parseFloat(p.umbral_rojo) || 0;
+            
+            let colorStock = 'var(--success)'; // Verde por defecto
+            if (stockVal <= 0) {
+                colorStock = 'var(--danger)'; // Rojo cuando ya se acabó
+            } else if (stockVal <= umbralVal) {
+                colorStock = 'var(--warning)'; // Amarillo cuando está en o por debajo del umbral asignado
+            }
+
+            html += `
+                <div class="consulta-item">
+                    <span><strong>${limpiarNombre(p.nom)}</strong><br><small>Categoría: ${p.cat}</small></span>
+                    <span style="font-weight:bold; color:${colorStock};">Stock: ${formatearNumero(p.stock, 2)}</span>
+                </div>`; 
+        });
+        document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--muted); text-align:center;">No hay inventario registrado con los filtros seleccionados.</p>';
+    }
+
+    function actualizarSelectoresMonedaExportacion() {
+        let sel = document.getElementById('sel_pdf_moneda');
+        if(sel) sel.innerHTML = `<option value="ALL" selected>Todas las Monedas</option><option value="USD">Solo USD</option><option value="BS">Solo BS</option><option value="COP">Solo COP</option><option value="EUR">Solo EUR</option>`;
+    }
+
+    function ejecutarAccionPDF(accion) {
+        let valDoc = document.getElementById('sel_pdf_exportar').value;
+        let modMon = document.getElementById('sel_pdf_moneda').value;
+        let ordPdf = document.getElementById('sel_pdf_orden').value;
+        let filtroStock = document.getElementById('sel_pdf_stock').value; 
+        if(!valDoc || !modMon || !ordPdf || !filtroStock) return alert("Seleccione todos los filtros obligatorios.");
+        
+        if (accion === 'descargar') {
+            generarPDFInventarioNativo(valDoc, modMon, ordPdf, filtroStock);
+        }
+    }
+
+    // =======================================================
+    // GENERACIÓN DE PDF NATIVO CON jsPDF
+    // =======================================================
+    function generarPDFInventarioNativo(valDoc, modMoneda, ordPdf, filtroStock) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Refresquería Flor';
+        let tasasObj = CONFIG_GLOBAL.tasas || {};
+        let tasaBs = parseFloat(tasasObj.ves) || 1; 
+        let tasaCop = parseFloat(tasasObj.cop) || 1; 
+        let tasaEur = parseFloat(tasasObj.eur) || 1;
+
+        let showCaja = ["inv_caja", "caja"].includes(valDoc);
+
+        let arr = [...CATALOGO];
+        if (filtroStock === 'con_stock') arr = arr.filter(p => parseFloat(p.stock) > 0);
+        arr.sort((a,b) => ordPdf === 'cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)));
+
+        // Encabezado institucional
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(44, 62, 80);
+        doc.text(nombreLocal, 14, 18);
+
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(127, 140, 141);
+        doc.text(`Reporte de Inventario (${valDoc.toUpperCase()}) - ${new Date().toLocaleDateString()}`, 14, 24);
+
+        doc.setDrawColor(52, 152, 219);
+        doc.setLineWidth(0.5);
+        doc.line(14, 28, 196, 28);
+
+        let posY = 34;
+        let lC = "";
+
+        arr.forEach((p, index) => {
+            if (ordPdf === 'cat' && p.cat !== lC) {
+                if (posY > 265) { doc.addPage(); posY = 20; }
+                doc.setFillColor(44, 62, 80);
+                doc.rect(14, posY, 182, 7, "F");
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(9);
+                doc.setTextColor(255, 255, 255);
+                doc.text(p.cat.toUpperCase(), 18, posY + 4.5);
+                posY += 7;
+                lC = p.cat;
+            }
+
+            let arrayCaja = showCaja ? obtenerLineasMonedas(convertirA_USD(p.base, p.mBase), modMoneda, tasaBs, tasaCop, tasaEur) : [];
+            let maxLineas = Math.max(arrayCaja.length, 1);
+            let alturaCelda = Math.max(12, 6 + (maxLineas * 4.5));
+
+            if (posY + alturaCelda > 280) { doc.addPage(); posY = 20; }
+
+            if (index % 2 === 0) {
+                doc.setFillColor(249, 249, 249);
+                doc.rect(14, posY, 182, alturaCelda, "F");
+            }
+
+            // Nombre y Stock del producto
+            let pNom = limpiarNombre(p.nom);
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(44, 62, 80);
+            doc.text(pNom, 18, posY + 5);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(127, 140, 141);
+            doc.text(`Stock: ${p.stock}`, 18, posY + 10);
+
+            // Imprimir bloque de Precio apilado verticalmente
+            if (showCaja) {
+                let colX = 145;
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(44, 62, 80);
+                doc.text("Precio:", colX, posY + 5);
+                
+                doc.setFont("Helvetica", "normal");
+                let offsetV = posY + 9;
+                arrayCaja.forEach(linea => {
+                    doc.text(linea, colX, offsetV);
+                    offsetV += 4.5;
+                });
+            }
+
+            posY += alturaCelda;
+        });
+
+        doc.save(`Inventario_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`);
+    }
+
+    function obtenerLineasMonedas(usd, modMoneda, tv, tc, te) {
+        let lineas = [];
+        if(["ALL", "USD"].includes(modMoneda)) lineas.push(`$${formatearNumero(usd)}`);
+        if(["ALL", "BS"].includes(modMoneda) && tv > 0) lineas.push(`${formatearNumero(usd*tv)} BS`);
+        if(["ALL", "COP"].includes(modMoneda) && tc > 0) lineas.push(`${formatearNumero(usd*tc, 0)} COP`);
+        if(["ALL", "EUR"].includes(modMoneda) && te > 0) lineas.push(`${formatearNumero(usd*te)} EUR`);
+        return lineas;
+    }
+
+    function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
+    function formatearNumero(v, d = 2) { if (isNaN(v) || v == null) return "0"; let num = parseFloat(v); if (d === 0) num = Math.round(num); let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; }
+    function convertirA_USD(m, mon) { let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 }; return parseFloat(mon === 'BS' ? m / t.ves : mon === 'COP' ? m / t.cop : mon === 'EUR' ? m / t.eur : m); }
+    function actualizarVisibilidadMonedas() { let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 }; parseFloat(t.ves) === 0 ? document.body.classList.add('hide-bs') : document.body.classList.remove('hide-bs'); parseFloat(t.cop) === 0 ? document.body.classList.add('hide-cop') : document.body.classList.remove('hide-cop'); parseFloat(t.eur) === 0 ? document.body.classList.add('hide-eur') : document.body.classList.remove('hide-eur'); }
+</script>
+</body>
+</html>

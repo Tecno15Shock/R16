@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proveedores e Historial - Sistema Maestro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        body.hide-bs .moneda-bs { display: none !important; }
+        body.hide-cop .moneda-cop { display: none !important; }
+        body.hide-eur .moneda-eur { display: none !important; }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        /* ========================================================= */
+        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
+        /* ========================================================= */
+        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* ========================================================= */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
+        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        /* Etiqueta para diferenciar la página activa en el menú */
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            padding-bottom: 130px; 
+        }
+
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: 1px solid var(--border); }
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media (max-width: 768px) { 
+            .grid-2 { grid-template-columns: 1fr; } 
+            .main-content { padding: 10px; padding-bottom: 100px; }
+        }
+
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; outline: none; }
+        input:focus, select:focus { border-color: var(--secondary); }
+
+        button { 
+            background: linear-gradient(135deg, var(--secondary), #2980b9);
+            color: white; border: none; padding: 12px 18px; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; 
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+        button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4); 
+            opacity: 0.95; 
+        }
+        button:active { transform: translateY(1px); }
+
+        .btn-success { background: linear-gradient(135deg, var(--success), #27ae60) !important; box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3) !important; }
+        .btn-warning { background: linear-gradient(135deg, var(--warning), #d35400) !important; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3) !important; }
+        .btn-danger { background: linear-gradient(135deg, var(--danger), #c0392b) !important; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3) !important; }
+
+        .consulta-item { border-bottom: 1px solid var(--border); padding: 12px 15px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); }
+        .consulta-item:nth-child(even) { background-color: rgba(0,0,0,0.02); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; font-size: 0.9rem; }
+        th { background: var(--primary); color: white; }
+
+        .custom-modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); 
+            z-index: 100000; display: none; align-items: center; justify-content: center; 
+        }
+        .custom-modal-box { 
+            background: var(--card-bg); padding: 30px; border-radius: 16px; 
+            width: 420px; max-width: 90%; text-align: center; position: relative; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            animation: modalScaleUp 0.3s ease-in-out; 
+        }
+        @keyframes modalScaleUp { 
+            from { transform: scale(0.85); opacity: 0; } 
+            to { transform: scale(1); opacity: 1; } 
+        }
+        .custom-modal-title { 
+            font-size: 1.4rem; color: var(--primary); margin-bottom: 15px; 
+            font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; 
+        }
+    </style>
+</head>
+<body>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
+<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 380px; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border-top: 5px solid var(--danger);">
+        <h2 style="color: var(--danger); margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 12px;">🔒 Acceso Protegido</h2>
+        <p style="font-size: 0.95rem; color: var(--muted); margin: 20px 0;">Introduce el PIN de Administrador para ver este módulo:</p>
+        
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" onkeyup="if(event.key==='Enter') verificarPinBody()" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid var(--border); border-radius: 8px; outline: none; background: var(--bg); color: var(--text);">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span>
+        </div>
+
+        <button onclick="verificarPinBody()" class="btn-primary" style="background: linear-gradient(135deg, var(--primary), #1a252f);">Desbloquear Pantalla</button>
+        <button onclick="window.history.back()" class="btn-danger" style="margin-top: 10px;">Volver Atrás</button>
+    </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<div class="wrapper">
+    
+	<!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <!-- SOLO UN ENLACE DEBE TENER LA CLASE "active" POR PÁGINA -->
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn">💸 Avances / Retiros</a>
+        <a href="conversor.html" class="tab-btn">🧮 Conversor Monetario</a>
+        <a href="facturar.html" class="tab-btn">🛒 Facturar Venta</a>
+        <a href="caja_registradora.html" class="tab-btn">🧾 Caja Registradora</a>
+        <a href="control_inventario.html" class="tab-btn">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn active">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn">🧾 Pagos y Servicios</a>
+        <a href="conciliacion_pto.html" class="tab-btn">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL CENTRADO -->
+    <div class="main-content">
+        <div class="card" style="border-top: 4px solid #3498db;">
+            <h2>🚚 Control de Proveedores e Ingreso de Mercancía</h2>
+            <p style="color: var(--muted); font-size: 0.9rem;">Registra la entrada de mercancía sumando stock directamente.</p>
+            
+            <div class="grid-2" style="margin-bottom:15px;">
+                <input type="text" id="buscar_prov_rapido" placeholder="🔍 Buscar producto..." oninput="renderProveedoresEntrada()" style="margin-top:0;">
+                <select id="orden_prov_rapido" onchange="renderProveedoresEntrada()" style="margin-top:0;">
+                    <option value="cat">Categoría</option>
+                    <option value="az">Alfabético</option>
+                </select>
+            </div>
+            
+            <div id="lista_proveedores_entrada" style="max-height:350px; overflow-y:auto; border: 1px solid var(--border); border-radius: 6px;"></div>
+            
+            <h3 style="margin-top: 25px; border-bottom: 1px solid var(--border); padding-bottom: 5px; color: var(--primary);">📋 Historial de Entradas</h3>
+            <button class="btn-warning" style="margin-bottom: 10px; width:100%;" onclick="cargarHistorialProveedores()">🔄 Actualizar Historial</button>
+            <div style="overflow-x:auto; max-height:300px; overflow-y:auto;">
+                <table id="tabla_historial_proveedores">
+                    <tr><th>Fecha / Hora</th><th>Producto</th><th>Cantidad Entrante</th></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+    let isAdminUnlocked = false;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        mostrarModalLocal("Autenticando", "Verificando sesión...");
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) { cerrarModalGlobal(); alert("Sin sesión activa."); return; }
+            await inicializarDatos(data.session.user);
+        } catch (err) { console.error(err); cerrarModalGlobal(); }
+    });
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        let icono = document.getElementById('icono_ojo_pin');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icono.innerText = '🙈';
+        } else {
+            input.type = 'password';
+            icono.innerText = '👁️';
+        }
+    }
+
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
+        if (pinIngresado === pinReal) {
+            isAdminUnlocked = true;
+            document.getElementById('pantalla_bloqueo_admin').style.display = 'none';
+        } else {
+            alert("❌ PIN Incorrecto.");
+            document.getElementById('pin_ingreso_body').value = '';
+        }
+    }
+
+    async function inicializarDatos(user) {
+        let userId = user.id;
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        } else {
+            let { data: localesList } = await supabaseClient.from('locales').select('id, nombre').limit(1);
+            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        }
+
+        let conf = null, localData = null;
+        try {
+            let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+            conf = resConf.data;
+        } catch(e) { console.warn("Sin configuración"); }
+
+        try {
+            let resLocal = await supabaseClient.from('locales').select('nombre, password_admin').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+            localData = resLocal.data;
+        } catch(e) { console.warn("Sin local"); }
+
+        if (conf) {
+            CONFIG_GLOBAL = conf;
+            if (conf.identidad && conf.identidad.admin_pass) {
+                ADMIN_PASS_DB = conf.identidad.admin_pass;
+            }
+        }
+
+        if (localData && localData.password_admin) {
+            ADMIN_PASS_DB = localData.password_admin;
+        }
+
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
+        let etiquetaModulo = "Proveedores e Historial";
+
+        document.getElementById('main_top_title').innerHTML = `
+            🏪 ${nombreLocal} 
+            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                📌 Módulo: ${etiquetaModulo}
+            </span>
+        `;
+
+        let { data: catData } = await supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
+        if (catData) {
+            CATALOGO = catData.map(p => ({
+                uuid: p.id, nom: p.nombre, cat: p.categoria || "General", stock: p.stock || 0
+            }));
+        }
+
+        cerrarModalGlobal();
+        renderProveedoresEntrada();
+        cargarHistorialProveedores();
+    }
+
+    function renderProveedoresEntrada() {
+        let q = document.getElementById('buscar_prov_rapido').value.toLowerCase();
+        let ord = document.getElementById('orden_prov_rapido').value;
+        let arr = CATALOGO.filter(p => p.nom.toLowerCase().includes(q));
+        arr.sort((a,b) => ord === 'cat' ? a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom) : a.nom.localeCompare(b.nom));
+
+        let html = "";
+        arr.forEach((p) => {
+            let realIdx = CATALOGO.findIndex(x => x.uuid === p.uuid);
+            html += `
+            <div class="consulta-item">
+                <div><strong>${p.nom}</strong><br><small style="color:var(--muted);">Cat: ${p.cat} | Stock: <strong style="color:var(--success);">${p.stock}</strong></small></div>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <input type="number" step="0.01" id="cant_prov_${realIdx}" value="0" style="width:75px; text-align:center; padding:6px; font-weight:bold; margin-top:0;">
+                    <button class="btn-success" style="padding:8px 14px; margin:0; width:auto;" onclick="registrarEntradaProveedor(${realIdx})">+ Añadir</button>
+                </div>
+            </div>`;
+        });
+        document.getElementById('lista_proveedores_entrada').innerHTML = html || '<p style="text-align:center; padding:20px;">No hay productos.</p>';
+    }
+
+    async function registrarEntradaProveedor(idx) {
+        let p = CATALOGO[idx];
+        let cant = parseFloat(document.getElementById(`cant_prov_${idx}`).value) || 0;
+        if(cant <= 0) return alert("Ingresa una cantidad mayor a 0.");
+
+        let nuevoStock = (parseFloat(p.stock) || 0) + cant;
+        mostrarModalLocal("Registrando", "Guardando entrada...");
+        try {
+            await supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', p.uuid);
+            await supabaseClient.from('proveedores_historial_entradas').insert([{
+                local_id: CURRENT_LOCAL_ID, producto_id: p.uuid, cantidad: cant, nota: 'Ingreso por Proveedor'
+            }]);
+            p.stock = nuevoStock;
+            renderProveedoresEntrada();
+            cargarHistorialProveedores();
+            cerrarModalGlobal();
+            alert("✅ Entrada registrada con éxito.");
+        } catch(err) { cerrarModalGlobal(); alert("❌ Error: " + err.message); }
+    }
+
+    async function cargarHistorialProveedores() {
+        let tablaEl = document.getElementById('tabla_historial_proveedores');
+        if(!tablaEl) return;
+        try {
+            let { data } = await supabaseClient.from('proveedores_historial_entradas').select('*, catalogo(nombre)').eq('local_id', CURRENT_LOCAL_ID).order('fecha', { ascending: false });
+            let html = `<tr><th>Fecha / Hora</th><th>Producto</th><th>Cantidad Entrante</th></tr>`;
+            if(!data || data.length === 0) {
+                html += `<tr><td colspan="3" style="text-align:center;">Sin registros.</td></tr>`;
+            } else {
+                data.forEach(h => {
+                    let nombreProd = h.catalogo ? h.catalogo.nombre : 'Desconocido';
+                    html += `<tr><td style="text-align:center;">${new Date(h.fecha).toLocaleString()}</td><td><strong>${nombreProd}</strong></td><td style="text-align:right; color:var(--success); font-weight:bold;">+${h.cantidad}</td></tr>`;
+                });
+            }
+            tablaEl.innerHTML = html;
+        } catch(e) { console.error(e); }
+    }
+
+    function abrirModalGlobal(t, h) { document.getElementById('global_modal_title').innerText = t; document.getElementById('global_modal_body').innerHTML = h; document.getElementById('global_modal').style.display = 'flex'; }
+    function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
+    function mostrarModalLocal(t, m) { abrirModalGlobal(t, `<div>⏳ ${m}</div>`); }
+</script>
+</body>
+</html>

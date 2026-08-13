@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Vendedores - Sistema Maestro</title>
+    <!-- Librería Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Librería jsPDF nativa para generación de comprobantes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --input-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
+
+        /* ========================================================= */
+        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
+        /* ========================================================= */
+        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* ========================================================= */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
+        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        /* Etiqueta para diferenciar la página activa en el menú */
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        .main-content { padding: 20px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid var(--border); }
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        label { font-size: 0.9rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted); }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); outline: none; }
+        input:focus { border-color: var(--secondary); }
+        
+        button { background: var(--secondary); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        button.btn-danger { background: var(--danger); }
+        button.btn-warning { background: var(--warning); color: #fff; }
+        button.btn-success { background: var(--success); }
+        button.btn-info { background: var(--info); color: #fff; }
+        button.btn-add { background: var(--primary); width: auto; padding: 8px 12px; display: inline-block; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+        th { background: var(--primary); color: white; }
+        .zebra-item { border-bottom: 1px solid var(--border); padding: 12px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); margin-bottom: 8px; border-radius: 6px; }
+        .zebra-item:nth-child(even) { background-color: rgba(0,0,0,0.02); }
+
+        /* MODALES */
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; }
+        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .modal-close-btn { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .custom-modal-title { font-size: 1.2rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+
+        /* RESULTADOS BÚSQUEDA EDICIÓN */
+        .search-result-item { padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .search-result-item:hover { background: rgba(52, 152, 219, 0.1); }
+    </style>
+</head>
+<body>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
+<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 380px; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border-top: 5px solid var(--danger);">
+        <h2 style="color: var(--danger); margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 12px;">🔒 Acceso Protegido</h2>
+        <p style="font-size: 0.95rem; color: var(--muted); margin: 20px 0;">Introduce el PIN de Administrador o Supervisor del Sistema:</p>
+        
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid var(--border); border-radius: 8px; outline: none; background: var(--bg); color: var(--text);" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span>
+        </div>
+
+        <div id="mensaje_carga_pin" style="display: none; color: var(--success); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">⏳ Desbloqueando módulo...</div>
+
+        <button id="btn_desbloquear_pin" onclick="verificarPinBody()" style="background: linear-gradient(135deg, var(--primary), #1a252f);">Desbloquear Pantalla</button>
+        <button id="btn_volver_pin" onclick="window.location.href='principal.html'" style="background: linear-gradient(135deg, var(--danger), #c0392b); margin-top: 10px;">Volver al Inicio</button>
+    </div>
+</div>
+
+<!-- LOGIN SUPABASE -->
+<div id="login_overlay" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background: linear-gradient(135deg, #1e3c72, #2a5298); z-index:99998; display:none; align-items:center; justify-content:center;">
+    <div style="background:var(--card-bg); padding:35px; border-radius:16px; width:90%; max-width:380px; text-align:center; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+        <h2 style="color:var(--primary); border:none; margin-bottom:20px;">Refresquería Flor<br><span style="font-size:0.8rem; color:var(--muted); font-weight:normal;">Módulo Vendedores</span></h2>
+        <input type="email" id="login_email" placeholder="Correo electrónico" style="margin-bottom:12px;">
+        <input type="password" id="login_pass" placeholder="Contraseña" style="margin-bottom:20px;" onkeyup="if(event.key==='Enter') iniciarSesion()">
+        <button onclick="iniciarSesion()" style="background:var(--secondary); padding:12px; font-size:1rem;">Ingresar al Sistema</button>
+    </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<div class="wrapper">
+    
+	<!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <!-- SOLO UN ENLACE DEBE TENER LA CLASE "active" POR PÁGINA -->
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn">💸 Avances / Retiros</a>
+        <a href="conversor.html" class="tab-btn">🧮 Conversor Monetario</a>
+        <a href="facturar.html" class="tab-btn">🛒 Facturar Venta</a>
+        <a href="caja_registradora.html" class="tab-btn">🧾 Caja Registradora</a>
+        <a href="control_inventario.html" class="tab-btn">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn">🧾 Pagos y Servicios</a>
+        <a href="conciliacion_pto.html" class="tab-btn">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn active">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <div class="card" style="border-top: 4px solid #e67e22;">
+            <h2>🧑‍💼 Registro de Empleados y Cierres (Orden Alfabético)</h2>
+            <button onclick="abrirModalNuevoEmpleado()" class="btn-add" style="width:100%; margin-bottom:15px;">+ Añadir Vendedor Nuevo</button>
+            <input type="text" id="buscar_empleado" placeholder="🔍 Buscar empleado por nombre..." oninput="renderEmpleados()" style="margin-bottom:15px;">
+            <div id="lista_empleados_container"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let EMPLEADOS = [];
+    let CATALOGO = [];
+    let CONFIG_GLOBAL = {};
+    let LOTES_GENERAL = [];
+
+    window.loteEditLoteId = null;
+    window.loteEditDetallesOriginal = [];
+    window.loteEditDetallesTmp = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        await precargarConfiguracionSistema();
+
+        const { data } = await supabaseClient.auth.getSession();
+        if (data && data.session) {
+            await sincronizarSesion(data.session.user.id);
+        } else {
+            document.getElementById('login_overlay').style.display = 'flex';
+        }
+    });
+
+    async function precargarConfiguracionSistema() {
+        try {
+            let { data: localesList } = await supabaseClient.from('locales').select('id').limit(1);
+            if (localesList && localesList.length > 0) {
+                CURRENT_LOCAL_ID = localesList[0].id;
+                let { data: conf } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+                if (conf) CONFIG_GLOBAL = conf;
+            }
+        } catch(e) { console.error("Error precargando configuraciones:", e); }
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        let icono = document.getElementById('icono_ojo_pin');
+        if (input.type === 'password') {
+            input.type = 'text'; icono.innerText = '🙈';
+        } else {
+            input.type = 'password'; icono.innerText = '👁️';
+        }
+    }
+
+    function togglePinModal(inputId, icono) {
+        let input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            icono.innerText = '🙈';
+        } else {
+            input.type = 'password';
+            icono.innerText = '👁️';
+        }
+    }
+
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
+        let supervisorValido = EMPLEADOS.some(e => e.pin === pinIngresado);
+
+        if (pinIngresado === pinReal || supervisorValido) {
+            document.getElementById('btn_desbloquear_pin').style.display = 'none';
+            document.getElementById('btn_volver_pin').style.display = 'none';
+            document.getElementById('mensaje_carga_pin').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('pantalla_bloqueo_admin').style.display = 'none';
+                document.getElementById('btn_desbloquear_pin').style.display = 'block';
+                document.getElementById('btn_volver_pin').style.display = 'block';
+                document.getElementById('mensaje_carga_pin').style.display = 'none';
+                document.getElementById('pin_ingreso_body').value = '';
+                document.getElementById('pin_ingreso_body').type = 'password';
+                document.getElementById('icono_ojo_pin').innerText = '👁️';
+            }, 1000);
+        } else {
+            alert("❌ PIN Incorrecto. Autorización denegada.");
+            document.getElementById('pin_ingreso_body').value = '';
+        }
+    }
+
+    async function iniciarSesion() {
+        const email = document.getElementById('login_email').value.trim();
+        const pass = document.getElementById('login_pass').value.trim();
+        if(!email || !pass) return alert("Ingrese correo y contraseña.");
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+        if (error) return alert("Error de acceso: " + error.message);
+        window.location.reload();
+    }
+
+    async function sincronizarSesion(userId) {
+        document.getElementById('login_overlay').style.display = 'none';
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        }
+
+        // Cargar configuración y nombre del local de forma segura
+        let conf = null, localData = null;
+        try {
+            let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+            conf = resConf.data;
+        } catch(e) { console.warn("Sin configuración"); }
+
+        try {
+            let resLocal = await supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+            localData = resLocal.data;
+        } catch(e) { console.warn("Sin local"); }
+
+        if (conf) {
+            CONFIG_GLOBAL = conf;
+        }
+
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
+        let etiquetaModulo = "Vendedores"; 
+
+        document.getElementById('main_top_title').innerHTML = `
+            🏪 ${nombreLocal} 
+            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                📌 Módulo: ${etiquetaModulo}
+            </span>
+        `;
+
+        await cargarDatosServidor();
+    }
+
+    async function cargarDatosServidor() {
+        if(!CURRENT_LOCAL_ID) return;
+        const [resEmp, resCat, resConf, resLotes] = await Promise.all([
+            supabaseClient.from('empleados').select('*').eq('local_id', CURRENT_LOCAL_ID),
+            supabaseClient.from('catalogo').select('*'),
+            supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single(),
+            supabaseClient.from('lotes_diarios').select('*').eq('local_id', CURRENT_LOCAL_ID)
+        ]);
+
+        if(resEmp.data) {
+            EMPLEADOS = resEmp.data.sort((a,b) => (a.nombre + " " + a.apellido).localeCompare(b.nombre + " " + b.apellido));
+        }
+
+        if(resCat.data) CATALOGO = resCat.data;
+        if(resConf.data) CONFIG_GLOBAL = resConf.data;
+        if(resLotes.data) LOTES_GENERAL = resLotes.data;
+
+        renderEmpleados();
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('active');
+    }
+
+    function renderEmpleados() {
+        let q = document.getElementById('buscar_empleado').value.toLowerCase();
+        let html = "";
+
+        EMPLEADOS.filter(e => (e.nombre + " " + e.apellido).toLowerCase().includes(q)).forEach(emp => {
+            let lotesEmp = LOTES_GENERAL.filter(l => l.vendedor_id === emp.id);
+            let totalCierres = lotesEmp.length;
+            let totalVenta = lotesEmp.reduce((acc, l) => acc + (parseFloat(l.total_vendido_usd) || 0), 0);
+            let totalCapital = lotesEmp.reduce((acc, l) => acc + (parseFloat(l.capital_invertido) || 0), 0);
+            let totalGanancia = lotesEmp.reduce((acc, l) => acc + (parseFloat(l.ganancia_neta) || 0), 0);
+
+            html += `
+            <div class="zebra-item" style="border-left: 4px solid #e67e22;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <strong style="font-size:1.05rem; color:var(--primary);">${emp.nombre} ${emp.apellido}</strong>
+                        <span style="background: #e8f4f8; color: var(--primary); font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; border: 1px solid #bce8f1;">📌 ${emp.rol || 'Cajero'}</span>
+                    </div>
+                    <small>C.I: ${emp.cedula || 'N/A'} | Tel: ${emp.telefono || 'N/A'}</small><br>
+                    <div style="margin-top:6px; font-size:0.9rem; display:flex; flex-wrap:wrap; gap:12px;">
+                        <span>📦 Total de venta (cierres): <strong>${totalCierres}</strong></span>
+                        <span>💵 Venta: <strong style="color:var(--info);">$${formatearNumero(totalVenta)}</strong></span>
+                        <span>📈 Capital: <strong style="color:var(--warning);">$${formatearNumero(totalCapital)}</strong></span>
+                        <span>💰 Ganancia: <strong style="color:var(--success);">$${formatearNumero(totalGanancia)}</strong></span>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                    <div style="display:flex; gap:4px;">
+                        <button class="btn-info" style="padding:4px 8px; margin:0;" onclick="editarEmpleado('${emp.id}')">✏️ Editar</button>
+                        <button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="eliminarEmpleado('${emp.id}')">🗑️ Eliminar</button>
+                    </div>
+                    <button class="btn-warning" style="padding:6px 10px; margin:0; width:100%; font-weight:bold;" onclick="verVentasEmpleado('${emp.id}', '${emp.nombre} ${emp.apellido}')">📊 Ver Ventas / Lotes</button>
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('lista_empleados_container').innerHTML = html || '<p style="text-align:center; color:var(--muted);">No hay vendedores registrados.</p>';
+    }
+
+    function abrirModalNuevoEmpleado() {
+        abrirModalGlobal("Añadir Vendedor Nuevo", `
+            <div class="grid-2">
+                <div><label>Nombre:</label><input type="text" id="emp_nombre" placeholder="Nombre"></div>
+                <div><label>Apellido:</label><input type="text" id="emp_apellido" placeholder="Apellido"></div>
+            </div>
+            <div class="grid-2">
+                <div><label>Cédula:</label><input type="text" id="emp_cedula" placeholder="V-12345678"></div>
+                <div><label>Teléfono:</label><input type="text" id="emp_telefono" placeholder="0412..."></div>
+            </div>
+            <div class="grid-2">
+                <div><label>Rol / Cargo:</label>
+                    <select id="emp_rol">
+                        <option value="Cajero">Cajero</option>
+                        <option value="Vendedor">Vendedor</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Administrador">Administrador</option>
+                    </select>
+                </div>
+                <div>
+                    <label>PIN de Acceso (4-6 Dígitos):</label>
+                    <div style="position: relative;">
+                        <input type="password" id="emp_pin" placeholder="0000" maxlength="6" style="padding-right: 40px;">
+                        <span onclick="togglePinModal('emp_pin', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem;" title="Ver/Ocultar PIN">👁️</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="guardarEmpleadoNuevo()" class="btn-success" style="margin-top:15px;">💾 Guardar Vendedor</button>
+        `);
+    }
+
+    async function guardarEmpleadoNuevo() {
+        let nombre = document.getElementById('emp_nombre').value.trim();
+        let apellido = document.getElementById('emp_apellido').value.trim();
+        let cedula = document.getElementById('emp_cedula').value.trim();
+        let telefono = document.getElementById('emp_telefono').value.trim();
+        let rol = document.getElementById('emp_rol').value;
+        let pin = document.getElementById('emp_pin').value.trim() || '0000';
+
+        if(!nombre || !apellido || !cedula) return alert("Nombre, apellido y cédula son obligatorios.");
+
+        mostrarModalLocal("Guardando", "Registrando vendedor...");
+        let { error } = await supabaseClient.from('empleados').insert([{
+            local_id: CURRENT_LOCAL_ID, nombre, apellido, cedula, telefono, rol, pin_acceso: pin,
+            prestamos_deudas: 0, historial: []
+        }]);
+
+        if(error) { cerrarModalGlobal(); return alert("Error: " + error.message); }
+        await cargarDatosServidor();
+        cerrarModalGlobal(); alert("✅ Vendedor registrado con éxito.");
+    }
+
+    function editarEmpleado(id) {
+        let emp = EMPLEADOS.find(e => e.id === id);
+        if(!emp) return;
+
+        let rolActual = emp.rol || 'Cajero';
+
+        abrirModalGlobal("Modificar Vendedor", `
+            <input type="hidden" id="edit_emp_id" value="${emp.id}">
+            <div class="grid-2">
+                <div><label>Nombre:</label><input type="text" id="emp_nombre" value="${emp.nombre}"></div>
+                <div><label>Apellido:</label><input type="text" id="emp_apellido" value="${emp.apellido}"></div>
+            </div>
+            <div class="grid-2">
+                <div><label>Cédula:</label><input type="text" id="emp_cedula" value="${emp.cedula || ''}"></div>
+                <div><label>Teléfono:</label><input type="text" id="emp_telefono" value="${emp.telefono || ''}"></div>
+            </div>
+            <div class="grid-2">
+                <div><label>Rol / Cargo:</label>
+                    <select id="emp_rol">
+                        <option value="Cajero" ${rolActual === 'Cajero' ? 'selected' : ''}>Cajero</option>
+                        <option value="Vendedor" ${rolActual === 'Vendedor' ? 'selected' : ''}>Vendedor</option>
+                        <option value="Supervisor" ${rolActual === 'Supervisor' ? 'selected' : ''}>Supervisor</option>
+                        <option value="Administrador" ${rolActual === 'Administrador' ? 'selected' : ''}>Administrador</option>
+                    </select>
+                </div>
+                <div>
+                    <label>PIN de Acceso:</label>
+                    <div style="position: relative;">
+                        <input type="password" id="emp_pin" value="${emp.pin_acceso || ''}" placeholder="0000" maxlength="6" style="padding-right: 40px;">
+                        <span onclick="togglePinModal('emp_pin', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem;" title="Ver/Ocultar PIN">👁️</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="actualizarEmpleadoSupabase()" class="btn-success" style="margin-top:15px;">💾 Guardar Cambios</button>
+        `);
+    }
+
+    async function actualizarEmpleadoSupabase() {
+        let id = document.getElementById('edit_emp_id').value;
+        let nombre = document.getElementById('emp_nombre').value.trim();
+        let apellido = document.getElementById('emp_apellido').value.trim();
+        let cedula = document.getElementById('emp_cedula').value.trim();
+        let telefono = document.getElementById('emp_telefono').value.trim();
+        let rol = document.getElementById('emp_rol').value;
+        let pin = document.getElementById('emp_pin').value.trim();
+
+        if(!nombre || !apellido || !cedula) return alert("Campos obligatorios vacíos.");
+
+        mostrarModalLocal("Actualizando", "Guardando cambios...");
+        let { error } = await supabaseClient.from('empleados').update({
+            nombre, apellido, cedula, telefono, rol, pin_acceso: pin
+        }).eq('id', id);
+
+        if(error) { cerrarModalGlobal(); return alert("Error: " + error.message); }
+        await cargarDatosServidor();
+        cerrarModalGlobal(); alert("✅ Vendedor actualizado con éxito.");
+    }
+
+    async function eliminarEmpleado(id) {
+        if(!confirm("⚠️ ¿Estás seguro de eliminar este vendedor?")) return;
+        mostrarModalLocal("Eliminando", "Borrando vendedor...");
+        let { error } = await supabaseClient.from('empleados').delete().eq('id', id);
+        if(error) { cerrarModalGlobal(); return alert("Error: " + error.message); }
+        await cargarDatosServidor();
+        cerrarModalGlobal(); alert("✅ Vendedor eliminado.");
+    }
+
+    async function verVentasEmpleado(empId, empNombre) {
+        mostrarModalLocal("Consultando", "Buscando historial de ventas...");
+        let { data: lotes, error } = await supabaseClient.from('lotes_diarios').select('*').eq('vendedor_id', empId).eq('local_id', CURRENT_LOCAL_ID).order('creado_en', { ascending: false });
+        cerrarModalGlobal();
+
+        if(error) return alert("Error al consultar ventas: " + error.message);
+        if(!lotes || lotes.length === 0) return abrirModalGlobal(`Ventas de ${empNombre}`, "<p style='text-align:center; color:var(--muted); margin-top:20px;'>No hay ventas registradas para este vendedor.</p>");
+
+        let html = `<p style="font-size:0.85rem; color:var(--muted);">Listado completo de turnos y lotes cerrados:</p><div style="max-height:60vh; overflow-y:auto;"><table style="width:100%; font-size:0.9rem;">
+            <tr><th>Fecha / Turno</th><th>Total Venta</th><th>Ganancia</th><th>Opciones</th></tr>`;
+
+        lotes.forEach(l => {
+            html += `
+            <tr>
+                <td><strong>${l.fecha}</strong><br><small>${l.turno || 'N/A'}</small></td>
+                <td style="color:var(--info); font-weight:bold;">$${formatearNumero(l.total_vendido_usd)}</td>
+                <td style="color:var(--success); font-weight:bold;">$${formatearNumero(l.ganancia_neta)}</td>
+                <td style="display:flex; gap:4px; flex-wrap:wrap; justify-content:center;">
+                    <button class="btn-info" style="padding:4px 8px; font-size:0.8rem; margin:0;" onclick="verDetallesLote('${l.id}')">👁️ Ver</button>
+                    <button class="btn-info" style="padding:4px 8px; font-size:0.8rem; margin:0; background:#8e44ad;" onclick="descargarPDFLote('${l.id}')">📄 PDF</button>
+                    <button class="btn-success" style="padding:4px 8px; font-size:0.8rem; margin:0;" onclick="editarLoteVenta('${l.id}')">✏️ Edit</button>
+                    <button class="btn-danger" style="padding:4px 8px; font-size:0.8rem; margin:0;" onclick="eliminarLoteSupabase('${l.id}')">🗑️</button>
+                </td>
+            </tr>`;
+        });
+        html += `</table></div>`;
+        abrirModalGlobal(`Historial de Ventas: ${empNombre}`, html);
+    }
+
+    async function verDetallesLote(loteId) {
+        mostrarModalLocal("Cargando", "Buscando detalle...");
+        let { data: detalle } = await supabaseClient.from('detalle_ventas').select('*, catalogo(*)').eq('lote_id', loteId);
+        let { data: lote } = await supabaseClient.from('lotes_diarios').select('*').eq('id', loteId).single();
+        cerrarModalGlobal();
+        if(!detalle) return alert("Error cargando detalles.");
+
+        detalle.sort((a, b) => {
+            let nameA = limpiarNombre(a.catalogo?.nombre || '').toLowerCase();
+            let nameB = limpiarNombre(b.catalogo?.nombre || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        let trs = ""; let totalCant = 0; let totalUsd = 0;
+        detalle.forEach(d => {
+            let pNom = d.catalogo ? d.catalogo.nombre : 'Producto';
+            let precioUnit = d.cantidad > 0 ? (d.subtotal_usd / d.cantidad) : 0;
+            totalCant += d.cantidad; totalUsd += d.subtotal_usd;
+            trs += `<tr><td>${limpiarNombre(pNom)}</td><td style="text-align:center;">${d.cantidad}</td><td style="text-align:right;">$${formatearNumero(precioUnit)}</td><td style="text-align:right; font-weight:bold;">$${formatearNumero(d.subtotal_usd)}</td></tr>`;
+        });
+
+        let html = `
+            <p><strong>Fecha:</strong> ${lote.fecha} | <strong>Turno:</strong> ${lote.turno}</p>
+            <table style="width:100%; font-size:0.9rem; margin-top:10px;">
+                <tr><th>Producto</th><th style="text-align:center;">Cant</th><th style="text-align:right;">P. Unit</th><th style="text-align:right;">Subtotal</th></tr>
+                ${trs}
+                <tr style="font-weight:bold; background:var(--item-bg);"><td colspan="2" style="text-align:right;">Total General:</td><td style="text-align:center;">${totalCant}</td><td style="text-align:right; color:var(--success);">$${formatearNumero(totalUsd)}</td></tr>
+            </table>
+        `;
+        abrirModalGlobal("Detalle de Venta", html);
+    }
+
+    async function editarLoteVenta(loteId) {
+        mostrarModalLocal("Cargando", "Abriendo editor inteligente...");
+        let { data: detalle } = await supabaseClient.from('detalle_ventas').select('*, catalogo(*)').eq('lote_id', loteId);
+        let { data: lote } = await supabaseClient.from('lotes_diarios').select('*').eq('id', loteId).single();
+        cerrarModalGlobal();
+        if(!detalle) return alert("Error cargando detalles.");
+
+        detalle.sort((a, b) => {
+            let nameA = limpiarNombre(a.catalogo?.nombre || '').toLowerCase();
+            let nameB = limpiarNombre(b.catalogo?.nombre || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        window.loteEditLoteId = loteId;
+        window.loteEditDetallesOriginal = JSON.parse(JSON.stringify(detalle));
+        window.loteEditDetallesTmp = JSON.parse(JSON.stringify(detalle));
+
+        let modoDetectado = 'venta';
+        let conteoCaja = 0; let conteoVenta = 0;
+
+        detalle.forEach(d => {
+            if (d.cantidad > 0 && d.catalogo) {
+                let pUnit = d.subtotal_usd / d.cantidad;
+                let pBase = parseFloat(d.catalogo.precio_base) || 0;
+                let pVenta = parseFloat(d.catalogo.precio_venta) || 0;
+                
+                if (Math.abs(pUnit - pBase) <= 0.05 && pBase > 0) conteoCaja++;
+                else if (Math.abs(pUnit - pVenta) <= 0.05) conteoVenta++;
+                
+                if (d.catalogo.nombre.toLowerCase().includes('box_-')) conteoCaja += 2;
+            }
+        });
+        
+        if (conteoCaja > conteoVenta) modoDetectado = 'caja';
+
+        let html = `
+            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">
+                Cualquier producto que dejes en cantidad <strong>0</strong> será reingresado a tu inventario. Si agregas, se restará automáticamente.
+            </p>
+            
+            <div id="contenedor_tabla_edicion_lote" style="max-height:40vh; overflow-y:auto; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 6px;"></div>
+            
+            <div style="background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                    <label style="margin:0; color:var(--primary);">➕ Añadir Nuevo Producto:</label>
+                    
+                    <select id="modo_precio_lote" onchange="buscarProductoLoteEdit(document.getElementById('buscador_add_producto').value)" style="width: auto; padding: 6px; font-size: 0.85rem; border-color:var(--secondary); background:var(--white);">
+                        <option value="venta" ${modoDetectado === 'venta' ? 'selected' : ''}>🛒 Usar Precio Venta (Detal)</option>
+                        <option value="caja" ${modoDetectado === 'caja' ? 'selected' : ''}>📦 Usar Precio Base (Mayor/Caja)</option>
+                    </select>
+                </div>
+                
+                <input type="text" id="buscador_add_producto" placeholder="Escribe aquí para buscar en el catálogo..." oninput="buscarProductoLoteEdit(this.value)" style="margin-bottom: 5px;">
+                <div id="resultado_busqueda_edit" style="max-height: 150px; overflow-y: auto; background: var(--white); border-radius: 6px;"></div>
+            </div>
+
+            <button class="btn-success" style="margin-top:20px; width:100%; padding:14px; font-size:1.05rem;" onclick="guardarEdicionLoteVenta('${loteId}')">💾 Guardar Cambios y Procesar Inventario</button>
+        `;
+        
+        abrirModalGlobal("Editar Venta Inteligente", html);
+        actualizarUIEdicionLote();
+    }
+
+    function buscarProductoLoteEdit(q) {
+        let res = document.getElementById('resultado_busqueda_edit');
+        if(!q) { res.innerHTML = ''; return; }
+        
+        let modo = document.getElementById('modo_precio_lote').value;
+        let html = '';
+        
+        CATALOGO.filter(p => p.nombre.toLowerCase().includes(q.toLowerCase()) && p.activo).forEach(p => {
+            let pBase = parseFloat(p.precio_base) || 0;
+            let pVenta = parseFloat(p.precio_venta) || 0;
+            
+            let precio = (modo === 'caja' && pBase > 0) ? pBase : pVenta;
+            let etiqueta = modo === 'caja' ? '📦 Precio Mayor' : '🛒 Precio Detal';
+            
+            html += `<div class="search-result-item" onclick="agregarProductoALoteEdit('${p.id}', ${precio})">
+                <span>➕ <strong>${limpiarNombre(p.nombre)}</strong> <small style="color:var(--muted)">(${etiqueta})</small></span>
+                <span style="color:var(--success); font-weight:bold; background:#e8f8f5; padding:2px 6px; border-radius:4px;">$${precio.toFixed(2)}</span>
+            </div>`;
+        });
+        res.innerHTML = html || '<div style="padding:10px; color:var(--danger); text-align:center;">No se encontraron productos coincidentes.</div>';
+    }
+
+    function agregarProductoALoteEdit(prodId, precioAplicado) {
+        let p = CATALOGO.find(x => x.id === prodId);
+        if(!p) return;
+        
+        let existingById = window.loteEditDetallesTmp.find(x => x.producto_id === prodId);
+        
+        if (existingById) {
+            existingById.cantidad += 1;
+            existingById.precio_aplicado = precioAplicado;
+        } else {
+            window.loteEditDetallesTmp.push({
+                id: null,
+                lote_id: window.loteEditLoteId,
+                producto_id: prodId,
+                cantidad: 1,
+                precio_aplicado: precioAplicado,
+                subtotal_usd: precioAplicado,
+                catalogo: p
+            });
+        }
+        
+        document.getElementById('buscador_add_producto').value = '';
+        document.getElementById('resultado_busqueda_edit').innerHTML = '';
+        actualizarUIEdicionLote();
+    }
+
+    function actualizarUIEdicionLote() {
+        let container = document.getElementById('contenedor_tabla_edicion_lote');
+        if (!container) return;
+        
+        window.loteEditDetallesTmp.sort((a, b) => {
+            let nameA = limpiarNombre(a.catalogo?.nombre || '').toLowerCase();
+            let nameB = limpiarNombre(b.catalogo?.nombre || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        if (window.loteEditDetallesTmp.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:var(--danger); font-weight:bold; padding: 15px;">⚠️ El lote quedará vacío. Al guardar, toda la mercancía será devuelta a tu catálogo.</p>';
+            return;
+        }
+
+        let html = `<table style="width:100%; border-collapse:collapse; font-size:0.9rem; margin:0;">
+            <tr><th style="border:none;">Producto</th><th style="text-align:right; border:none;">P. Unit</th><th style="text-align:center; border:none;">Controles</th></tr>`;
+        
+        window.loteEditDetallesTmp.forEach((d, idx) => {
+            let pNom = d.catalogo ? d.catalogo.nombre : 'Producto Desconocido';
+            
+            let pUnit = 0;
+            if (d.precio_aplicado !== undefined) pUnit = d.precio_aplicado;
+            else if (d.cantidad > 0) pUnit = d.subtotal_usd / d.cantidad;
+            
+            html += `<tr style="background: ${idx % 2 === 0 ? 'var(--white)' : 'var(--item-bg)'};">
+                <td style="padding: 10px; border-bottom: 1px solid var(--border);"><strong>${limpiarNombre(pNom)}</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); text-align:right; color:var(--success); font-weight:bold;">$${pUnit.toFixed(2)}</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:5px;">
+                    <button class="btn-danger" style="padding:5px 12px; margin:0; width:auto;" onclick="modificarCantidadLoteEdit(${idx}, -1)">-</button>
+                    <input type="number" value="${d.cantidad}" style="width:50px; text-align:center; padding:5px; font-weight:bold; margin:0; border:1px solid #ccc; background:#fff;" readonly>
+                    <button class="btn-success" style="padding:5px 12px; margin:0; width:auto;" onclick="modificarCantidadLoteEdit(${idx}, 1)">+</button>
+                </td>
+            </tr>`;
+        });
+        html += `</table>`;
+        container.innerHTML = html;
+    }
+
+    function modificarCantidadLoteEdit(idx, delta) {
+        let currentItem = window.loteEditDetallesTmp[idx];
+        let nuevaCant = Math.max(0, currentItem.cantidad + delta);
+        
+        if (nuevaCant === 0) {
+            window.loteEditDetallesTmp.splice(idx, 1);
+        } else {
+            currentItem.cantidad = nuevaCant;
+        }
+        actualizarUIEdicionLote();
+    }
+
+    async function guardarEdicionLoteVenta(loteId) {
+        mostrarModalLocal("Actualizando", "Cruzando datos con el inventario y sincronizando auditoría...");
+        try {
+            let original = window.loteEditDetallesOriginal || [];
+            let actual = window.loteEditDetallesTmp || [];
+            
+            let totalVentaNuevo = 0; 
+            let totalCapitalNuevo = 0;
+
+            let todosLosProductos = {}; 
+            original.forEach(d => { todosLosProductos[d.producto_id] = { orig: d, act: null }; });
+            actual.forEach(d => {
+                if(!todosLosProductos[d.producto_id]) todosLosProductos[d.producto_id] = { orig: null, act: d };
+                else todosLosProductos[d.producto_id].act = d;
+            });
+
+            for (let prodId in todosLosProductos) {
+                let dOrig = todosLosProductos[prodId].orig;
+                let dAct = todosLosProductos[prodId].act;
+                
+                let cantOrig = dOrig ? dOrig.cantidad : 0;
+                let cantAct = dAct ? dAct.cantidad : 0;
+                let diffCant = cantAct - cantOrig;
+
+                let cat = CATALOGO.find(c => c.id === prodId);
+                if(!cat && dOrig) cat = dOrig.catalogo;
+                
+                let precioUnit = 0;
+                if (dAct && dAct.precio_aplicado !== undefined) {
+                    precioUnit = dAct.precio_aplicado;
+                } else if (dOrig && dOrig.cantidad > 0) {
+                    precioUnit = dOrig.subtotal_usd / dOrig.cantidad;
+                } else if (cat) {
+                    precioUnit = cat.precio_venta || cat.precio_base;
+                }
+                
+                let costoUnit = cat?.costo_fuente || 0;
+                let subtotalUsd = cantAct * precioUnit;
+
+                if (diffCant !== 0 && cat) {
+                    let nuevoStock = Math.max(0, parseFloat(cat.stock || 0) - diffCant);
+                    await supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', prodId);
+                    cat.stock = nuevoStock; 
+                }
+
+                if (cantAct > 0) {
+                    totalVentaNuevo += subtotalUsd;
+                    totalCapitalNuevo += (costoUnit * cantAct);
+                    
+                    if (dOrig) { 
+                        await supabaseClient.from('detalle_ventas').update({ cantidad: cantAct, subtotal_usd: subtotalUsd }).eq('id', dOrig.id);
+                    } else { 
+                        await supabaseClient.from('detalle_ventas').insert([{
+                            lote_id: loteId, producto_id: prodId, cantidad: cantAct, subtotal_usd: subtotalUsd
+                        }]);
+                    }
+                } else {
+                    if (dOrig && dOrig.id) { 
+                        await supabaseClient.from('detalle_ventas').delete().eq('id', dOrig.id);
+                    }
+                }
+            }
+
+            let gananciaNueva = totalVentaNuevo - totalCapitalNuevo;
+            
+            await supabaseClient.from('lotes_diarios').update({
+                total_vendido_usd: totalVentaNuevo,
+                capital_invertido: totalCapitalNuevo,
+                ganancia_neta: gananciaNueva
+            }).eq('id', loteId);
+
+            let nuevosDetallesJson = actual.map(d => {
+                let cat = CATALOGO.find(c => c.id === d.producto_id) || d.catalogo;
+                let pUnit = d.cantidad > 0 ? (d.subtotal_usd / d.cantidad) : 0;
+                return {
+                    nombre: limpiarNombre(cat?.nombre || 'Producto'),
+                    E: 0,
+                    S: d.cantidad,
+                    VP: cat?.precio_venta || pUnit,
+                    PI: pUnit,
+                    VT: d.subtotal_usd
+                };
+            });
+
+            await supabaseClient.from('control_inventario_cierres').update({
+                detalles_json: nuevosDetallesJson,
+                total_usd: totalVentaNuevo
+            }).eq('lote_id', loteId);
+
+            cerrarModalGlobal();
+            alert("✅ Venta editada y sincronizada correctamente en todos los módulos.");
+            await cargarDatosServidor();
+            
+        } catch(e) {
+            cerrarModalGlobal();
+            alert("❌ Error durante el cruce de datos: " + e.message);
+        }
+    }
+
+    async function descargarPDFLote(loteId) {
+        mostrarModalLocal("Generando PDF", "Construyendo comprobante estructurado...");
+        try {
+            const [resDet, resLote, resCierre] = await Promise.all([
+                supabaseClient.from('detalle_ventas').select('*, catalogo(nombre)').eq('lote_id', loteId),
+                supabaseClient.from('lotes_diarios').select('*, empleados(nombre, apellido)').eq('id', loteId).single(),
+                supabaseClient.from('control_inventario_cierres').select('*').eq('lote_id', loteId).maybeSingle()
+            ]);
+
+            cerrarModalGlobal();
+            let detalle = resDet.data;
+            let lote = resLote.data;
+            if(!detalle || !lote) return alert("Error al cargar los datos del comprobante.");
+
+            detalle.sort((a, b) => {
+                let nameA = limpiarNombre(a.catalogo?.nombre || '').toLowerCase();
+                let nameB = limpiarNombre(b.catalogo?.nombre || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+
+            let empleadoCierraNom = "N/A";
+            let empleadoRecibeNom = "N/A";
+
+            if (resCierre.data) {
+                let idCierra = resCierre.data.empleado_cierra;
+                let idRecibe = resCierre.data.empleado_recibe;
+                if (idCierra) {
+                    let empC = EMPLEADOS.find(e => e.id === idCierra);
+                    if (empC) empleadoCierraNom = `${empC.nombre} ${empC.apellido}`;
+                }
+                if (idRecibe) {
+                    let empR = EMPLEADOS.find(e => e.id === idRecibe);
+                    if (empR) empleadoRecibeNom = `${empR.nombre} ${empR.apellido}`;
+                }
+            }
+            if (empleadoCierraNom === "N/A" && lote.empleados) {
+                empleadoCierraNom = `${lote.empleados.nombre} ${lote.empleados.apellido}`;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Refresquería Flor';
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(16);
+            doc.setTextColor(44, 62, 80);
+            doc.text(nombreLocal, 14, 18);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(127, 140, 141);
+            doc.text("Comprobante de Venta / Cierre de Turno", 14, 24);
+            doc.text(`Fecha: ${lote.fecha}  |  Turno: ${lote.turno || 'N/A'}`, 14, 30);
+            
+            doc.text(`Entregó (Vendedor): ${empleadoCierraNom}`, 14, 36);
+            doc.text(`Recibió: ${empleadoRecibeNom}`, 110, 36);
+
+            let tasasObj = lote.tasas || CONFIG_GLOBAL.tasas || {};
+            let tasaBs = tasasObj.ves || tasasObj.bs || 1;
+            let tasaCop = tasasObj.cop || 0;
+            let tasaEur = tasasObj.eur || 0;
+            doc.text(`Tasas del día ($): BS: ${tasaBs} | COP: ${tasaCop} | EUR: ${tasaEur}`, 14, 42);
+
+            doc.setDrawColor(52, 152, 219);
+            doc.setLineWidth(0.5);
+            doc.line(14, 46, 196, 46);
+
+            let posY = 52;
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setFillColor(44, 62, 80);
+            doc.setTextColor(255, 255, 255);
+            doc.rect(14, posY, 182, 8, "F");
+            doc.text("Producto", 18, posY + 5.5);
+            doc.text("Cant", 120, posY + 5.5, { align: "center" });
+            doc.text("Precio Unit.", 150, posY + 5.5, { align: "right" });
+            doc.text("Subtotal", 190, posY + 5.5, { align: "right" });
+
+            posY += 8;
+            doc.setFont("Helvetica", "normal");
+            doc.setTextColor(44, 62, 80);
+
+            let totalCant = 0;
+            let totalUsd = 0;
+
+            detalle.forEach((d, index) => {
+                if (posY > 270) {
+                    doc.addPage();
+                    posY = 20;
+                }
+                if (index % 2 === 0) {
+                    doc.setFillColor(249, 249, 249);
+                    doc.rect(14, posY, 182, 7, "F");
+                }
+                let pNom = limpiarNombre(d.catalogo ? d.catalogo.nombre : 'Producto');
+                let precioUnit = d.cantidad > 0 ? (d.subtotal_usd / d.cantidad) : 0;
+                totalCant += d.cantidad;
+                totalUsd += d.subtotal_usd;
+
+                doc.text(String(pNom), 18, posY + 5);
+                doc.text(String(d.cantidad), 120, posY + 5, { align: "center" });
+                doc.text(`$${precioUnit.toFixed(2)}`, 150, posY + 5, { align: "right" });
+                doc.text(`$${parseFloat(d.subtotal_usd || 0).toFixed(2)}`, 190, posY + 5, { align: "right" });
+
+                posY += 7;
+            });
+
+            posY += 4;
+            doc.setDrawColor(189, 195, 199);
+            doc.line(14, posY, 196, posY);
+            posY += 6;
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(10);
+            doc.text(`Total Productos: ${totalCant}`, 14, posY);
+            doc.text(`Monto Total: $${totalUsd.toFixed(2)}`, 190, posY, { align: "right" });
+
+            doc.save(`Comprobante_Venta_${lote.fecha}.pdf`);
+        } catch(e) {
+            cerrarModalGlobal();
+            alert("❌ Error al generar el PDF: " + e.message);
+            console.error(e);
+        }
+    }
+
+    async function eliminarLoteSupabase(id) {
+        if(!confirm("⚠️ ¿Estás seguro de eliminar esta venta? La mercancía vendida retornará al inventario físico y se limpiará del control.")) return;
+        mostrarModalLocal("Eliminando", "Revirtiendo stock y borrando lote...");
+        try {
+            let { data: detalle } = await supabaseClient.from('detalle_ventas').select('*').eq('lote_id', id);
+            if(detalle) {
+                for(let d of detalle) {
+                    let { data: cat } = await supabaseClient.from('catalogo').select('stock').eq('id', d.producto_id).single();
+                    if(cat) {
+                        let stockRestaurado = cat.stock + d.cantidad;
+                        await supabaseClient.from('catalogo').update({ stock: stockRestaurado }).eq('id', d.producto_id);
+                    }
+                }
+            }
+            await supabaseClient.from('detalle_ventas').delete().eq('lote_id', id);
+            await supabaseClient.from('control_inventario_cierres').delete().eq('lote_id', id);
+            let { error } = await supabaseClient.from('lotes_diarios').delete().eq('id', id);
+            if(error) throw error;
+
+            cerrarModalGlobal(); alert("✅ Venta eliminada y stock restaurado con éxito.");
+            await cargarDatosServidor();
+        } catch(e) { cerrarModalGlobal(); alert("❌ Error: " + e.message); }
+    }
+
+    function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
+    function formatearNumero(v, d = 2) {
+        if (isNaN(v) || v === null || v === undefined) return "0";
+        let num = parseFloat(v); if (d === 0) num = Math.round(num);
+        let p = num.toFixed(d).split('.');
+        p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return p.length > 1 ? p[0] + "," + p[1] : p[0];
+    }
+    function abrirModalGlobal(titulo, htmlContent) {
+        document.getElementById('global_modal_title').innerText = titulo;
+        document.getElementById('global_modal_body').innerHTML = htmlContent;
+        document.getElementById('global_modal').style.display = 'flex';
+    }
+    function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
+    function mostrarModalLocal(titulo, msg) { abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem;">⏳ ${msg}</div>`); }
+</script>
+</body>
+</html>

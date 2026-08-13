@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recargas Telefónicas - Sistema Maestro</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* CORE CSS LINEA POR LINEA */
+        :root {
+            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
+            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        /* ========================================================= */
+        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
+        /* ========================================================= */
+        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* ========================================================= */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
+        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
+        .sidebar .tab-btn:hover { background: #34495e; color: white; }
+        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-overlay.active { display: block; }
+
+        /* MAIN CONTENT & CARDS */
+        .main-content { padding: 20px; padding-bottom: 130px; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border);}
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        
+        .btn-op-service { padding: 15px; font-size: 1rem; font-weight: bold; color: white; border: none; border-radius: 6px; cursor: pointer; flex: 1; text-align: center; }
+        .service-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 15px;}
+        .service-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid var(--secondary);}
+        .service-card-title { font-size: 1.1rem; font-weight: bold; color: var(--primary); margin-bottom: 5px;}
+        .service-card-cobro { font-size: 1.4rem; font-weight: bold; color: var(--success); }
+
+        /* VENTANAS MODALES ELEGANTES */
+        .custom-modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); 
+            z-index: 100000; display: none; align-items: center; justify-content: center; 
+        }
+        .custom-modal-box { 
+            background: var(--card-bg); padding: 30px; border-radius: 16px; 
+            width: 400px; max-width: 90%; text-align: center; position: relative; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            animation: modalScaleUp 0.3s ease-in-out; 
+        }
+        @keyframes modalScaleUp { 
+            from { transform: scale(0.85); opacity: 0; } 
+            to { transform: scale(1); opacity: 1; } 
+        }
+        .custom-modal-title { 
+            font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; 
+            font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; 
+        }
+        .btn-modal-cerrar {
+            background: var(--primary); color: white; border: none; padding: 10px 20px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<!-- MODAL GLOBAL ELEGANTE -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <div id="global_modal_title" class="custom-modal-title">Aviso</div>
+        <div id="global_modal_body" style="font-size: 1.05rem; color: var(--text); line-height: 1.5;"></div>
+        <button onclick="cerrarModalGlobal()" class="btn-modal-cerrar">Aceptar</button>
+    </div>
+</div>
+
+<div class="wrapper">
+    
+    <!-- BARRA SUPERIOR -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+    </div>
+
+    <!-- MENÚ LATERAL -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-brand">Menú del Sistema</div>
+        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
+        <a href="precios.html" class="tab-btn">💰 Precios</a>
+        <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
+        <a href="recargas.html" class="tab-btn active">📱 Recargas Telefónicas</a>
+        <a href="wifi.html" class="tab-btn">📶 WiFi Ticket</a>
+        <a href="avances.html" class="tab-btn">💸 Avances / Retiros</a>
+        <a href="conversor.html" class="tab-btn">🧮 Conversor Monetario</a>
+        <a href="facturar.html" class="tab-btn">🛒 Facturar Venta</a>
+        <a href="caja_registradora.html" class="tab-btn">🧾 Caja Registradora</a>
+        <a href="control_inventario.html" class="tab-btn">📋 Control Inventario</a>
+        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
+        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
+        <a href="proveedores.html" class="tab-btn">🚚 Proveedores</a>
+        <a href="pagos_servicios.html" class="tab-btn">🧾 Pagos y Servicios</a>
+        <a href="conciliacion_pto.html" class="tab-btn">💳 Conciliación Pto</a>
+        <a href="conciliacion_bio.html" class="tab-btn">💳 Conciliación Bio</a>
+        <a href="empleados.html" class="tab-btn">🧑‍💼 Vendedores</a>
+        <a href="clientes.html" class="tab-btn">👥 Clientes y Fiados</a>
+        <a href="gestion_catalogo.html" class="tab-btn">📁 Gestión de Catálogo</a>
+        <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <div class="card" style="border-top: 4px solid #3498db;">
+            <h2>📱 Recargas Telefónicas</h2>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-op-service" style="background:#0052cc;" onclick="renderServicioRecarga('Digitel')">Digitel</button>
+                <button class="btn-op-service" style="background:#00aae4;" onclick="renderServicioRecarga('Movistar')">Movistar</button>
+                <button class="btn-op-service" style="background:#ff5500;" onclick="renderServicioRecarga('Movilnet')">Movilnet</button>
+            </div>
+            <div id="cat_recargas_container" class="service-card-grid">
+                <p style="text-align:center; color:var(--muted); grid-column:1/-1; margin-top:20px;">Cargando planes de recarga desde Supabase...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // MOTOR DE CONEXIÓN SUPABASE GLOBAL
+    // ==========================================
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data } = await window.supabaseClient.auth.getSession();
+        if (data && data.session) {
+            await sincronizarSesionSupabase(data.session);
+        } else {
+            window.location.href = 'index.html';
+        }
+    });
+
+    async function sincronizarSesionSupabase(session) {
+        const userId = session.user.id;
+        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        } else {
+            let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
+            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        }
+
+        await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
+    }
+
+    async function cargarTodoDesdeSupabase(email, nombrePerfil) {
+        if(!CURRENT_LOCAL_ID) return;
+        try {
+            let conf = null, localData = null;
+            try {
+                let resConf = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+                conf = resConf.data;
+            } catch(e) { console.warn("Sin configuración"); }
+
+            try {
+                let resLocal = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+                localData = resLocal.data;
+            } catch(e) { console.warn("Sin local"); }
+
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+            }
+
+            let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
+            let etiquetaModulo = "Recargas Telefónicas";
+
+            document.getElementById('main_top_title').innerHTML = `
+                🏪 ${nombreLocal} 
+                <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    📌 Módulo: ${etiquetaModulo}
+                </span>
+            `;
+             
+            // Renderizar Movistar por defecto al entrar
+            renderServicioRecarga('Movistar');
+        } catch(e) {
+            console.error("Error cargando BD:", e);
+        }
+    }
+
+    // UI SIDEBAR
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
+
+    // GESTIÓN DE VENTANAS MODALES ELEGANTES
+    function abrirModalGlobal(titulo, htmlContenido) {
+        document.getElementById('global_modal_title').innerText = titulo;
+        document.getElementById('global_modal_body').innerHTML = htmlContenido;
+        document.getElementById('global_modal').style.display = 'flex';
+    }
+
+    function cerrarModalGlobal() {
+        document.getElementById('global_modal').style.display = 'none';
+    }
+
+    // LÓGICA DEL MÓDULO (RECARGAS) CON ORDEN ESTRICTO: BS, USD, COP, EUR
+    function renderServicioRecarga(op) {
+        let recargasData = CONFIG_GLOBAL.recargas || [];
+        let filtrados = [];
+
+        if (Array.isArray(recargasData)) {
+            filtrados = recargasData.filter(r => (r.operadora || '').toLowerCase() === op.toLowerCase());
+        } else if (typeof recargasData === 'object' && recargasData !== null) {
+            filtrados = recargasData[op] || recargasData[op.toLowerCase()] || [];
+        }
+
+        let divisasConfig = CONFIG_GLOBAL.divisas || {};
+        let tasasConfig = CONFIG_GLOBAL.tasas || CONFIG_GLOBAL.tasas_cambio || { ves: 1, cop: 1, eur: 1 };
+        let tasaVes = parseFloat(tasasConfig.ves || tasasConfig.bs || 1);
+        let tasaCop = parseFloat(tasasConfig.cop || 1);
+        let tasaEur = parseFloat(tasasConfig.eur || 1);
+
+        let html = "";
+        
+        filtrados.forEach(r => {
+            let monto = parseFloat(r.monto) || 0;
+            let cobro = parseFloat(r.cobro) || 0;
+            let porcentaje = parseFloat(r.porcentaje) || 0;
+            let comisionTotal = cobro + (monto * (porcentaje / 100));
+            let totalBs = monto + comisionTotal;
+
+            let totalUsd = tasaVes > 0 ? totalBs / tasaVes : 0;
+            let totalCop = tasaVes > 0 ? (totalBs / tasaVes) * tasaCop : 0;
+            let totalEur = tasaVes > 0 ? (totalBs / tasaVes) * tasaEur : 0;
+
+            // Lista estricta en el orden requerido: BS (con comisión), USD, COP, EUR
+            let listaCobranza = [
+                { codigo: 'BS', simbolo: 'Bs', valor: totalBs, decimales: 2 },
+                { codigo: 'USD', simbolo: '$', valor: totalUsd, decimales: 2 },
+                { codigo: 'COP', simbolo: 'COP', valor: totalCop, decimales: 0 },
+                { codigo: 'EUR', simbolo: '€', valor: totalEur, decimales: 2 }
+            ];
+
+            let htmlMonedasCobranza = "";
+            listaCobranza.forEach(m => {
+                let keyConfig = m.codigo.toLowerCase();
+                let divConfig = divisasConfig[keyConfig] || divisasConfig[m.codigo];
+                let estaActiva = true;
+                if (divConfig && typeof divConfig === 'object') {
+                    estaActiva = divConfig.activa || divConfig.activo || false;
+                } else if (divConfig === false) {
+                    estaActiva = false;
+                }
+
+                // Mostrar si está activa o si es BS/USD por defecto
+                if (estaActiva || m.codigo === 'BS' || m.codigo === 'USD') {
+                    htmlMonedasCobranza += `<div style="font-size: 0.9rem; color: var(--text); margin-top: 3px;"><strong>${m.codigo}:</strong> ${m.simbolo}${formatearNumero(m.valor, m.decimales)}</div>`;
+                }
+            });
+
+            html += `
+                <div class="service-card">
+                    <div class="service-card-title">${r.operadora || op}</div>
+                    <div class="service-card-cobro">${formatearNumero(monto)} BS</div>
+                    <div style="font-size: 0.85rem; color: var(--muted); margin-top: 4px;">Comisión: ${formatearNumero(comisionTotal)} BS</div>
+                    <div style="margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 6px;">
+                        <div style="font-size: 0.75rem; font-weight: bold; color: var(--success); margin-bottom: 2px;">COBRANZA TOTAL:</div>
+                        ${htmlMonedasCobranza}
+                    </div>
+                </div>
+            `;
+        });
+        
+        let cont = document.getElementById('cat_recargas_container');
+        if(cont) cont.innerHTML = html || `<p style="color:var(--muted); text-align:center; grid-column:1/-1;">No hay planes configurados para ${op}. Dirígete a Configuraciones para añadirlos.</p>`;
+    }
+
+    function formatearNumero(v, d = 2) { 
+        if (isNaN(v) || v === null || v === undefined) return "0"; 
+        let num = parseFloat(v); if (d === 0) num = Math.round(num); 
+        let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+        if (d > 0 && p[1] === "00") return p[0]; 
+        return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
+    }
+</script>
+</body>
+</html>

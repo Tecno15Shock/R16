@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="head_title">Sistema Maestro - Conexión Segura</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
+            --success: #2ecc71; --warning: #f39c12; --text: #333; 
+            --border: #dcdde1; --card-bg: #ffffff; --muted: #7f8c8d;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: var(--text);
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* LOGIN OVERLAY Y CONTENEDOR */
+        #login_overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.9), rgba(42, 82, 152, 0.95));
+            z-index: 999999; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px);
+            padding: 15px;
+        }
+        .login-card {
+            background: var(--card-bg); padding: 35px 30px; border-radius: 16px;
+            width: 100%; max-width: 400px; text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .login-card h2 {
+            color: var(--primary); margin-bottom: 20px; font-size: 1.5rem; border-bottom: none;
+        }
+        
+        .input-group { position: relative; margin-bottom: 15px; text-align: left; }
+        .input-group label { font-size: 0.85rem; font-weight: bold; color: var(--muted); display: block; margin-bottom: 5px; }
+        input[type="email"], input[type="password"], input[type="text"] {
+            width: 100%; padding: 12px 14px; font-size: 0.95rem;
+            border: 2px solid var(--border); border-radius: 8px;
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+            background: #fdfdfd; color: var(--text);
+        }
+        input:focus { border-color: var(--secondary); box-shadow: 0 0 5px rgba(52, 152, 219, 0.3); background: #fff; }
+        
+        .toggle-password {
+            position: absolute; right: 12px; top: 35px; background: none; border: none;
+            cursor: pointer; font-size: 1.1rem; color: var(--muted); padding: 0;
+        }
+
+        /* SECCIÓN TÉRMINOS Y CONDICIONES */
+        .terminos-container {
+            display: flex; align-items: center; gap: 8px; margin: 15px 0 20px 0;
+            text-align: left; font-size: 0.85rem; color: #555;
+        }
+        .terminos-container input[type="checkbox"] {
+            width: 18px; height: 18px; accent-color: var(--secondary); cursor: pointer;
+        }
+        .link-terminos {
+            color: var(--secondary); text-decoration: underline; cursor: pointer; font-weight: 600;
+        }
+        .link-terminos:hover { color: #2980b9; }
+
+        /* BOTONES */
+        .btn-main {
+            background: var(--secondary); color: white; border: none; border-radius: 8px;
+            padding: 12px; font-size: 1rem; font-weight: bold; width: 100%;
+            cursor: pointer; transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        .btn-main:hover { background: #2980b9; }
+        .btn-main:active { transform: scale(0.98); }
+
+        .btn-link {
+            background: none; border: none; color: var(--danger); font-size: 0.85rem;
+            cursor: pointer; margin-top: 15px; text-decoration: underline; display: inline-block;
+        }
+        .btn-link:hover { color: #c0392b; }
+
+        /* MODAL ESTILIZADO */
+        .custom-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.7); z-index: 1000000; display: none;
+            align-items: center; justify-content: center; backdrop-filter: blur(4px);
+            padding: 20px;
+        }
+        .custom-modal-box {
+            background: var(--card-bg); padding: 30px; border-radius: 14px;
+            width: 100%; max-width: 500px; position: relative;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: left;
+            max-height: 85vh; display: flex; flex-direction: column;
+            animation: scaleUp 0.3s ease-in-out;
+        }
+        @keyframes scaleUp {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .custom-modal-title {
+            font-size: 1.25rem; color: var(--primary); margin-bottom: 15px;
+            font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 8px;
+        }
+        #global_modal_body { overflow-y: auto; font-size: 0.9rem; line-height: 1.5; color: #444; flex-grow: 1; margin-bottom: 20px; }
+        .modal-close-btn {
+            position: absolute; top: 15px; right: 15px; background: var(--danger);
+            color: white; border: none; border-radius: 50%; width: 30px; height: 30px;
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MODAL GLOBAL ESTILIZADO -->
+    <div id="global_modal" class="custom-modal-overlay">
+        <div class="custom-modal-box">
+            <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+            <div id="global_modal_title" class="custom-modal-title">Título</div>
+            <div id="global_modal_body">Contenido dinámico...</div>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login_overlay">
+        <div class="login-card">
+            <h2>
+                🛡️ R16 🛡️<br>
+                <span style="font-size: 0.85rem; color: var(--muted); font-weight: normal;">Conexión Segura Supabase</span>
+            </h2>
+            
+            <div class="input-group">
+                <label>Correo Electrónico</label>
+                <input type="email" id="login_email" placeholder="admin@sistema.com">
+            </div>
+
+            <div class="input-group">
+                <label>Contraseña</label>
+                <input type="password" id="login_pass" placeholder="••••••••" onkeyup="if(event.key==='Enter') window.iniciarSesionSupabase()">
+                <button type="button" class="toggle-password" onclick="togglePassVisibility('login_pass', this)">👁️</button>
+            </div>
+
+            <div class="terminos-container">
+                <input type="checkbox" id="check_terminos">
+                <div>Acepto los <span class="link-terminos" onclick="abrirTerminosYCondiciones()">términos y condiciones</span></div>
+            </div>
+
+            <button class="btn-main" onclick="window.iniciarSesionSupabase()">Ingresar al Sistema</button>
+            
+            <div>
+                <button id="btn_recuperar" class="btn-link" onclick="mostrarModalRecuperacion()">¿Olvidaste tu contraseña?</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const URL_PANTALLA_PRINCIPAL = 'principal.html'; 
+
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    // 1. Verificación automática de sesión y manejo de recuperación de contraseña por enlace
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            // Escuchar si el usuario entra mediante un enlace de recuperación de contraseña de Supabase
+            window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    mostrarModalNuevaContrasena();
+                }
+            });
+
+            const { data } = await window.supabaseClient.auth.getSession();
+            if (data && data.session) {
+                window.location.href = URL_PANTALLA_PRINCIPAL;
+            } else {
+                document.getElementById('login_overlay').style.display = 'flex';
+            }
+        } catch (err) { 
+            console.error(err); 
+        }
+    });
+
+    // 2. Iniciar sesión con validación de términos
+    window.iniciarSesionSupabase = async function() {
+        const email = document.getElementById('login_email').value.trim();
+        const pass = document.getElementById('login_pass').value.trim();
+        const aceptaTerminos = document.getElementById('check_terminos').checked;
+
+        if(!email || !pass) return mostrarAlertaPersonalizada("Atención", "⚠️ Ingresa tu correo y contraseña para continuar.");
+        if(!aceptaTerminos) return mostrarAlertaPersonalizada("Términos Requeridos", "⚠️ Debes aceptar los términos y condiciones para usar el sistema.");
+
+        mostrarModalCargando("Autenticando", "Conectando con el servidor seguro...");
+
+        try {
+            const { error } = await window.supabaseClient.auth.signInWithPassword({ email, password: pass });
+            cerrarModalGlobal();
+            
+            if (error) { 
+                mostrarAlertaPersonalizada("Acceso Denegado", "❌ Credenciales incorrectas o usuario no registrado.");
+            } else { 
+                window.location.href = URL_PANTALLA_PRINCIPAL; 
+            }
+        } catch (err) { 
+            cerrarModalGlobal();
+            mostrarAlertaPersonalizada("Error de Red", "❌ No se pudo establecer conexión con Supabase. Verifica tu internet.");
+        }
+    };
+
+    // 3. Recuperación de contraseña por correo adaptada a GitHub Pages
+    window.recuperarContrasena = async function() {
+        const email = document.getElementById('recuperar_email').value.trim();
+        if(!email) return alert("⚠️ Ingresa un correo electrónico válido.");
+
+        mostrarModalCargando("Enviando Correo", "Solicitando recuperación a Supabase...");
+        try {
+            const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+                // Esto redirige exactamente a tu GitHub Pages actual con el token de sesión
+                redirectTo: window.location.origin + window.location.pathname,
+            });
+            cerrarModalGlobal();
+            if(error) {
+                mostrarAlertaPersonalizada("Error", "❌ No se pudo enviar el correo: " + error.message);
+            } else {
+                mostrarAlertaPersonalizada("Correo Enviado", "✅ Si el correo está registrado en el sistema, se le ha enviado un enlace de recuperación de contraseña.");
+            }
+        } catch(e) {
+            cerrarModalGlobal();
+            mostrarAlertaPersonalizada("Error", "❌ Ocurrió un error inesperado al procesar la solicitud.");
+        }
+    };
+
+    function mostrarModalRecuperacion() {
+        let html = `
+            <p>Introduce tu correo electrónico registrado y te enviaremos un enlace de recuperación a través de Supabase:</p>
+            <div class="input-group" style="margin-top:15px;">
+                <label>Correo Electrónico</label>
+                <input type="email" id="recuperar_email" placeholder="tucorreo@dominio.com">
+            </div>
+            <button class="btn-main" style="margin-top:10px;" onclick="recuperarContrasena()">Enviar Enlace de Recuperación</button>
+        `;
+        abrirModalGlobal("Recuperar Contraseña", html);
+    }
+
+    // Modal para actualizar la contraseña cuando se usa el enlace del correo
+    function mostrarModalNuevaContrasena() {
+        let html = `
+            <p>Por favor, introduce tu nueva contraseña:</p>
+            <div class="input-group" style="margin-top:15px;">
+                <label>Nueva Contraseña</label>
+                <input type="password" id="nueva_pass" placeholder="••••••••">
+            </div>
+            <button class="btn-main" style="margin-top:10px;" onclick="actualizarPasswordEnServidor()">Guardar Nueva Contraseña</button>
+        `;
+        abrirModalGlobal("Restablecer Contraseña", html);
+    }
+
+    window.actualizarPasswordEnServidor = async function() {
+        const nuevaPass = document.getElementById('nueva_pass').value.trim();
+        if(!nuevaPass || nuevaPass.length < 6) return alert("⚠️ La contraseña debe tener al menos 6 caracteres.");
+
+        mostrarModalCargando("Actualizando", "Guardando nueva contraseña...");
+        try {
+            const { error } = await window.supabaseClient.auth.updateUser({ password: nuevaPass });
+            cerrarModalGlobal();
+            if(error) {
+                mostrarAlertaPersonalizada("Error", "❌ No se pudo actualizar: " + error.message);
+            } else {
+                mostrarAlertaPersonalizada("¡Contraseña Actualizada!", "✅ Tu contraseña ha sido cambiada con éxito. Ya puedes ingresar al sistema.");
+            }
+        } catch(e) {
+            cerrarModalGlobal();
+            mostrarAlertaPersonalizada("Error", "❌ Ocurrió un error inesperado.");
+        }
+    };
+
+    // 4. Términos y Condiciones (Enfoque Legal en Venezuela)
+    function abrirTerminosYCondiciones() {
+        let html = `
+            <h4 style="margin-top:0; color:var(--primary);">Términos, Condiciones y Política de Privacidad</h4>
+            <p><strong>1. Marco Legal y Operativo (Venezuela):</strong> Este software opera bajo las normativas de automatización comercial y control interno estipuladas para establecimientos mercantiles en el territorio de la República Bolivariana de Venezuela.</p>
+            <p><strong>2. Recolección de Datos e Información:</strong> El sistema almacena registros estrictamente operativos vinculados a su sucursal comercial, los cuales incluyen:</p>
+            <ul>
+                <li>Catálogos de productos, costos de adquisición y precios de venta o caja.</li>
+                <li>Control de inventario físico, mermas, entradas de proveedores e historiales de turnos/lotes.</li>
+                <li>Registros de deudas de clientes (fiados) y control de personal/vendedores.</li>
+                <li>Datos de autenticación seguros gestionados mediante infraestructura en la nube (Supabase).</li>
+            </ul>
+            <p><strong>3. Responsabilidad de Uso:</strong> La veracidad de los datos introducidos (tasas de cambio oficiales, cierres de caja y transacciones multidivisa) es entera responsabilidad del operador o administrador autorizado del local.</p>
+            <p><strong>4. Privacidad y Seguridad:</strong> La información recolectada se procesa exclusivamente con fines de gestión comercial interna y no es compartida con terceros ajenos a la administración del establecimiento.</p>
+        `;
+        abrirModalGlobal("Términos y Condiciones Legales", html);
+    }
+
+    // Utilidades de Modales y Visualización
+    function abrirModalGlobal(titulo, htmlContent) { 
+        document.getElementById('global_modal_title').innerText = titulo; 
+        document.getElementById('global_modal_body').innerHTML = htmlContent; 
+        document.getElementById('global_modal').style.display = 'flex'; 
+    }
+    
+    function cerrarModalGlobal() { 
+        document.getElementById('global_modal').style.display = 'none'; 
+    }
+
+    function mostrarModalCargando(titulo, msg) { 
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:25px; font-size:1.1rem; color:var(--primary);">⏳ ${msg}</div>`); 
+    }
+
+    function mostrarAlertaPersonalizada(titulo, mensaje) {
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:15px; font-size:1rem;">${mensaje}</div><button class="btn-main" style="margin-top:15px;" onclick="cerrarModalGlobal()">Entendido</button>`);
+    }
+
+    function togglePassVisibility(inputId, btn) {
+        let input = document.getElementById(inputId);
+        if (input) {
+            if (input.type === "password") {
+                input.type = "text";
+                btn.innerText = "🙈";
+            } else {
+                input.type = "password";
+                btn.innerText = "👁️";
+            }
+        }
+    }
+	
+	async function verificarEstadoSuscripcionLocal(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, locales(fecha_vencimiento, activo)').eq('id', userId).single();
+    
+        if (perfil && perfil.locales) {
+            let local = perfil.locales;
+            let ahora = new Date();
+            let fechaVenc = local.fecha_vencimiento ? new Date(local.fecha_vencimiento) : null;
+
+            // Si el local está desactivado, o si tiene fecha de vencimiento y esta ya pasó
+            if (!local.activo || (fechaVenc && fechaVenc < ahora)) {
+                alert("❌ Su plan o suscripción ha vencido. Comuníquese con soporte para realizar la renovación.");
+                await supabaseClient.auth.signOut();
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+        return true; // Acceso permitido (Activo o Perpetuo sin fecha de corte)
+    }
+</script>
+</body>
+</html>
