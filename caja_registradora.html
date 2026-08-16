@@ -8,9 +8,24 @@
     
     <style>
         :root {
-            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
-            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
-            --border: #ccc; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+            --topbar-bg: #000000; /* Franja superior negra */
+            --sidebar-bg: #000000; /* Menú lateral negro */
+            --active-gold: #D4AF37; /* Dorado institucional para el menú activo */
+            
+            /* Nuevos Colores Institucionales */
+            --primary: #002244; /* Azul Marino */
+            --secondary: #003366; /* Azul Marino Claro */
+            --danger: #b30000; /* Rojo Institucional */
+            
+            --bg: #f4f4f9; 
+            --success: #2ecc71; 
+            --warning: #f39c12; 
+            --info: #34495e; 
+            --text: #333; 
+            --border: #ccc; 
+            --card-bg: #ffffff; 
+            --item-bg: #fdfdfd; 
+            --muted: #7f8c8d;
         }
         body.hide-bs .moneda-bs { display: none !important; }
         body.hide-cop .moneda-cop { display: none !important; }
@@ -20,28 +35,33 @@
         body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .wrapper { display: block; min-height: 100vh; position: relative; }
 
-        /* ========================================================= */
-        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
-        /* ========================================================= */
-        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        /* BARRA SUPERIOR */
+        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; }
 
-        /* ========================================================= */
-        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
-        /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        /* MENÚ LATERAL */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
         .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
-        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
-        .sidebar .tab-btn:hover { background: #34495e; color: white; }
-        /* Etiqueta para diferenciar la página activa en el menú */
-        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 1px; color: white; }
+        .sidebar .tab-btn { background: none; color: white; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
+        .sidebar .tab-btn:hover { background: #222222; color: white; }
+        .sidebar .tab-btn.active { background: var(--active-gold) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; }
         .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
         .sidebar-overlay.active { display: block; }
 
         .main-content { max-width: 900px; margin: 0 auto; padding: 20px; padding-bottom: 180px; }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: 1px solid var(--border);}
+        
+        /* DISEÑO INSTITUCIONAL EN TARJETAS */
+        .card { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08); 
+            border-top: 4px solid var(--primary); 
+            border-bottom: 4px solid var(--danger);
+        }
         h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -80,7 +100,23 @@
         .resta-cero { color: #2ed573 !important; font-weight: bold; } 
 
         .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 100000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
-        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; min-width: 320px; max-width: 90%; width: 650px; position: relative; max-height: 90vh; display: flex; flex-direction: column; }
+        
+        /* DISEÑO INSTITUCIONAL EN VENTANAS EMERGENTES */
+        .custom-modal-box { 
+            background: var(--card-bg); 
+            padding: 25px; 
+            border-radius: 12px; 
+            min-width: 320px; 
+            max-width: 90%; 
+            width: 650px; 
+            position: relative; 
+            max-height: 90vh; 
+            display: flex; 
+            flex-direction: column; 
+            border: 3px solid var(--primary); 
+            box-shadow: 0 0 15px rgba(179, 0, 0, 0.15);
+        }
+        
         .pdf-fullscreen { width: 95vw !important; height: 95vh !important; max-width: none !important; }
         #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px;}
         .modal-close-btn { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; }
@@ -198,7 +234,7 @@
 
  <div class="wrapper">
     
-	<!-- BARRA SUPERIOR -->
+    <!-- BARRA SUPERIOR -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
         <div class="top-bar-title" id="main_top_title">Cargando...</div>
@@ -208,7 +244,6 @@
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
         <div class="sidebar-brand">Menú del Sistema</div>
-        <!-- SOLO UN ENLACE DEBE TENER LA CLASE "active" POR PÁGINA -->
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -255,7 +290,7 @@
         <div id="modulo_caja_cola" class="d-none">
             <button class="btn-danger" style="margin-bottom: 15px;" onclick="volverAlSelector()">⬅ Volver a Elegir Módulo</button>
             
-            <div class="card" style="border: 2px solid var(--danger);">
+            <div class="card" style="border-top: 4px solid var(--danger);">
                 <h2>📠 Operación de Caja Registradora</h2>
                 <div class="grid-2">
                     <div>
@@ -298,7 +333,7 @@
                 <button class="btn-info" style="font-size: 1.2rem; padding: 15px;" onclick="abrirModalPagos()">💳 Ingresar Método De Pago</button>
             </div>
 
-            <div class="card" style="border: 2px solid var(--success); background: #eafaf1; text-align: center;">
+            <div class="card" style="border-top: 4px solid var(--success); background: #eafaf1; text-align: center;">
                 <button class="btn-success" style="font-size: 1.2rem; padding: 18px; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);" onclick="solicitarPinVendedorCola()">🚀 Cerrar Venta</button>
             </div>
         </div>
@@ -310,7 +345,7 @@
         <div id="modulo_cierre_guardia" class="d-none">
             <button class="btn-danger" style="margin-bottom: 15px;" onclick="volverAlSelector()">⬅ Volver a Elegir Módulo</button>
 
-            <div class="card" style="border: 2px solid var(--success);">
+            <div class="card" style="border-top: 4px solid var(--success);">
                 <h2>🧾 Cierre de Guardia / Turno Completo</h2>
                 <p style="color: var(--muted); font-size: 0.95rem;">Llene los datos globales de su guardia completa utilizando el carrito de mercancía y los métodos de pago detallados.</p>
                 
@@ -356,7 +391,7 @@
                 <button class="btn-info" style="font-size: 1.2rem; padding: 15px;" onclick="abrirModalPagos()">💳 Ingresar Método De Pago</button>
             </div>
 
-            <div class="card" style="border: 2px solid var(--success); background: #eafaf1; text-align: center;">
+            <div class="card" style="border-top: 4px solid var(--success); background: #eafaf1; text-align: center;">
                 <button class="btn-success" style="font-size: 1.2rem; padding: 18px; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);" onclick="ejecutarCierreGuardiaDirecto()">🟢 Cierre de Guardia</button>
             </div>
         </div>
@@ -400,32 +435,6 @@
         await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
     }
 
-    async function inicializarDatos(userId) {
-        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
-        if (perfil && perfil.local_id) {
-            CURRENT_LOCAL_ID = perfil.local_id;
-            let { data: conf } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
-            if (conf) {
-                CONFIG_GLOBAL = conf;
-                let nombreLocal = conf.identidad?.nombre || 'Sistema';
-                let etiquetaModulo = "Balance y Lotes";
-                
-                document.getElementById('main_top_title').innerHTML = `
-                    🏪 ${nombreLocal} 
-                    <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        📌 Módulo: ${etiquetaModulo}
-                    </span>
-                `;
-            }
-        } else {
-            cerrarModalGlobal();
-            return alert("Error: Perfil no vinculado a un local.");
-        }
-
-        cerrarModalGlobal();
-        await renderBalanceLotes();
-    }
-
     async function cargarTodoDesdeSupabase(email, nombrePerfil) {
         if(!CURRENT_LOCAL_ID) return;
         try {
@@ -467,6 +476,38 @@
         } catch(e) { console.error(e); }
     }
 
+    // ==========================================
+    // SISTEMA DE SINCRONIZACIÓN Y VALIDACIÓN CONCURRENTE
+    // ==========================================
+    
+    // 1. Validar directamente contra el servidor antes de cualquier transacción
+    async function validarStockEnTiempoReal(carrito) {
+        let ids = carrito.map(p => p.uuid || p.id);
+        const { data, error } = await window.supabaseClient.from('catalogo').select('id, stock, nombre').in('id', ids);
+        if (error) throw new Error("Fallo de red al verificar el inventario en el servidor.");
+
+        for (let item of carrito) {
+            let dbItem = data.find(d => d.id === (item.uuid || item.id));
+            if (!dbItem) throw new Error(`El producto ${item.nom} ya no existe en la base de datos.`);
+            if (dbItem.stock < item.cant) {
+                throw new Error(`Stock insuficiente para: ${dbItem.nombre}. Solicitado: ${item.cant}, Disponible real: ${dbItem.stock}.`);
+            }
+        }
+        return true;
+    }
+
+    // 2. Refrescar el inventario local tras una transacción sin recargar la página
+    async function refrescarCatalogoLocal() {
+        if(!CURRENT_LOCAL_ID) return;
+        const { data } = await window.supabaseClient.from('catalogo').select('id, stock').eq('local_id', CURRENT_LOCAL_ID);
+        if (data) {
+            data.forEach(dbProd => {
+                let localProd = CATALOGO.find(p => p.uuid === dbProd.id);
+                if (localProd) localProd.stock = dbProd.stock;
+            });
+        }
+    }
+
     function cambiarMundo(mundo) {
         mundoActual = mundo;
         document.getElementById('selector_mundo_card').classList.add('d-none');
@@ -488,15 +529,14 @@
 
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('active'); }
     
-	window.alert = function(msg) {
+    window.alert = function(msg) {
         let icono = '⚠️';
         let titulo = 'Aviso del Sistema';
         
-        // Detectar tipo de mensaje para personalizar el icono y título
         if (msg.includes('✅') || msg.includes('Exitosa') || msg.includes('Exitoso')) {
             icono = '✅';
             titulo = 'Operación Exitosa';
-        } else if (msg.includes('❌') || msg.includes('Error') || msg.includes('Incorrecto') || msg.includes('vacío')) {
+        } else if (msg.includes('❌') || msg.includes('Error') || msg.includes('Incorrecto') || msg.includes('vacío') || msg.includes('Insuficiente') || msg.includes('Abortada')) {
             icono = '❌';
             titulo = 'Atención / Error';
         }
@@ -510,7 +550,7 @@
         `;
         abrirModalGlobal(titulo, html);
     };
-	
+    
     function abrirModalGlobal(titulo, htmlContent, isFullscreen = false) { 
         document.getElementById('global_modal_title').innerText = titulo; 
         document.getElementById('global_modal_body').innerHTML = htmlContent; 
@@ -523,7 +563,6 @@
 
     function abrirModalPagos() { document.getElementById('modal_pagos').style.display = 'flex'; }
     function cerrarModalPagos() { document.getElementById('modal_pagos').style.display = 'none'; }
-
 
     /* ========================================== */
     /* MUNDO 1: COLA Y VENTA DIARIA               */
@@ -565,22 +604,20 @@
             if (vTemp && vTemp.carrito) {
                 for (let p of vTemp.carrito) {
                     let catID = p.uuid || p.id;
-                    let prodCat = CATALOGO.find(x => x.uuid === catID);
-                    if (prodCat) {
-                        // USO DE RPC PARA SUMAR (RESTAURAR) STOCK DE FORMA ATÓMICA
-                        await window.supabaseClient.rpc('incrementar_stock', { 
-                            prod_id: catID, 
-                            cantidad_a_sumar: p.cant 
-                        });
-                        prodCat.stock += p.cant; // Actualizar UI localmente
-                    }
+                    await window.supabaseClient.rpc('incrementar_stock', { 
+                        prod_id: catID, 
+                        cantidad_a_sumar: p.cant 
+                    });
                 }
             }
 
             const { error: errDel } = await window.supabaseClient.from('ventas_temporales').delete().eq('id', idCola);
             if (errDel) throw errDel;
             
-            alert("✅ Venta anulada de la cola. Stock restablecido al catálogo.");
+            // SINCRONIZACIÓN INMEDIATA DEL FRONTEND
+            await refrescarCatalogoLocal();
+            
+            alert("✅ Venta anulada de la cola. Stock restablecido de forma segura.");
             abrirModalCola();
         } catch(e) { alert("Error al anular: " + e.message); cerrarModalGlobal(); }
     }
@@ -774,6 +811,9 @@
             let { error: errDelTemp } = await window.supabaseClient.from('ventas_temporales').delete().eq('vendedor_id', vendedorId).eq('local_id', CURRENT_LOCAL_ID);
             if(errDelTemp) throw new Error("Error al limpiar ventas temporales: " + errDelTemp.message);
 
+            // Refrescar inventario local por precaución
+            await refrescarCatalogoLocal();
+
             codigosTicketsLiquidados = codigosTickets;
             datosLiquidacionTurno = { efectivoUsd, efectivoBs, puntoBs, pagomovilBs, biopagoBs, totalVenta, esUltimaCaja };
 
@@ -788,7 +828,7 @@
     }
 
     function mostrarModalTicketLiquidacionCompleto() {
-        let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'REFRESQUERÍA FLOR';
+        let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'SISTEMA';
         let vendedorSel = document.getElementById('cierre_quien_cerro').selectedOptions[0]?.text || 'N/A';
         let turnoSel = document.getElementById('modal_cierre_turno')?.value || 'N/A';
         
@@ -838,6 +878,39 @@
         abrirModalGlobal("Liquidación Exitosa", htmlTicket);
     }
 
+    /* SEGURIDAD: PIN DE VENDEDOR PARA ENVIAR A LA COLA */
+    function solicitarPinVendedorCola() {
+        let vendedorId = document.getElementById('cierre_quien_cerro').value;
+        if(!vendedorId) return alert("❌ Seleccione primero al vendedor.");
+        if(productosTicket.length === 0) return alert("❌ Carrito vacío.");
+        let clienteId = document.getElementById('cliente_id_seleccionado').value;
+        if(!clienteId) return alert("❌ Seleccione un cliente.");
+
+        let emp = EMPLEADOS.find(e => e.id === vendedorId);
+        if(!emp) return alert("❌ Vendedor no válido.");
+
+        let html = `
+            <div style="text-align:center; padding:10px;">
+                <p style="color:var(--danger); font-weight:bold; margin-bottom:15px;">Ingrese el PIN del Vendedor (${emp.nombre} ${emp.apellido})</p>
+                <input type="password" id="input_pin_vendedor_cola" placeholder="XXXX" style="text-align:center; font-size:2rem; letter-spacing:8px; padding:10px;" onkeyup="if(event.key==='Enter') validarPinVendedorCola('${emp.pin}')">
+                <button class="btn-success" style="margin-top:20px; background:var(--primary);" onclick="validarPinVendedorCola('${emp.pin}')">🔓 Confirmar y Enviar a Cola</button>
+            </div>`;
+        abrirModalGlobal("🔒 PIN de Vendedor Requerido", html);
+        setTimeout(() => document.getElementById('input_pin_vendedor_cola')?.focus(), 100);
+    }
+
+    function validarPinVendedorCola(pinReal) {
+        let pinIngresado = document.getElementById('input_pin_vendedor_cola').value.trim();
+        let pinAdmin = CONFIG_GLOBAL.identidad?.admin_pass || '151016';
+        
+        if (pinIngresado === pinReal || pinIngresado === pinAdmin) {
+            cerrarModalGlobal();
+            procesarVentaRapida();
+        } else {
+            alert("❌ PIN Incorrecto para este vendedor.");
+            document.getElementById('input_pin_vendedor_cola').value = '';
+        }
+    }
 
     /* ========================================== */
     /* MUNDO 2: CIERRE DE GUARDIA TRADICIONAL     */
@@ -850,8 +923,11 @@
         if(!vendedorId || !supervisorId) return alert("❌ Seleccione el empleado que cierra y el supervisor que recibe.");
         if(productosTicket.length === 0) return alert("❌ Debe declarar al menos un producto en el carrito de la guardia.");
 
-        mostrarModalLocal("Procesando Cierre", "Generando lote y registrando entrega de guardia...");
+        mostrarModalLocal("Procesando Cierre", "Validando stock y registrando entrega...");
         try {
+            // VALIDACIÓN ESTRICTA EN BD
+            await validarStockEnTiempoReal(productosTicket);
+
             let fechaHoy = new Date().toISOString().slice(0,10);
             let tasaBs = parseFloat(CONFIG_GLOBAL.tasas?.ves) || 1;
 
@@ -901,7 +977,7 @@
             let snapshotInventario = CATALOGO.map(prod => {
                 let item = detallesAgrupados[prod.uuid];
                 let cantVendida = item ? item.cant : 0;
-                let E_val = prod.stock + cantVendida; // El stock actual antes de restar
+                let E_val = prod.stock + cantVendida;
                 let S_val = prod.stock;
                 let VP_val = Math.max(0, E_val - S_val);
                 let VT_val = item ? item.subtotal : (VP_val * prod.base);
@@ -913,23 +989,22 @@
                 tasa_usd_bs: tasaBs, total_usd: totalVentaUsd, detalles_json: snapshotInventario
             }]);
 
-            // [NUEVO] USO DE RPC PARA RESTAR STOCK TRAS CERRAR GUARDIA
+            // DESCUENTO DIRECTO EN BD
             for (let p of productosTicket) {
                 let catID = p.uuid || p.id;
-                let prodCat = CATALOGO.find(x => x.uuid === catID);
-                if (prodCat) {
-                    await window.supabaseClient.rpc('decrementar_stock', { 
-                        prod_id: catID, 
-                        cantidad_a_restar: p.cant 
-                    });
-                    prodCat.stock = Math.max(0, prodCat.stock - p.cant); // Actualizar UI
-                }
+                await window.supabaseClient.rpc('decrementar_stock', { 
+                    prod_id: catID, 
+                    cantidad_a_restar: p.cant 
+                });
             }
+            
+            // SINCRONIZACIÓN INMEDIATA DEL FRONTEND
+            await refrescarCatalogoLocal();
 
             ultimoNumeroVentaGenerado = 'GC-' + Math.floor(1000 + Math.random() * 9000);
             cerrarModalGlobal();
             
-            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'REFRESQUERÍA FLOR';
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'SISTEMA';
             let htmlProductos = productosTicket.map(p => `<tr><td>${p.cant}x ${limpiarNombre(p.nom)}</td><td style="text-align:right;">${formatearNumero(((p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base) * p.cant) * tasaBs, 2)} BS</td></tr>`).join('');
             
             let htmlTicket = `
@@ -951,42 +1026,7 @@
                 </div>`;
             abrirModalGlobal("Cierre de Guardia Exitoso", htmlTicket);
 
-        } catch(e) { cerrarModalGlobal(); alert("❌ Error al cerrar guardia: " + e.message); }
-    }
-
-
-    /* SEGURIDAD: PIN DE VENDEDOR PARA ENVIAR A LA COLA */
-    function solicitarPinVendedorCola() {
-        let vendedorId = document.getElementById('cierre_quien_cerro').value;
-        if(!vendedorId) return alert("❌ Seleccione primero al vendedor.");
-        if(productosTicket.length === 0) return alert("❌ Carrito vacío.");
-        let clienteId = document.getElementById('cliente_id_seleccionado').value;
-        if(!clienteId) return alert("❌ Seleccione un cliente.");
-
-        let emp = EMPLEADOS.find(e => e.id === vendedorId);
-        if(!emp) return alert("❌ Vendedor no válido.");
-
-        let html = `
-            <div style="text-align:center; padding:10px;">
-                <p style="color:var(--danger); font-weight:bold; margin-bottom:15px;">Ingrese el PIN del Vendedor (${emp.nombre} ${emp.apellido})</p>
-                <input type="password" id="input_pin_vendedor_cola" placeholder="XXXX" style="text-align:center; font-size:2rem; letter-spacing:8px; padding:10px;" onkeyup="if(event.key==='Enter') validarPinVendedorCola('${emp.pin}')">
-                <button class="btn-success" style="margin-top:20px; background:var(--primary);" onclick="validarPinVendedorCola('${emp.pin}')">🔓 Confirmar y Enviar a Cola</button>
-            </div>`;
-        abrirModalGlobal("🔒 PIN de Vendedor Requerido", html);
-        setTimeout(() => document.getElementById('input_pin_vendedor_cola')?.focus(), 100);
-    }
-
-    function validarPinVendedorCola(pinReal) {
-        let pinIngresado = document.getElementById('input_pin_vendedor_cola').value.trim();
-        let pinAdmin = CONFIG_GLOBAL.identidad?.admin_pass || '151016';
-        
-        if (pinIngresado === pinReal || pinIngresado === pinAdmin) {
-            cerrarModalGlobal();
-            procesarVentaRapida();
-        } else {
-            alert("❌ PIN Incorrecto para este vendedor.");
-            document.getElementById('input_pin_vendedor_cola').value = '';
-        }
+        } catch(e) { cerrarModalGlobal(); alert("❌ Transacción Abortada: " + e.message); }
     }
 
 
@@ -1301,7 +1341,6 @@
             totalIngresadoUsd += convertirA_USD(valEfectivoTrans, 'BS');
         });
 
-        // Transferencias internacionales (Solo actúan si se selecciona moneda)
         document.querySelectorAll('#lista_transferencia_internacional .trans-row').forEach(row => {
             let monto = parseFloat(row.querySelector('.trans_monto')?.value) || 0;
             let pct = parseFloat(row.querySelector('.trans_pct')?.value) || 0;
@@ -1313,7 +1352,6 @@
             }
         });
 
-        // Avances Retirados y Gastos Operativos (Solo actúan si se selecciona moneda)
         document.querySelectorAll('#lista_avances .flex-row-justificado, #lista_gastos .flex-row-justificado').forEach(row => {
             let monto = parseFloat(row.querySelector('.monto_multi')?.value) || 0;
             let moneda = row.querySelector('.moneda_multi')?.value;
@@ -1323,7 +1361,6 @@
             }
         });
 
-        // Vueltos Entregados Extra (Restan del total en caja, solo si hay moneda seleccionada)
         document.querySelectorAll('#contenedor-vueltos-ticket .flex-row').forEach(row => {
             let montoVuelto = parseFloat(row.querySelector('.vuelto_val')?.value) || 0;
             let monedaVuelto = row.querySelector('.vuelto_moneda')?.value;
@@ -1347,13 +1384,19 @@
         document.querySelectorAll('#resta_eur_txt').forEach(el => { el.className = colorCls; el.innerHTML = `${formatearNumero(absDif * (t.eur || 1))} EUR`; });
     }
 
+    // ==========================================
+    // VENTA RÁPIDA (REESCRITA PARA VALIDACIÓN EN BD)
+    // ==========================================
     async function procesarVentaRapida() {
         let vendedorId = document.getElementById('cierre_quien_cerro').value;
         let clienteId = document.getElementById('cliente_id_seleccionado').value;
 
         ultimoNumeroVentaGenerado = 'V-' + Math.floor(1000 + Math.random() * 9000);
-        mostrarModalLocal("Procesando", "Descontando inventario y enviando a la cola...");
+        mostrarModalLocal("Procesando", "Validando inventario en tiempo real...");
         try {
+            // VALIDACIÓN ESTRICTA EN BD
+            await validarStockEnTiempoReal(productosTicket);
+
             let totalBase = 0, totalVenta = 0;
             productosTicket.forEach(p => { 
                 let pt = p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base; 
@@ -1367,23 +1410,21 @@
                 total_base_usd: totalBase, total_venta_usd: totalVenta, numero_venta: ultimoNumeroVentaGenerado
             }]);
 
-            // [NUEVO] USO DE RPC PARA RESTAR STOCK (COLAS)
+            // DESCUENTO DIRECTO EN BD
             for (let p of productosTicket) {
                 let catID = p.uuid || p.id;
-                let prodCat = CATALOGO.find(x => x.uuid === catID);
-                if (prodCat) {
-                    await window.supabaseClient.rpc('decrementar_stock', { 
-                        prod_id: catID, 
-                        cantidad_a_restar: p.cant 
-                    });
-                    prodCat.stock = Math.max(0, prodCat.stock - p.cant); // Actualizar UI localmente
-                }
+                await window.supabaseClient.rpc('decrementar_stock', { 
+                    prod_id: catID, 
+                    cantidad_a_restar: p.cant 
+                });
             }
+            
+            // SINCRONIZACIÓN INMEDIATA DEL FRONTEND
+            await refrescarCatalogoLocal();
             cerrarModalGlobal();
             
-            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'REFRESQUERÍA FLOR';
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'SISTEMA';
             let tasaBs = CONFIG_GLOBAL.tasas?.ves || 1;
-            let totalUsd = totalVenta;
             let htmlProductos = productosTicket.map(p => `<tr><td>${p.cant}x ${limpiarNombre(p.nom)}</td><td style="text-align:right;">${formatearNumero(((p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base) * p.cant) * tasaBs, 2)} BS</td></tr>`).join('');
             
             let htmlTicket = `
@@ -1393,11 +1434,9 @@
                     <hr style="border-top: 1px dashed #000;">
                     <p style="margin:2px 0; text-align:center; font-size:14px; font-weight:bold;">TICKET: ${ultimoNumeroVentaGenerado}</p>
                     <hr style="border-top: 1px dashed #000;">
-                    <p style="margin:2px 0;"><strong>Fecha:</strong> ${new Date().toLocaleString()}</p>
-                    <hr style="border-top: 1px dashed #000;">
                     <table style="width:100%; font-size:12px; color: black;">${htmlProductos}</table>
                     <hr style="border-top: 1px dashed #000;">
-                    <p style="text-align:right; font-size:14px; font-weight:bold; margin:5px 0;">TOTAL BS: ${formatearNumero(totalUsd * tasaBs, 2)} BS</p>
+                    <p style="text-align:right; font-size:14px; font-weight:bold; margin:5px 0;">TOTAL BS: ${formatearNumero(totalVenta * tasaBs, 2)} BS</p>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:15px; justify-content: space-between;">
                     <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
@@ -1405,119 +1444,7 @@
                 </div>`;
             abrirModalGlobal("Venta Enviada a Cola", htmlTicket);
 
-        } catch(e) { cerrarModalGlobal(); alert("❌ Error: " + e.message); }
-    }
-
-    async function ejecutarCierreGuardiaDirecto() {
-        let vendedorId = document.getElementById('guardia_quien_cierra').value;
-        let supervisorId = document.getElementById('guardia_quien_recibe').value;
-        let turno = document.getElementById('guardia_turno_tipo').value;
-
-        if(!vendedorId || !supervisorId) return alert("❌ Seleccione el empleado que cierra y el supervisor que recibe.");
-        if(productosTicket.length === 0) return alert("❌ Debe declarar al menos un producto en el carrito de la guardia.");
-
-        mostrarModalLocal("Procesando Cierre", "Generando lote y registrando entrega de guardia...");
-        try {
-            let fechaHoy = new Date().toISOString().slice(0,10);
-            let tasaBs = parseFloat(CONFIG_GLOBAL.tasas?.ves) || 1;
-
-            let totalVentaUsd = 0, totalCapital = 0;
-            let detallesAgrupados = {};
-
-            productosTicket.forEach(p => {
-                let precioCobrado = p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base;
-                let capUni = parseFloat(p.fuente) || 0;
-                if(!detallesAgrupados[p.uuid]) detallesAgrupados[p.uuid] = { uuid: p.uuid, nom: p.nom, cant: 0, subtotal: 0 };
-                detallesAgrupados[p.uuid].cant += p.cant;
-                detallesAgrupados[p.uuid].subtotal += (precioCobrado * p.cant);
-                totalVentaUsd += (precioCobrado * p.cant);
-                totalCapital += (capUni * p.cant);
-            });
-
-            let gananciaNeta = totalVentaUsd - totalCapital;
-
-            let { data: loteRes, error: errLote } = await window.supabaseClient.from('lotes_diarios').insert([{
-                local_id: CURRENT_LOCAL_ID, vendedor_id: vendedorId, fecha: fechaHoy, turno: turno, 
-                total_vendido_usd: totalVentaUsd, capital_invertido: totalCapital, ganancia_neta: gananciaNeta, tasa_bs: tasaBs
-            }]).select().single();
-            if(errLote) throw errLote;
-
-            let puntoBs = 0, biopagoBs = 0;
-            document.querySelectorAll('#lista_punto .trans_monto').forEach(el => { puntoBs += parseFloat(el.value) || 0; });
-            document.querySelectorAll('#lista_biopago .trans_monto').forEach(el => { biopagoBs += parseFloat(el.value) || 0; });
-
-            if(puntoBs > 0) {
-                await window.supabaseClient.from('conciliacion_punto').insert([{
-                    local_id: CURRENT_LOCAL_ID, lote_id: loteRes.id, fecha: fechaHoy,
-                    monto_esperado: puntoBs, monto_ingresado: 0, estado: 'Pendiente Siguiente Día', referencia: '', notas: `Guardia ${turno}`
-                }]);
-            }
-            if(biopagoBs > 0) {
-                await window.supabaseClient.from('conciliacion_biopago').insert([{
-                    local_id: CURRENT_LOCAL_ID, lote_id: loteRes.id, fecha: fechaHoy,
-                    monto_esperado: biopagoBs, monto_ingresado: 0, estado: 'Pendiente Siguiente Día', referencia: '', notas: `Guardia ${turno}`
-                }]);
-            }
-
-            let arrDetalles = Object.values(detallesAgrupados).map(d => ({
-                lote_id: loteRes.id, producto_id: d.uuid, cantidad: d.cant, subtotal_usd: d.subtotal
-            }));
-            if(arrDetalles.length > 0) await window.supabaseClient.from('detalle_ventas').insert(arrDetalles);
-
-            let snapshotInventario = CATALOGO.map(prod => {
-                let item = detallesAgrupados[prod.uuid];
-                let cantVendida = item ? item.cant : 0;
-                let E_val = prod.stock + cantVendida; // El stock actual antes de restar
-                let S_val = prod.stock;
-                let VP_val = Math.max(0, E_val - S_val);
-                let VT_val = item ? item.subtotal : (VP_val * prod.base);
-                return { uuid: prod.uuid, nombre: prod.nom, E: E_val, S: S_val, VP: VP_val, PI: prod.base, VT: VT_val };
-            });
-
-            await window.supabaseClient.from('control_inventario_cierres').insert([{
-                local_id: CURRENT_LOCAL_ID, lote_id: loteRes.id, empleado_cierra: vendedorId, empleado_recibe: supervisorId,
-                tasa_usd_bs: tasaBs, total_usd: totalVentaUsd, detalles_json: snapshotInventario
-            }]);
-
-            // [NUEVO] USO DE RPC PARA RESTAR STOCK TRAS CERRAR GUARDIA
-            for (let p of productosTicket) {
-                let catID = p.uuid || p.id;
-                let prodCat = CATALOGO.find(x => x.uuid === catID);
-                if (prodCat) {
-                    await window.supabaseClient.rpc('decrementar_stock', { 
-                        prod_id: catID, 
-                        cantidad_a_restar: p.cant 
-                    });
-                    prodCat.stock = Math.max(0, prodCat.stock - p.cant); // Actualizar UI localmente
-                }
-            }
-
-            ultimoNumeroVentaGenerado = 'GC-' + Math.floor(1000 + Math.random() * 9000);
-            cerrarModalGlobal();
-            
-            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'REFRESQUERÍA FLOR';
-            let htmlProductos = productosTicket.map(p => `<tr><td>${p.cant}x ${limpiarNombre(p.nom)}</td><td style="text-align:right;">${formatearNumero(((p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base) * p.cant) * tasaBs, 2)} BS</td></tr>`).join('');
-            
-            let htmlTicket = `
-                <div id="ticket_para_imprimir" style="font-family: 'Courier New', monospace; font-size: 13px; background: #fff; padding: 15px; border: 1px solid #ccc; max-width: 300px; margin: 0 auto; color: black;">
-                    <h3 style="text-align:center; margin:0 0 5px 0;">${nombreLocal}</h3>
-                    <p style="text-align:center; margin:0 0 10px 0;">COMPROBANTE DE CIERRE GUARDIA</p>
-                    <hr style="border-top: 1px dashed #000;">
-                    <p style="margin:2px 0; text-align:center; font-size:14px; font-weight:bold;">TICKET: ${ultimoNumeroVentaGenerado}</p>
-                    <hr style="border-top: 1px dashed #000;">
-                    <p style="margin:2px 0;"><strong>Fecha:</strong> ${new Date().toLocaleString()}</p>
-                    <hr style="border-top: 1px dashed #000;">
-                    <table style="width:100%; font-size:12px; color: black;">${htmlProductos}</table>
-                    <hr style="border-top: 1px dashed #000;">
-                    <p style="text-align:right; font-size:14px; font-weight:bold; margin:5px 0;">TOTAL BS: ${formatearNumero(totalVentaUsd * tasaBs, 2)} BS</p>
-                </div>
-                <div style="display:flex; gap:10px; margin-top:15px; justify-content: space-between;">
-                    <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
-                    <button class="btn-success" style="margin:0; width:auto;" onclick="cerrarModalGlobal(); reiniciarFormularioPermaneciendo();">✅ Finalizar (Permanecer)</button>
-                </div>`;
-            abrirModalGlobal("Cierre de Guardia Exitoso", htmlTicket);
-
-        } catch(e) { cerrarModalGlobal(); alert("❌ Error al cerrar guardia: " + e.message); }
+        } catch(e) { cerrarModalGlobal(); alert("❌ Transacción Abortada: " + e.message); }
     }
 
     function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
