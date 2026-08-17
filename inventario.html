@@ -3,72 +3,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario - Sistema Maestro</title>
+    <title>Inventario | Panel Elegante</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Librería jsPDF nativa para generación de comprobantes en PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO ELEGANTE (Carmesí, Dorado y Negro)    */
+        /* ========================================================= */
         :root {
-            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
-            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
-            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+            --topbar-bg: #050505; /* Negro puro/profundo */
+            --sidebar-bg: #080808; /* Negro profundo */
+            --active-gold: #D4AF37; /* Dorado institucional */
+            --active-gold-hover: #F3E5AB; 
+            
+            /* Paleta Carmesí */
+            --crimson: #7A171D;
+            --crimson-dark: #5a111a;
+            --crimson-light: #9B222A;
+
+            /* Base y texto */
+            --bg: #F9F8F6; /* Blanco roto / Marfil muy claro para dar calidez */
+            --text: #2A2A2A; 
+            --text-light: #555555;
+            --border: #E8E0D5; 
+            --card-bg: #FFFFFF; 
+            --item-bg: #FCFBFA; 
+            
+            /* Estados */
+            --success: #2E7D32; 
+            --warning: #B8860B; /* Dark Goldenrod */
+            --danger: #8B0000;
         }
+
         body.hide-bs .moneda-bs { display: none !important; }
         body.hide-cop .moneda-cop { display: none !important; }
         body.hide-eur .moneda-eur { display: none !important; }
 
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 0; 
+        }
+
         .wrapper { display: block; min-height: 100vh; position: relative; }
         
-        /* ========================================================= */
-        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
-        /* ========================================================= */
-        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
-
-        /* ========================================================= */
-        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
-        /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
-        .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
-        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
-        .sidebar .tab-btn:hover { background: #34495e; color: white; }
-        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
-        .sidebar-overlay.active { display: block; }
-
-        /* CONTENEDOR PRINCIPAL */
-        .main-content { 
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px; 
-            padding-bottom: 130px; 
+        /* Tipografías elegantes para títulos */
+        h1, h2, h3, .serif-font {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            letter-spacing: 0.5px;
         }
 
-        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: 1px solid var(--border);}
-        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        /* ========================================================= */
+        /* PANTALLA DE CARGA (LOADING OVERLAY)                       */
+        /* ========================================================= */
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, #5a111a 0%, #2e080d 100%);
+            z-index: 99999; 
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+        .loading-card {
+            background: #ffffff;
+            padding: 50px 40px;
+            text-align: center;
+            width: 85%;
+            max-width: 450px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            position: relative;
+        }
+        /* Esquinas doradas */
+        .loading-card::before, .loading-card::after {
+            content: ''; position: absolute; width: 35px; height: 35px;
+            border-color: var(--active-gold); border-style: solid;
+        }
+        .loading-card::before { top: 15px; left: 15px; border-width: 2px 0 0 2px; }
+        .loading-card::after { bottom: 15px; right: 15px; border-width: 0 2px 2px 0; }
         
-        .grid-vertical { display: flex; flex-direction: column; gap: 10px; }
-        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+        .spinner {
+            width: 45px; height: 45px;
+            border: 2px solid rgba(212, 175, 55, 0.2);
+            border-top-color: var(--active-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-title {
+            color: var(--crimson-dark); font-family: 'Georgia', serif;
+            font-size: 1.3rem; letter-spacing: 3px; font-weight: bold;
+            margin-bottom: 15px; text-transform: uppercase;
+        }
+        .loading-quote {
+            color: #666; font-style: italic; font-size: 1rem; margin-bottom: 25px;
+            font-family: 'Georgia', serif;
+        }
+        .loading-text {
+            color: #888; font-size: 0.85rem; line-height: 1.6; max-width: 90%; margin: 0 auto;
+        }
+
+        /* ========================================================= */
+        /* BARRA SUPERIOR: Negro con letras blancas                  */
+        /* ========================================================= */
+        .top-bar { 
+            background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; 
+            display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
+            border-bottom: 2px solid var(--active-gold); /* Toque de oro sutil */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+        }
+        .menu-toggle-btn { 
+            background: transparent; border: 1px solid rgba(212, 175, 55, 0.4); color: var(--active-gold); 
+            font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; 
+            border-radius: 4px; display: flex; align-items: center; justify-content: center; 
+            transition: all 0.3s;
+        }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.1); border-color: var(--active-gold); }
+        .top-bar-title { 
+            font-family: 'Georgia', serif; font-size: 1.2rem; font-weight: normal; flex-grow: 1; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 1px; 
+            display: flex; align-items: center; color: white; 
+        }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL: Negro absoluto, activo en Oro               */
+        /* ========================================================= */
+        .sidebar { 
+            position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; 
+            background: var(--sidebar-bg); color: #E0E0E0; padding: 20px 15px; 
+            display: flex; flex-direction: column; gap: 4px; z-index: 1002; 
+            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            box-shadow: 5px 0 20px rgba(0,0,0,0.5); border-right: 1px solid #1A1A1A; overflow-y: auto; 
+        }
+        .sidebar.open { left: 0; }
+        
+        .sidebar-brand { 
+            font-family: 'Georgia', serif; font-size: 1.1rem; color: var(--active-gold);
+            text-align: center; padding-bottom: 20px; border-bottom: 1px solid #222; 
+            margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase;
+        }
+        
+        .sidebar .tab-btn { 
+            background: transparent; color: #CCCCCC; border: none; text-align: left; 
+            padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; 
+            font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; 
+            transition: all 0.2s ease; border-left: 3px solid transparent;
+        }
+        .sidebar .tab-btn:hover { 
+            background: rgba(255, 255, 255, 0.03); color: #FFF; border-left: 3px solid #555; 
+        }
+        .sidebar .tab-btn.active { 
+            background: var(--active-gold) !important; color: #000000 !important; 
+            font-weight: bold; border-left: 4px solid #FFFFFF; 
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+        }
+        
+        .sidebar-overlay { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(2px); z-index: 1001; 
+            display: none; opacity: 0; transition: opacity 0.3s;
+        }
+        .sidebar-overlay.active { display: block; opacity: 1; }
+
+        /* Scrollbar estilizada y elegante */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #CCC; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--active-gold); }
+        .sidebar::-webkit-scrollbar-track { background: var(--sidebar-bg); }
+        .sidebar::-webkit-scrollbar-thumb { background: #333; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background: var(--active-gold); }
+
+        /* ========================================================= */
+        /* CONTENEDOR PRINCIPAL Y TARJETAS                           */
+        /* ========================================================= */
+        .main-content { max-width: 950px; margin: 0 auto; padding: 30px 20px; padding-bottom: 130px; }
+
+        .card { 
+            background: var(--card-bg); padding: 25px; border-radius: 4px; margin-bottom: 25px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04); 
+            border: 1px solid var(--border);
+            position: relative;
+            border-top: 3px solid var(--crimson);
+        }
+        
+        h2 { 
+            color: var(--crimson-dark); margin-top: 0; font-size: 1.3rem; 
+            border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        h3 { color: var(--crimson); font-size: 1.1rem; border-bottom: 1px dashed var(--border); padding-bottom: 5px; margin-bottom: 15px;}
+        
+        .grid-vertical { display: flex; flex-direction: column; gap: 12px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
         @media (max-width: 768px) {
             .grid-4 { grid-template-columns: 1fr; }
-            .main-content { padding: 10px; padding-bottom: 100px; } 
+            .main-content { padding: 15px; padding-bottom: 100px; } 
         }
 
-        label { font-size: 0.9rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted);}
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
-        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; }
+        /* ========================================================= */
+        /* FORMULARIOS, INPUTS Y BOTONES                             */
+        /* ========================================================= */
+        label { 
+            font-size: 0.85rem; font-weight: bold; display: block; margin-top: 15px; 
+            color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;
+        }
         
-        .cat-header { background: var(--primary); color: white; padding: 8px 12px; margin-top: 10px; margin-bottom: 5px; border-radius: 4px; font-weight: bold; width: 100%; }
-        .consulta-item { border-bottom: 1px solid var(--border); padding: 12px 15px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;}
-        .zebra-list .consulta-item:nth-child(even) { background-color: rgba(0,0,0,0.03); }
+        input, select { 
+            width: 100%; padding: 12px; margin-top: 5px; 
+            border: 1px solid var(--border); border-radius: 3px; font-size: 0.95rem; 
+            background-color: #FAFAFA; transition: all 0.3s ease;
+            color: var(--text); border-left: 3px solid #DDD;
+        }
+        input:focus, select:focus {
+            outline: none; background-color: #FFF;
+            border-color: var(--active-gold);
+            border-left: 3px solid var(--active-gold);
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
+        }
+
+        /* Campos readonly con diseño elegante */
+        input[readonly] { 
+            background: var(--bg); border-left: 3px solid var(--crimson-light); 
+            color: var(--crimson-dark); font-weight: bold; font-family: 'Courier New', Courier, monospace; 
+            font-size: 1.1rem; text-align: right;
+        }
+
+        button { 
+            background: linear-gradient(135deg, var(--crimson), var(--crimson-dark)); 
+            color: var(--active-gold); border: 1px solid var(--active-gold); 
+            padding: 14px 20px; border-radius: 3px; cursor: pointer; font-weight: bold; 
+            width: 100%; margin-top: 20px; font-size: 0.95rem; text-transform: uppercase; 
+            letter-spacing: 1px; transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover { 
+            background: linear-gradient(135deg, var(--crimson-light), var(--crimson)); 
+            color: #FFF; box-shadow: 0 6px 15px rgba(122, 23, 29, 0.3); transform: translateY(-1px);
+        }
+        
+        /* Botones secundarios (como el de Bot) */
+        button.btn-outline {
+            background: transparent; color: var(--crimson-dark);
+            border: 1px solid var(--crimson-dark);
+        }
+        button.btn-outline:hover {
+            background: var(--crimson-dark); color: var(--active-gold);
+        }
+
+        /* ========================================================= */
+        /* LISTAS DE INVENTARIO                                      */
+        /* ========================================================= */
+        .cat-header { 
+            background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); 
+            color: var(--active-gold); padding: 10px 15px; margin-top: 15px; margin-bottom: 5px; 
+            border-radius: 2px; font-weight: bold; width: 100%; font-family: 'Georgia', serif;
+            letter-spacing: 1px; font-size: 0.95rem; border-left: 4px solid var(--active-gold);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .consulta-item { 
+            border-bottom: 1px solid var(--border); padding: 15px; font-size: 0.95rem; 
+            display: flex; justify-content: space-between; align-items: center;
+            transition: background 0.2s;
+        }
+        .consulta-item:hover { background-color: rgba(212, 175, 55, 0.03); }
+        .zebra-list .consulta-item:nth-child(even) { background-color: var(--item-bg); }
+        
+        .item-name { font-weight: bold; color: var(--text); display: block; margin-bottom: 3px;}
+        .item-cat { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;}
+        .item-stock { font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; font-weight: bold;}
+
+        /* Etiqueta topbar elegante */
+        .badge-elegant {
+            font-size: 0.75rem; font-family: 'Segoe UI', sans-serif;
+            font-weight: bold; background: var(--crimson); color: var(--active-gold); 
+            padding: 4px 12px; border-radius: 20px; margin-left: 15px; letter-spacing: 1px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 1px solid var(--active-gold);
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
+
+<!-- PANTALLA DE CARGA ELEGANTE -->
+<div id="loading-screen">
+    <div class="loading-card">
+        <div class="spinner"></div>
+        <div class="loading-title">Construyendo su Panel</div>
+        <div class="loading-quote">"El éxito está en los detalles."</div>
+        <div class="loading-text">
+            Sincronizando su información operativa segura y preparando su entorno de trabajo de alto rendimiento...
+        </div>
+    </div>
+</div>
 
 <div class="wrapper">
     
@@ -81,7 +313,7 @@
     <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú del Sistema</div>
+        <div class="sidebar-brand">Menú Ejecutivo</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn active">📦 Inventario Físico</a>
@@ -105,57 +337,71 @@
     </div>
 
     <div class="main-content">
-        <div class="card" style="border-top: 4px solid #9b59b6;">
-            <h2>📄 Exportación de Reportes PDF</h2>
-            <label>Tipo de documento:</label>
-            <select id="sel_pdf_exportar" style="border: 2px solid #9b59b6; margin-bottom: 10px;">
-                <option value="" disabled selected>Seleccionar Tipo de documento</option>
-                <option value="inv">Inventario Físico</option>
-                <option value="caja">Precio</option>
-                <option value="inv_caja">Inventario + Precio</option>
-            </select>
-            <label>Moneda:</label>
-            <select id="sel_pdf_moneda" style="border: 2px solid var(--secondary); margin-bottom: 10px;"></select>
-            <label>Orden (PDF):</label>
-            <select id="sel_pdf_orden" style="border: 2px solid var(--primary); margin-bottom: 10px;">
-                <option value="" disabled selected>Seleccionar Orden (PDF)</option>
-                <option value="az">Alfabético</option>
-                <option value="cat">Categorías</option>
-            </select>
-            <label>Filtro de Stock:</label>
-            <select id="sel_pdf_stock" style="border: 2px solid var(--warning);">
-                <option value="" disabled selected>Seleccionar</option>
-                <option value="todos">Mostrar Todo el Catálogo</option>
-                <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
-            </select>
-            
-            <div class="grid-vertical" style="margin-top:15px;">
-                <button onclick="ejecutarAccionPDF('descargar')" style="background:#9b59b6; margin-top:0;">Descargar PDF</button>
-                <button onclick="alert('Lógica de envío API Telegram por integrar')" style="background:#2980b9; margin-top:0;">Enviar PDF (Bot)</button>
-            </div>
-        </div>
-
-        <div class="card" style="border-top: 4px solid #f1c40f;">
-            <h2>📦 Inventario y Caja</h2>
-            <div class="grid-4" style="background:var(--item-bg); padding:10px; border-radius:8px; margin-bottom:15px;">
-                <div><label>Fondo ($):</label><input type="text" id="inv_fondo_usd" readonly></div>
-                <div class="moneda-bs"><label>Fondo (BS):</label><input type="text" id="inv_fondo_bs" readonly></div>
-                <div class="moneda-cop"><label>Fondo (COP):</label><input type="text" id="inv_fondo_cop" readonly></div>
-                <div class="moneda-eur"><label>Fondo (EUR):</label><input type="text" id="inv_fondo_eur" readonly></div>
-            </div>
-            
-            <h3>Existencias en Tiempo Real</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <!-- SECCIÓN DE EXPORTACIÓN -->
+        <div class="card">
+            <h2 class="serif-font">📄 Exportación de Reportes PDF</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div>
-                    <label style="font-size:0.8rem; margin:0;">Orden:</label>
-                    <select id="orden_inv_fisico" onchange="renderInventarioFisico()" style="margin-top:2px;">
-                        <option value="cat">Ordenar por Categorías</option>
-                        <option value="az">Ordenar Alfabéticamente</option>
+                    <label>Tipo de documento</label>
+                    <select id="sel_pdf_exportar">
+                        <option value="" disabled selected>Seleccionar Documento</option>
+                        <option value="inv">Inventario Físico</option>
+                        <option value="caja">Listado de Precios</option>
+                        <option value="inv_caja">Inventario + Precio</option>
                     </select>
                 </div>
                 <div>
-                    <label style="font-size:0.8rem; margin:0;">Filtro de Agotados:</label>
-                    <select id="filtro_stock_fisico" onchange="renderInventarioFisico()" style="margin-top:2px;">
+                    <label>Moneda a reflejar</label>
+                    <select id="sel_pdf_moneda"></select>
+                </div>
+                <div>
+                    <label>Orden de Organización</label>
+                    <select id="sel_pdf_orden">
+                        <option value="" disabled selected>Seleccionar Ordenamiento</option>
+                        <option value="az">Alfabético A-Z</option>
+                        <option value="cat">Por Categorías</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Filtro de Existencias</label>
+                    <select id="sel_pdf_stock">
+                        <option value="" disabled selected>Seleccionar Filtro</option>
+                        <option value="todos">Mostrar Todo el Catálogo</option>
+                        <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="grid-vertical" style="margin-top:20px;">
+                <button onclick="ejecutarAccionPDF('descargar')">Descargar Documento PDF</button>
+                <button class="btn-outline" onclick="alert('Lógica de envío API Telegram por integrar')" style="margin-top:5px;">Enviar vía Telegram (Bot)</button>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE INVENTARIO -->
+        <div class="card">
+            <h2 class="serif-font">📦 Panel de Inventario y Caja</h2>
+            
+            <label style="margin-top: 0; margin-bottom: 10px;">Fondos Registrados en Caja</label>
+            <div class="grid-4" style="background:var(--item-bg); padding:15px; border-radius:4px; margin-bottom:25px; border: 1px solid var(--border);">
+                <div><label style="margin-top:0;">Dólares (USD)</label><input type="text" id="inv_fondo_usd" readonly></div>
+                <div class="moneda-bs"><label style="margin-top:0;">Bolívares (BS)</label><input type="text" id="inv_fondo_bs" readonly></div>
+                <div class="moneda-cop"><label style="margin-top:0;">Pesos (COP)</label><input type="text" id="inv_fondo_cop" readonly></div>
+                <div class="moneda-eur"><label style="margin-top:0;">Euros (EUR)</label><input type="text" id="inv_fondo_eur" readonly></div>
+            </div>
+            
+            <h3 class="serif-font">Existencias Físicas en Tiempo Real</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+                <div>
+                    <label style="font-size:0.8rem; margin:0;">Visualización de datos:</label>
+                    <select id="orden_inv_fisico" onchange="renderInventarioFisico()" style="margin-top:5px;">
+                        <option value="cat">Agrupados por Categoría</option>
+                        <option value="az">Listado Alfabético (A-Z)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; margin:0;">Filtro en tiempo real:</label>
+                    <select id="filtro_stock_fisico" onchange="renderInventarioFisico()" style="margin-top:5px;">
                         <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
                         <option value="todos">Mostrar Todo el Catálogo</option>
                     </select>
@@ -176,10 +422,27 @@
     let CONFIG_GLOBAL = {};
     let CATALOGO = [];
 
+    // Manejo de la pantalla de carga elegante
+    function ocultarLoading() {
+        const loader = document.getElementById('loading-screen');
+        // Un pequeño retraso para permitir que el usuario aprecie el diseño y el mensaje
+        setTimeout(() => {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 800);
+        }, 1800);
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
         const { data } = await window.supabaseClient.auth.getSession();
-        if (data && data.session) await sincronizarSesionSupabase(data.session);
-        else window.location.href = 'index.html';
+        if (data && data.session) {
+            await sincronizarSesionSupabase(data.session);
+            ocultarLoading();
+        }
+        else {
+            window.location.href = 'index.html';
+        }
     });
 
     async function sincronizarSesionSupabase(session) {
@@ -210,14 +473,12 @@
             cargarFondos();
         }
 
-        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Administrativo';
         let etiquetaModulo = "Inventario Físico"; 
 
         document.getElementById('main_top_title').innerHTML = `
-            🏪 ${nombreLocal} 
-            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                📌 Módulo: ${etiquetaModulo}
-            </span>
+            ${nombreLocal} 
+            <span class="badge-elegant">📌 ${etiquetaModulo}</span>
         `;
 
         await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
@@ -253,9 +514,9 @@
     function cargarFondos() {
         let f = CONFIG_GLOBAL.fondos_caja || { usd:0, bs:0, cop:0, eur:0 };
         document.getElementById('inv_fondo_usd').value = `$${formatearNumero(f.usd)}`;
-        document.getElementById('inv_fondo_bs').value = `${formatearNumero(f.bs)}`;
-        document.getElementById('inv_fondo_cop').value = `${formatearNumero(f.cop, 0)}`;
-        document.getElementById('inv_fondo_eur').value = `${formatearNumero(f.eur)}`;
+        document.getElementById('inv_fondo_bs').value = `Bs. ${formatearNumero(f.bs)}`;
+        document.getElementById('inv_fondo_cop').value = `$${formatearNumero(f.cop, 0)}`;
+        document.getElementById('inv_fondo_eur').value = `€${formatearNumero(f.eur)}`;
     }
 
     function renderInventarioFisico() {
@@ -279,25 +540,28 @@
             let stockVal = parseFloat(p.stock) || 0;
             let umbralVal = parseFloat(p.umbral_rojo) || 0;
             
-            let colorStock = 'var(--success)'; // Verde por defecto
+            let colorStock = 'var(--success)'; // Verde
             if (stockVal <= 0) {
-                colorStock = 'var(--danger)'; // Rojo cuando ya se acabó
+                colorStock = 'var(--danger)'; // Rojo carmesí para agotado
             } else if (stockVal <= umbralVal) {
-                colorStock = 'var(--warning)'; // Amarillo cuando está en o por debajo del umbral asignado
+                colorStock = 'var(--warning)'; // Dorado Oscuro para alerta
             }
 
             html += `
                 <div class="consulta-item">
-                    <span><strong>${limpiarNombre(p.nom)}</strong><br><small>Categoría: ${p.cat}</small></span>
-                    <span style="font-weight:bold; color:${colorStock};">Stock: ${formatearNumero(p.stock, 2)}</span>
+                    <span>
+                        <span class="item-name">${limpiarNombre(p.nom)}</span>
+                        <span class="item-cat">Categoría: ${p.cat}</span>
+                    </span>
+                    <span class="item-stock" style="color:${colorStock};">Und: ${formatearNumero(p.stock, 2)}</span>
                 </div>`; 
         });
-        document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--muted); text-align:center;">No hay inventario registrado con los filtros seleccionados.</p>';
+        document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--text-light); text-align:center; padding: 20px; font-style:italic;">No se encontraron registros con los filtros actuales.</p>';
     }
 
     function actualizarSelectoresMonedaExportacion() {
         let sel = document.getElementById('sel_pdf_moneda');
-        if(sel) sel.innerHTML = `<option value="ALL" selected>Todas las Monedas</option><option value="USD">Solo USD</option><option value="BS">Solo BS</option><option value="COP">Solo COP</option><option value="EUR">Solo EUR</option>`;
+        if(sel) sel.innerHTML = `<option value="ALL" selected>Todas las Monedas</option><option value="USD">Solo Dólares (USD)</option><option value="BS">Solo Bolívares (BS)</option><option value="COP">Solo Pesos (COP)</option><option value="EUR">Solo Euros (EUR)</option>`;
     }
 
     function ejecutarAccionPDF(accion) {
@@ -305,7 +569,7 @@
         let modMon = document.getElementById('sel_pdf_moneda').value;
         let ordPdf = document.getElementById('sel_pdf_orden').value;
         let filtroStock = document.getElementById('sel_pdf_stock').value; 
-        if(!valDoc || !modMon || !ordPdf || !filtroStock) return alert("Seleccione todos los filtros obligatorios.");
+        if(!valDoc || !modMon || !ordPdf || !filtroStock) return alert("Por favor, seleccione todos los parámetros obligatorios del documento.");
         
         if (accion === 'descargar') {
             generarPDFInventarioNativo(valDoc, modMon, ordPdf, filtroStock);
@@ -313,13 +577,13 @@
     }
 
     // =======================================================
-    // GENERACIÓN DE PDF NATIVO CON jsPDF
+    // GENERACIÓN DE PDF NATIVO CON jsPDF (AJUSTADO A ESTILO)
     // =======================================================
     function generarPDFInventarioNativo(valDoc, modMoneda, ordPdf, filtroStock) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Refresquería Flor';
+        let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Panel Empresarial';
         let tasasObj = CONFIG_GLOBAL.tasas || {};
         let tasaBs = parseFloat(tasasObj.ves) || 1; 
         let tasaCop = parseFloat(tasasObj.cop) || 1; 
@@ -331,19 +595,19 @@
         if (filtroStock === 'con_stock') arr = arr.filter(p => parseFloat(p.stock) > 0);
         arr.sort((a,b) => ordPdf === 'cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)));
 
-        // Encabezado institucional
+        // Encabezado institucional elegante PDF
         doc.setFont("Helvetica", "bold");
         doc.setFontSize(16);
-        doc.setTextColor(44, 62, 80);
-        doc.text(nombreLocal, 14, 18);
+        doc.setTextColor(90, 17, 26); // Carmesí oscuro en PDF
+        doc.text(nombreLocal.toUpperCase(), 14, 18);
 
-        doc.setFont("Helvetica", "normal");
+        doc.setFont("Helvetica", "italic");
         doc.setFontSize(10);
-        doc.setTextColor(127, 140, 141);
-        doc.text(`Reporte de Inventario (${valDoc.toUpperCase()}) - ${new Date().toLocaleDateString()}`, 14, 24);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Reporte Analítico de Inventario (${valDoc.toUpperCase()}) - ${new Date().toLocaleDateString()}`, 14, 24);
 
-        doc.setDrawColor(52, 152, 219);
-        doc.setLineWidth(0.5);
+        doc.setDrawColor(212, 175, 55); // Línea dorada
+        doc.setLineWidth(0.8);
         doc.line(14, 28, 196, 28);
 
         let posY = 34;
@@ -352,13 +616,13 @@
         arr.forEach((p, index) => {
             if (ordPdf === 'cat' && p.cat !== lC) {
                 if (posY > 265) { doc.addPage(); posY = 20; }
-                doc.setFillColor(44, 62, 80);
+                doc.setFillColor(122, 23, 29); // Fondo carmesí encabezado categoría
                 doc.rect(14, posY, 182, 7, "F");
                 doc.setFont("Helvetica", "bold");
                 doc.setFontSize(9);
-                doc.setTextColor(255, 255, 255);
-                doc.text(p.cat.toUpperCase(), 18, posY + 4.5);
-                posY += 7;
+                doc.setTextColor(212, 175, 55); // Texto Dorado
+                doc.text(p.cat.toUpperCase(), 18, posY + 5);
+                posY += 8;
                 lC = p.cat;
             }
 
@@ -369,31 +633,30 @@
             if (posY + alturaCelda > 280) { doc.addPage(); posY = 20; }
 
             if (index % 2 === 0) {
-                doc.setFillColor(249, 249, 249);
+                doc.setFillColor(249, 248, 246);
                 doc.rect(14, posY, 182, alturaCelda, "F");
             }
 
-            // Nombre y Stock del producto
             let pNom = limpiarNombre(p.nom);
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(10);
-            doc.setTextColor(44, 62, 80);
+            doc.setTextColor(40, 40, 40);
             doc.text(pNom, 18, posY + 5);
 
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(8.5);
-            doc.setTextColor(127, 140, 141);
-            doc.text(`Stock: ${p.stock}`, 18, posY + 10);
+            doc.setTextColor(90, 90, 90);
+            doc.text(`Stock: ${p.stock} Und.`, 18, posY + 10);
 
-            // Imprimir bloque de Precio apilado verticalmente
             if (showCaja) {
                 let colX = 145;
                 doc.setFont("Helvetica", "bold");
                 doc.setFontSize(8.5);
-                doc.setTextColor(44, 62, 80);
-                doc.text("Precio:", colX, posY + 5);
+                doc.setTextColor(122, 23, 29); // Etiqueta precio carmesí
+                doc.text("Valores:", colX, posY + 5);
                 
                 doc.setFont("Helvetica", "normal");
+                doc.setTextColor(60, 60, 60);
                 let offsetV = posY + 9;
                 arrayCaja.forEach(linea => {
                     doc.text(linea, colX, offsetV);
@@ -404,15 +667,15 @@
             posY += alturaCelda;
         });
 
-        doc.save(`Inventario_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`);
+        doc.save(`Reporte_Inventario_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`);
     }
 
     function obtenerLineasMonedas(usd, modMoneda, tv, tc, te) {
         let lineas = [];
-        if(["ALL", "USD"].includes(modMoneda)) lineas.push(`$${formatearNumero(usd)}`);
-        if(["ALL", "BS"].includes(modMoneda) && tv > 0) lineas.push(`${formatearNumero(usd*tv)} BS`);
-        if(["ALL", "COP"].includes(modMoneda) && tc > 0) lineas.push(`${formatearNumero(usd*tc, 0)} COP`);
-        if(["ALL", "EUR"].includes(modMoneda) && te > 0) lineas.push(`${formatearNumero(usd*te)} EUR`);
+        if(["ALL", "USD"].includes(modMoneda)) lineas.push(`$${formatearNumero(usd)} USD`);
+        if(["ALL", "BS"].includes(modMoneda) && tv > 0) lineas.push(`Bs. ${formatearNumero(usd*tv)}`);
+        if(["ALL", "COP"].includes(modMoneda) && tc > 0) lineas.push(`$${formatearNumero(usd*tc, 0)} COP`);
+        if(["ALL", "EUR"].includes(modMoneda) && te > 0) lineas.push(`€${formatearNumero(usd*te)} EUR`);
         return lineas;
     }
 
