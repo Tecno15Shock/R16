@@ -3,163 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="head_title">Sistema Maestro - Conexión Segura</title>
+    <title id="head_title">Sistema de Gestión Premium</title>
     <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
-            --success: #2ecc71; --warning: #f39c12; --text: #333; 
-            --border: #dcdde1; --card-bg: #ffffff; --muted: #7f8c8d;
+            --bg-dark-red: #3b0918;
+            --bg-light-red: #7c1126;
+            --gold-primary: #d4af37;
+            --gold-light: #f3e5ab;
+            --gold-dark: #aa8c2c;
+            --text-main: #222;
+            --card-bg: #fffcf5;
+            --muted: #666;
+            --border-color: #d4af37;
+            --danger: #b30000;
         }
         * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Roboto', sans-serif;
             margin: 0; padding: 0;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            color: var(--text);
+            background: linear-gradient(135deg, var(--bg-dark-red), var(--bg-light-red));
+            color: var(--text-main);
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh;
         }
 
-        /* LOGIN OVERLAY Y CONTENEDOR */
+        /* LOGIN OVERLAY Y CONTENEDOR - DISEÑO PREMIUM */
         #login_overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(135deg, rgba(30, 60, 114, 0.9), rgba(42, 82, 152, 0.95));
+            background: radial-gradient(circle at center, rgba(124, 17, 38, 0.8), rgba(59, 9, 24, 0.95));
             z-index: 999999; display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px);
             padding: 15px;
         }
         .login-card {
-            background: var(--card-bg); padding: 35px 30px; border-radius: 16px;
-            width: 100%; max-width: 400px; text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            animation: fadeIn 0.4s ease-in-out;
+            background: var(--card-bg); 
+            padding: 40px 35px; 
+            border-radius: 4px;
+            width: 100%; max-width: 420px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 2px solid var(--gold-primary);
+            position: relative;
+            animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        .login-card::before, .login-card::after {
+            content: ''; position: absolute; width: 30px; height: 30px; border: 2px solid var(--gold-primary);
+        }
+        .login-card::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .login-card::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-15px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(-20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
+
         .login-card h2 {
-            color: var(--primary); margin-bottom: 20px; font-size: 1.5rem; border-bottom: none;
+            font-family: 'Playfair Display', serif;
+            color: var(--bg-dark-red); 
+            margin-bottom: 25px; 
+            font-size: 1.8rem; 
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
         
-        .input-group { position: relative; margin-bottom: 15px; text-align: left; }
-        .input-group label { font-size: 0.85rem; font-weight: bold; color: var(--muted); display: block; margin-bottom: 5px; }
-        input[type="email"], input[type="password"], input[type="text"] {
-            width: 100%; padding: 12px 14px; font-size: 0.95rem;
-            border: 2px solid var(--border); border-radius: 8px;
-            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-            background: #fdfdfd; color: var(--text);
+        .input-group { position: relative; margin-bottom: 20px; text-align: left; }
+        .input-group label { 
+            font-family: 'Playfair Display', serif;
+            font-size: 0.9rem; font-weight: bold; color: var(--bg-dark-red); display: block; margin-bottom: 6px; 
+            letter-spacing: 0.5px;
         }
-        input:focus { border-color: var(--secondary); box-shadow: 0 0 5px rgba(52, 152, 219, 0.3); background: #fff; }
+        input[type="email"], input[type="password"], input[type="text"] {
+            width: 100%; padding: 12px 14px; font-size: 1rem;
+            border: 1px solid var(--border-color); border-radius: 2px;
+            outline: none; transition: all 0.3s ease;
+            background: #fff; color: var(--text-main);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        input:focus { 
+            border-color: var(--gold-dark); 
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.4); 
+        }
         
         .toggle-password {
             position: absolute; right: 12px; top: 35px; background: none; border: none;
-            cursor: pointer; font-size: 1.1rem; color: var(--muted); padding: 0;
+            cursor: pointer; font-size: 1.1rem; color: var(--gold-dark); padding: 0;
         }
 
-        /* SECCIÓN TÉRMINOS Y CONDICIONES */
         .terminos-container {
-            display: flex; align-items: center; gap: 8px; margin: 15px 0 20px 0;
-            text-align: left; font-size: 0.85rem; color: #555;
+            display: flex; align-items: flex-start; gap: 10px; margin: 20px 0 25px 0;
+            text-align: left; font-size: 0.85rem; color: var(--muted);
         }
         .terminos-container input[type="checkbox"] {
-            width: 18px; height: 18px; accent-color: var(--secondary); cursor: pointer;
+            width: 18px; height: 18px; accent-color: var(--gold-dark); cursor: pointer; margin-top: 2px;
         }
         .link-terminos {
-            color: var(--secondary); text-decoration: underline; cursor: pointer; font-weight: 600;
+            color: var(--bg-light-red); text-decoration: underline; cursor: pointer; font-weight: bold;
         }
-        .link-terminos:hover { color: #2980b9; }
+        .link-terminos:hover { color: var(--bg-dark-red); }
 
-        /* BOTONES */
         .btn-main {
-            background: var(--secondary); color: white; border: none; border-radius: 8px;
-            padding: 12px; font-size: 1rem; font-weight: bold; width: 100%;
-            cursor: pointer; transition: background 0.2s, transform 0.1s;
-            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+            background: linear-gradient(to right, var(--gold-dark), var(--gold-primary)); 
+            color: #fff; border: none; border-radius: 2px;
+            padding: 14px; font-size: 1.05rem; font-family: 'Playfair Display', serif; font-weight: bold; width: 100%;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        .btn-main:hover { background: #2980b9; }
+        .btn-main:hover { background: linear-gradient(to right, #b8962e, #e5c04b); box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6); }
         .btn-main:active { transform: scale(0.98); }
 
         .btn-link {
-            background: none; border: none; color: var(--danger); font-size: 0.85rem;
-            cursor: pointer; margin-top: 15px; text-decoration: underline; display: inline-block;
+            background: none; border: none; color: var(--bg-light-red); font-size: 0.85rem;
+            cursor: pointer; margin-top: 20px; text-decoration: underline; display: inline-block;
+            font-family: 'Roboto', sans-serif;
         }
-        .btn-link:hover { color: #c0392b; }
+        .btn-link:hover { color: var(--bg-dark-red); }
 
-        /* MODAL ESTILIZADO */
+        .btn-narrar {
+            background: var(--bg-dark-red); color: var(--gold-light);
+            border: 1px solid var(--gold-primary); padding: 8px 15px; border-radius: 4px;
+            cursor: pointer; font-size: 0.9rem; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 8px;
+            font-family: 'Playfair Display', serif; transition: all 0.2s;
+        }
+        .btn-narrar:hover { background: var(--bg-light-red); }
+
         .custom-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.7); z-index: 1000000; display: none;
-            align-items: center; justify-content: center; backdrop-filter: blur(4px);
+            background: rgba(20, 5, 10, 0.85); z-index: 1000000; display: none;
+            align-items: center; justify-content: center; backdrop-filter: blur(6px);
             padding: 20px;
         }
         .custom-modal-box {
-            background: var(--card-bg); padding: 30px; border-radius: 14px;
-            width: 100%; max-width: 500px; position: relative;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: left;
+            background: var(--card-bg); padding: 35px; border-radius: 2px;
+            width: 100%; max-width: 750px; position: relative;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5); text-align: left;
             max-height: 85vh; display: flex; flex-direction: column;
-            animation: scaleUp 0.3s ease-in-out;
+            border: 3px double var(--gold-primary);
+            animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @keyframes scaleUp {
-            from { transform: scale(0.9); opacity: 0; }
+            from { transform: scale(0.95); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
         .custom-modal-title {
-            font-size: 1.25rem; color: var(--primary); margin-bottom: 15px;
-            font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 8px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem; color: var(--bg-dark-red); margin-bottom: 15px;
+            font-weight: bold; border-bottom: 1px solid var(--gold-primary); padding-bottom: 10px;
+            text-transform: uppercase; letter-spacing: 1px; text-align: center;
         }
-        #global_modal_body { overflow-y: auto; font-size: 0.9rem; line-height: 1.5; color: #444; flex-grow: 1; margin-bottom: 20px; }
+        #global_modal_body { 
+            overflow-y: auto; font-size: 0.9rem; line-height: 1.6; color: #333; 
+            flex-grow: 1; margin-bottom: 20px; padding-right: 15px; text-align: justify;
+        }
+        #global_modal_body::-webkit-scrollbar { width: 6px; }
+        #global_modal_body::-webkit-scrollbar-track { background: #f1f1f1; }
+        #global_modal_body::-webkit-scrollbar-thumb { background: var(--gold-primary); border-radius: 4px; }
+
         .modal-close-btn {
-            position: absolute; top: 15px; right: 15px; background: var(--danger);
-            color: white; border: none; border-radius: 50%; width: 30px; height: 30px;
-            font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            position: absolute; top: -15px; right: -15px; background: var(--bg-dark-red);
+            color: var(--gold-light); border: 2px solid var(--gold-primary); border-radius: 50%; 
+            width: 35px; height: 35px; font-weight: bold; cursor: pointer; display: flex; 
+            align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s; font-size: 1.1rem;
         }
+        .modal-close-btn:hover { transform: scale(1.1); background: var(--danger); }
+        
+        .spinner-luxury {
+            width: 40px; height: 40px;
+            border: 4px solid rgba(212, 175, 55, 0.3);
+            border-left-color: var(--gold-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- MODAL GLOBAL ESTILIZADO -->
     <div id="global_modal" class="custom-modal-overlay">
         <div class="custom-modal-box">
-            <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+            <button class="modal-close-btn" onclick="cerrarModalYDetenerVoz()">✕</button>
             <div id="global_modal_title" class="custom-modal-title">Título</div>
             <div id="global_modal_body">Contenido dinámico...</div>
         </div>
     </div>
 
-    <!-- PANTALLA DE LOGIN -->
     <div id="login_overlay">
         <div class="login-card">
             <h2>
-                🛡️ R16 🛡️<br>
-                <span style="font-size: 0.85rem; color: var(--muted); font-weight: normal;">Conexión Segura Supabase</span>
+                ⚜️Bienvenidos⚜️<br>
+                <span style="font-family: 'Roboto', sans-serif; font-size: 0.8rem; color: var(--gold-dark); font-weight: bold; letter-spacing: 2px;">SISTEMA CONTABLE PREMIUM</span>
             </h2>
             
             <div class="input-group">
-                <label>Correo Electrónico</label>
+                <label>Correo Electrónico Autorizado</label>
                 <input type="email" id="login_email" placeholder="admin@sistema.com">
             </div>
 
             <div class="input-group">
-                <label>Contraseña</label>
+                <label>Clave de Seguridad</label>
                 <input type="password" id="login_pass" placeholder="••••••••" onkeyup="if(event.key==='Enter') window.iniciarSesionSupabase()">
                 <button type="button" class="toggle-password" onclick="togglePassVisibility('login_pass', this)">👁️</button>
             </div>
 
             <div class="terminos-container">
                 <input type="checkbox" id="check_terminos">
-                <div>Acepto los <span class="link-terminos" onclick="abrirTerminosYCondiciones()">términos y condiciones</span></div>
+                <div>Certifico que he leído y acepto incondicionalmente los <span class="link-terminos" onclick="abrirTerminosYCondiciones()">Términos Contractuales y Legales</span>.</div>
             </div>
 
-            <button class="btn-main" onclick="window.iniciarSesionSupabase()">Ingresar al Sistema</button>
+            <button class="btn-main" onclick="window.iniciarSesionSupabase()">AUTENTICAR E INGRESAR</button>
             
             <div>
-                <button id="btn_recuperar" class="btn-link" onclick="mostrarModalRecuperacion()">¿Olvidaste tu contraseña?</button>
+                <button id="btn_recuperar" class="btn-link" onclick="mostrarModalRecuperacion()">¿Extravió sus credenciales de acceso?</button>
             </div>
         </div>
     </div>
@@ -171,10 +231,10 @@
     window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
     window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
 
-    // 1. Verificación automática de sesión y manejo de recuperación de contraseña por enlace
+    let hablando = false;
+
     window.addEventListener('DOMContentLoaded', async () => {
         try {
-            // Escuchar si el usuario entra mediante un enlace de recuperación de contraseña de Supabase
             window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (event === 'PASSWORD_RECOVERY') {
                     mostrarModalNuevaContrasena();
@@ -192,134 +252,179 @@
         }
     });
 
-    // 2. Iniciar sesión con validación de términos
     window.iniciarSesionSupabase = async function() {
         const email = document.getElementById('login_email').value.trim();
         const pass = document.getElementById('login_pass').value.trim();
         const aceptaTerminos = document.getElementById('check_terminos').checked;
 
-        if(!email || !pass) return mostrarAlertaPersonalizada("Atención", "⚠️ Ingresa tu correo y contraseña para continuar.");
-        if(!aceptaTerminos) return mostrarAlertaPersonalizada("Términos Requeridos", "⚠️ Debes aceptar los términos y condiciones para usar el sistema.");
+        if(!email || !pass) return mostrarAlertaPersonalizada("Validación Requerida", "⚠️ Ingrese sus credenciales operativas completas.");
+        if(!aceptaTerminos) return mostrarAlertaPersonalizada("Obligación Legal", "⚠️ Es imperativo aceptar los términos y condiciones vinculantes para acceder a la plataforma.");
 
-        mostrarModalCargando("Autenticando", "Conectando con el servidor seguro...");
+        mostrarModalCargando("Verificando Credenciales", "Estableciendo túnel encriptado con el servidor...");
 
         try {
             const { error } = await window.supabaseClient.auth.signInWithPassword({ email, password: pass });
-            cerrarModalGlobal();
             
             if (error) { 
-                mostrarAlertaPersonalizada("Acceso Denegado", "❌ Credenciales incorrectas o usuario no registrado.");
+                cerrarModalYDetenerVoz();
+                mostrarAlertaPersonalizada("Acceso Denegado", "❌ Las credenciales proporcionadas carecen de validez en nuestros registros de seguridad.");
             } else { 
                 window.location.href = URL_PANTALLA_PRINCIPAL; 
             }
         } catch (err) { 
-            cerrarModalGlobal();
-            mostrarAlertaPersonalizada("Error de Red", "❌ No se pudo establecer conexión con Supabase. Verifica tu internet.");
+            cerrarModalYDetenerVoz();
+            mostrarAlertaPersonalizada("Falla de Conectividad", "❌ Conexión rechazada. Verifique la estabilidad de su proveedor de red.");
         }
     };
 
-    // 3. Recuperación de contraseña por correo adaptada a GitHub Pages
     window.recuperarContrasena = async function() {
         const email = document.getElementById('recuperar_email').value.trim();
-        if(!email) return alert("⚠️ Ingresa un correo electrónico válido.");
+        if(!email) return alert("⚠️ Ingrese una dirección electrónica válida.");
 
-        mostrarModalCargando("Enviando Correo", "Solicitando recuperación a Supabase...");
+        mostrarModalCargando("Procesando Petición", "Generando token de seguridad...");
         try {
             const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-                // Esto redirige exactamente a tu GitHub Pages actual con el token de sesión
                 redirectTo: window.location.origin + window.location.pathname,
             });
-            cerrarModalGlobal();
+            cerrarModalYDetenerVoz();
             if(error) {
-                mostrarAlertaPersonalizada("Error", "❌ No se pudo enviar el correo: " + error.message);
+                mostrarAlertaPersonalizada("Falla de Sistema", "❌ " + error.message);
             } else {
-                mostrarAlertaPersonalizada("Correo Enviado", "✅ Si el correo está registrado en el sistema, se le ha enviado un enlace de recuperación de contraseña.");
+                mostrarAlertaPersonalizada("Protocolo Iniciado", "✅ Si su identidad está verificada, recibirá instrucciones encriptadas en su buzón electrónico.");
             }
         } catch(e) {
-            cerrarModalGlobal();
-            mostrarAlertaPersonalizada("Error", "❌ Ocurrió un error inesperado al procesar la solicitud.");
+            cerrarModalYDetenerVoz();
+            mostrarAlertaPersonalizada("Error Crítico", "❌ Interrupción inesperada en el protocolo de recuperación.");
         }
     };
 
     function mostrarModalRecuperacion() {
         let html = `
-            <p>Introduce tu correo electrónico registrado y te enviaremos un enlace de recuperación a través de Supabase:</p>
-            <div class="input-group" style="margin-top:15px;">
+            <p style="text-align:center;">Identifíquese proporcionando su correo asignado para emitir un enlace de restauración:</p>
+            <div class="input-group" style="margin-top:20px;">
                 <label>Correo Electrónico</label>
-                <input type="email" id="recuperar_email" placeholder="tucorreo@dominio.com">
+                <input type="email" id="recuperar_email" placeholder="ejemplo@dominio.com">
             </div>
-            <button class="btn-main" style="margin-top:10px;" onclick="recuperarContrasena()">Enviar Enlace de Recuperación</button>
+            <button class="btn-main" style="margin-top:15px;" onclick="recuperarContrasena()">Emitir Solicitud</button>
         `;
-        abrirModalGlobal("Recuperar Contraseña", html);
+        abrirModalGlobal("Restauración de Acceso", html);
     }
 
-    // Modal para actualizar la contraseña cuando se usa el enlace del correo
     function mostrarModalNuevaContrasena() {
         let html = `
-            <p>Por favor, introduce tu nueva contraseña:</p>
-            <div class="input-group" style="margin-top:15px;">
-                <label>Nueva Contraseña</label>
+            <p style="text-align:center;">Establezca una nueva clave criptográfica para su perfil:</p>
+            <div class="input-group" style="margin-top:20px;">
+                <label>Nueva Clave</label>
                 <input type="password" id="nueva_pass" placeholder="••••••••">
             </div>
-            <button class="btn-main" style="margin-top:10px;" onclick="actualizarPasswordEnServidor()">Guardar Nueva Contraseña</button>
+            <button class="btn-main" style="margin-top:15px;" onclick="actualizarPasswordEnServidor()">Sellar Nueva Clave</button>
         `;
-        abrirModalGlobal("Restablecer Contraseña", html);
+        abrirModalGlobal("Reinicio de Credenciales", html);
     }
 
     window.actualizarPasswordEnServidor = async function() {
         const nuevaPass = document.getElementById('nueva_pass').value.trim();
-        if(!nuevaPass || nuevaPass.length < 6) return alert("⚠️ La contraseña debe tener al menos 6 caracteres.");
+        if(!nuevaPass || nuevaPass.length < 6) return alert("⚠️ La longitud mínima exigida es de 6 caracteres alfanuméricos.");
 
-        mostrarModalCargando("Actualizando", "Guardando nueva contraseña...");
+        mostrarModalCargando("Escribiendo Registros", "Sobrescribiendo la bóveda de claves...");
         try {
             const { error } = await window.supabaseClient.auth.updateUser({ password: nuevaPass });
-            cerrarModalGlobal();
+            cerrarModalYDetenerVoz();
             if(error) {
-                mostrarAlertaPersonalizada("Error", "❌ No se pudo actualizar: " + error.message);
+                mostrarAlertaPersonalizada("Error de Escritura", "❌ " + error.message);
             } else {
-                mostrarAlertaPersonalizada("¡Contraseña Actualizada!", "✅ Tu contraseña ha sido cambiada con éxito. Ya puedes ingresar al sistema.");
+                mostrarAlertaPersonalizada("Actualización Exitosa", "✅ Sus credenciales han sido renovadas satisfactoriamente.");
             }
         } catch(e) {
-            cerrarModalGlobal();
-            mostrarAlertaPersonalizada("Error", "❌ Ocurrió un error inesperado.");
+            cerrarModalYDetenerVoz();
+            mostrarAlertaPersonalizada("Falla de Sistema", "❌ Imposible concretar la solicitud en este momento.");
         }
     };
 
-    // 4. Términos y Condiciones (Enfoque Legal en Venezuela)
+    window.narrarTexto = function() {
+        if ('speechSynthesis' in window) {
+            if (hablando) {
+                window.speechSynthesis.cancel();
+                hablando = false;
+                document.getElementById('btn_narrar').innerHTML = '🔊 Iniciar Lectura Automática';
+                return;
+            }
+            const texto = document.getElementById('texto_legal_completo').innerText;
+            const mensaje = new SpeechSynthesisUtterance(texto);
+            mensaje.lang = 'es-VE';
+            mensaje.rate = 1.05; 
+            
+            mensaje.onend = function() {
+                hablando = false;
+                let btn = document.getElementById('btn_narrar');
+                if(btn) btn.innerHTML = '🔊 Iniciar Lectura Automática';
+            };
+            
+            window.speechSynthesis.speak(mensaje);
+            hablando = true;
+            document.getElementById('btn_narrar').innerHTML = '🔇 Detener Lectura';
+        } else {
+            alert('Su infraestructura de hardware o software actual no admite síntesis de voz.');
+        }
+    };
+
+    // TÉRMINOS Y CONDICIONES (Actualizados con fines comerciales y marco legal)
     function abrirTerminosYCondiciones() {
         let html = `
-            <h4 style="margin-top:0; color:var(--primary);">Términos, Condiciones y Política de Privacidad</h4>
-            <p><strong>1. Marco Legal y Operativo (Venezuela):</strong> Este software opera bajo las normativas de automatización comercial y control interno estipuladas para establecimientos mercantiles en el territorio de la República Bolivariana de Venezuela.</p>
-            <p><strong>2. Recolección de Datos e Información:</strong> El sistema almacena registros estrictamente operativos vinculados a su sucursal comercial, los cuales incluyen:</p>
-            <ul>
-                <li>Catálogos de productos, costos de adquisición y precios de venta o caja.</li>
-                <li>Control de inventario físico, mermas, entradas de proveedores e historiales de turnos/lotes.</li>
-                <li>Registros de deudas de clientes (fiados) y control de personal/vendedores.</li>
-                <li>Datos de autenticación seguros gestionados mediante infraestructura en la nube (Supabase).</li>
-            </ul>
-            <p><strong>3. Responsabilidad de Uso:</strong> La veracidad de los datos introducidos (tasas de cambio oficiales, cierres de caja y transacciones multidivisa) es entera responsabilidad del operador o administrador autorizado del local.</p>
-            <p><strong>4. Privacidad y Seguridad:</strong> La información recolectada se procesa exclusivamente con fines de gestión comercial interna y no es compartida con terceros ajenos a la administración del establecimiento.</p>
+            <button id="btn_narrar" class="btn-narrar" onclick="narrarTexto()">🔊 Iniciar Lectura Automática</button>
+            <div id="texto_legal_completo">
+                <p><strong>CONTRATO COMERCIAL DE LICENCIA, TÉRMINOS DE SERVICIO Y EXENCIÓN LEGAL</strong></p>
+                <p>El presente documento constituye un acuerdo comercial y vinculante entre usted (en adelante, "El Cliente" o "Licenciatario") e <strong>Israel Josué Ríos Ávila</strong> (en adelante, "El Proveedor" o "Titular"), propietario intelectual y comercial del presente Sistema Contable Premium. Al acceder, adquirir o utilizar esta plataforma, usted acepta someterse irrenunciablemente a las siguientes cláusulas.</p>
+
+                <p><strong>ARTÍCULO 1. PROPÓSITO COMERCIAL Y DEFINICIÓN DEL SISTEMA:</strong> Este software es una solución tecnológica avanzada orientada a la explotación comercial (Software as a Service - SaaS). Su propósito es centralizar, optimizar y automatizar la gestión de inventarios, facturación concurrente y cierres de guardia multidivisa para establecimientos mercantiles. Se otorga una licencia de uso temporal, revocable y condicionada al cumplimiento de los pagos acordados.</p>
+
+                <p><strong>ARTÍCULO 2. VENTAJAS Y FUNCIONALIDAD DEL SISTEMA:</strong> El Cliente reconoce que la adopción de este sistema le provee ventajas tecnológicas sustanciales, incluyendo: procesamiento concurrente que evita colisiones en ventas simultáneas, sincronización de bases de datos en la nube en tiempo real, protección criptográfica de los accesos y escalabilidad operativa sin depender de servidores físicos locales.</p>
+                
+                <p><strong>ARTÍCULO 3. RECOPILACIÓN Y TRATAMIENTO DE DATOS:</strong> Para el correcto funcionamiento operativo, el sistema captura y almacena en infraestructuras seguras (Supabase) los siguientes datos de su negocio: inventarios y catálogos, historial de ventas y lotes, métricas de ganancias, registros de clientes deudores y perfiles/PINes de empleados. No se recopilan ni almacenan datos bancarios sensibles ni tarjetas de crédito de los consumidores finales.</p>
+
+                <p><strong>ARTÍCULO 4. CESE DE SERVICIOS Y ELIMINACIÓN DE DATOS:</strong> Si el Cliente decide finalizar el uso de los servicios, suspender sus pagos o rescindir el contrato comercial, el Proveedor se reserva el derecho de inhabilitar el acceso. Para garantizar la privacidad del Cliente, <strong>todos sus datos operativos, financieros y registros almacenados serán borrados de manera irreversible</strong> y purgados de los servidores tras un periodo de inactividad, eximiendo al Proveedor de cualquier responsabilidad por la pérdida de dicho historial.</p>
+
+                <p><strong>ARTÍCULO 5. DERECHO AL LIBRE COMERCIO Y PERMANENCIA (VENEZUELA):</strong> Las operaciones comerciales de este software, su distribución, cobro y alojamiento en línea, se amparan expresamente en el <strong>Artículo 112 de la Constitución de la República Bolivariana de Venezuela</strong>, el cual consagra el libre derecho a dedicarse a la actividad económica de preferencia. Asimismo, la legalidad de los datos aquí procesados se sostiene bajo la <strong>Ley de Mensajes de Datos y Firmas Electrónicas</strong>. El Proveedor retiene el derecho pleno y absoluto de mantener el sistema en línea, comercializarlo y publicitar sus características con el fin lícito de lucro, previniendo cualquier demanda de censura o limitación comercial infundada.</p>
+                
+                <p><strong>ARTÍCULO 6. GARANTÍA DE SOPORTE Y DISPONIBILIDAD:</strong> El Proveedor certifica su intención y esfuerzo comercial de mantener el sistema activo y funcional en línea. Se mantendrá monitoreo sobre la plataforma para resolver fallas de código propias del sistema. Sin embargo, el servicio depende de enlaces de red y servidores de terceros (Cloud), por lo que no se garantizan tiempos de actividad ininterrumpidos en casos de fuerza mayor, catástrofes, fallos eléctricos locales o bloqueos de telecomunicaciones.</p>
+
+                <p><strong>ARTÍCULO 7. EXENCIÓN TOTAL DE RESPONSABILIDAD (CLÁUSULA ANTIDEMANDAS):</strong> Entendido su propósito de herramienta de apoyo comercial, Israel Josué Ríos Ávila queda absolutamente exonerado, y el Cliente renuncia expresamente a su derecho de demandar, por cualquier pérdida financiera, descuadre de caja, lucro cesante, fallas de conectividad que impidan la venta, o pérdida de datos. La responsabilidad patrimonial máxima del Proveedor, probada judicialmente, quedará estrictamente limitada a la devolución del último canon de suscripción pagado por el Cliente.</p>
+            </div>
         `;
-        abrirModalGlobal("Términos y Condiciones Legales", html);
+        abrirModalGlobal("Términos, Condiciones y Política de Comercialización", html);
     }
 
-    // Utilidades de Modales y Visualización
     function abrirModalGlobal(titulo, htmlContent) { 
         document.getElementById('global_modal_title').innerText = titulo; 
         document.getElementById('global_modal_body').innerHTML = htmlContent; 
         document.getElementById('global_modal').style.display = 'flex'; 
     }
     
-    function cerrarModalGlobal() { 
-        document.getElementById('global_modal').style.display = 'none'; 
+    function cerrarModalYDetenerVoz() { 
+        document.getElementById('global_modal').style.display = 'none';
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            hablando = false;
+        }
     }
 
     function mostrarModalCargando(titulo, msg) { 
-        abrirModalGlobal(titulo, `<div style="text-align:center; padding:25px; font-size:1.1rem; color:var(--primary);">⏳ ${msg}</div>`); 
+        abrirModalGlobal(titulo, `
+            <div style="text-align:center; padding:35px; font-family: 'Playfair Display', serif;">
+                <div class="spinner-luxury"></div>
+                <div style="font-size:1.3rem; color:var(--bg-dark-red); font-weight:bold; letter-spacing:1px; margin-bottom:5px;">${titulo}</div>
+                <div style="font-size:0.9rem; color:var(--muted); font-family: 'Roboto', sans-serif;">${msg}</div>
+            </div>
+        `); 
     }
 
     function mostrarAlertaPersonalizada(titulo, mensaje) {
-        abrirModalGlobal(titulo, `<div style="text-align:center; padding:15px; font-size:1rem;">${mensaje}</div><button class="btn-main" style="margin-top:15px;" onclick="cerrarModalGlobal()">Entendido</button>`);
+        abrirModalGlobal(titulo, `
+            <div style="text-align:center; padding:20px;">
+                <div style="font-size:1.1rem; margin-bottom: 25px; line-height: 1.5;">${mensaje}</div>
+                <button class="btn-main" onclick="cerrarModalYDetenerVoz()">Comprendido</button>
+            </div>
+        `);
     }
 
     function togglePassVisibility(inputId, btn) {
@@ -334,8 +439,8 @@
             }
         }
     }
-	
-	async function verificarEstadoSuscripcionLocal(userId) {
+    
+    async function verificarEstadoSuscripcionLocal(userId) {
         let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, locales(fecha_vencimiento, activo)').eq('id', userId).single();
     
         if (perfil && perfil.locales) {
@@ -343,15 +448,13 @@
             let ahora = new Date();
             let fechaVenc = local.fecha_vencimiento ? new Date(local.fecha_vencimiento) : null;
 
-            // Si el local está desactivado, o si tiene fecha de vencimiento y esta ya pasó
             if (!local.activo || (fechaVenc && fechaVenc < ahora)) {
-                alert("❌ Su plan o suscripción ha vencido. Comuníquese con soporte para realizar la renovación.");
+                mostrarAlertaPersonalizada("Acceso Restringido", "❌ El período operativo contractual ha expirado. Por favor, regularice su situación administrativa.");
                 await supabaseClient.auth.signOut();
-                window.location.href = 'index.html';
                 return false;
             }
         }
-        return true; // Acceso permitido (Activo o Perpetuo sin fecha de corte)
+        return true; 
     }
 </script>
 </body>
