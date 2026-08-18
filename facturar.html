@@ -3,107 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Facturas - Sistema Maestro</title>
+    <title>Generador de Facturas | Panel Premium</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     
     <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
+        /* ========================================================= */
         :root {
-            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
-            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
-            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+            --topbar-bg: #050505; 
+            --sidebar-bg: #080808; 
+            --active-gold: #D4AF37; 
+            
+            /* Paleta Carmesí Institucional */
+            --crimson: #7A171D;
+            --crimson-dark: #4A0E12; 
+            --crimson-light: #9B222A;
+
+            /* Base y texto */
+            --bg: #FDFBF7; 
+            --text: #2A2A2A; 
+            --text-light: #555555;
+            --border: #E8E0D5; 
+            --card-bg: #FFFFFF; 
+            --item-bg: #FCFBFA; 
+            
+            /* Estados Sólidos (para alertas y botones) */
+            --success: #2E7D32; 
+            --warning: #B8860B; 
+            --danger: #8B0000;
+            --info: #2c3e50;
         }
+
         body.hide-bs .moneda-bs { display: none !important; }
         body.hide-cop .moneda-cop { display: none !important; }
         body.hide-eur .moneda-eur { display: none !important; }
 
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .wrapper { display: block; min-height: 100vh; position: relative; }
 
-        /* ========================================================= */
-        /* BARRA SUPERIOR */
-        /* ========================================================= */
-        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+        h1, h2, h3, .serif-font { font-family: 'Georgia', 'Times New Roman', serif; letter-spacing: 0.5px; }
 
         /* ========================================================= */
-        /* MENÚ LATERAL */
+        /* PANTALLA DE CARGA LUXURY                                  */
         /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
-        .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
-        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
-        .sidebar .tab-btn:hover { background: #34495e; color: white; }
-        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
-        .sidebar-overlay.active { display: block; }
-
-        .main-content { max-width: 900px; margin: 0 auto; padding: 20px; padding-bottom: 130px; }
-        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border);}
-        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        #loading_overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, var(--crimson-dark) 0%, #1a0507 100%);
+            z-index: 1000000; display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+        .loading-card {
+            background: #ffffff; padding: 50px 40px; text-align: center; width: 85%;
+            max-width: 450px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative;
+            border-radius: 4px;
+        }
+        .loading-card::before, .loading-card::after {
+            content: ''; position: absolute; width: 40px; height: 40px; border-color: var(--active-gold); border-style: solid;
+        }
+        .loading-card::before { top: 15px; left: 15px; border-width: 3px 0 0 3px; }
+        .loading-card::after { bottom: 15px; right: 15px; border-width: 0 3px 3px 0; }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 3px solid rgba(212, 175, 55, 0.2);
+            border-top-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 25px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-title {
+            color: var(--crimson-dark); font-family: 'Georgia', serif; font-size: 1.4rem; 
+            letter-spacing: 3px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;
+        }
+        .loading-subtitle { color: #666; font-style: italic; font-size: 1.05rem; margin-bottom: 25px; font-family: 'Georgia', serif; line-height: 1.5; }
+
+        /* ========================================================= */
+        /* BARRA SUPERIOR: Ajuste Estricto en Línea                  */
+        /* ========================================================= */
+        .top-bar { 
+            background: var(--topbar-bg); color: white; height: 65px; padding: 0 15px; 
+            display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
+            border-bottom: 2px solid var(--active-gold); box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
+        }
+        .menu-toggle-btn { 
+            background: transparent; border: 1px solid var(--active-gold); color: var(--active-gold); 
+            font-size: 1.5rem; cursor: pointer; width: 42px; height: 42px; padding: 0; flex-shrink: 0;
+            border-radius: 6px; display: flex; align-items: center; justify-content: center; 
+            transition: all 0.3s; padding-bottom: 3px; line-height: 1;
+        }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.15); box-shadow: inset 0 0 8px rgba(212,175,55,0.3); }
+        .top-bar-title { display: flex; align-items: center; gap: 10px; flex-grow: 1; overflow: hidden; white-space: nowrap; }
+        .local-name { font-family: 'Georgia', serif; font-size: 1.25rem; font-weight: bold; color: #FFFFFF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px; }
+        .badge-elegant {
+            font-size: 0.75rem; font-family: 'Segoe UI', sans-serif; font-weight: bold; 
+            background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
+            color: var(--active-gold); padding: 5px 12px; border-radius: 4px; 
+            letter-spacing: 1.5px; border: 1px solid var(--active-gold); text-transform: uppercase;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; flex-shrink: 1;
+        }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL                                              */
+        /* ========================================================= */
+        .sidebar { 
+            position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; 
+            background: var(--sidebar-bg); color: #E0E0E0; padding: 20px 15px; 
+            display: flex; flex-direction: column; gap: 4px; z-index: 1002; 
+            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            box-shadow: 5px 0 25px rgba(0,0,0,0.7); border-right: 1px solid var(--active-gold); overflow-y: auto; 
+        }
+        .sidebar.open { left: 0; }
+        .sidebar-brand { font-family: 'Georgia', serif; font-size: 1.1rem; color: var(--active-gold); text-align: center; padding-bottom: 20px; border-bottom: 1px solid #222; margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
+        .sidebar .tab-btn { background: transparent; color: #CCCCCC; border: none; text-align: left; padding: 14px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s ease; }
+        .sidebar .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #FFF; border-left: 3px solid var(--active-gold); }
+        .sidebar .tab-btn.active { background: linear-gradient(90deg, #9D7B24, #5c4714) !important; color: #FFFFFF !important; font-weight: bold; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2); border-left: none; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(3px); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; }
+        .sidebar-overlay.active { display: block; opacity: 1; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #CCC; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--active-gold); }
+
+        /* ========================================================= */
+        /* CONTENEDORES PRINCIPALES Y TARJETAS                       */
+        /* ========================================================= */
+        .main-content { max-width: 950px; margin: 0 auto; padding: 30px 20px; padding-bottom: 130px; }
+        .card { 
+            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
+            border-top: 4px solid var(--crimson);
+        }
+        h2 { color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-family: 'Georgia', serif; text-transform: uppercase; letter-spacing: 1px; }
+        h3 { color: var(--crimson); margin-top: 25px; font-size: 1.15rem; border-bottom: 1px dashed var(--border); padding-bottom: 8px; font-family: 'Georgia', serif; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 
-        label { font-size: 0.9rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted);}
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
-        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: transform 0.1s;}
+        /* ========================================================= */
+        /* INPUTS Y BOTONES PREMIUM                                  */
+        /* ========================================================= */
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { 
+            width: 100%; padding: 14px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; 
+            font-size: 0.95rem; background: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD;
+        }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
+
+        button { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: none; padding: 14px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
         button:active { transform: scale(0.98); }
-        button.btn-danger { background: var(--danger); width: auto; padding: 8px 12px; margin-top: 0; }
-        button.btn-warning { background: var(--warning); color: #fff; width: auto; padding: 8px 12px; margin-top: 0; }
-        button.btn-success { background: var(--success); font-size: 1.1rem; padding: 15px; margin-bottom: 20px;}
-        button.btn-add { background: var(--primary); width: auto; padding: 12px 15px; margin-top: 10px; display: inline-block; font-size: 1.05rem; }
-        button.btn-info { background: var(--info); color: white; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
-        th { background: var(--primary); color: white; }
+        button.btn-add { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        button.btn-success { background: linear-gradient(135deg, #1B5E20, #2E7D32); color: white; border: 1px solid #A5D6A7; }
+        button.btn-warning { background: linear-gradient(135deg, #9D7B24, var(--warning)); color: white; border: 1px solid #FFE082; }
+        button.btn-danger { background: var(--danger); color: white; width: auto; padding: 8px 12px; margin-top: 0; box-shadow: none; font-size: 0.9rem;}
+        button.btn-info { background: linear-gradient(135deg, #2c3e50, #34495e); color: white; }
+
+        /* ========================================================= */
+        /* TABLAS Y CALCULADORAS                                     */
+        /* ========================================================= */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; background: var(--card-bg); }
+        th, td { border: 1px solid var(--border); padding: 12px; text-align: left; }
+        th { background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); font-family: 'Georgia', serif; letter-spacing: 1px; border-color: var(--active-gold); }
         
-        .total-box-multi { display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; padding: 15px; background: var(--item-bg); border-radius: 6px; border: 2px solid var(--secondary); line-height: 1.4; text-align: center; margin-top: 15px; }
-        .txt-success { color: var(--success); font-size: 1.8rem;}
+        .total-box-multi { display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 6px; border: 2px solid var(--active-gold); text-align: center; margin-top: 20px; box-shadow: 0 4px 10px rgba(212,175,55,0.1); }
+        .txt-success { color: var(--crimson-dark); font-size: 2rem; font-family: 'Georgia', serif; margin-top: 5px; }
 
-        .input-group { background: var(--item-bg); padding: 12px; border: 1px solid var(--border); border-radius: 5px; margin-top: 12px; }
-        .flex-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+        .input-group { background: var(--item-bg); padding: 15px; border: 1px solid var(--border); border-radius: 6px; margin-top: 15px; }
+        .flex-row { display: flex; gap: 10px; align-items: flex-end; margin-top: 10px; }
 
-        /* Estilos Buscador de Clientes */
-        #resultados_clientes { position: absolute; background: #fff; border: 1px solid var(--border); z-index: 10; max-height: 200px; overflow-y: auto; display: none; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px; }
-        .cliente-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 0.9em; }
-        .cliente-item:hover { background: #f0f8ff; }
-        .btn-nuevo-cliente { width: 100%; padding: 10px; background: #e8f4f8; color: var(--primary); border: none; cursor: pointer; text-align: left; font-weight: bold; }
+        #resultados_clientes { position: absolute; background: #fff; border: 1px solid var(--active-gold); z-index: 10; max-height: 200px; overflow-y: auto; display: none; width: 100%; box-shadow: 0 8px 16px rgba(0,0,0,0.2); border-radius: 0 0 6px 6px; }
+        .cliente-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 0.95rem; transition: background 0.2s;}
+        .cliente-item:hover { background: rgba(212, 175, 55, 0.1); font-weight: bold; color: var(--crimson-dark); }
+        .btn-nuevo-cliente { width: 100%; padding: 12px; background: var(--item-bg); color: var(--crimson-dark); border: none; cursor: pointer; text-align: left; font-weight: bold; box-shadow: none; }
 
-        /* Panel Calculadora de Diferencias */
-        .panel-diferencia { background: var(--card-bg); padding: 12px; border-radius: 8px; border: 2px solid var(--primary); text-align: center; margin-top: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .monedas-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; }
-        .moneda-box { padding: 8px; border-radius: 4px; background: var(--item-bg); border: 1px solid var(--border); font-size: 0.95rem; font-weight: bold; }
+        .panel-diferencia { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 2px solid var(--active-gold); text-align: center; margin-top: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(212,175,55,0.15); }
+        .monedas-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+        .moneda-box { padding: 10px; border-radius: 4px; background: rgba(212, 175, 55, 0.05); border: 1px solid var(--active-gold); font-size: 1rem; font-weight: bold; font-family: 'Courier New', Courier, monospace; }
         .resta-positiva { color: var(--danger); } 
         .resta-cero { color: var(--success); } 
 
-        /* MODALES MÁS ALTOS Y AMPLIOS */
-        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 100000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
-        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 90vw; max-width: 800px; height: 95vh; max-height: 95vh; position: relative; display: flex; flex-direction: column; }
+        /* ========================================================= */
+        /* MODALES PREMIUM                                           */
+        /* ========================================================= */
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 100000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 8px; width: 90vw; max-width: 800px; height: 95vh; max-height: 95vh; position: relative; display: flex; flex-direction: column; border: 2px solid var(--active-gold); box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
         .pdf-fullscreen { width: 96vw !important; height: 96vh !important; max-width: none !important; }
         
-        .modal-scroll-body { overflow-y: auto; flex-grow: 1; padding-right: 5px; margin-bottom: 5px; }
-        .modal-sticky-footer { position: sticky; bottom: 0; background: var(--card-bg); padding-top: 10px; border-top: 1px solid var(--border); z-index: 10; }
+        .modal-scroll-body { overflow-y: auto; flex-grow: 1; padding-right: 10px; margin-bottom: 10px; }
+        .modal-sticky-footer { position: sticky; bottom: 0; background: var(--card-bg); padding-top: 15px; border-top: 1px solid var(--border); z-index: 10; }
 
-        .modal-close-btn { position: absolute; top: 12px; right: 12px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-weight: bold; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center;}
-        .custom-modal-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; margin-top: 5px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; text-align: center; }
+        .modal-close-btn { position: absolute; top: -15px; right: -15px; background: var(--danger); color: white; border: 2px solid var(--active-gold); border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: transform 0.2s;}
+        .modal-close-btn:hover { transform: scale(1.1); }
+        .custom-modal-title { font-family: 'Georgia', serif; font-size: 1.5rem; color: var(--crimson-dark); margin-bottom: 20px; margin-top: 5px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
 
-        .menu-grid { display: flex; flex-direction: column; gap: 8px; text-align: left; }
-        .menu-item-card { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 12px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid var(--secondary); border-bottom: 1px solid var(--border); }
+        /* Estilo Lista Productos Seleccionables */
+        .menu-grid { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+        .menu-item-card { display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--active-gold); border-bottom: 1px solid var(--border); transition: all 0.2s; }
+        .menu-item-card:hover { transform: translateX(3px); background: rgba(212, 175, 55, 0.05); border-left-color: var(--crimson); }
         .menu-item-info { display: flex; flex-direction: column; width: 55%; }
-        .menu-item-nom { font-weight: bold; font-size: 0.95rem; color: var(--primary); }
-        .menu-item-precio { font-size: 0.85rem; color: var(--muted); margin-top: 3px; }
-        .menu-item-controls { display: flex; align-items: center; gap: 6px; width: 40%; justify-content: flex-end; }
-        .menu-btn { background: var(--border); color: var(--text); border: none; width: 35px; height: 35px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; font-size: 1.2rem;}
-        .menu-btn.add { background: var(--success); color: white; }
-        .menu-btn.sub { background: var(--danger); color: white; }
-        .menu-input { width: 60px; text-align: center; padding: 4px; margin: 0; border: 1px solid var(--border); border-radius: 4px; height: 35px; font-weight: bold; font-size: 1rem;}
+        .menu-item-nom { font-family: 'Georgia', serif; font-weight: bold; font-size: 1.05rem; color: var(--text); }
+        .menu-item-precio { font-size: 0.9rem; color: var(--text-light); margin-top: 4px; font-weight: bold; }
+        .menu-item-controls { display: flex; align-items: center; gap: 8px; width: 40%; justify-content: flex-end; }
+        .menu-btn { color: white; border: none; width: 38px; height: 38px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; font-size: 1.3rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+        .menu-btn.add { background: linear-gradient(135deg, #2E7D32, #1B5E20); border: 1px solid #A5D6A7; }
+        .menu-btn.sub { background: linear-gradient(135deg, var(--danger), #5a111a); border: 1px solid #EF9A9A; }
+        .menu-input { width: 65px; text-align: center; padding: 4px; margin: 0; border: 1px solid var(--active-gold); border-left: none; border-radius: 4px; height: 38px; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 1.1rem;}
     </style>
 </head>
 <body>
+
+<!-- PANTALLA DE CARGA LUXURY -->
+<div id="loading_overlay">
+    <div class="loading-card">
+        <div class="spinner-luxury"></div>
+        <div class="loading-title">Construyendo su Panel</div>
+        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Sincronizando la información de ventas y disponibilidad con los servidores seguros...</div>
+    </div>
+</div>
 
 <div id="global_modal" class="custom-modal-overlay">
     <div class="custom-modal-box">
@@ -117,39 +238,39 @@
 <div id="modal_pagos" class="custom-modal-overlay">
     <div class="custom-modal-box pdf-fullscreen">
         <button class="modal-close-btn" onclick="cerrarModalPagos()">✕</button>
-        <h2 style="text-align: center; margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 10px;">💳 Calculadora de Pagos y Soportes</h2>
-        <p style="text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 0;">(Herramienta de cálculo para cotizar al cliente. No afecta la base de datos).</p>
+        <div class="custom-modal-title" style="border-bottom-color: var(--info);">💳 Calculadora de Pagos y Soportes</div>
+        <p style="text-align: center; color: var(--text-light); font-size: 0.95rem; margin-top: -10px; margin-bottom: 20px;">(Herramienta de cálculo para cotizar al cliente. No afecta la base de datos).</p>
         
         <div class="modal-scroll-body">
-            <div class="input-group"><label>Pago Móvil:</label><div id="lista_pagomovil"></div><button class="btn-add" onclick="agregarCampoTransaccion('lista_pagomovil', 'pm_val')">+ Añadir Pago Móvil BS</button></div>
-            <div class="input-group"><label>Punto De Venta:</label><div id="lista_punto"></div><button class="btn-add" onclick="agregarCampoTransaccion('lista_punto', 'punto_val')">+ Añadir Punto BS</button></div>
-            <div class="input-group"><label>BioPago:</label><div id="lista_biopago"></div><button class="btn-add" onclick="agregarCampoTransaccion('lista_biopago', 'biopago_val')">+ Añadir BioPago BS</button></div>
+            <div class="input-group"><label style="color: var(--crimson-dark);">Pago Móvil:</label><div id="lista_pagomovil"></div><button class="btn-add" onclick="agregarCampoTransaccion('lista_pagomovil', 'pm_val')">+ Añadir Pago Móvil BS</button></div>
+            <div class="input-group"><label style="color: var(--crimson-dark);">Punto De Venta:</label><div id="lista_punto"></div><button class="btn-add" onclick="agregarCampoTransaccion('lista_punto', 'punto_val')">+ Añadir Punto BS</button></div>
+            <div class="input-group"><label style="color: var(--crimson-dark);">BioPago:</label><div id="lista_biopago"></div><button class="btn-add" onclick="agregarCampoTransaccion('lista_biopago', 'biopago_val')">+ Añadir BioPago BS</button></div>
             
             <div class="input-group">
-                <label>Transferencia Internacional:</label>
+                <label style="color: var(--crimson-dark);">Transferencia Internacional:</label>
                 <div id="lista_transferencia_internacional"></div>
                 <button class="btn-add" onclick="agregarCampoTransferenciaInternacional()">+ Añadir Transferencia Internacional</button>
             </div>
            
-            <div class="input-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px;">
+            <div class="input-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; background: rgba(212, 175, 55, 0.05); border-color: var(--active-gold);">
                 <div class="moneda-bs"><label>Efectivo Físico (BS):</label><input type="number" step="0.01" id="val_bs" oninput="calcularRestaReal()"></div>
                 <div><label>Efectivo Físico ($):</label><input type="number" step="0.01" id="val_usd" oninput="calcularRestaReal()"></div>
                 <div class="moneda-cop"><label>Efectivo Físico (COP):</label><input type="number" id="val_cop" oninput="calcularRestaReal()"></div>
                 <div class="moneda-eur"><label>Efectivo Físico (EUR):</label><input type="number" step="0.01" id="val_eur" oninput="calcularRestaReal()"></div>
             </div>
            
-            <hr style="margin: 20px 0;">
-            <div id="seccion-vueltos">
-                <label style="font-weight: bold; color: #ff6b6b;">Vueltos a Entregar Extra:</label>
+            <hr style="margin: 25px 0; border: 1px dashed var(--border);">
+            <div id="seccion-vueltos" class="input-group" style="background: rgba(139, 0, 0, 0.03); border-color: var(--danger);">
+                <label style="color: var(--danger); font-size: 1rem;">Vueltos a Entregar Extra:</label>
                 <div id="contenedor-vueltos-ticket"></div>
-                <button class="btn-danger" onclick="agregarVuelto('contenedor-vueltos-ticket')" style="margin-top: 5px;">+ Añadir Vuelto</button>
+                <button class="btn-danger" style="margin-top: 10px; width:100%; font-size:1rem; padding:12px;" onclick="agregarVuelto('contenedor-vueltos-ticket')">+ Añadir Vuelto</button>
             </div>
         </div>
 
-        <!-- PANEL DE DIFERENCIA ANCLADO (STICKY) DENTRO DE LA CALCULADORA -->
+        <!-- PANEL DE DIFERENCIA ANCLADO (STICKY) -->
         <div class="modal-sticky-footer">
-            <div class="panel-diferencia" style="margin: 0 0 10px 0; border-color: var(--secondary);">
-                <div style="font-size: 0.95rem; color: var(--muted); margin-bottom: 5px; font-weight: bold;" class="lbl_diferencia_txt">DIFERENCIA / SALDO PENDIENTE</div>
+            <div class="panel-diferencia">
+                <div style="font-size: 0.95rem; color: var(--crimson-dark); margin-bottom: 8px; font-weight: bold; letter-spacing: 1px;" class="lbl_diferencia_txt">DIFERENCIA / SALDO PENDIENTE</div>
                 <div class="monedas-grid">
                     <div class="moneda-box"><span class="txt_resta_usd resta-positiva">$0,00</span></div>
                     <div class="moneda-box moneda-bs"><span class="txt_resta_bs resta-positiva">0,00 BS</span></div>
@@ -157,7 +278,7 @@
                     <div class="moneda-box moneda-eur"><span class="txt_resta_eur resta-positiva">0 EUR</span></div>
                 </div>
             </div>
-            <button class="btn-success" style="width: 100%; margin: 0; padding: 12px; font-size: 1.1rem;" onclick="cerrarModalPagos()">✅ Cerrar Calculadora</button>
+            <button class="btn-success" style="width: 100%; margin: 0; padding: 16px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px;" onclick="cerrarModalPagos()">✅ Cerrar Calculadora</button>
         </div>
     </div>
 </div>
@@ -166,13 +287,16 @@
     <!-- BARRA SUPERIOR -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        <div class="top-bar-title" id="main_top_title">
+            <!-- Inyectado desde JS -->
+            Cargando...
+        </div>
     </div>
 
     <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú del Sistema</div>
+        <div class="sidebar-brand">Menú Ejecutivo</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -196,65 +320,65 @@
     </div>
 
     <div class="main-content">
-        <div class="card" style="border-top: 4px solid var(--secondary);">
-            <h2>📄 Emisión de Factura / Proforma (Solo Lectura)</h2>
-            <p style="color: var(--muted); font-size: 0.95rem; margin-bottom: 20px;">
+        <div class="card">
+            <h2 class="serif-font">📄 Emisión de Factura / Proforma <span style="font-size:0.8rem; color:var(--text-light); vertical-align:middle;">(Solo Lectura)</span></h2>
+            <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 25px;">
                 Genera comprobantes en PDF sin afectar el inventario ni registrar transacciones en la base de datos.
             </p>
             
             <div class="grid-2">
-                <div style="background: var(--item-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--primary);">
-                    <label style="margin-top: 0; color: var(--primary);">🧑‍💼 ASESOR / VENDEDOR:</label>
-                    <select id="venta_vendedor" style="border: 1px solid var(--primary);"></select>
+                <div style="background: var(--item-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--active-gold); box-shadow: 0 2px 5px rgba(212,175,55,0.1);">
+                    <label style="margin-top: 0; color: var(--crimson-dark);">🧑‍💼 ASESOR / VENDEDOR:</label>
+                    <select id="venta_vendedor" style="border-left-color: var(--crimson); font-weight: bold;"></select>
                 </div>
                 
-                <div style="background: var(--item-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--primary); position: relative;">
-                    <label style="margin-top: 0; color: var(--primary);">👤 CLIENTE / EMPRESA:</label>
-                    <input type="text" id="buscar_cliente" placeholder="Buscar nombre o cédula..." oninput="filtrarClientes(this.value)" autocomplete="off" style="border: 1px solid var(--primary);">
+                <div style="background: var(--item-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--active-gold); position: relative; box-shadow: 0 2px 5px rgba(212,175,55,0.1);">
+                    <label style="margin-top: 0; color: var(--crimson-dark);">👤 CLIENTE / EMPRESA:</label>
+                    <input type="text" id="buscar_cliente" placeholder="Buscar nombre o cédula..." oninput="filtrarClientes(this.value)" autocomplete="off" style="border-left-color: var(--crimson); font-weight: bold;">
                     <input type="hidden" id="cliente_id_seleccionado">
                     <div id="resultados_clientes"></div>
                 </div>
             </div>
 
-            <!-- BOTONES DE PRODUCTO Y DESCUENTO LADO A LADO -->
-            <div class="grid-2" style="margin-top:20px; margin-bottom:10px;">
-                <button class="btn-add" style="margin:0;" onclick="abrirMenuFullscreen()">🛒 Agregar Productos al Documento</button>
-                <button class="btn-warning" style="margin:0; padding:12px;" onclick="abrirInterfazRebaja()">🎁 Aplicar Rebaja / Descuento</button>
+            <!-- BOTONES DE PRODUCTO Y DESCUENTO -->
+            <div class="grid-2" style="margin-top:25px; margin-bottom:15px;">
+                <button class="btn-add" style="margin:0; padding:16px;" onclick="abrirMenuFullscreen()">🛒 Agregar Productos al Documento</button>
+                <button class="btn-warning" style="margin:0; padding:16px;" onclick="abrirInterfazRebaja()">🎁 Aplicar Rebaja / Descuento</button>
             </div>
 
-            <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top:20px;">📋 Detalle de la Factura</h3>
-            <div style="overflow-x:auto;">
-                <table id="tabla_factura">
+            <h3 class="serif-font" style="margin-top:30px;">📋 Detalle de la Factura</h3>
+            <div style="overflow-x:auto; border-radius: 6px; border: 1px solid var(--active-gold);">
+                <table id="tabla_factura" style="margin-top: 0;">
                     <tr><th>Cant</th><th>Producto / Servicio</th><th>Precio Und.</th><th>Subtotal</th><th>Acción</th></tr>
                 </table>
             </div>
 
-            <!-- ESCOGER MONEDA PARA LA FACTURA PDF (DEBAJO DE LA LISTA DE PRODUCTOS) -->
-            <div style="background: #eafaf1; padding: 12px; border-radius: 6px; border: 2px solid var(--success); margin-top: 15px;">
-                <label style="margin-top: 0; color: var(--success); font-size: 1.05rem;">💱 ESCOGER MONEDA PARA LA FACTURA PDF:</label>
-                <select id="moneda_factura" style="border: 1px solid var(--success); font-weight: bold; color: var(--success); font-size: 1.1rem; padding: 10px;" onchange="actualizarTablaFactura()">
+            <!-- ESCOGER MONEDA -->
+            <div style="background: rgba(46, 125, 50, 0.05); padding: 20px; border-radius: 6px; border: 2px solid var(--success); margin-top: 25px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);">
+                <label style="margin-top: 0; color: var(--success); font-size: 1.1rem; letter-spacing: 0.5px;">💱 ESCOGER MONEDA PARA LA FACTURA PDF:</label>
+                <select id="moneda_factura" style="border: 2px solid var(--success); font-weight: bold; color: var(--success); font-size: 1.15rem; padding: 12px; border-left: 6px solid var(--success);" onchange="actualizarTablaFactura()">
                     <option value="" selected disabled>-- SELECCIONAR MONEDA OBLIGATORIA --</option>
-                    <option value="USD">Dólar Estadounidense (USD)</option>
-                    <option value="BS">Bolívar (BS)</option>
-                    <option value="COP">Peso Colombiano (COP)</option>
-                    <option value="EUR">Euro (EUR)</option>
+                    <option value="USD">🇺🇸 Dólar Estadounidense (USD)</option>
+                    <option value="BS">🇻🇪 Bolívar (BS)</option>
+                    <option value="COP">🇨🇴 Peso Colombiano (COP)</option>
+                    <option value="EUR">🇪🇺 Euro (EUR)</option>
                 </select>
             </div>
             
             <div class="total-box-multi">
-                <div style="color: var(--muted); font-size: 1rem; text-transform: uppercase;">TOTAL NETO A FACTURAR</div>
+                <div style="color: var(--crimson); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; font-family: 'Georgia', serif;">TOTAL NETO A FACTURAR</div>
                 <div id="tot_caja_moneda" class="txt-success">0.00</div>
             </div>
         </div>
 
-        <div class="card" style="border-top: 4px solid var(--info); text-align: center;">
-            <h2>2. Calculadora para el Cliente (Opcional)</h2>
-            <p style="color: var(--muted); font-size: 0.9rem;">Si el cliente desea calcular cuánto falta por pagar según el efectivo y transferencias disponibles.</p>
-            <button class="btn-info" style="font-size: 1.2rem; padding: 15px;" onclick="abrirModalPagos()">🧮 Abrir Calculadora de Diferencias</button>
+        <div class="card" style="border-top: 4px solid var(--info); text-align: center; background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%);">
+            <h2 class="serif-font" style="justify-content: center; border-bottom: none; margin-bottom: 5px; color: var(--info);">🧮 Herramienta Financiera</h2>
+            <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 20px;">Calculadora rápida para auditar saldos, efectivos y vueltos con el cliente.</p>
+            <button class="btn-info" style="font-size: 1.2rem; padding: 18px; max-width: 500px; margin: 0 auto; display: block; border-radius: 30px; box-shadow: 0 6px 15px rgba(44, 62, 80, 0.3);" onclick="abrirModalPagos()">Abrir Calculadora de Diferencias</button>
         </div>
         
-        <button class="btn-success" onclick="generarFacturaPDFProfesional()" style="font-size: 1.2rem; padding: 18px; box-shadow: 0 4px 6px rgba(46, 204, 113, 0.3);">
-            🖨️ GENERAR Y DESCARGAR FACTURA EN PDF
+        <button class="btn-success" onclick="generarFacturaPDFProfesional()" style="font-size: 1.25rem; padding: 22px; box-shadow: 0 8px 25px rgba(46, 125, 50, 0.4); border-radius: 6px; letter-spacing: 1.5px;">
+            🖨️ GENERAR Y DESCARGAR FACTURA
         </button>
     </div>
 </div>
@@ -279,37 +403,51 @@
     });
 
     async function sincronizarSesionSupabase(session) {
-        const userId = session.user.id;
-        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
-        if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
-        else {
-            let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
-            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        try {
+            const userId = session.user.id;
+            let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+            if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
+            else {
+                let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
+                if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+            }
+
+            let conf = null, localData = null;
+            try {
+                let resConf = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+                conf = resConf.data;
+            } catch(e) { console.warn("Sin configuración"); }
+
+            try {
+                let resLocal = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+                localData = resLocal.data;
+            } catch(e) { console.warn("Sin local"); }
+
+            if (conf) CONFIG_GLOBAL = conf;
+
+            let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Empresarial';
+            let etiquetaModulo = "Generador Facturas"; 
+            
+            document.getElementById('main_top_title').innerHTML = `
+                <span class="local-name">🏪 ${nombreLocal}</span>
+                <span class="badge-elegant">📌 ${etiquetaModulo}</span>
+            `;
+
+            await cargarTodoDesdeSupabase();
+
+            // Ocultar modal de carga tras cargar los datos
+            setTimeout(() => {
+                document.getElementById('loading_overlay').style.opacity = '0';
+                document.getElementById('loading_overlay').style.transition = 'opacity 0.8s ease';
+                setTimeout(() => {
+                    document.getElementById('loading_overlay').style.display = 'none';
+                }, 800);
+            }, 1200);
+
+        } catch (error) {
+            console.error("Error al inicializar:", error);
+            document.getElementById('loading_overlay').style.display = 'none';
         }
-
-        let conf = null, localData = null;
-        try {
-            let resConf = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
-            conf = resConf.data;
-        } catch(e) { console.warn("Sin configuración"); }
-
-        try {
-            let resLocal = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
-            localData = resLocal.data;
-        } catch(e) { console.warn("Sin local"); }
-
-        if (conf) CONFIG_GLOBAL = conf;
-
-        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
-        
-        document.getElementById('main_top_title').innerHTML = `
-            🏪 ${nombreLocal} 
-            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                📌 Módulo: Generador Facturas
-            </span>
-        `;
-
-        await cargarTodoDesdeSupabase();
     }
 
     async function cargarTodoDesdeSupabase() {
@@ -390,8 +528,8 @@
         if (/^\d+$/.test(textoTrim)) cedulaSugerida = textoTrim;
         else { let partes = textoTrim.split(' '); nombreSugerido = partes[0] || ''; apellidoSugerido = partes.slice(1).join(' ') || ''; }
 
-        abrirModalGlobal("Añadir Cliente (Para esta factura)", `
-            <p style="text-align:center; color: var(--info); font-size: 0.9rem; margin-top:0;">(El cliente se agregará localmente para imprimir el PDF, sin tocar la base de datos).</p>
+        abrirModalGlobal("Añadir Cliente Temporal", `
+            <p style="text-align:center; color: var(--text-light); font-size: 0.95rem; margin-top:0;">(El cliente se agregará localmente para imprimir el PDF, sin tocar la base de datos).</p>
             <div class="grid-2">
                 <div><label>Nombres:</label><input type="text" id="c_nom_local" placeholder="Ej. Juan" value="${nombreSugerido}"></div>
                 <div><label>Apellidos:</label><input type="text" id="c_ape_local" placeholder="Ej. Pérez" value="${apellidoSugerido}"></div>
@@ -399,8 +537,8 @@
             <div class="grid-2">
                 <div><label>Cédula / RIF:</label><input type="text" id="c_ced_local" placeholder="V-12345678" value="${cedulaSugerida}"></div>
             </div>
-            <button class="btn-success" onclick="guardarClienteLocal()" style="margin-top:15px; width: 100%;">💾 Usar Cliente</button>
-            <button class="btn-warning" style="margin-top:5px; width: 100%;" onclick="cerrarModalGlobal()">Cancelar</button>
+            <button class="btn-success" onclick="guardarClienteLocal()" style="margin-top:20px; width: 100%; font-size:1.1rem; padding:15px;">💾 Usar Cliente</button>
+            <button class="btn-danger" style="margin-top:10px; width: 100%; font-size:1.1rem; padding:15px;" onclick="cerrarModalGlobal()">Cancelar</button>
         `);
     }
 
@@ -462,8 +600,8 @@
         let simbolo = monedaDestino === 'USD' ? '$' : monedaDestino === 'EUR' ? '€' : monedaDestino;
         
         let htmlContent = `
-            <div style="margin-bottom: 12px;">
-                <input type="text" id="buscador_modal_productos" placeholder="🔍 Buscar mercancía o servicio..." style="width: 100%; padding: 12px; border: 2px solid var(--primary); border-radius: 6px; font-size: 1.1rem;" onkeyup="filtrarProductosModal()">
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="buscador_modal_productos" placeholder="🔍 Buscar mercancía o servicio..." style="width: 100%; padding: 15px; border: 2px solid var(--active-gold); border-radius: 6px; font-size: 1.15rem;" onkeyup="filtrarProductosModal()">
             </div>
             
             <div class="modal-scroll-body">
@@ -483,7 +621,7 @@
                         <div class="menu-item-info">
                             <span class="menu-item-nom">${limpiarNombre(p.nom)}</span>
                             <span class="menu-item-precio">Precio Und: ${simbolo} ${formatearNumero(precioConvertido, monedaDestino === 'COP' ? 0 : 2)}</span>
-                            <span style="font-size:0.8rem; font-weight:bold; color:${colorStock}; margin-top: 4px;">📦 Stock: ${p.stock}</span>
+                            <span style="font-size:0.8rem; font-weight:bold; color:${colorStock}; margin-top: 5px; letter-spacing: 0.5px;">📦 Stock: ${p.stock}</span>
                         </div>
                         <div class="menu-item-controls">
                             <button class="menu-btn sub" onclick="modificarCantidadItem(${i}, -1)">-</button>
@@ -497,8 +635,8 @@
 
             <!-- PANEL DE DIFERENCIA ANCLADO (STICKY) DENTRO DE SELECCIONAR PRODUCTOS -->
             <div class="modal-sticky-footer">
-                <div class="panel-diferencia" style="margin: 0 0 10px 0; border-color: var(--secondary);">
-                    <div style="font-size: 0.95rem; color: var(--muted); margin-bottom: 5px; font-weight: bold;" class="lbl_diferencia_txt">DIFERENCIA / SALDO PENDIENTE</div>
+                <div class="panel-diferencia" style="margin: 0 0 10px 0;">
+                    <div style="font-size: 0.95rem; color: var(--crimson-dark); margin-bottom: 8px; font-weight: bold; letter-spacing: 1px;" class="lbl_diferencia_txt">DIFERENCIA / SALDO PENDIENTE</div>
                     <div class="monedas-grid">
                         <div class="moneda-box"><span class="txt_resta_usd resta-positiva">$0,00</span></div>
                         <div class="moneda-box moneda-bs"><span class="txt_resta_bs resta-positiva">0,00 BS</span></div>
@@ -506,7 +644,7 @@
                         <div class="moneda-box moneda-eur"><span class="txt_resta_eur resta-positiva">0 EUR</span></div>
                     </div>
                 </div>
-                <button class="btn-success" style="width:100%; margin:0; padding:12px; font-size:1.1rem;" onclick="cerrarModalGlobal()">✅ Aceptar y Volver</button>
+                <button class="btn-success" style="width:100%; margin:0; padding:16px; font-size:1.15rem; text-transform: uppercase; letter-spacing: 1.5px;" onclick="cerrarModalGlobal()">✅ Aceptar y Volver</button>
             </div>
         `;
         abrirModalGlobal("Seleccionar Productos / Servicios", htmlContent);
@@ -548,7 +686,7 @@
     }
 
     function abrirInterfazRebaja() {
-        if(productosFactura.length === 0) return alert("❌ Añada productos primero.");
+        if(productosFactura.length === 0) return alert("❌ Añada productos primero para aplicar un descuento.");
         let opcionesProd = `<option value="todos">Aplicar a TODA LA FACTURA (Global)</option>`;
         productosFactura.forEach((p, i) => { opcionesProd += `<option value="${i}">Solo a: ${limpiarNombre(p.nom)}</option>`; });
         let monedaActual = document.getElementById('moneda_factura').value || 'USD';
@@ -573,7 +711,7 @@
                 </div>
             </div>
             <div class="modal-sticky-footer">
-                <button class="btn-success" style="width: 100%; margin: 0; padding: 14px;" onclick="aplicarRebajaDefinitiva()">✅ Aplicar Rebaja</button>
+                <button class="btn-success" style="width: 100%; margin: 0; padding: 16px; font-size: 1.1rem; letter-spacing: 1px;" onclick="aplicarRebajaDefinitiva()">✅ Aplicar Rebaja</button>
             </div>
         `;
         abrirModalGlobal("🎁 Configurar Rebaja / Descuento", html);
@@ -626,14 +764,14 @@
             let subConvertido = obtenerPrecioEnMonedaActual(subUsd);
             let descConvertido = obtenerPrecioEnMonedaActual(descUsd);
             
-            let infoRebaja = descUsd > 0 ? `<br><small style="color:var(--danger); font-weight:bold;">🎁 Descuento aplic: -${simbolo} ${formatearNumero(descConvertido, decimales)} c/u</small>` : '';
+            let infoRebaja = descUsd > 0 ? `<br><small style="color:var(--danger); font-weight:bold;">🎁 Dto: -${simbolo} ${formatearNumero(descConvertido, decimales)} c/u</small>` : '';
 
             html += `<tr>
-                <td><input type="number" step="0.01" value="${p.cant}" style="width:60px; padding:4px; text-align:center;" onchange="cambiarCantidadFactura(${idx}, this.value)"></td>
-                <td>${limpiarNombre(p.nom)}${infoRebaja}</td>
-                <td style="color:var(--text);">${simbolo} ${formatearNumero(precioUnitarioConvertido, decimales)}</td>
-                <td style="font-weight:bold; color:var(--primary);">${simbolo} ${formatearNumero(subConvertido, decimales)}</td>
-                <td style="text-align:center;"><button class="btn-danger" style="padding:6px 10px; margin:0; font-size:1rem;" onclick="productosFactura.splice(${idx},1); actualizarTablaFactura();">🗑️</button></td>
+                <td><input type="number" step="0.01" value="${p.cant}" style="width:65px; padding:6px; text-align:center; font-weight:bold; font-family:'Courier New', Courier, monospace;" onchange="cambiarCantidadFactura(${idx}, this.value)"></td>
+                <td style="font-weight:bold;">${limpiarNombre(p.nom)}${infoRebaja}</td>
+                <td style="color:var(--text-light);">${simbolo} ${formatearNumero(precioUnitarioConvertido, decimales)}</td>
+                <td style="font-weight:bold; color:var(--crimson-dark);">${simbolo} ${formatearNumero(subConvertido, decimales)}</td>
+                <td style="text-align:center;"><button class="btn-danger" style="padding:8px 12px; margin:0; font-size:1.1rem; border-radius:4px;" onclick="productosFactura.splice(${idx},1); actualizarTablaFactura();">🗑️</button></td>
             </tr>`;
         });
         
@@ -651,7 +789,7 @@
     // ========================================================
     function agregarCampoTransaccion(containerId, inputClass) {
         let cont = document.getElementById(containerId); if(!cont) return; let rowId = 'row_' + Date.now();
-        cont.insertAdjacentHTML('beforeend', `<div class="flex-row trans-row" id="${rowId}" style="margin-bottom:5px;"><input type="number" step="0.01" placeholder="Monto" class="${inputClass} trans_monto" oninput="calcularRestaReal()" style="flex:2;"><input type="text" placeholder="Ref" class="ref_val" style="flex:1;"><input type="number" step="0.1" placeholder="%" class="trans_pct" oninput="calcularRestaReal()" style="width: 75px;"><button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">X</button></div>`);
+        cont.insertAdjacentHTML('beforeend', `<div class="flex-row trans-row" id="${rowId}" style="margin-bottom:5px;"><input type="number" step="0.01" placeholder="Monto" class="${inputClass} trans_monto" oninput="calcularRestaReal()" style="flex:2;"><input type="text" placeholder="Ref" class="ref_val" style="flex:1;"><input type="number" step="0.1" placeholder="%" class="trans_pct" oninput="calcularRestaReal()" style="width: 75px;"><button class="btn-danger" style="padding:8px 12px; margin:0; border-radius:4px;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">X</button></div>`);
     }
 
     function agregarCampoTransferenciaInternacional() {
@@ -660,7 +798,7 @@
             <div class="flex-row trans-row" id="${rowId}" style="margin-bottom:5px;">
                 <input type="number" step="0.01" placeholder="Monto" class="trans_monto" oninput="calcularRestaReal()" style="flex:2;">
                 <input type="text" placeholder="Ref" class="ref_val" style="flex:1;">
-                <input type="number" step="0.1" placeholder="%" class="trans_pct" oninput="calcularRestaReal()" style="width: 65px;">
+                <input type="number" step="0.1" placeholder="%" class="trans_pct" oninput="calcularRestaReal()" style="width: 75px;">
                 <select class="trans_moneda" onchange="calcularRestaReal()" style="flex:1.5;">
                     <option value="" selected disabled>Moneda</option>
                     <option value="USD">Dólar ($)</option>
@@ -668,14 +806,14 @@
                     <option value="EUR">Euro (€)</option>
                     <option value="BS">Bolívar (BS)</option>
                 </select>
-                <button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">X</button>
+                <button class="btn-danger" style="padding:8px 12px; margin:0; border-radius:4px;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">X</button>
             </div>
         `);
     }
 
     function agregarVuelto(containerId) {
         let cont = document.getElementById(containerId); if(!cont) return; let rowId = 'v_' + Date.now();
-        cont.insertAdjacentHTML('beforeend', `<div class="flex-row" id="${rowId}" style="margin-bottom:5px;"><input type="number" step="0.01" placeholder="Monto Vuelto" class="vuelto_val" oninput="calcularRestaReal()" style="flex:2;"><select class="vuelto_moneda" onchange="calcularRestaReal()" style="flex:1;"><option value="" selected disabled>-- MONEDA --</option><option value="USD">USD</option><option value="BS">BS</option><option value="COP">COP</option><option value="EUR">EUR</option></select><button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">X</button></div>`);
+        cont.insertAdjacentHTML('beforeend', `<div class="flex-row" id="${rowId}" style="margin-bottom:5px;"><input type="number" step="0.01" placeholder="Monto Vuelto" class="vuelto_val" oninput="calcularRestaReal()" style="flex:2;"><select class="vuelto_moneda" onchange="calcularRestaReal()" style="flex:1;"><option value="" selected disabled>-- MONEDA --</option><option value="USD">USD</option><option value="BS">BS</option><option value="COP">COP</option><option value="EUR">EUR</option></select><button class="btn-danger" style="padding:8px 12px; margin:0; border-radius:4px;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">X</button></div>`);
     }
 
     function calcularRestaReal() {
@@ -739,7 +877,7 @@
 
         if (productosFactura.length === 0) return alert("❌ No existen registros de mercancía para auditar la factura.");
 
-        abrirModalGlobal("Generando PDF", "Construyendo documento estructurado con datos nativos...");
+        abrirModalGlobal("Generando PDF", "<div style='text-align:center; padding: 20px; font-size: 1.1rem; color: var(--crimson-dark); font-weight:bold;'>Construyendo documento estructurado con datos nativos...</div>");
 
         try {
             const { jsPDF } = window.jspdf;
@@ -749,7 +887,7 @@
             let nombreVendedor = selVendedor.options[selVendedor.selectedIndex]?.text || 'N/A';
             let inputCliente = document.getElementById('buscar_cliente').value.trim();
             let nombreCliente = inputCliente || 'Consumidor Final';
-            let nombreEmpresa = CONFIG_GLOBAL.identidad?.nombre || 'Operador de Redes y Servicios';
+            let nombreEmpresa = CONFIG_GLOBAL.identidad?.nombre || 'Panel Empresarial';
             let numComprobante = 'FAC-' + Math.floor(100000 + Math.random() * 900000);
             
             let simbolo = monedaDestino === 'USD' ? '$' : monedaDestino === 'EUR' ? '€' : monedaDestino;
@@ -758,41 +896,41 @@
             // 1. Encabezado institucional formal
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(15);
-            doc.setTextColor(44, 62, 80);
+            doc.setTextColor(122, 23, 29); // Carmesí oscuro
             doc.text(nombreEmpresa.toUpperCase(), 14, 16);
 
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(8.5);
-            doc.setTextColor(127, 140, 141);
+            doc.setTextColor(100, 100, 100);
             doc.text("FACTURA COMERCIAL / DOCUMENTO DE CONTROL DE VENTA", 14, 22);
 
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(11);
-            doc.setTextColor(41, 128, 185);
+            doc.setTextColor(40, 40, 40);
             doc.text(numComprobante, 196, 16, { align: 'right' });
 
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(8);
-            doc.setTextColor(127, 140, 141);
+            doc.setTextColor(100, 100, 100);
             let fechaEmision = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
             doc.text(`Fecha y Hora de Emisión: ${fechaEmision}`, 196, 22, { align: 'right' });
 
-            doc.setDrawColor(52, 152, 219);
-            doc.setLineWidth(0.5);
+            doc.setDrawColor(212, 175, 55); // Dorado
+            doc.setLineWidth(0.8);
             doc.line(14, 26, 196, 26);
 
             // 2. Caja de Cliente y Asesor
-            doc.setFillColor(248, 249, 250);
+            doc.setFillColor(249, 248, 246);
             doc.roundedRect(14, 30, 182, 15, 2, 2, "F");
 
             doc.setFontSize(7.5);
-            doc.setTextColor(127, 140, 141);
+            doc.setTextColor(100, 100, 100);
             doc.text("TITULAR / CLIENTE:", 17, 36);
             doc.text("ASESOR ASIGNADO / MONEDA:", 110, 36);
 
             doc.setFontSize(9);
             doc.setFont("Helvetica", "bold");
-            doc.setTextColor(44, 62, 80);
+            doc.setTextColor(40, 40, 40);
             doc.text(String(nombreCliente.toUpperCase()), 17, 42);
             doc.text(String(`${nombreVendedor} | Expresado en: ${monedaDestino}`), 110, 42);
 
@@ -801,13 +939,13 @@
             // 3. Tabla Detallada de Productos / Servicios
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(10.5);
-            doc.setTextColor(44, 62, 80);
+            doc.setTextColor(122, 23, 29); // Carmesí oscuro
             doc.text("Detalle de Transacción y Partidas", 14, posY);
 
             posY += 4;
             doc.setFontSize(8);
-            doc.setFillColor(44, 62, 80);
-            doc.setTextColor(255, 255, 255);
+            doc.setFillColor(122, 23, 29); // Fondo cabecera carmesí
+            doc.setTextColor(212, 175, 55); // Texto Dorado
             doc.rect(14, posY, 182, 6.5, "F");
             doc.text("Cant", 17, posY + 4.5);
             doc.text("Descripción del Bien o Servicio", 35, posY + 4.5);
@@ -816,7 +954,7 @@
 
             posY += 6.5;
             doc.setFont("Helvetica", "normal");
-            doc.setTextColor(44, 62, 80);
+            doc.setTextColor(40, 40, 40);
 
             let totalFacturaMoneda = 0;
             let totalRebajasMoneda = 0;
@@ -827,7 +965,7 @@
                     posY = 20;
                 }
                 if (idx % 2 === 0) {
-                    doc.setFillColor(249, 249, 249);
+                    doc.setFillColor(249, 248, 246);
                     doc.rect(14, posY, 182, 6.5, "F");
                 }
 
@@ -850,7 +988,9 @@
                 doc.text(String(p.cant), 17, posY + 4.5);
                 doc.text(String(nombreItem), 35, posY + 4.5);
                 doc.text(`${simbolo} ${formatearNumero(precioUnitarioMoneda, decimales)}`, 135, posY + 4.5, { align: 'right' });
+                doc.setFont("Helvetica", "bold");
                 doc.text(`${simbolo} ${formatearNumero(subtotalFilaMoneda, decimales)}`, 192, posY + 4.5, { align: 'right' });
+                doc.setFont("Helvetica", "normal");
 
                 posY += 6.5;
             });
@@ -863,22 +1003,21 @@
                 posY = 20;
             }
 
-            doc.setFillColor(248, 249, 250);
+            doc.setFillColor(249, 248, 246);
             doc.roundedRect(115, posY, 81, 20, 2, 2, "F");
 
             doc.setFontSize(8);
-            doc.setTextColor(127, 140, 141);
+            doc.setTextColor(100, 100, 100);
             doc.text("Total Descuentos Aplicados:", 120, posY + 5.5);
             doc.text(`-${simbolo} ${formatearNumero(totalRebajasMoneda, decimales)}`, 191, posY + 5.5, { align: 'right' });
 
-            doc.setDrawColor(220, 220, 220);
+            doc.setDrawColor(212, 175, 55); // Línea dorada
             doc.line(120, posY + 8, 191, posY + 8);
 
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(10);
-            doc.setTextColor(44, 62, 80);
+            doc.setTextColor(122, 23, 29); // Carmesí oscuro
             doc.text("TOTAL NETO A PAGAR:", 120, posY + 14.5);
-            doc.setTextColor(41, 128, 185);
             doc.text(`${simbolo} ${formatearNumero(totalFacturaMoneda, decimales)}`, 191, posY + 14.5, { align: 'right' });
 
             posY += 24;
@@ -889,13 +1028,13 @@
                 posY = 20;
             }
 
-            doc.setFillColor(255, 249, 230);
-            doc.setDrawColor(243, 156, 18);
+            doc.setFillColor(253, 251, 247);
+            doc.setDrawColor(212, 175, 55); // Borde Dorado
             doc.roundedRect(14, posY, 182, 30, 2, 2, "FD");
 
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(7.5);
-            doc.setTextColor(180, 100, 0);
+            doc.setTextColor(122, 23, 29); // Texto Carmesí
             doc.text("CONDICIONES TÉCNICAS Y MARCO LEGAL DE EMISIÓN:", 17, posY + 5);
 
             doc.setFont("Helvetica", "normal");
