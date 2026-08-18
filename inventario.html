@@ -12,9 +12,9 @@
         /* VARIABLES DE ESTILO ELEGANTE (Carmesí, Dorado y Negro)    */
         /* ========================================================= */
         :root {
-            --topbar-bg: #050505; /* Negro puro/profundo */
-            --sidebar-bg: #080808; /* Negro profundo */
-            --active-gold: #D4AF37; /* Dorado institucional */
+            --topbar-bg: #050505; 
+            --sidebar-bg: #080808; 
+            --active-gold: #D4AF37; 
             --active-gold-hover: #F3E5AB; 
             
             /* Paleta Carmesí */
@@ -23,16 +23,16 @@
             --crimson-light: #9B222A;
 
             /* Base y texto */
-            --bg: #F9F8F6; /* Blanco roto / Marfil muy claro para dar calidez */
+            --bg: #F9F8F6; 
             --text: #2A2A2A; 
             --text-light: #555555;
             --border: #E8E0D5; 
             --card-bg: #FFFFFF; 
             --item-bg: #FCFBFA; 
             
-            /* Estados Sólidos (para bordes y badges) */
+            /* Estados Sólidos (para badges) */
             --success: #2E7D32; 
-            --warning: #B8860B; /* Dark Goldenrod */
+            --warning: #B8860B; 
             --danger: #8B0000;
         }
 
@@ -44,15 +44,11 @@
         
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            margin: 0; 
-            padding: 0; 
+            background: var(--bg); color: var(--text); margin: 0; padding: 0; 
         }
 
         .wrapper { display: block; min-height: 100vh; position: relative; }
         
-        /* Tipografías elegantes para títulos */
         h1, h2, h3, .serif-font {
             font-family: 'Georgia', 'Times New Roman', serif;
             letter-spacing: 0.5px;
@@ -64,74 +60,60 @@
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: radial-gradient(circle at center, #5a111a 0%, #2e080d 100%);
-            z-index: 99999; 
-            display: flex; justify-content: center; align-items: center;
+            z-index: 99999; display: flex; justify-content: center; align-items: center;
             transition: opacity 0.8s ease, visibility 0.8s;
         }
         .loading-card {
-            background: #ffffff;
-            padding: 50px 40px;
-            text-align: center;
-            width: 85%;
-            max-width: 450px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-            position: relative;
+            background: #ffffff; padding: 50px 40px; text-align: center; width: 85%;
+            max-width: 450px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); position: relative;
         }
-        /* Esquinas doradas */
         .loading-card::before, .loading-card::after {
-            content: ''; position: absolute; width: 35px; height: 35px;
-            border-color: var(--active-gold); border-style: solid;
+            content: ''; position: absolute; width: 35px; height: 35px; border-color: var(--active-gold); border-style: solid;
         }
         .loading-card::before { top: 15px; left: 15px; border-width: 2px 0 0 2px; }
         .loading-card::after { bottom: 15px; right: 15px; border-width: 0 2px 2px 0; }
         
         .spinner {
-            width: 45px; height: 45px;
-            border: 2px solid rgba(212, 175, 55, 0.2);
-            border-top-color: var(--active-gold);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 25px auto;
+            width: 45px; height: 45px; border: 2px solid rgba(212, 175, 55, 0.2);
+            border-top-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 25px auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .loading-title {
-            color: var(--crimson-dark); font-family: 'Georgia', serif;
-            font-size: 1.3rem; letter-spacing: 3px; font-weight: bold;
-            margin-bottom: 15px; text-transform: uppercase;
+            color: var(--crimson-dark); font-family: 'Georgia', serif; font-size: 1.3rem; 
+            letter-spacing: 3px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;
         }
-        .loading-quote {
-            color: #666; font-style: italic; font-size: 1rem; margin-bottom: 25px;
-            font-family: 'Georgia', serif;
-        }
-        .loading-text {
-            color: #888; font-size: 0.85rem; line-height: 1.6; max-width: 90%; margin: 0 auto;
-        }
+        .loading-quote { color: #666; font-style: italic; font-size: 1rem; margin-bottom: 25px; font-family: 'Georgia', serif; }
+        .loading-text { color: #888; font-size: 0.85rem; line-height: 1.6; max-width: 90%; margin: 0 auto; }
 
         /* ========================================================= */
-        /* BARRA SUPERIOR: Negro con letras blancas                  */
+        /* BARRA SUPERIOR: Negro con letras blancas y Borde Dorado   */
         /* ========================================================= */
         .top-bar { 
             background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; 
-            display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
-            border-bottom: 2px solid var(--active-gold); 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 999; 
+            border-bottom: 2px solid var(--active-gold); box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
         }
+        .top-bar-left { display: flex; align-items: center; gap: 15px; }
+        
+        /* Ajuste de alineación central hacia arriba para el ícono de menú */
         .menu-toggle-btn { 
-            background: transparent; border: 1px solid rgba(212, 175, 55, 0.4); color: var(--active-gold); 
-            font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; 
+            background: transparent; border: 1px solid #B8860B; color: #B8860B; 
+            font-size: 1.5rem; cursor: pointer; width: 38px; height: 38px; padding: 0; 
             border-radius: 4px; display: flex; align-items: center; justify-content: center; 
             transition: all 0.3s;
+            padding-bottom: 3px; /* Nudge físico sutil hacia arriba */
+            line-height: 1;
         }
-        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.1); border-color: var(--active-gold); }
+        .menu-toggle-btn:hover { background: rgba(184, 134, 11, 0.15); border-color: var(--active-gold); color: var(--active-gold); }
         .top-bar-title { 
             font-family: 'Georgia', serif; font-size: 1.2rem; font-weight: normal; flex-grow: 1; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 1px; 
-            display: flex; align-items: center; color: white; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 1px; color: white; 
         }
 
         /* ========================================================= */
-        /* MENÚ LATERAL: Negro absoluto, activo en Oro               */
+        /* MENÚ LATERAL: Fondo negro, activo en Oro                  */
         /* ========================================================= */
         .sidebar { 
             position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; 
@@ -141,28 +123,21 @@
             box-shadow: 5px 0 20px rgba(0,0,0,0.5); border-right: 1px solid #1A1A1A; overflow-y: auto; 
         }
         .sidebar.open { left: 0; }
-        
         .sidebar-brand { 
             font-family: 'Georgia', serif; font-size: 1.1rem; color: var(--active-gold);
             text-align: center; padding-bottom: 20px; border-bottom: 1px solid #222; 
             margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase;
         }
-        
         .sidebar .tab-btn { 
             background: transparent; color: #CCCCCC; border: none; text-align: left; 
             padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; 
-            font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; 
-            transition: all 0.2s ease; border-left: 3px solid transparent;
+            font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s ease;
         }
-        .sidebar .tab-btn:hover { 
-            background: rgba(255, 255, 255, 0.03); color: #FFF; border-left: 3px solid #555; 
-        }
+        .sidebar .tab-btn:hover { background: rgba(255, 255, 255, 0.03); color: #FFF; border-left: 3px solid #555; }
         .sidebar .tab-btn.active { 
-            background: var(--active-gold) !important; color: #000000 !important; 
-            font-weight: bold; border-left: 4px solid #FFFFFF; 
-            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+            background: linear-gradient(90deg, #9D7B24, #735919) !important; 
+            color: #FFFFFF !important; font-weight: bold; box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3); border-left: none;
         }
-        
         .sidebar-overlay { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
             background: rgba(0,0,0,0.7); backdrop-filter: blur(2px); z-index: 1001; 
@@ -170,126 +145,110 @@
         }
         .sidebar-overlay.active { display: block; opacity: 1; }
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: #CCC; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--active-gold); }
-        .sidebar::-webkit-scrollbar-track { background: var(--sidebar-bg); }
-        .sidebar::-webkit-scrollbar-thumb { background: #333; }
-        .sidebar::-webkit-scrollbar-thumb:hover { background: var(--active-gold); }
-
         /* ========================================================= */
-        /* CONTENEDOR PRINCIPAL Y TARJETAS                           */
+        /* CONTENEDORES Y TARJETAS                                   */
         /* ========================================================= */
         .main-content { max-width: 950px; margin: 0 auto; padding: 30px 20px; padding-bottom: 130px; }
-
         .card { 
             background: var(--card-bg); padding: 25px; border-radius: 4px; margin-bottom: 25px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04); 
-            border: 1px solid var(--border);
-            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border);
             border-top: 3px solid var(--crimson);
         }
-        
         h2 { 
             color: var(--crimson-dark); margin-top: 0; font-size: 1.3rem; 
             border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        h3 { color: var(--crimson); font-size: 1.1rem; border-bottom: 1px dashed var(--border); padding-bottom: 5px; margin-bottom: 15px;}
-        
-        .grid-vertical { display: flex; flex-direction: column; gap: 12px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        @media (max-width: 768px) {
-            .grid-4 { grid-template-columns: 1fr; }
-            .main-content { padding: 15px; padding-bottom: 100px; } 
+            display: flex; align-items: center; gap: 8px; text-transform: uppercase;
         }
 
-        /* ========================================================= */
-        /* FORMULARIOS, INPUTS Y BOTONES                             */
-        /* ========================================================= */
-        label { 
-            font-size: 0.85rem; font-weight: bold; display: block; margin-top: 15px; 
-            color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;
+        /* Botón Desplegable para Secciones */
+        .toggle-section-btn {
+            background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
+            color: var(--active-gold); border: 1px solid var(--active-gold); 
+            padding: 15px 20px; width: 100%; border-radius: 4px; cursor: pointer; 
+            font-weight: bold; font-size: 1.1rem; text-transform: uppercase; 
+            letter-spacing: 1px; transition: all 0.3s; text-align: left;
+            display: flex; justify-content: space-between; align-items: center;
+            font-family: 'Georgia', serif; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        
+        .toggle-section-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+        .collapsible-content {
+            display: none; padding-top: 20px; animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ========================================================= */
+        /* FORMULARIOS                                               */
+        /* ========================================================= */
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 15px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
         input, select { 
-            width: 100%; padding: 12px; margin-top: 5px; 
-            border: 1px solid var(--border); border-radius: 3px; font-size: 0.95rem; 
-            background-color: #FAFAFA; transition: all 0.3s ease;
-            color: var(--text); border-left: 3px solid #DDD;
+            width: 100%; padding: 12px; margin-top: 5px; border: 1px solid var(--border); border-radius: 3px; font-size: 0.95rem; 
+            background-color: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 3px solid #DDD;
         }
-        input:focus, select:focus {
-            outline: none; background-color: #FFF;
-            border-color: var(--active-gold);
-            border-left: 3px solid var(--active-gold);
-            box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
-        }
-
+        input:focus, select:focus { outline: none; background-color: #FFF; border-color: var(--active-gold); border-left: 3px solid var(--active-gold); box-shadow: 0 0 8px rgba(212, 175, 55, 0.2); }
+        
         input[readonly] { 
             background: var(--bg); border-left: 3px solid var(--crimson-light); 
             color: var(--crimson-dark); font-weight: bold; font-family: 'Courier New', Courier, monospace; 
             font-size: 1.1rem; text-align: right;
         }
 
-        button { 
+        .grid-vertical { display: flex; flex-direction: column; gap: 12px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        @media (max-width: 768px) { .grid-4 { grid-template-columns: 1fr; } }
+
+        button.btn-action { 
             background: linear-gradient(135deg, var(--crimson), var(--crimson-dark)); 
             color: var(--active-gold); border: 1px solid var(--active-gold); 
             padding: 14px 20px; border-radius: 3px; cursor: pointer; font-weight: bold; 
             width: 100%; margin-top: 20px; font-size: 0.95rem; text-transform: uppercase; 
             letter-spacing: 1px; transition: all 0.3s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        button:hover { 
-            background: linear-gradient(135deg, var(--crimson-light), var(--crimson)); 
-            color: #FFF; box-shadow: 0 6px 15px rgba(122, 23, 29, 0.3); transform: translateY(-1px);
-        }
-        button.btn-outline { background: transparent; color: var(--crimson-dark); border: 1px solid var(--crimson-dark); }
-        button.btn-outline:hover { background: var(--crimson-dark); color: var(--active-gold); }
+        button.btn-action:hover { box-shadow: 0 6px 15px rgba(122, 23, 29, 0.3); transform: translateY(-1px); filter: brightness(1.1); }
 
         /* ========================================================= */
-        /* LISTADO DE INVENTARIO CON RESALTADO DE FILAS COMPLETAS    */
+        /* LISTADO DE INVENTARIO CON BORDES DORADOS Y FONDOS TENUES  */
         /* ========================================================= */
         .cat-header { 
             background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); 
-            color: var(--active-gold); padding: 10px 15px; margin-top: 15px; margin-bottom: 5px; 
-            border-radius: 2px; font-weight: bold; width: 100%; font-family: 'Georgia', serif;
-            letter-spacing: 1px; font-size: 0.95rem; border-left: 4px solid var(--active-gold);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            color: var(--active-gold); padding: 12px 15px; margin-top: 20px; margin-bottom: 0; 
+            border: 3px solid var(--active-gold); border-bottom: none;
+            font-weight: bold; width: 100%; font-family: 'Georgia', serif;
+            letter-spacing: 1px; font-size: 1rem; border-top-left-radius: 4px; border-top-right-radius: 4px;
         }
 
         .consulta-item { 
-            border-bottom: 1px solid var(--border); padding: 15px; font-size: 0.95rem; 
+            padding: 15px; font-size: 0.95rem; 
             display: flex; justify-content: space-between; align-items: center;
-            border-left: 4px solid transparent; /* Espacio para el borde lateral */
+            border-bottom: 1px solid var(--active-gold); /* Fina linea dorada inferor */
+            border-left: 3px solid var(--active-gold); /* Linea dorada izquierda */
+            border-right: 3px solid var(--active-gold); /* Linea dorada derecha */
             transition: all 0.2s;
         }
-        .consulta-item:hover { transform: translateX(2px); }
-
-        /* Resaltado de Filas (Verde, Amarillo, Rojo muy sutiles) */
-        .row-success { background-color: rgba(46, 125, 50, 0.05) !important; border-left-color: var(--success); }
-        .row-warning { background-color: rgba(184, 134, 11, 0.08) !important; border-left-color: var(--warning); }
-        .row-danger { background-color: rgba(139, 0, 0, 0.06) !important; border-left-color: var(--danger); }
+        
+        /* Tintes Transparentes según estado */
+        .row-success { background-color: rgba(46, 125, 50, 0.12) !important; }
+        .row-warning { background-color: rgba(184, 134, 11, 0.15) !important; }
+        .row-danger { background-color: rgba(139, 0, 0, 0.12) !important; }
         
         .item-name { font-weight: bold; color: var(--text); display: block; margin-bottom: 3px;}
         .item-cat { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;}
         
-        /* Badges Sólidos Elegantes */
+        /* Badges de Cantidad (Colores Sólidos) */
         .badge-stock {
-            padding: 5px 12px; border-radius: 4px; font-family: 'Courier New', Courier, monospace;
-            font-size: 1.05rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-            display: inline-block; text-align: center; min-width: 80px; letter-spacing: 0.5px;
+            padding: 6px 14px; border-radius: 4px; font-family: 'Courier New', Courier, monospace;
+            font-size: 1.05rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: inline-block; text-align: center; min-width: 85px; letter-spacing: 0.5px;
         }
-        .badge-stock-success { background: #2E7D32; color: #FFFFFF; border: 1px solid #1B5E20; }
-        .badge-stock-warning { background: #B8860B; color: #000000; border: 1px solid #9D7B24; }
-        .badge-stock-danger { background: #8B0000; color: #FFFFFF; border: 1px solid #5a111a; }
+        .badge-stock-success { background: var(--success); color: #FFFFFF; border: 1px solid #1B5E20; }
+        .badge-stock-warning { background: var(--warning); color: #000000; border: 1px solid #9D7B24; }
+        .badge-stock-danger { background: var(--danger); color: #FFFFFF; border: 1px solid #5a111a; }
 
         .badge-elegant {
-            font-size: 0.75rem; font-family: 'Segoe UI', sans-serif;
-            font-weight: bold; background: var(--crimson); color: var(--active-gold); 
-            padding: 4px 12px; border-radius: 20px; margin-left: 15px; letter-spacing: 1px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 1px solid var(--active-gold);
-            text-transform: uppercase;
+            font-size: 0.75rem; font-family: 'Segoe UI', sans-serif; font-weight: bold; 
+            background: var(--crimson); color: var(--active-gold); padding: 4px 12px; border-radius: 20px; 
+            margin-left: 15px; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+            border: 1px solid var(--active-gold); text-transform: uppercase;
         }
     </style>
 </head>
@@ -300,17 +259,18 @@
         <div class="spinner"></div>
         <div class="loading-title">Construyendo su Panel</div>
         <div class="loading-quote">"El éxito está en los detalles."</div>
-        <div class="loading-text">
-            Sincronizando su información operativa segura y preparando su entorno de trabajo de alto rendimiento...
-        </div>
+        <div class="loading-text">Sincronizando su información operativa segura y preparando su entorno de trabajo de alto rendimiento...</div>
     </div>
 </div>
 
 <div class="wrapper">
     
     <div class="top-bar">
-        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        <div class="top-bar-left">
+            <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+            <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        </div>
+        <div id="top_badge_container"></div>
     </div>
 
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -340,76 +300,92 @@
 
     <div class="main-content">
         
-        <div class="card">
-            <h2 class="serif-font">📄 Exportación de Reportes PDF</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div>
-                    <label>Tipo de documento</label>
-                    <select id="sel_pdf_exportar">
-                        <option value="" disabled selected>Seleccionar Documento</option>
-                        <option value="inv">Inventario Físico</option>
-                        <option value="caja">Listado de Precios</option>
-                        <option value="inv_caja">Inventario + Precio</option>
-                    </select>
+        <!-- SECCIÓN DE EXPORTACIÓN PDF COLLAPSIBLE -->
+        <div class="card" style="padding: 0; border: none; background: transparent; box-shadow: none;">
+            <button class="toggle-section-btn" onclick="toggleSeccion('sec_pdf', 'arrow_pdf')">
+                <span>📄 Exportación de Reportes PDF</span>
+                <span id="arrow_pdf">▼</span>
+            </button>
+            <div id="sec_pdf" class="collapsible-content card" style="border-top: none; margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label>Tipo de documento</label>
+                        <select id="sel_pdf_exportar">
+                            <option value="" disabled selected>Seleccione una opción...</option>
+                            <option value="inv">Inventario Físico</option>
+                            <option value="caja">Listado de Precios</option>
+                            <option value="inv_caja">Inventario + Precio</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Moneda a reflejar</label>
+                        <select id="sel_pdf_moneda">
+                            <option value="" disabled selected>Seleccione una opción...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Orden de Organización</label>
+                        <select id="sel_pdf_orden">
+                            <option value="" disabled selected>Seleccione una opción...</option>
+                            <option value="az">Alfabético A-Z</option>
+                            <option value="cat">Por Categorías</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Filtro de Existencias</label>
+                        <select id="sel_pdf_stock">
+                            <option value="" disabled selected>Seleccione una opción...</option>
+                            <option value="todos">Mostrar Todo el Catálogo</option>
+                            <option value="con_stock">Ocultar Mercancía Agotada</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label>Moneda a reflejar</label>
-                    <select id="sel_pdf_moneda"></select>
+                
+                <div class="grid-vertical" style="margin-top:20px;">
+                    <button class="btn-action" onclick="ejecutarAccionPDF('descargar')">Descargar Documento PDF</button>
                 </div>
-                <div>
-                    <label>Orden de Organización</label>
-                    <select id="sel_pdf_orden">
-                        <option value="" disabled selected>Seleccionar Ordenamiento</option>
-                        <option value="az">Alfabético A-Z</option>
-                        <option value="cat">Por Categorías</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Filtro de Existencias</label>
-                    <select id="sel_pdf_stock">
-                        <option value="" disabled selected>Seleccionar Filtro</option>
-                        <option value="todos">Mostrar Todo el Catálogo</option>
-                        <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="grid-vertical" style="margin-top:20px;">
-                <button onclick="ejecutarAccionPDF('descargar')">Descargar Documento PDF</button>
-                <button class="btn-outline" onclick="alert('Lógica de envío API Telegram por integrar')" style="margin-top:5px;">Enviar vía Telegram (Bot)</button>
             </div>
         </div>
 
-        <div class="card">
-            <h2 class="serif-font">📦 Panel de Inventario y Caja</h2>
-            
-            <label style="margin-top: 0; margin-bottom: 10px;">Fondos Registrados en Caja</label>
-            <div class="grid-4" style="background:var(--item-bg); padding:15px; border-radius:4px; margin-bottom:25px; border: 1px solid var(--border);">
-                <div><label style="margin-top:0;">Dólares (USD)</label><input type="text" id="inv_fondo_usd" readonly></div>
-                <div class="moneda-bs"><label style="margin-top:0;">Bolívares (BS)</label><input type="text" id="inv_fondo_bs" readonly></div>
-                <div class="moneda-cop"><label style="margin-top:0;">Pesos (COP)</label><input type="text" id="inv_fondo_cop" readonly></div>
-                <div class="moneda-eur"><label style="margin-top:0;">Euros (EUR)</label><input type="text" id="inv_fondo_eur" readonly></div>
+        <!-- SECCIÓN CAJA MONETARIA COLLAPSIBLE -->
+        <div class="card" style="padding: 0; border: none; background: transparent; box-shadow: none;">
+            <button class="toggle-section-btn" onclick="toggleSeccion('sec_caja', 'arrow_caja')">
+                <span>💵 Caja Monetaria</span>
+                <span id="arrow_caja">▼</span>
+            </button>
+            <div id="sec_caja" class="collapsible-content card" style="border-top: none; margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0;">
+                <label style="margin-top: 0; margin-bottom: 10px;">Fondos Registrados en Caja Registradora</label>
+                <div class="grid-4" style="background:var(--item-bg); padding:15px; border-radius:4px; border: 1px solid var(--border);">
+                    <div><label style="margin-top:0;">🇺🇸 Dólares (USD)</label><input type="text" id="inv_fondo_usd" readonly></div>
+                    <div class="moneda-bs"><label style="margin-top:0;">🇻🇪 Bolívares (BS)</label><input type="text" id="inv_fondo_bs" readonly></div>
+                    <div class="moneda-cop"><label style="margin-top:0;">🇨🇴 Pesos (COP)</label><input type="text" id="inv_fondo_cop" readonly></div>
+                    <div class="moneda-eur"><label style="margin-top:0;">🇪🇺 Euros (EUR)</label><input type="text" id="inv_fondo_eur" readonly></div>
+                </div>
             </div>
+        </div>
+
+        <!-- SECCIÓN DE INVENTARIO -->
+        <div class="card" style="padding: 10px 0 0 0; background: transparent; border: none; box-shadow: none;">
+            <h2 class="serif-font" style="padding: 0 20px;">📦 Inventario</h2>
             
-            <h3 class="serif-font">Existencias Físicas en Tiempo Real</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; padding: 0 20px 15px 20px; border-bottom: 1px solid var(--border);">
                 <div>
                     <label style="font-size:0.8rem; margin:0;">Visualización de datos:</label>
-                    <select id="orden_inv_fisico" onchange="renderInventarioFisico()" style="margin-top:5px;">
+                    <select id="orden_inv_fisico" onchange="renderInventarioFisico()" style="margin-top:5px; background: white;">
                         <option value="cat">Agrupados por Categoría</option>
                         <option value="az">Listado Alfabético (A-Z)</option>
                     </select>
                 </div>
                 <div>
                     <label style="font-size:0.8rem; margin:0;">Filtro en tiempo real:</label>
-                    <select id="filtro_stock_fisico" onchange="renderInventarioFisico()" style="margin-top:5px;">
+                    <select id="filtro_stock_fisico" onchange="renderInventarioFisico()" style="margin-top:5px; background: white;">
                         <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
                         <option value="todos">Mostrar Todo el Catálogo</option>
                     </select>
                 </div>
             </div>
 
-            <div id="inv_lista_readonly"></div>
+            <div id="inv_lista_readonly" style="padding: 0 20px 20px 20px;"></div>
         </div>
     </div>
 </div>
@@ -422,6 +398,18 @@
     let CURRENT_LOCAL_ID = null;
     let CONFIG_GLOBAL = {};
     let CATALOGO = [];
+
+    function toggleSeccion(idContenedor, idFlecha) {
+        let cont = document.getElementById(idContenedor);
+        let flecha = document.getElementById(idFlecha);
+        if (cont.style.display === "none" || cont.style.display === "") {
+            cont.style.display = "block";
+            flecha.innerText = "▲";
+        } else {
+            cont.style.display = "none";
+            flecha.innerText = "▼";
+        }
+    }
 
     function ocultarLoading() {
         const loader = document.getElementById('loading-screen');
@@ -472,15 +460,13 @@
         let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Administrativo';
         let etiquetaModulo = "Inventario Físico"; 
 
-        document.getElementById('main_top_title').innerHTML = `
-            ${nombreLocal} 
-            <span class="badge-elegant">📌 ${etiquetaModulo}</span>
-        `;
+        document.getElementById('main_top_title').innerHTML = `🏪 ${nombreLocal}`;
+        document.getElementById('top_badge_container').innerHTML = `<span class="badge-elegant">📌 ${etiquetaModulo}</span>`;
 
-        await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
+        await cargarTodoDesdeSupabase();
     }
 
-    async function cargarTodoDesdeSupabase(email, nombrePerfil) {
+    async function cargarTodoDesdeSupabase() {
         if(!CURRENT_LOCAL_ID) return;
         try {
             let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
@@ -493,9 +479,12 @@
 
             let { data: reqCat } = await window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
             if(reqCat) {
+                // Sincronización estricta de variables con la tabla catálogo para umbrales
                 CATALOGO = reqCat.map(p => ({
                     uuid: p.id, nom: p.nombre, cat: p.categoria || "General", base: p.precio_base || 0, 
-                    mBase: p.moneda_base || 'USD', stock: p.stock || 0, umbral_rojo: p.umbral_rojo || 0
+                    mBase: p.moneda_base || 'USD', stock: parseFloat(p.stock) || 0, 
+                    umbralAmarillo: parseFloat(p.umbral_amarillo) || 5, 
+                    umbralRojo: parseFloat(p.umbral_rojo) || 0
                 }));
             }
             renderInventarioFisico();
@@ -527,27 +516,27 @@
         arr.sort((a,b) => ord==='cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom))); 
         
         let html = ""; let lC = "";
-        arr.forEach(p => { 
+        arr.forEach((p, index) => { 
             if(ord === 'cat' && p.cat !== lC) { 
                 html += `<div class="cat-header">${p.cat.toUpperCase()}</div>`; 
                 lC = p.cat; 
             } 
 
-            let stockVal = parseFloat(p.stock) || 0;
-            let umbralVal = parseFloat(p.umbral_rojo) || 0;
+            let stockVal = p.stock;
             
-            // Asignación de clases para toda la fila y el badge (Fondo transparente sutil)
             let badgeClass = 'badge-stock-success'; 
             let rowClass = 'row-success'; 
 
-            if (stockVal <= 0) {
+            if (stockVal <= p.umbralRojo) {
                 badgeClass = 'badge-stock-danger'; 
                 rowClass = 'row-danger';
-            } else if (stockVal <= umbralVal) {
+            } else if (stockVal <= p.umbralAmarillo) {
                 badgeClass = 'badge-stock-warning'; 
                 rowClass = 'row-warning';
             }
 
+            // Un solo bloque HTML por producto.
+            // Si es el último elemento de la categoría o del array, redondeamos bordes inferiores opcionalmente.
             html += `
                 <div class="consulta-item ${rowClass}">
                     <span>
@@ -557,12 +546,18 @@
                     <span class="badge-stock ${badgeClass}">Und: ${formatearNumero(p.stock, 2)}</span>
                 </div>`; 
         });
-        document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--text-light); text-align:center; padding: 20px; font-style:italic;">No se encontraron registros con los filtros actuales.</p>';
+        document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--text-light); text-align:center; padding: 20px; font-style:italic; border: 1px solid var(--border);">No se encontraron registros con los filtros actuales.</p>';
     }
 
     function actualizarSelectoresMonedaExportacion() {
         let sel = document.getElementById('sel_pdf_moneda');
-        if(sel) sel.innerHTML = `<option value="ALL" selected>Todas las Monedas</option><option value="USD">Solo Dólares (USD)</option><option value="BS">Solo Bolívares (BS)</option><option value="COP">Solo Pesos (COP)</option><option value="EUR">Solo Euros (EUR)</option>`;
+        if(sel) sel.innerHTML = `
+            <option value="" disabled selected>Seleccione una opción...</option>
+            <option value="ALL">Todas las Monedas</option>
+            <option value="USD">Solo Dólares (USD)</option>
+            <option value="BS">Solo Bolívares (BS)</option>
+            <option value="COP">Solo Pesos (COP)</option>
+            <option value="EUR">Solo Euros (EUR)</option>`;
     }
 
     function ejecutarAccionPDF(accion) {
@@ -570,7 +565,11 @@
         let modMon = document.getElementById('sel_pdf_moneda').value;
         let ordPdf = document.getElementById('sel_pdf_orden').value;
         let filtroStock = document.getElementById('sel_pdf_stock').value; 
-        if(!valDoc || !modMon || !ordPdf || !filtroStock) return alert("Por favor, seleccione todos los parámetros obligatorios del documento.");
+        
+        // Validación estricta que exige seleccionar todas las opciones antes de descargar
+        if(!valDoc || !modMon || !ordPdf || !filtroStock) {
+            return alert("⛔ Error de Procedimiento: Por favor, despliegue y seleccione todas las opciones obligatorias del documento antes de intentar exportar el reporte.");
+        }
         
         if (accion === 'descargar') {
             generarPDFInventarioNativo(valDoc, modMon, ordPdf, filtroStock);
