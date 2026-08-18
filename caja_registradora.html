@@ -880,6 +880,7 @@
                     }
                 }
 
+                // Obtener el registro S del CIERRE ANTERIOR
                 const { data: ultCierreArr, error: errUltCierre } = await window.supabaseClient
                     .from('control_inventario_cierres')
                     .select('detalles_json')
@@ -900,9 +901,14 @@
 
                 let snapshotInventario = CATALOGO.map(prod => {
                     let infoDia = ventasTotalesDia[prod.uuid] || { cant: 0, subtotal: 0 };
-                    let E_valor = stockAnteriorMap[prod.uuid] !== undefined ? stockAnteriorMap[prod.uuid] : (prod.stock + infoDia.cant);
-                    let S_valor = prod.stock;
-                    let VP_valor = Math.max(0, E_valor - S_valor);
+                    let VP_valor = infoDia.cant;
+
+                    // CORRECCIÓN MATEMÁTICA: E es el S del último inventario
+                    let E_valor = stockAnteriorMap[prod.uuid] !== undefined ? stockAnteriorMap[prod.uuid] : (prod.stock + VP_valor);
+                    // S es E restando la venta (VP). Si no hay venta, será igual a E.
+                    let S_valor = E_valor - VP_valor;
+                    if(S_valor < 0) S_valor = 0; 
+                    
                     let PI_valor = prod.base;
                     let VT_valor = infoDia.subtotal > 0 ? infoDia.subtotal : (VP_valor * PI_valor);
 
@@ -1153,14 +1159,33 @@
             }));
             if(arrDetalles.length > 0) await window.supabaseClient.from('detalle_ventas').insert(arrDetalles);
 
+            // Obtener registro S del último cierre
+            const { data: ultCierreArr, error: errUltCierre } = await window.supabaseClient
+                .from('control_inventario_cierres')
+                .select('detalles_json')
+                .eq('local_id', CURRENT_LOCAL_ID)
+                .order('id', { ascending: false })
+                .limit(1);
+
+            let stockAnteriorMap = {};
+            if (!errUltCierre && ultCierreArr && ultCierreArr.length > 0 && ultCierreArr[0].detalles_json) {
+                ultCierreArr[0].detalles_json.forEach(item => {
+                    let pId = item.uuid || item.producto_id;
+                    stockAnteriorMap[pId] = parseFloat(item.S) || 0;
+                });
+            }
+
             let snapshotInventario = CATALOGO.map(prod => {
                 let item = detallesAgrupados[prod.uuid];
-                let cantVendida = item ? item.cant : 0;
-                let E_val = prod.stock + cantVendida;
-                let S_val = prod.stock;
-                let VP_val = Math.max(0, E_val - S_val);
-                let VT_val = item ? item.subtotal : (VP_val * prod.base);
-                return { uuid: prod.uuid, nombre: prod.nom, E: E_val, S: S_val, VP: VP_val, PI: prod.base, VT: VT_val };
+                let VP_valor = item ? item.cant : 0;
+                
+                // CORRECCIÓN MATEMÁTICA: E es el S del último inventario
+                let E_valor = stockAnteriorMap[prod.uuid] !== undefined ? stockAnteriorMap[prod.uuid] : (prod.stock + VP_valor);
+                let S_valor = E_valor - VP_valor;
+                if(S_valor < 0) S_valor = 0;
+
+                let VT_valor = item ? item.subtotal : (VP_valor * prod.base);
+                return { uuid: prod.uuid, nombre: prod.nom, E: E_valor, S: S_valor, VP: VP_valor, PI: prod.base, VT: VT_valor };
             });
 
             await window.supabaseClient.from('control_inventario_cierres').insert([{
