@@ -3,104 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Vendedores - Sistema Maestro</title>
+    <title>Gestión de Vendedores | Panel Premium</title>
     <!-- Librería Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Librería jsPDF nativa para generación de comprobantes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
+        /* ========================================================= */
         :root {
-            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
-            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
-            --border: #ddd; --card-bg: #ffffff; --input-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+            --topbar-bg: #050505; 
+            --sidebar-bg: #080808; 
+            --active-gold: #D4AF37; 
+            
+            /* Paleta Carmesí Institucional */
+            --crimson: #7A171D;
+            --crimson-dark: #4A0E12; 
+            --crimson-light: #9B222A;
+
+            /* Base y texto */
+            --bg: #FDFBF7; 
+            --text: #2A2A2A; 
+            --text-light: #555555;
+            --border: #E8E0D5; 
+            --card-bg: #FFFFFF; 
+            --item-bg: #FCFBFA; 
+            
+            /* Estados Sólidos */
+            --success: #2E7D32; 
+            --warning: #B8860B; 
+            --danger: #8B0000;
+            --info: #2c3e50;
         }
+
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
 
         /* ========================================================= */
-        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
+        /* BARRA SUPERIOR */
         /* ========================================================= */
-        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+        .top-bar { 
+            background: var(--topbar-bg); color: white; height: 65px; padding: 0 15px; 
+            display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
+            border-bottom: 2px solid var(--active-gold); box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
+        }
+        .menu-toggle-btn { 
+            background: transparent; border: 1px solid var(--active-gold); color: var(--active-gold); 
+            font-size: 1.5rem; cursor: pointer; width: 42px; height: 42px; padding: 0; flex-shrink: 0;
+            border-radius: 6px; display: flex; align-items: center; justify-content: center; 
+            transition: all 0.3s; padding-bottom: 3px; line-height: 1;
+        }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.15); box-shadow: inset 0 0 8px rgba(212,175,55,0.3); }
+        .top-bar-title { display: flex; align-items: center; gap: 10px; flex-grow: 1; overflow: hidden; white-space: nowrap; }
+        .local-name { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: bold; color: #FFFFFF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px; }
+        .badge-elegant {
+            font-size: 0.75rem; font-family: 'Roboto', sans-serif; font-weight: bold; 
+            background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
+            color: var(--active-gold); padding: 5px 12px; border-radius: 4px; 
+            letter-spacing: 1.5px; border: 1px solid var(--active-gold); text-transform: uppercase;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; flex-shrink: 1;
+        }
 
         /* ========================================================= */
-        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* MENÚ LATERAL */
         /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar { 
+            position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; 
+            background: var(--sidebar-bg); color: #E0E0E0; padding: 20px 15px; 
+            display: flex; flex-direction: column; gap: 4px; z-index: 1002; 
+            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            box-shadow: 5px 0 25px rgba(0,0,0,0.7); border-right: 1px solid var(--active-gold); overflow-y: auto; 
+        }
         .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
-        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
-        .sidebar .tab-btn:hover { background: #34495e; color: white; }
-        /* Etiqueta para diferenciar la página activa en el menú */
-        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
-        .sidebar-overlay.active { display: block; }
+        .sidebar-brand { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--active-gold); text-align: center; padding-bottom: 20px; border-bottom: 1px solid #222; margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
+        .sidebar .tab-btn { background: transparent; color: #CCCCCC; border: none; text-align: left; padding: 14px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s ease; }
+        .sidebar .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #FFF; border-left: 3px solid var(--active-gold); }
+        .sidebar .tab-btn.active { background: linear-gradient(90deg, #9D7B24, #5c4714) !important; color: #FFFFFF !important; font-weight: bold; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2); border-left: none; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(3px); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; }
+        .sidebar-overlay.active { display: block; opacity: 1; }
 
-        .main-content { padding: 20px; }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid var(--border); }
-        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        /* ========================================================= */
+        /* CONTENEDORES PRINCIPALES Y TARJETAS */
+        /* ========================================================= */
+        .main-content { max-width: 1100px; margin: 0 auto; padding: 30px 20px; padding-bottom: 120px; }
+        .card { 
+            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
+            border-top: 4px solid var(--crimson); position: relative; overflow: hidden;
+        }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        label { font-size: 0.9rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted); }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); outline: none; }
-        input:focus { border-color: var(--secondary); }
+        h2 { color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; }
         
-        button { background: var(--secondary); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: opacity 0.2s; }
-        button:hover { opacity: 0.9; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { 
+            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; 
+            font-size: 1rem; background: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD; font-family: 'Roboto', sans-serif;
+        }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
+
+        button { font-family: 'Roboto', sans-serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
         button:active { transform: scale(0.98); }
-        button.btn-danger { background: var(--danger); }
-        button.btn-warning { background: var(--warning); color: #fff; }
-        button.btn-success { background: var(--success); }
-        button.btn-info { background: var(--info); color: #fff; }
-        button.btn-add { background: var(--primary); width: auto; padding: 8px 12px; display: inline-block; }
+        
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: #fff; }
+        .btn-success { background: linear-gradient(135deg, #1e8449, #2ecc71); color: white; border-bottom: 2px solid #1e8449; }
+        .btn-info { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-add { background: var(--item-bg); color: var(--crimson-dark); border: 1px solid var(--crimson-dark); width: auto; display: inline-block; padding: 10px 15px; }
+        .btn-add:hover { background: var(--crimson-dark); color: var(--active-gold); }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
-        th { background: var(--primary); color: white; }
-        .zebra-item { border-bottom: 1px solid var(--border); padding: 12px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); margin-bottom: 8px; border-radius: 6px; }
-        .zebra-item:nth-child(even) { background-color: rgba(0,0,0,0.02); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; background: var(--card-bg); }
+        th, td { border: 1px solid var(--border); padding: 12px; text-align: left; }
+        th { background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); font-family: 'Playfair Display', serif; letter-spacing: 1px; border-color: var(--active-gold); }
+
+        .employee-card { border: 1px solid var(--border); padding: 15px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); margin-bottom: 12px; border-radius: 6px; border-left: 4px solid var(--active-gold); box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: 0.3s; }
+        .employee-card:hover { box-shadow: 0 6px 15px rgba(0,0,0,0.06); transform: translateY(-1px); }
 
         /* MODALES */
-        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; }
-        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .modal-close-btn { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .custom-modal-title { font-size: 1.2rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--crimson-dark); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
+        .modal-close-btn:hover { background: var(--crimson); transform: scale(1.05); color: #FFF; }
+        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--crimson-dark); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
         #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
 
-        /* RESULTADOS BÚSQUEDA EDICIÓN */
-        .search-result-item { padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .search-result-item:hover { background: rgba(52, 152, 219, 0.1); }
+        .search-result-item { padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+        .search-result-item:hover { background: rgba(212, 175, 55, 0.1); border-left: 3px solid var(--active-gold); }
+        
+        /* BLOQUEO Y LOGIN */
+        #pantalla_bloqueo_admin, #login_overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, rgba(74, 14, 18, 0.95), rgba(5, 5, 5, 0.98)); backdrop-filter: blur(8px); z-index: 99999; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.4s ease-in-out; }
     </style>
 </head>
 <body>
 
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
-<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px;">
-    <div style="background: var(--card-bg); width: 100%; max-width: 380px; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border-top: 5px solid var(--danger);">
-        <h2 style="color: var(--danger); margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 12px;">🔒 Acceso Protegido</h2>
-        <p style="font-size: 0.95rem; color: var(--muted); margin: 20px 0;">Introduce el PIN de Administrador o Supervisor del Sistema:</p>
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN LUXURY -->
+<div id="pantalla_bloqueo_admin" style="display: none;">
+    <div class="card" style="width: 380px; text-align: center; border-top: 4px solid var(--active-gold); margin: 0; box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: #FFFFFF;">
+        <h2 style="color: var(--crimson-dark); border-bottom-color: var(--active-gold);">🔒 Acceso Protegido</h2>
+        <p style="font-size: 0.95rem; color: var(--text-light); margin-bottom: 20px;">Introduce el PIN de Administrador o Supervisor del Sistema:</p>
         
         <div style="position: relative; margin-bottom: 20px;">
-            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid var(--border); border-radius: 8px; outline: none; background: var(--bg); color: var(--text);" onkeyup="if(event.key==='Enter') verificarPinBody()">
-            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span>
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace;" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
         </div>
 
-        <div id="mensaje_carga_pin" style="display: none; color: var(--success); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">⏳ Desbloqueando módulo...</div>
+        <div id="mensaje_carga_pin" style="display: none; color: var(--success); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; font-family: 'Playfair Display', serif;">⏳ Desbloqueando módulo...</div>
 
-        <button id="btn_desbloquear_pin" onclick="verificarPinBody()" style="background: linear-gradient(135deg, var(--primary), #1a252f);">Desbloquear Pantalla</button>
-        <button id="btn_volver_pin" onclick="window.location.href='principal.html'" style="background: linear-gradient(135deg, var(--danger), #c0392b); margin-top: 10px;">Volver al Inicio</button>
+        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">Desbloquear Pantalla</button>
+        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">Volver al Inicio</button>
     </div>
 </div>
 
-<!-- LOGIN SUPABASE -->
-<div id="login_overlay" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background: linear-gradient(135deg, #1e3c72, #2a5298); z-index:99998; display:none; align-items:center; justify-content:center;">
-    <div style="background:var(--card-bg); padding:35px; border-radius:16px; width:90%; max-width:380px; text-align:center; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
-        <h2 style="color:var(--primary); border:none; margin-bottom:20px;">Refresquería Flor<br><span style="font-size:0.8rem; color:var(--muted); font-weight:normal;">Módulo Vendedores</span></h2>
+<!-- LOGIN SUPABASE LUXURY -->
+<div id="login_overlay">
+    <div class="card" style="width: 380px; text-align: center; border-top: 4px solid var(--active-gold); margin: 0; box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: #FFFFFF;">
+        <h2 style="color: var(--crimson-dark); border-bottom: none; margin-bottom: 5px;">Módulo Empresarial</h2>
+        <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 20px; font-family: 'Playfair Display', serif; font-style: italic;">Acceso a Gestión de Vendedores</p>
+        
         <input type="email" id="login_email" placeholder="Correo electrónico" style="margin-bottom:12px;">
         <input type="password" id="login_pass" placeholder="Contraseña" style="margin-bottom:20px;" onkeyup="if(event.key==='Enter') iniciarSesion()">
-        <button onclick="iniciarSesion()" style="background:var(--secondary); padding:12px; font-size:1rem;">Ingresar al Sistema</button>
+        <button class="btn-info" onclick="iniciarSesion()" style="padding:14px; font-size:1rem; letter-spacing: 1px;">Ingresar al Sistema</button>
     </div>
 </div>
 
@@ -124,8 +196,7 @@
     <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú del Sistema</div>
-        <!-- SOLO UN ENLACE DEBE TENER LA CLASE "active" POR PÁGINA -->
+        <div class="sidebar-brand">Menú Ejecutivo</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -150,10 +221,12 @@
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
-        <div class="card" style="border-top: 4px solid #e67e22;">
-            <h2>🧑‍💼 Registro de Empleados y Cierres (Orden Alfabético)</h2>
-            <button onclick="abrirModalNuevoEmpleado()" class="btn-add" style="width:100%; margin-bottom:15px;">+ Añadir Vendedor Nuevo</button>
-            <input type="text" id="buscar_empleado" placeholder="🔍 Buscar empleado por nombre..." oninput="renderEmpleados()" style="margin-bottom:15px;">
+        <div class="card">
+            <h2>🧑‍💼 Registro de Empleados y Cierres</h2>
+            <p style="font-size:0.9rem; color:var(--text-light); margin-bottom: 20px;">Gestione el equipo de ventas, supervise los lotes y asigne roles y accesos.</p>
+            
+            <button onclick="abrirModalNuevoEmpleado()" class="btn-add" style="width:100%; margin-bottom:20px; font-size: 1.05rem;">+ Añadir Vendedor Nuevo</button>
+            <input type="text" id="buscar_empleado" placeholder="🔍 Buscar empleado por nombre..." oninput="renderEmpleados()" style="margin-bottom:20px; font-size: 1.05rem;">
             <div id="lista_empleados_container"></div>
         </div>
     </div>
@@ -220,7 +293,7 @@
     async function verificarPinBody() {
         let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
         let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
-        let supervisorValido = EMPLEADOS.some(e => e.pin === pinIngresado);
+        let supervisorValido = EMPLEADOS.some(e => e.pin_acceso === pinIngresado || e.pin === pinIngresado);
 
         if (pinIngresado === pinReal || supervisorValido) {
             document.getElementById('btn_desbloquear_pin').style.display = 'none';
@@ -228,14 +301,16 @@
             document.getElementById('mensaje_carga_pin').style.display = 'block';
             
             setTimeout(() => {
-                document.getElementById('pantalla_bloqueo_admin').style.display = 'none';
+                let pantalla = document.getElementById('pantalla_bloqueo_admin');
+                pantalla.style.animation = 'fadeIn 0.4s reverse';
+                setTimeout(() => { pantalla.style.display = 'none'; }, 300);
                 document.getElementById('btn_desbloquear_pin').style.display = 'block';
                 document.getElementById('btn_volver_pin').style.display = 'block';
                 document.getElementById('mensaje_carga_pin').style.display = 'none';
                 document.getElementById('pin_ingreso_body').value = '';
                 document.getElementById('pin_ingreso_body').type = 'password';
                 document.getElementById('icono_ojo_pin').innerText = '👁️';
-            }, 1000);
+            }, 800);
         } else {
             alert("❌ PIN Incorrecto. Autorización denegada.");
             document.getElementById('pin_ingreso_body').value = '';
@@ -258,7 +333,6 @@
             CURRENT_LOCAL_ID = perfil.local_id;
         }
 
-        // Cargar configuración y nombre del local de forma segura
         let conf = null, localData = null;
         try {
             let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
@@ -274,15 +348,16 @@
             CONFIG_GLOBAL = conf;
         }
 
-        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Empresarial';
         let etiquetaModulo = "Vendedores"; 
 
         document.getElementById('main_top_title').innerHTML = `
-            🏪 ${nombreLocal} 
-            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                📌 Módulo: ${etiquetaModulo}
-            </span>
+            <span class="local-name">🏪 ${nombreLocal}</span>
+            <span class="badge-elegant">📌 ${etiquetaModulo}</span>
         `;
+        
+        document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
+        document.getElementById('pin_ingreso_body').focus();
 
         await cargarDatosServidor();
     }
@@ -324,31 +399,31 @@
             let totalGanancia = lotesEmp.reduce((acc, l) => acc + (parseFloat(l.ganancia_neta) || 0), 0);
 
             html += `
-            <div class="zebra-item" style="border-left: 4px solid #e67e22;">
-                <div>
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <strong style="font-size:1.05rem; color:var(--primary);">${emp.nombre} ${emp.apellido}</strong>
-                        <span style="background: #e8f4f8; color: var(--primary); font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; border: 1px solid #bce8f1;">📌 ${emp.rol || 'Cajero'}</span>
+            <div class="employee-card">
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 5px;">
+                        <strong style="font-size:1.15rem; color:var(--crimson-dark); font-family: 'Playfair Display', serif;">${emp.nombre} ${emp.apellido}</strong>
+                        <span style="background: rgba(212, 175, 55, 0.15); color: var(--crimson-dark); font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 4px; border: 1px solid var(--active-gold); text-transform: uppercase;">📌 ${emp.rol || 'Cajero'}</span>
                     </div>
-                    <small>C.I: ${emp.cedula || 'N/A'} | Tel: ${emp.telefono || 'N/A'}</small><br>
-                    <div style="margin-top:6px; font-size:0.9rem; display:flex; flex-wrap:wrap; gap:12px;">
-                        <span>📦 Total de venta (cierres): <strong>${totalCierres}</strong></span>
-                        <span>💵 Venta: <strong style="color:var(--info);">$${formatearNumero(totalVenta)}</strong></span>
-                        <span>📈 Capital: <strong style="color:var(--warning);">$${formatearNumero(totalCapital)}</strong></span>
-                        <span>💰 Ganancia: <strong style="color:var(--success);">$${formatearNumero(totalGanancia)}</strong></span>
+                    <small style="color: var(--text-light);">C.I: ${emp.cedula || 'N/A'} | Tel: ${emp.telefono || 'N/A'}</small><br>
+                    <div style="margin-top:10px; font-size:0.9rem; display:flex; flex-wrap:wrap; gap:15px;">
+                        <span style="background: var(--bg); padding: 5px 10px; border-radius: 4px; border: 1px solid #EEE;">📦 Cierres: <strong>${totalCierres}</strong></span>
+                        <span style="background: var(--bg); padding: 5px 10px; border-radius: 4px; border: 1px solid #EEE;">💵 Venta: <strong style="color:var(--info);">$${formatearNumero(totalVenta)}</strong></span>
+                        <span style="background: var(--bg); padding: 5px 10px; border-radius: 4px; border: 1px solid #EEE;">📈 Capital: <strong style="color:var(--warning);">$${formatearNumero(totalCapital)}</strong></span>
+                        <span style="background: var(--bg); padding: 5px 10px; border-radius: 4px; border: 1px solid #EEE;">💰 Ganancia: <strong style="color:var(--success);">$${formatearNumero(totalGanancia)}</strong></span>
                     </div>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
-                    <div style="display:flex; gap:4px;">
-                        <button class="btn-info" style="padding:4px 8px; margin:0;" onclick="editarEmpleado('${emp.id}')">✏️ Editar</button>
-                        <button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="eliminarEmpleado('${emp.id}')">🗑️ Eliminar</button>
+                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end; margin-left: 15px;">
+                    <div style="display:flex; gap:6px; width: 100%;">
+                        <button class="btn-add" style="padding:8px 12px; margin:0; flex:1; font-size:0.85rem;" onclick="editarEmpleado('${emp.id}')">✏️ Editar</button>
+                        <button class="btn-danger" style="padding:8px 12px; margin:0; width: auto; font-size:0.85rem;" onclick="eliminarEmpleado('${emp.id}')">🗑️</button>
                     </div>
-                    <button class="btn-warning" style="padding:6px 10px; margin:0; width:100%; font-weight:bold;" onclick="verVentasEmpleado('${emp.id}', '${emp.nombre} ${emp.apellido}')">📊 Ver Ventas / Lotes</button>
+                    <button class="btn-info" style="padding:10px 15px; margin:0; width:100%; font-weight:bold; font-size:0.9rem; letter-spacing: 0.5px;" onclick="verVentasEmpleado('${emp.id}', '${emp.nombre} ${emp.apellido}')">📊 Ver Ventas / Lotes</button>
                 </div>
             </div>`;
         });
 
-        document.getElementById('lista_empleados_container').innerHTML = html || '<p style="text-align:center; color:var(--muted);">No hay vendedores registrados.</p>';
+        document.getElementById('lista_empleados_container').innerHTML = html || '<p style="text-align:center; color:var(--muted); padding: 20px; font-style: italic;">No hay vendedores registrados.</p>';
     }
 
     function abrirModalNuevoEmpleado() {
@@ -373,12 +448,12 @@
                 <div>
                     <label>PIN de Acceso (4-6 Dígitos):</label>
                     <div style="position: relative;">
-                        <input type="password" id="emp_pin" placeholder="0000" maxlength="6" style="padding-right: 40px;">
+                        <input type="password" id="emp_pin" placeholder="0000" maxlength="6" style="padding-right: 40px; text-align: center; font-weight: bold; letter-spacing: 4px;">
                         <span onclick="togglePinModal('emp_pin', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem;" title="Ver/Ocultar PIN">👁️</span>
                     </div>
                 </div>
             </div>
-            <button onclick="guardarEmpleadoNuevo()" class="btn-success" style="margin-top:15px;">💾 Guardar Vendedor</button>
+            <button onclick="guardarEmpleadoNuevo()" class="btn-success" style="margin-top:25px; padding: 15px; font-size: 1.05rem;">💾 Guardar Vendedor</button>
         `);
     }
 
@@ -392,7 +467,7 @@
 
         if(!nombre || !apellido || !cedula) return alert("Nombre, apellido y cédula son obligatorios.");
 
-        mostrarModalLocal("Guardando", "Registrando vendedor...");
+        mostrarModalLocal("Guardando", "Registrando vendedor en la base de datos...");
         let { error } = await supabaseClient.from('empleados').insert([{
             local_id: CURRENT_LOCAL_ID, nombre, apellido, cedula, telefono, rol, pin_acceso: pin,
             prestamos_deudas: 0, historial: []
@@ -431,12 +506,12 @@
                 <div>
                     <label>PIN de Acceso:</label>
                     <div style="position: relative;">
-                        <input type="password" id="emp_pin" value="${emp.pin_acceso || ''}" placeholder="0000" maxlength="6" style="padding-right: 40px;">
+                        <input type="password" id="emp_pin" value="${emp.pin_acceso || emp.pin || ''}" placeholder="0000" maxlength="6" style="padding-right: 40px; text-align: center; font-weight: bold; letter-spacing: 4px;">
                         <span onclick="togglePinModal('emp_pin', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem;" title="Ver/Ocultar PIN">👁️</span>
                     </div>
                 </div>
             </div>
-            <button onclick="actualizarEmpleadoSupabase()" class="btn-success" style="margin-top:15px;">💾 Guardar Cambios</button>
+            <button onclick="actualizarEmpleadoSupabase()" class="btn-success" style="margin-top:25px; padding: 15px; font-size: 1.05rem;">💾 Guardar Cambios</button>
         `);
     }
 
@@ -451,7 +526,7 @@
 
         if(!nombre || !apellido || !cedula) return alert("Campos obligatorios vacíos.");
 
-        mostrarModalLocal("Actualizando", "Guardando cambios...");
+        mostrarModalLocal("Actualizando", "Sincronizando cambios...");
         let { error } = await supabaseClient.from('empleados').update({
             nombre, apellido, cedula, telefono, rol, pin_acceso: pin
         }).eq('id', id);
@@ -471,27 +546,30 @@
     }
 
     async function verVentasEmpleado(empId, empNombre) {
-        mostrarModalLocal("Consultando", "Buscando historial de ventas...");
+        mostrarModalLocal("Consultando", "Buscando historial de lotes y ventas...");
         let { data: lotes, error } = await supabaseClient.from('lotes_diarios').select('*').eq('vendedor_id', empId).eq('local_id', CURRENT_LOCAL_ID).order('creado_en', { ascending: false });
         cerrarModalGlobal();
 
         if(error) return alert("Error al consultar ventas: " + error.message);
-        if(!lotes || lotes.length === 0) return abrirModalGlobal(`Ventas de ${empNombre}`, "<p style='text-align:center; color:var(--muted); margin-top:20px;'>No hay ventas registradas para este vendedor.</p>");
+        if(!lotes || lotes.length === 0) return abrirModalGlobal(`Ventas de ${empNombre}`, "<p style='text-align:center; color:var(--muted); margin-top:20px; font-style:italic;'>No hay ventas registradas para este vendedor.</p>");
 
-        let html = `<p style="font-size:0.85rem; color:var(--muted);">Listado completo de turnos y lotes cerrados:</p><div style="max-height:60vh; overflow-y:auto;"><table style="width:100%; font-size:0.9rem;">
-            <tr><th>Fecha / Turno</th><th>Total Venta</th><th>Ganancia</th><th>Opciones</th></tr>`;
+        let html = `<p style="font-size:0.9rem; color:var(--text-light); margin-bottom: 15px;">Listado completo de turnos y lotes cerrados. Haga clic en PDF para generar un comprobante.</p>
+        <div style="max-height:60vh; overflow-y:auto; border: 1px solid var(--border); border-radius: 6px;">
+        <table style="width:100%; font-size:0.9rem; margin:0;">
+            <tr><th style="border:none;">Fecha / Turno</th><th style="border:none;">Total Venta</th><th style="border:none;">Ganancia</th><th style="text-align:center; border:none;">Opciones</th></tr>`;
 
-        lotes.forEach(l => {
+        lotes.forEach((l, i) => {
+            let bg = i % 2 === 0 ? "var(--white)" : "var(--item-bg)";
             html += `
-            <tr>
-                <td><strong>${l.fecha}</strong><br><small>${l.turno || 'N/A'}</small></td>
-                <td style="color:var(--info); font-weight:bold;">$${formatearNumero(l.total_vendido_usd)}</td>
-                <td style="color:var(--success); font-weight:bold;">$${formatearNumero(l.ganancia_neta)}</td>
-                <td style="display:flex; gap:4px; flex-wrap:wrap; justify-content:center;">
-                    <button class="btn-info" style="padding:4px 8px; font-size:0.8rem; margin:0;" onclick="verDetallesLote('${l.id}')">👁️ Ver</button>
-                    <button class="btn-info" style="padding:4px 8px; font-size:0.8rem; margin:0; background:#8e44ad;" onclick="descargarPDFLote('${l.id}')">📄 PDF</button>
-                    <button class="btn-success" style="padding:4px 8px; font-size:0.8rem; margin:0;" onclick="editarLoteVenta('${l.id}')">✏️ Edit</button>
-                    <button class="btn-danger" style="padding:4px 8px; font-size:0.8rem; margin:0;" onclick="eliminarLoteSupabase('${l.id}')">🗑️</button>
+            <tr style="background: ${bg}; border-bottom: 1px solid var(--border);">
+                <td style="padding: 12px;"><strong>${l.fecha}</strong><br><small style="color:var(--muted)">${l.turno || 'N/A'}</small></td>
+                <td style="padding: 12px; color:var(--info); font-weight:bold;">$${formatearNumero(l.total_vendido_usd)}</td>
+                <td style="padding: 12px; color:var(--success); font-weight:bold;">$${formatearNumero(l.ganancia_neta)}</td>
+                <td style="padding: 12px; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; align-items:center;">
+                    <button class="btn-add" style="padding:6px 10px; font-size:0.8rem; margin:0;" onclick="verDetallesLote('${l.id}')">👁️ Ver</button>
+                    <button class="btn-warning" style="padding:6px 10px; font-size:0.8rem; margin:0; background:var(--active-gold); border-color:var(--active-gold); color:#000;" onclick="descargarPDFLote('${l.id}')">📄 PDF</button>
+                    <button class="btn-success" style="padding:6px 10px; font-size:0.8rem; margin:0; border:none;" onclick="editarLoteVenta('${l.id}')">✏️ Editar</button>
+                    <button class="btn-danger" style="padding:6px 10px; font-size:0.8rem; margin:0;" onclick="eliminarLoteSupabase('${l.id}')">🗑️</button>
                 </td>
             </tr>`;
         });
@@ -500,7 +578,7 @@
     }
 
     async function verDetallesLote(loteId) {
-        mostrarModalLocal("Cargando", "Buscando detalle...");
+        mostrarModalLocal("Cargando", "Buscando detalles del lote...");
         let { data: detalle } = await supabaseClient.from('detalle_ventas').select('*, catalogo(*)').eq('lote_id', loteId);
         let { data: lote } = await supabaseClient.from('lotes_diarios').select('*').eq('id', loteId).single();
         cerrarModalGlobal();
@@ -517,16 +595,21 @@
             let pNom = d.catalogo ? d.catalogo.nombre : 'Producto';
             let precioUnit = d.cantidad > 0 ? (d.subtotal_usd / d.cantidad) : 0;
             totalCant += d.cantidad; totalUsd += d.subtotal_usd;
-            trs += `<tr><td>${limpiarNombre(pNom)}</td><td style="text-align:center;">${d.cantidad}</td><td style="text-align:right;">$${formatearNumero(precioUnit)}</td><td style="text-align:right; font-weight:bold;">$${formatearNumero(d.subtotal_usd)}</td></tr>`;
+            trs += `<tr><td style="font-family:'Playfair Display', serif;">${limpiarNombre(pNom)}</td><td style="text-align:center;">${d.cantidad}</td><td style="text-align:right;">$${formatearNumero(precioUnit)}</td><td style="text-align:right; font-weight:bold;">$${formatearNumero(d.subtotal_usd)}</td></tr>`;
         });
 
         let html = `
-            <p><strong>Fecha:</strong> ${lote.fecha} | <strong>Turno:</strong> ${lote.turno}</p>
-            <table style="width:100%; font-size:0.9rem; margin-top:10px;">
-                <tr><th>Producto</th><th style="text-align:center;">Cant</th><th style="text-align:right;">P. Unit</th><th style="text-align:right;">Subtotal</th></tr>
-                ${trs}
-                <tr style="font-weight:bold; background:var(--item-bg);"><td colspan="2" style="text-align:right;">Total General:</td><td style="text-align:center;">${totalCant}</td><td style="text-align:right; color:var(--success);">$${formatearNumero(totalUsd)}</td></tr>
-            </table>
+            <div style="margin-bottom:12px; font-size:0.9rem; text-align:left; background:var(--item-bg); padding:12px; border-radius:6px; border:1px solid var(--border);">
+                <p style="margin:3px 0;"><strong>Fecha del Lote:</strong> ${lote.fecha}</p>
+                <p style="margin:3px 0;"><strong>Turno Operativo:</strong> ${lote.turno}</p>
+            </div>
+            <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden; max-height:40vh; overflow-y:auto;">
+                <table style="width:100%; font-size:0.9rem; margin:0;">
+                    <tr><th style="border:none;">Producto</th><th style="text-align:center; border:none;">Cant</th><th style="text-align:right; border:none;">P. Unit</th><th style="text-align:right; border:none;">Subtotal</th></tr>
+                    ${trs}
+                    <tr style="font-weight:bold; background:var(--item-bg);"><td colspan="2" style="text-align:right; font-family:'Playfair Display', serif; color:var(--crimson-dark);">Total General:</td><td style="text-align:center;">${totalCant}</td><td style="text-align:right; color:var(--success); font-size: 1.1rem;">$${formatearNumero(totalUsd)}</td></tr>
+                </table>
+            </div>
         `;
         abrirModalGlobal("Detalle de Venta", html);
     }
@@ -567,27 +650,27 @@
         if (conteoCaja > conteoVenta) modoDetectado = 'caja';
 
         let html = `
-            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">
-                Cualquier producto que dejes en cantidad <strong>0</strong> será reingresado a tu inventario. Si agregas, se restará automáticamente.
+            <p style="font-size:0.85rem; color:var(--warning); margin-bottom:12px; font-weight: bold;">
+                ⚠️ Cualquier producto que dejes en cantidad 0 será reingresado a tu inventario. Si agregas, se restará automáticamente.
             </p>
             
             <div id="contenedor_tabla_edicion_lote" style="max-height:40vh; overflow-y:auto; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 6px;"></div>
             
-            <div style="background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-                    <label style="margin:0; color:var(--primary);">➕ Añadir Nuevo Producto:</label>
+            <div style="background: var(--item-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                    <label style="margin:0; color:var(--crimson-dark); font-family: 'Playfair Display', serif; font-size: 1.1rem;">➕ Añadir Nuevo Producto:</label>
                     
-                    <select id="modo_precio_lote" onchange="buscarProductoLoteEdit(document.getElementById('buscador_add_producto').value)" style="width: auto; padding: 6px; font-size: 0.85rem; border-color:var(--secondary); background:var(--white);">
+                    <select id="modo_precio_lote" onchange="buscarProductoLoteEdit(document.getElementById('buscador_add_producto').value)" style="width: auto; padding: 8px; font-size: 0.9rem; border-color:var(--active-gold); background:var(--card-bg);">
                         <option value="venta" ${modoDetectado === 'venta' ? 'selected' : ''}>🛒 Usar Precio Venta (Detal)</option>
                         <option value="caja" ${modoDetectado === 'caja' ? 'selected' : ''}>📦 Usar Precio Base (Mayor/Caja)</option>
                     </select>
                 </div>
                 
                 <input type="text" id="buscador_add_producto" placeholder="Escribe aquí para buscar en el catálogo..." oninput="buscarProductoLoteEdit(this.value)" style="margin-bottom: 5px;">
-                <div id="resultado_busqueda_edit" style="max-height: 150px; overflow-y: auto; background: var(--white); border-radius: 6px;"></div>
+                <div id="resultado_busqueda_edit" style="max-height: 160px; overflow-y: auto; background: var(--card-bg); border-radius: 6px;"></div>
             </div>
 
-            <button class="btn-success" style="margin-top:20px; width:100%; padding:14px; font-size:1.05rem;" onclick="guardarEdicionLoteVenta('${loteId}')">💾 Guardar Cambios y Procesar Inventario</button>
+            <button class="btn-success" style="margin-top:25px; width:100%; padding:15px; font-size:1.05rem;" onclick="guardarEdicionLoteVenta('${loteId}')">💾 Guardar Cambios y Procesar Inventario</button>
         `;
         
         abrirModalGlobal("Editar Venta Inteligente", html);
@@ -609,11 +692,11 @@
             let etiqueta = modo === 'caja' ? '📦 Precio Mayor' : '🛒 Precio Detal';
             
             html += `<div class="search-result-item" onclick="agregarProductoALoteEdit('${p.id}', ${precio})">
-                <span>➕ <strong>${limpiarNombre(p.nombre)}</strong> <small style="color:var(--muted)">(${etiqueta})</small></span>
-                <span style="color:var(--success); font-weight:bold; background:#e8f8f5; padding:2px 6px; border-radius:4px;">$${precio.toFixed(2)}</span>
+                <span style="font-family:'Playfair Display', serif;">➕ <strong>${limpiarNombre(p.nombre)}</strong> <small style="color:var(--muted); font-family:'Roboto',sans-serif;">(${etiqueta})</small></span>
+                <span style="color:var(--success); font-weight:bold; background:#e8f8f5; padding:4px 8px; border-radius:4px;">$${precio.toFixed(2)}</span>
             </div>`;
         });
-        res.innerHTML = html || '<div style="padding:10px; color:var(--danger); text-align:center;">No se encontraron productos coincidentes.</div>';
+        res.innerHTML = html || '<div style="padding:15px; color:var(--danger); text-align:center;">No se encontraron productos coincidentes.</div>';
     }
 
     function agregarProductoALoteEdit(prodId, precioAplicado) {
@@ -653,11 +736,11 @@
         });
 
         if (window.loteEditDetallesTmp.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:var(--danger); font-weight:bold; padding: 15px;">⚠️ El lote quedará vacío. Al guardar, toda la mercancía será devuelta a tu catálogo.</p>';
+            container.innerHTML = '<p style="text-align:center; color:var(--danger); font-weight:bold; padding: 25px;">⚠️ El lote quedará vacío. Al guardar, toda la mercancía será devuelta a tu catálogo.</p>';
             return;
         }
 
-        let html = `<table style="width:100%; border-collapse:collapse; font-size:0.9rem; margin:0;">
+        let html = `<table style="width:100%; border-collapse:collapse; font-size:0.95rem; margin:0;">
             <tr><th style="border:none;">Producto</th><th style="text-align:right; border:none;">P. Unit</th><th style="text-align:center; border:none;">Controles</th></tr>`;
         
         window.loteEditDetallesTmp.forEach((d, idx) => {
@@ -667,13 +750,13 @@
             if (d.precio_aplicado !== undefined) pUnit = d.precio_aplicado;
             else if (d.cantidad > 0) pUnit = d.subtotal_usd / d.cantidad;
             
-            html += `<tr style="background: ${idx % 2 === 0 ? 'var(--white)' : 'var(--item-bg)'};">
-                <td style="padding: 10px; border-bottom: 1px solid var(--border);"><strong>${limpiarNombre(pNom)}</strong></td>
-                <td style="padding: 10px; border-bottom: 1px solid var(--border); text-align:right; color:var(--success); font-weight:bold;">$${pUnit.toFixed(2)}</td>
-                <td style="padding: 10px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:5px;">
-                    <button class="btn-danger" style="padding:5px 12px; margin:0; width:auto;" onclick="modificarCantidadLoteEdit(${idx}, -1)">-</button>
-                    <input type="number" value="${d.cantidad}" style="width:50px; text-align:center; padding:5px; font-weight:bold; margin:0; border:1px solid #ccc; background:#fff;" readonly>
-                    <button class="btn-success" style="padding:5px 12px; margin:0; width:auto;" onclick="modificarCantidadLoteEdit(${idx}, 1)">+</button>
+            html += `<tr style="background: ${idx % 2 === 0 ? 'var(--card-bg)' : 'var(--item-bg)'};">
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); font-family:'Playfair Display', serif;"><strong>${limpiarNombre(pNom)}</strong></td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align:right; color:var(--success); font-weight:bold;">$${pUnit.toFixed(2)}</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:5px;">
+                    <button class="btn-danger" style="padding:6px 14px; margin:0; width:auto; border-radius:4px;" onclick="modificarCantidadLoteEdit(${idx}, -1)">-</button>
+                    <input type="number" value="${d.cantidad}" style="width:55px; text-align:center; padding:6px; font-weight:bold; margin:0; border:1px solid #ccc; background:#fff; border-left:1px solid #ccc;" readonly>
+                    <button class="btn-success" style="padding:6px 14px; margin:0; width:auto; border-radius:4px; border-bottom:none;" onclick="modificarCantidadLoteEdit(${idx}, 1)">+</button>
                 </td>
             </tr>`;
         });
@@ -792,8 +875,11 @@
         }
     }
 
+    // ========================================================
+    // MOTOR DE PDF NATIVO CON jspdf (ESTILO PROFESIONAL ULTRA-PREMIUM)
+    // ========================================================
     async function descargarPDFLote(loteId) {
-        mostrarModalLocal("Generando PDF", "Construyendo comprobante estructurado...");
+        mostrarModalLocal("Generando PDF", "Construyendo comprobante estructurado y elegante...");
         try {
             const [resDet, resLote, resCierre] = await Promise.all([
                 supabaseClient.from('detalle_ventas').select('*, catalogo(nombre)').eq('lote_id', loteId),
@@ -834,83 +920,129 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Refresquería Flor';
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Panel Empresarial';
 
+            // Encabezado institucional Ultra-Premium
             doc.setFont("Helvetica", "bold");
-            doc.setFontSize(16);
-            doc.setTextColor(44, 62, 80);
-            doc.text(nombreLocal, 14, 18);
+            doc.setFontSize(15);
+            doc.setTextColor(122, 23, 29); // Carmesí oscuro
+            doc.text(nombreLocal.toUpperCase(), 14, 16);
 
             doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(100, 100, 100);
+            doc.text("COMPROBANTE DE VENTA Y CIERRE DE TURNO", 14, 22);
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(40, 40, 40);
+            doc.text(`Fecha: ${lote.fecha}`, 196, 16, { align: 'right' });
+
+            doc.setDrawColor(212, 175, 55); // Dorado
+            doc.setLineWidth(0.8);
+            doc.line(14, 26, 196, 26);
+
+            // Caja de Asesores
+            doc.setFillColor(249, 248, 246);
+            doc.roundedRect(14, 30, 182, 15, 2, 2, "F");
+
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 100, 100);
+            doc.text("ENTREGÓ (VENDEDOR):", 17, 36);
+            doc.text("RECIBIÓ (SUPERVISOR):", 110, 36);
+
             doc.setFontSize(9);
-            doc.setTextColor(127, 140, 141);
-            doc.text("Comprobante de Venta / Cierre de Turno", 14, 24);
-            doc.text(`Fecha: ${lote.fecha}  |  Turno: ${lote.turno || 'N/A'}`, 14, 30);
-            
-            doc.text(`Entregó (Vendedor): ${empleadoCierraNom}`, 14, 36);
-            doc.text(`Recibió: ${empleadoRecibeNom}`, 110, 36);
+            doc.setFont("Helvetica", "bold");
+            doc.setTextColor(40, 40, 40);
+            doc.text(String(empleadoCierraNom.toUpperCase()), 17, 42);
+            doc.text(String(empleadoRecibeNom.toUpperCase()), 110, 42);
 
             let tasasObj = lote.tasas || CONFIG_GLOBAL.tasas || {};
             let tasaBs = tasasObj.ves || tasasObj.bs || 1;
             let tasaCop = tasasObj.cop || 0;
             let tasaEur = tasasObj.eur || 0;
-            doc.text(`Tasas del día ($): BS: ${tasaBs} | COP: ${tasaCop} | EUR: ${tasaEur}`, 14, 42);
 
-            doc.setDrawColor(52, 152, 219);
-            doc.setLineWidth(0.5);
-            doc.line(14, 46, 196, 46);
+            let posY = 51;
 
-            let posY = 52;
+            // Cabecera de la Tabla PDF
             doc.setFont("Helvetica", "bold");
-            doc.setFontSize(9);
-            doc.setFillColor(44, 62, 80);
-            doc.setTextColor(255, 255, 255);
-            doc.rect(14, posY, 182, 8, "F");
-            doc.text("Producto", 18, posY + 5.5);
-            doc.text("Cant", 120, posY + 5.5, { align: "center" });
-            doc.text("Precio Unit.", 150, posY + 5.5, { align: "right" });
-            doc.text("Subtotal", 190, posY + 5.5, { align: "right" });
-
-            posY += 8;
+            doc.setFontSize(10.5);
+            doc.setTextColor(122, 23, 29);
+            doc.text("Detalle de Mercancía Vendida", 14, posY);
+            
             doc.setFont("Helvetica", "normal");
-            doc.setTextColor(44, 62, 80);
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Tasas Referenciales: BS: ${tasaBs} | COP: ${tasaCop} | EUR: ${tasaEur}`, 196, posY, { align: 'right' });
+
+            posY += 4;
+            doc.setFontSize(8);
+            doc.setFillColor(122, 23, 29); // Fondo Carmesí
+            doc.setTextColor(212, 175, 55); // Texto Dorado
+            doc.rect(14, posY, 182, 6.5, "F");
+            doc.setFont("Helvetica", "bold");
+            doc.text("Descripción del Producto", 17, posY + 4.5);
+            doc.text("Cant", 125, posY + 4.5, { align: 'center' });
+            doc.text("Precio Unit.", 155, posY + 4.5, { align: 'right' });
+            doc.text("Total ($)", 192, posY + 4.5, { align: 'right' });
+
+            posY += 6.5;
+            doc.setFont("Helvetica", "normal");
+            doc.setTextColor(40, 40, 40);
 
             let totalCant = 0;
             let totalUsd = 0;
 
             detalle.forEach((d, index) => {
-                if (posY > 270) {
+                if (posY > 265) {
                     doc.addPage();
                     posY = 20;
                 }
                 if (index % 2 === 0) {
-                    doc.setFillColor(249, 249, 249);
-                    doc.rect(14, posY, 182, 7, "F");
+                    doc.setFillColor(249, 248, 246);
+                    doc.rect(14, posY, 182, 6.5, "F");
                 }
+                
                 let pNom = limpiarNombre(d.catalogo ? d.catalogo.nombre : 'Producto');
                 let precioUnit = d.cantidad > 0 ? (d.subtotal_usd / d.cantidad) : 0;
                 totalCant += d.cantidad;
                 totalUsd += d.subtotal_usd;
 
-                doc.text(String(pNom), 18, posY + 5);
-                doc.text(String(d.cantidad), 120, posY + 5, { align: "center" });
-                doc.text(`$${precioUnit.toFixed(2)}`, 150, posY + 5, { align: "right" });
-                doc.text(`$${parseFloat(d.subtotal_usd || 0).toFixed(2)}`, 190, posY + 5, { align: "right" });
+                doc.text(String(pNom), 17, posY + 4.5);
+                doc.text(String(d.cantidad), 125, posY + 4.5, { align: 'center' });
+                doc.text(`$${parseFloat(precioUnit).toFixed(2)}`, 155, posY + 4.5, { align: 'right' });
+                doc.setFont("Helvetica", "bold");
+                doc.text(`$${parseFloat(d.subtotal_usd).toFixed(2)}`, 192, posY + 4.5, { align: 'right' });
+                doc.setFont("Helvetica", "normal");
 
-                posY += 7;
+                posY += 6.5;
             });
 
-            posY += 4;
-            doc.setDrawColor(189, 195, 199);
-            doc.line(14, posY, 196, posY);
             posY += 6;
 
-            doc.setFont("Helvetica", "bold");
-            doc.setFontSize(10);
-            doc.text(`Total Productos: ${totalCant}`, 14, posY);
-            doc.text(`Monto Total: $${totalUsd.toFixed(2)}`, 190, posY, { align: "right" });
+            // Totales Finales
+            if (posY > 250) {
+                doc.addPage();
+                posY = 20;
+            }
 
-            doc.save(`Comprobante_Venta_${lote.fecha}.pdf`);
+            doc.setFillColor(249, 248, 246);
+            doc.roundedRect(120, posY, 76, 18, 2, 2, "F");
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(100, 100, 100);
+            doc.text("Cantidad Total de Items:", 125, posY + 7);
+            doc.text(String(totalCant), 191, posY + 7, { align: 'right' });
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(9.5);
+            doc.setTextColor(122, 23, 29); // Carmesí oscuro
+            doc.text("TOTAL GENERAL VENDIDO:", 125, posY + 14);
+            doc.text(`$${parseFloat(totalUsd).toFixed(2)}`, 191, posY + 14, { align: 'right' });
+
+            let nombreArchivo = `Comprobante_Venta_${lote.fecha}.pdf`;
+            doc.save(nombreArchivo);
         } catch(e) {
             cerrarModalGlobal();
             alert("❌ Error al generar el PDF: " + e.message);
@@ -956,7 +1088,7 @@
         document.getElementById('global_modal').style.display = 'flex';
     }
     function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
-    function mostrarModalLocal(titulo, msg) { abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem;">⏳ ${msg}</div>`); }
+    function mostrarModalLocal(titulo, msg) { abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem; color:var(--crimson-dark); font-family:'Playfair Display', serif;">⏳ ${msg}</div>`); }
 </script>
 </body>
 </html>
