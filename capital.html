@@ -3,81 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📈 Capital e Inventario - Sistema Maestro</title>
-    <!-- Librerías Externas -->
+    <title>📈 Capital e Inventario | Panel Premium</title>
+    <!-- Librería Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     
     <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
+        /* ========================================================= */
         :root {
-            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
-            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
-            --border: #ddd; --card-bg: #ffffff; --input-bg: #ffffff; --muted: #7f8c8d;
+            --topbar-bg: #050505; 
+            --sidebar-bg: #080808; 
+            --active-gold: #D4AF37; 
+            
+            /* Paleta Carmesí Institucional */
+            --crimson: #7A171D;
+            --crimson-dark: #4A0E12; 
+            --crimson-light: #9B222A;
+
+            /* Base y texto */
+            --bg: #FDFBF7; 
+            --text: #2A2A2A; 
+            --text-light: #555555;
+            --border: #E8E0D5; 
+            --card-bg: #FFFFFF; 
+            --item-bg: #FCFBFA; 
+            
+            /* Estados Sólidos */
+            --success: #2E7D32; 
+            --warning: #B8860B; 
+            --danger: #8B0000;
+            --info: #2c3e50;
         }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
 
         /* ========================================================= */
-        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
+        /* BARRA SUPERIOR */
         /* ========================================================= */
-        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+        .top-bar { 
+            background: var(--topbar-bg); color: white; height: 65px; padding: 0 15px; 
+            display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
+            border-bottom: 2px solid var(--active-gold); box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
+        }
+        .menu-toggle-btn { 
+            background: transparent; border: 1px solid var(--active-gold); color: var(--active-gold); 
+            font-size: 1.5rem; cursor: pointer; width: 42px; height: 42px; padding: 0; flex-shrink: 0;
+            border-radius: 6px; display: flex; align-items: center; justify-content: center; 
+            transition: all 0.3s; padding-bottom: 3px; line-height: 1;
+        }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.15); box-shadow: inset 0 0 8px rgba(212,175,55,0.3); }
+        .top-bar-title { display: flex; align-items: center; gap: 10px; flex-grow: 1; overflow: hidden; white-space: nowrap; }
+        .local-name { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: bold; color: #FFFFFF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px; }
+        .badge-elegant {
+            font-size: 0.75rem; font-family: 'Roboto', sans-serif; font-weight: bold; 
+            background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
+            color: var(--active-gold); padding: 5px 12px; border-radius: 4px; 
+            letter-spacing: 1.5px; border: 1px solid var(--active-gold); text-transform: uppercase;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; flex-shrink: 1;
+        }
 
         /* ========================================================= */
-        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* MENÚ LATERAL */
         /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar { 
+            position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; 
+            background: var(--sidebar-bg); color: #E0E0E0; padding: 20px 15px; 
+            display: flex; flex-direction: column; gap: 4px; z-index: 1002; 
+            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            box-shadow: 5px 0 25px rgba(0,0,0,0.7); border-right: 1px solid var(--active-gold); overflow-y: auto; 
+        }
         .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
-        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
-        .sidebar .tab-btn:hover { background: #34495e; color: white; }
-        /* Etiqueta para diferenciar la página activa en el menú */
-        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
-        .sidebar-overlay.active { display: block; }
+        .sidebar-brand { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--active-gold); text-align: center; padding-bottom: 20px; border-bottom: 1px solid #222; margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
+        .sidebar .tab-btn { background: transparent; color: #CCCCCC; border: none; text-align: left; padding: 14px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s ease; }
+        .sidebar .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #FFF; border-left: 3px solid var(--active-gold); }
+        .sidebar .tab-btn.active { background: linear-gradient(90deg, #9D7B24, #5c4714) !important; color: #FFFFFF !important; font-weight: bold; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2); border-left: none; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(3px); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; }
+        .sidebar-overlay.active { display: block; opacity: 1; }
 
-        .main-content { max-width: 1100px; margin: 0 auto; padding: 20px; }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border); }
-        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
-
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        /* ========================================================= */
+        /* CONTENEDORES PRINCIPALES Y TARJETAS */
+        /* ========================================================= */
+        .main-content { max-width: 1100px; margin: 0 auto; padding: 30px 20px; padding-bottom: 120px; }
+        .card { 
+            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
+            border-top: 4px solid var(--crimson); position: relative; overflow: hidden;
+        }
+        
+        h2 { color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         @media (max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } }
 
-        .metric-box { padding: 20px; border-radius: 8px; text-align: center; color: white; font-weight: bold; display: flex; flex-direction: column; justify-content: center; }
-        .metric-title { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; margin-bottom: 5px; }
-        .metric-value { font-size: 2rem; }
+        /* ========================================================= */
+        /* MÉTRICAS FINANCIERAS LUXURY */
+        /* ========================================================= */
+        .metric-box { 
+            padding: 25px 20px; border-radius: 8px; text-align: center; color: white; 
+            display: flex; flex-direction: column; justify-content: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid transparent;
+            position: relative; overflow: hidden; transition: transform 0.3s;
+        }
+        .metric-box:hover { transform: translateY(-3px); }
+        .metric-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; margin-bottom: 8px; font-family: 'Roboto', sans-serif; font-weight: bold; }
+        .metric-value { font-size: 2.2rem; font-family: 'Playfair Display', serif; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         
-        .box-capital { background: linear-gradient(135deg, #2980b9, #1a252f); }
-        .box-proyeccion { background: linear-gradient(135deg, #27ae60, #145a32); }
-        .box-ganancia { background: linear-gradient(135deg, #8e44ad, #4a235a); }
+        .box-capital { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border-color: var(--active-gold); }
+        .box-proyeccion { background: linear-gradient(135deg, #0e1e38, #1a365d); color: #fff; border-color: #3b5998; } /* Lujo Deep Blue */
+        .box-ganancia { background: linear-gradient(135deg, #9D7B24, #C5A059); color: #000; border-color: #FFF; text-shadow: none; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; }
-        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
-        th { background: var(--primary); color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
+        input, select { 
+            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; 
+            font-size: 1rem; background: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD; font-family: 'Roboto', sans-serif;
+        }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
         
-        .search-input { width: 100%; padding: 10px; font-size: 1rem; border: 2px solid var(--info); border-radius: 6px; margin-bottom: 15px;}
+        .search-input { margin-bottom: 20px; font-size: 1.05rem; }
+
+        button { font-family: 'Roboto', sans-serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+        button:active { transform: scale(0.98); }
+        
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-info { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; background: var(--card-bg); }
+        th, td { border: 1px solid var(--border); padding: 12px; text-align: left; }
+        th { background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); font-family: 'Playfair Display', serif; letter-spacing: 1px; border-color: var(--active-gold); }
+
+        /* PANTALLA DE CARGA Y BLOQUEO */
+        #pantalla_bloqueo_admin, #loading_overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, rgba(74, 14, 18, 0.95), rgba(5, 5, 5, 0.98)); backdrop-filter: blur(8px); z-index: 99999; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.4s ease-in-out; }
+        
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 3px solid rgba(212, 175, 55, 0.2);
+            border-top-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 25px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
-<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(18, 18, 18, 0.75); backdrop-filter: blur(10px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px; animation: fadeIn 0.3s ease-in-out;">
-    <div style="background: var(--card-bg); width: 100%; max-width: 380px; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-top: 5px solid var(--danger);">
-        <h2 style="color: var(--danger); margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 12px;">🔒 Acceso Protegido</h2>
-        <p style="font-size: 0.95rem; color: var(--muted); margin: 20px 0;">Introduce el PIN de Administrador para abrir este módulo:</p>
+<!-- 🔄 LOADING OVERLAY -->
+<div id="loading_overlay">
+    <div class="card" style="width: 380px; text-align: center; border-top: 4px solid var(--active-gold); box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: #FFFFFF;">
+        <div class="spinner-luxury"></div>
+        <h2 style="color: var(--crimson-dark); border: none; font-size: 1.2rem;">Construyendo Panel</h2>
+        <p style="font-size: 0.9rem; color: var(--muted); font-family: 'Playfair Display', serif; font-style: italic;">Calculando métricas financieras globales...</p>
+    </div>
+</div>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN LUXURY -->
+<div id="pantalla_bloqueo_admin" style="display: none;">
+    <div class="card" style="width: 380px; text-align: center; border-top: 4px solid var(--active-gold); margin: 0; box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: #FFFFFF;">
+        <h2 style="color: var(--crimson-dark); border-bottom-color: var(--active-gold);">🔒 Acceso Protegido</h2>
+        <p style="font-size: 0.95rem; color: var(--text-light); margin-bottom: 20px;">Introduce el PIN de Administrador para abrir este módulo financiero:</p>
         
         <div style="position: relative; margin-bottom: 20px;">
-            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid var(--border); border-radius: 8px; outline: none; background: var(--bg); color: var(--text);" onkeyup="if(event.key==='Enter') verificarPinBody()">
-            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span>
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace;" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
         </div>
 
-        <button id="btn_desbloquear_pin" onclick="verificarPinBody()" style="background: linear-gradient(135deg, var(--primary), #1a252f); margin-top: 0; color:white; padding:12px; width:100%; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Desbloquear Pantalla</button>
-        <button id="btn_volver_pin" onclick="window.location.href='principal.html'" style="background: linear-gradient(135deg, var(--danger), #c0392b); margin-top: 10px; color:white; padding:12px; width:100%; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Volver al Inicio</button>
+        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; padding: 14px; font-size: 1rem; letter-spacing: 1.5px;">Desbloquear Pantalla</button>
+        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">Volver al Inicio</button>
     </div>
 </div>
 
@@ -92,8 +189,7 @@
     <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú del Sistema</div>
-        <!-- SOLO UN ENLACE DEBE TENER LA CLASE "active" POR PÁGINA -->
+        <div class="sidebar-brand">Menú Ejecutivo</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -119,7 +215,7 @@
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
         
-        <div class="card" style="border-top: 4px solid var(--primary);">
+        <div class="card" style="border-top: 4px solid var(--active-gold);">
             <h2>Resumen Financiero Global (Inventario Físico)</h2>
             <div class="grid-3">
                 <div class="metric-box box-capital">
@@ -135,12 +231,12 @@
                     <span class="metric-value" id="val_ganancia_total">$0.00</span>
                 </div>
             </div>
-            <p style="font-size:0.85rem; color:var(--muted); margin-top:15px; text-align:center;">
-                * Expresado en USD. El cálculo excluye recetas elaboradas para evitar duplicación, basándose únicamente en insumos simples almacenados.
+            <p style="font-size:0.85rem; color:var(--muted); margin-top:15px; text-align:center; font-style: italic;">
+                * Valores expresados en USD. El cálculo excluye recetas compuestas para evitar duplicidad de capital, basándose rigurosamente en insumos físicos.
             </p>
         </div>
 
-        <div class="card" style="border-top: 4px solid var(--info);">
+        <div class="card">
             <h2>Desglose de Capital por Producto</h2>
             <input type="text" id="busqueda_capital" class="search-input" placeholder="🔍 Filtrar producto por nombre o categoría..." oninput="renderTablaCapital()">
             
@@ -149,11 +245,11 @@
                     <thead>
                         <tr>
                             <th>Producto (Categoría)</th>
-                            <th>Stock Físico</th>
-                            <th>Costo Unitario</th>
-                            <th>Precio Unitario</th>
-                            <th>Capital (Costo)</th>
-                            <th>Proyección (Venta)</th>
+                            <th style="text-align: center;">Stock Físico</th>
+                            <th style="text-align: right;">Costo Unit.</th>
+                            <th style="text-align: right;">Precio Unit.</th>
+                            <th style="text-align: right;">Capital (Costo)</th>
+                            <th style="text-align: right;">Proyección</th>
                         </tr>
                     </thead>
                     <tbody id="tbody_capital"></tbody>
@@ -198,7 +294,6 @@
             return alert("Error: Perfil no vinculado a un local.");
         }
 
-        // Cargar configuración (PIN, Tasas) y nombre del local de forma segura
         let conf = null, localData = null;
         try {
             let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
@@ -215,14 +310,12 @@
             if(conf.tasas_cambio) TASAS_CAMBIO = conf.tasas_cambio;
         }
 
-        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Empresarial';
         let etiquetaModulo = "Capital e Inventario"; 
 
         document.getElementById('main_top_title').innerHTML = `
-            🏪 ${nombreLocal} 
-            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                📌 Módulo: ${etiquetaModulo}
-            </span>
+            <span class="local-name">🏪 ${nombreLocal}</span>
+            <span class="badge-elegant">📌 ${etiquetaModulo}</span>
         `;
 
         // Cargar Catálogo (Solo productos activos)
@@ -232,6 +325,13 @@
         }
 
         calcularCapital();
+
+        // Ocultar pantalla de carga e invocar bloqueo gerencial
+        setTimeout(() => {
+            document.getElementById('loading_overlay').style.display = 'none';
+            document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
+            document.getElementById('pin_ingreso_body').focus();
+        }, 800);
     }
 
     // ==========================================
@@ -258,10 +358,10 @@
         let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
         let btn = document.getElementById('btn_desbloquear_pin');
 
-        btn.innerHTML = "⏳ Cargando...";
+        btn.innerHTML = "⏳ Verificando acceso...";
         btn.disabled = true;
 
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 600));
 
         if (pinIngresado === ADMIN_PASS_DB) {
             let pantalla = document.getElementById('pantalla_bloqueo_admin');
@@ -270,9 +370,9 @@
                 pantalla.style.display = 'none';
                 btn.innerHTML = "Desbloquear Pantalla";
                 btn.disabled = false;
-            }, 300);
+            }, 250);
         } else {
-            alert("❌ PIN Incorrecto.");
+            alert("❌ PIN Incorrecto. Autorización denegada.");
             document.getElementById('pin_ingreso_body').value = '';
             btn.innerHTML = "Desbloquear Pantalla";
             btn.disabled = false;
@@ -295,9 +395,8 @@
         let totalCapital = 0;
         let totalProyeccion = 0;
 
-        // Limpiar el arreglo para renderizado asegurando cálculos en USD
         CATALOGO_DATOS.forEach(prod => {
-            // Regla crítica: Las recetas (preparados) no suman capital directo, pues es redundante frente a sus insumos.
+            // Excluir recetas para no duplicar capital
             if(prod.tipo !== 'simple') {
                 prod._capitalUSD = 0;
                 prod._proyeccionUSD = 0;
@@ -321,9 +420,9 @@
             prod._ventaRefUSD = ventaUSD;
         });
 
-        document.getElementById('val_capital_total').innerText = `$${totalCapital.toFixed(2)}`;
-        document.getElementById('val_proyeccion_total').innerText = `$${totalProyeccion.toFixed(2)}`;
-        document.getElementById('val_ganancia_total').innerText = `$${(totalProyeccion - totalCapital).toFixed(2)}`;
+        document.getElementById('val_capital_total').innerText = `$${totalCapital.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('val_proyeccion_total').innerText = `$${totalProyeccion.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('val_ganancia_total').innerText = `$${(totalProyeccion - totalCapital).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
         renderTablaCapital();
     }
@@ -333,28 +432,29 @@
         let tbody = document.getElementById('tbody_capital');
         let html = '';
 
-        // Filtrar productos simples con stock > 0, o que coincidan con la búsqueda
         let dataFiltrada = CATALOGO_DATOS.filter(p => p.tipo === 'simple' && (p.nombre.toLowerCase().includes(filtro) || (p.categoria && p.categoria.toLowerCase().includes(filtro))));
 
-        dataFiltrada.sort((a, b) => b._capitalUSD - a._capitalUSD); // Ordenar por mayor capital invertido
+        dataFiltrada.sort((a, b) => b._capitalUSD - a._capitalUSD);
 
-        dataFiltrada.forEach(prod => {
-            if (prod._capitalUSD === 0 && filtro === '') return; // Ocultar los vacíos si no hay búsqueda
+        dataFiltrada.forEach((prod, index) => {
+            if (prod._capitalUSD === 0 && filtro === '') return; 
+            
+            let bg = index % 2 === 0 ? "var(--card-bg)" : "var(--item-bg)";
 
             html += `
-                <tr>
-                    <td><strong>${prod.nombre}</strong><br><small style="color:var(--muted)">${prod.categoria || 'General'}</small></td>
-                    <td>${prod.stock} ${prod.unidad || 'Unidades'}</td>
-                    <td>$${(prod._costoRefUSD || 0).toFixed(2)}</td>
-                    <td>$${(prod._ventaRefUSD || 0).toFixed(2)}</td>
-                    <td style="font-weight:bold; color:var(--info);">$${(prod._capitalUSD || 0).toFixed(2)}</td>
-                    <td style="font-weight:bold; color:var(--success);">$${(prod._proyeccionUSD || 0).toFixed(2)}</td>
+                <tr style="background: ${bg}; border-bottom: 1px solid var(--border);">
+                    <td style="font-family: 'Playfair Display', serif;"><strong>${prod.nombre}</strong><br><small style="color:var(--muted); font-family: 'Roboto', sans-serif;">${prod.categoria || 'General'}</small></td>
+                    <td style="text-align: center;">${prod.stock} <small style="color:var(--muted)">${prod.unidad || 'U'}</small></td>
+                    <td style="text-align: right;">$${(prod._costoRefUSD || 0).toFixed(2)}</td>
+                    <td style="text-align: right;">$${(prod._ventaRefUSD || 0).toFixed(2)}</td>
+                    <td style="text-align: right; font-weight:bold; color:var(--crimson-dark);">$${(prod._capitalUSD || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td style="text-align: right; font-weight:bold; color:var(--success);">$${(prod._proyeccionUSD || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 </tr>
             `;
         });
 
         if (html === '') {
-            html = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">No hay registros válidos para mostrar.</td></tr>`;
+            html = `<tr><td colspan="6" style="text-align:center; padding:25px; color:var(--muted); font-style: italic;">No se encontraron registros de capital validos.</td></tr>`;
         }
 
         tbody.innerHTML = html;
