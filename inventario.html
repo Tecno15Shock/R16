@@ -9,33 +9,6 @@
     
     <style>
         /* ========================================================= */
-        /* ETIQUETAS DE ESTADO DE STOCK (BADGES)                     */
-        /* ========================================================= */
-        .badge-stock {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1.05rem;
-            font-weight: bold;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: inline-block;
-            text-align: center;
-            min-width: 80px;
-        }
-        /* Verde - Stock Óptimo */
-        .badge-stock-success { 
-            background: #E8F5E9; color: #1B5E20; border: 1px solid #A5D6A7; 
-        }
-        /* Amarillo/Dorado - Advertencia de Umbral */
-        .badge-stock-warning { 
-            background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; 
-        }
-        /* Rojo - Agotado */
-        .badge-stock-danger { 
-            background: #FFEBEE; color: #B71C1C; border: 1px solid #EF9A9A; 
-        }
-    
-        /* ========================================================= */
         /* VARIABLES DE ESTILO ELEGANTE (Carmesí, Dorado y Negro)    */
         /* ========================================================= */
         :root {
@@ -57,7 +30,7 @@
             --card-bg: #FFFFFF; 
             --item-bg: #FCFBFA; 
             
-            /* Estados */
+            /* Estados Sólidos (para bordes y badges) */
             --success: #2E7D32; 
             --warning: #B8860B; /* Dark Goldenrod */
             --danger: #8B0000;
@@ -141,7 +114,7 @@
         .top-bar { 
             background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; 
             display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
-            border-bottom: 2px solid var(--active-gold); /* Toque de oro sutil */
+            border-bottom: 2px solid var(--active-gold); 
             box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
         }
         .menu-toggle-btn { 
@@ -197,7 +170,6 @@
         }
         .sidebar-overlay.active { display: block; opacity: 1; }
 
-        /* Scrollbar estilizada y elegante */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: #CCC; border-radius: 4px; }
@@ -254,7 +226,6 @@
             box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
         }
 
-        /* Campos readonly con diseño elegante */
         input[readonly] { 
             background: var(--bg); border-left: 3px solid var(--crimson-light); 
             color: var(--crimson-dark); font-weight: bold; font-family: 'Courier New', Courier, monospace; 
@@ -273,18 +244,11 @@
             background: linear-gradient(135deg, var(--crimson-light), var(--crimson)); 
             color: #FFF; box-shadow: 0 6px 15px rgba(122, 23, 29, 0.3); transform: translateY(-1px);
         }
-        
-        /* Botones secundarios (como el de Bot) */
-        button.btn-outline {
-            background: transparent; color: var(--crimson-dark);
-            border: 1px solid var(--crimson-dark);
-        }
-        button.btn-outline:hover {
-            background: var(--crimson-dark); color: var(--active-gold);
-        }
+        button.btn-outline { background: transparent; color: var(--crimson-dark); border: 1px solid var(--crimson-dark); }
+        button.btn-outline:hover { background: var(--crimson-dark); color: var(--active-gold); }
 
         /* ========================================================= */
-        /* LISTAS DE INVENTARIO                                      */
+        /* LISTADO DE INVENTARIO CON RESALTADO DE FILAS COMPLETAS    */
         /* ========================================================= */
         .cat-header { 
             background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); 
@@ -293,19 +257,33 @@
             letter-spacing: 1px; font-size: 0.95rem; border-left: 4px solid var(--active-gold);
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
         .consulta-item { 
             border-bottom: 1px solid var(--border); padding: 15px; font-size: 0.95rem; 
             display: flex; justify-content: space-between; align-items: center;
-            transition: background 0.2s;
+            border-left: 4px solid transparent; /* Espacio para el borde lateral */
+            transition: all 0.2s;
         }
-        .consulta-item:hover { background-color: rgba(212, 175, 55, 0.03); }
-        .zebra-list .consulta-item:nth-child(even) { background-color: var(--item-bg); }
+        .consulta-item:hover { transform: translateX(2px); }
+
+        /* Resaltado de Filas (Verde, Amarillo, Rojo muy sutiles) */
+        .row-success { background-color: rgba(46, 125, 50, 0.05) !important; border-left-color: var(--success); }
+        .row-warning { background-color: rgba(184, 134, 11, 0.08) !important; border-left-color: var(--warning); }
+        .row-danger { background-color: rgba(139, 0, 0, 0.06) !important; border-left-color: var(--danger); }
         
         .item-name { font-weight: bold; color: var(--text); display: block; margin-bottom: 3px;}
         .item-cat { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;}
-        .item-stock { font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; font-weight: bold;}
+        
+        /* Badges Sólidos Elegantes */
+        .badge-stock {
+            padding: 5px 12px; border-radius: 4px; font-family: 'Courier New', Courier, monospace;
+            font-size: 1.05rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            display: inline-block; text-align: center; min-width: 80px; letter-spacing: 0.5px;
+        }
+        .badge-stock-success { background: #2E7D32; color: #FFFFFF; border: 1px solid #1B5E20; }
+        .badge-stock-warning { background: #B8860B; color: #000000; border: 1px solid #9D7B24; }
+        .badge-stock-danger { background: #8B0000; color: #FFFFFF; border: 1px solid #5a111a; }
 
-        /* Etiqueta topbar elegante */
         .badge-elegant {
             font-size: 0.75rem; font-family: 'Segoe UI', sans-serif;
             font-weight: bold; background: var(--crimson); color: var(--active-gold); 
@@ -317,7 +295,6 @@
 </head>
 <body>
 
-<!-- PANTALLA DE CARGA ELEGANTE -->
 <div id="loading-screen">
     <div class="loading-card">
         <div class="spinner"></div>
@@ -331,13 +308,11 @@
 
 <div class="wrapper">
     
-    <!-- BARRA SUPERIOR -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
         <div class="top-bar-title" id="main_top_title">Cargando...</div>
     </div>
 
-    <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
         <div class="sidebar-brand">Menú Ejecutivo</div>
@@ -364,7 +339,7 @@
     </div>
 
     <div class="main-content">
-        <!-- SECCIÓN DE EXPORTACIÓN -->
+        
         <div class="card">
             <h2 class="serif-font">📄 Exportación de Reportes PDF</h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -405,7 +380,6 @@
             </div>
         </div>
 
-        <!-- SECCIÓN DE INVENTARIO -->
         <div class="card">
             <h2 class="serif-font">📦 Panel de Inventario y Caja</h2>
             
@@ -435,7 +409,7 @@
                 </div>
             </div>
 
-            <div id="inv_lista_readonly" class="zebra-list"></div>
+            <div id="inv_lista_readonly"></div>
         </div>
     </div>
 </div>
@@ -449,15 +423,11 @@
     let CONFIG_GLOBAL = {};
     let CATALOGO = [];
 
-    // Manejo de la pantalla de carga elegante
     function ocultarLoading() {
         const loader = document.getElementById('loading-screen');
-        // Un pequeño retraso para permitir que el usuario aprecie el diseño y el mensaje
         setTimeout(() => {
             loader.style.opacity = '0';
-            setTimeout(() => {
-                loader.style.display = 'none';
-            }, 800);
+            setTimeout(() => { loader.style.display = 'none'; }, 800);
         }, 1800);
     }
 
@@ -466,8 +436,7 @@
         if (data && data.session) {
             await sincronizarSesionSupabase(data.session);
             ocultarLoading();
-        }
-        else {
+        } else {
             window.location.href = 'index.html';
         }
     });
@@ -567,37 +536,25 @@
             let stockVal = parseFloat(p.stock) || 0;
             let umbralVal = parseFloat(p.umbral_rojo) || 0;
             
-            // Lógica de detección de umbral reestructurada para usar clases CSS
+            // Asignación de clases para toda la fila y el badge (Fondo transparente sutil)
             let badgeClass = 'badge-stock-success'; 
+            let rowClass = 'row-success'; 
+
             if (stockVal <= 0) {
                 badgeClass = 'badge-stock-danger'; 
+                rowClass = 'row-danger';
             } else if (stockVal <= umbralVal) {
                 badgeClass = 'badge-stock-warning'; 
+                rowClass = 'row-warning';
             }
 
             html += `
-                <div class="consulta-item">
+                <div class="consulta-item ${rowClass}">
                     <span>
                         <span class="item-name">${limpiarNombre(p.nom)}</span>
                         <span class="item-cat">Categoría: ${p.cat}</span>
                     </span>
                     <span class="badge-stock ${badgeClass}">Und: ${formatearNumero(p.stock, 2)}</span>
-                </div>`; 
-            
-            let colorStock = 'var(--success)'; // Verde
-            if (stockVal <= 0) {
-                colorStock = 'var(--danger)'; // Rojo carmesí para agotado
-            } else if (stockVal <= umbralVal) {
-                colorStock = 'var(--warning)'; // Dorado Oscuro para alerta
-            }
-
-            html += `
-                <div class="consulta-item">
-                    <span>
-                        <span class="item-name">${limpiarNombre(p.nom)}</span>
-                        <span class="item-cat">Categoría: ${p.cat}</span>
-                    </span>
-                    <span class="item-stock" style="color:${colorStock};">Und: ${formatearNumero(p.stock, 2)}</span>
                 </div>`; 
         });
         document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--text-light); text-align:center; padding: 20px; font-style:italic;">No se encontraron registros con los filtros actuales.</p>';
@@ -620,9 +577,6 @@
         }
     }
 
-    // =======================================================
-    // GENERACIÓN DE PDF NATIVO CON jsPDF (AJUSTADO A ESTILO)
-    // =======================================================
     function generarPDFInventarioNativo(valDoc, modMoneda, ordPdf, filtroStock) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -639,10 +593,9 @@
         if (filtroStock === 'con_stock') arr = arr.filter(p => parseFloat(p.stock) > 0);
         arr.sort((a,b) => ordPdf === 'cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)));
 
-        // Encabezado institucional elegante PDF
         doc.setFont("Helvetica", "bold");
         doc.setFontSize(16);
-        doc.setTextColor(90, 17, 26); // Carmesí oscuro en PDF
+        doc.setTextColor(90, 17, 26); 
         doc.text(nombreLocal.toUpperCase(), 14, 18);
 
         doc.setFont("Helvetica", "italic");
@@ -650,7 +603,7 @@
         doc.setTextColor(100, 100, 100);
         doc.text(`Reporte Analítico de Inventario (${valDoc.toUpperCase()}) - ${new Date().toLocaleDateString()}`, 14, 24);
 
-        doc.setDrawColor(212, 175, 55); // Línea dorada
+        doc.setDrawColor(212, 175, 55); 
         doc.setLineWidth(0.8);
         doc.line(14, 28, 196, 28);
 
@@ -660,11 +613,11 @@
         arr.forEach((p, index) => {
             if (ordPdf === 'cat' && p.cat !== lC) {
                 if (posY > 265) { doc.addPage(); posY = 20; }
-                doc.setFillColor(122, 23, 29); // Fondo carmesí encabezado categoría
+                doc.setFillColor(122, 23, 29); 
                 doc.rect(14, posY, 182, 7, "F");
                 doc.setFont("Helvetica", "bold");
                 doc.setFontSize(9);
-                doc.setTextColor(212, 175, 55); // Texto Dorado
+                doc.setTextColor(212, 175, 55); 
                 doc.text(p.cat.toUpperCase(), 18, posY + 5);
                 posY += 8;
                 lC = p.cat;
@@ -696,7 +649,7 @@
                 let colX = 145;
                 doc.setFont("Helvetica", "bold");
                 doc.setFontSize(8.5);
-                doc.setTextColor(122, 23, 29); // Etiqueta precio carmesí
+                doc.setTextColor(122, 23, 29); 
                 doc.text("Valores:", colX, posY + 5);
                 
                 doc.setFont("Helvetica", "normal");
