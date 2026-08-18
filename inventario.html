@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario | Panel Elegante</title>
+    <title>Inventario | Panel Premium</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
         /* ========================================================= */
-        /* VARIABLES DE ESTILO ELEGANTE (Carmesí, Dorado y Negro)    */
+        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
         /* ========================================================= */
         :root {
             --topbar-bg: #050505; 
@@ -17,13 +17,13 @@
             --active-gold: #D4AF37; 
             --active-gold-hover: #F3E5AB; 
             
-            /* Paleta Carmesí */
+            /* Paleta Carmesí Institucional */
             --crimson: #7A171D;
-            --crimson-dark: #5a111a;
+            --crimson-dark: #4A0E12; /* Aún más profundo para contrastes */
             --crimson-light: #9B222A;
 
             /* Base y texto */
-            --bg: #F9F8F6; 
+            --bg: #FDFBF7; /* Tono marfil de alta gama */
             --text: #2A2A2A; 
             --text-light: #555555;
             --border: #E8E0D5; 
@@ -55,72 +55,87 @@
         }
 
         /* ========================================================= */
-        /* PANTALLA DE CARGA (LOADING OVERLAY)                       */
+        /* PANTALLA DE CARGA LUXURY                                  */
         /* ========================================================= */
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, #5a111a 0%, #2e080d 100%);
+            background: radial-gradient(circle at center, var(--crimson-dark) 0%, #1a0507 100%);
             z-index: 99999; display: flex; justify-content: center; align-items: center;
             transition: opacity 0.8s ease, visibility 0.8s;
         }
         .loading-card {
             background: #ffffff; padding: 50px 40px; text-align: center; width: 85%;
-            max-width: 450px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); position: relative;
+            max-width: 450px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative;
+            border-radius: 4px;
         }
         .loading-card::before, .loading-card::after {
-            content: ''; position: absolute; width: 35px; height: 35px; border-color: var(--active-gold); border-style: solid;
+            content: ''; position: absolute; width: 40px; height: 40px; border-color: var(--active-gold); border-style: solid;
         }
-        .loading-card::before { top: 15px; left: 15px; border-width: 2px 0 0 2px; }
-        .loading-card::after { bottom: 15px; right: 15px; border-width: 0 2px 2px 0; }
+        .loading-card::before { top: 15px; left: 15px; border-width: 3px 0 0 3px; }
+        .loading-card::after { bottom: 15px; right: 15px; border-width: 0 3px 3px 0; }
         
         .spinner {
-            width: 45px; height: 45px; border: 2px solid rgba(212, 175, 55, 0.2);
+            width: 50px; height: 50px; border: 3px solid rgba(212, 175, 55, 0.2);
             border-top-color: var(--active-gold); border-radius: 50%;
             animation: spin 1s linear infinite; margin: 0 auto 25px auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .loading-title {
-            color: var(--crimson-dark); font-family: 'Georgia', serif; font-size: 1.3rem; 
+            color: var(--crimson-dark); font-family: 'Georgia', serif; font-size: 1.4rem; 
             letter-spacing: 3px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;
         }
-        .loading-quote { color: #666; font-style: italic; font-size: 1rem; margin-bottom: 25px; font-family: 'Georgia', serif; }
+        .loading-quote { color: #666; font-style: italic; font-size: 1.05rem; margin-bottom: 25px; font-family: 'Georgia', serif; }
         .loading-text { color: #888; font-size: 0.85rem; line-height: 1.6; max-width: 90%; margin: 0 auto; }
 
         /* ========================================================= */
-        /* BARRA SUPERIOR: Negro con letras blancas y Borde Dorado   */
+        /* BARRA SUPERIOR: Ajuste Estricto en Línea                  */
         /* ========================================================= */
         .top-bar { 
-            background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; 
-            display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 999; 
-            border-bottom: 2px solid var(--active-gold); box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            background: var(--topbar-bg); color: white; height: 65px; padding: 0 15px; 
+            display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
+            border-bottom: 2px solid var(--active-gold); box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
         }
-        .top-bar-left { display: flex; align-items: center; gap: 15px; }
         
-        /* Ajuste de alineación central hacia arriba para el ícono de menú */
         .menu-toggle-btn { 
-            background: transparent; border: 1px solid #B8860B; color: #B8860B; 
-            font-size: 1.5rem; cursor: pointer; width: 38px; height: 38px; padding: 0; 
-            border-radius: 4px; display: flex; align-items: center; justify-content: center; 
-            transition: all 0.3s;
-            padding-bottom: 3px; /* Nudge físico sutil hacia arriba */
-            line-height: 1;
+            background: transparent; border: 1px solid var(--active-gold); color: var(--active-gold); 
+            font-size: 1.5rem; cursor: pointer; width: 42px; height: 42px; padding: 0; flex-shrink: 0;
+            border-radius: 6px; display: flex; align-items: center; justify-content: center; 
+            transition: all 0.3s; padding-bottom: 3px; line-height: 1;
         }
-        .menu-toggle-btn:hover { background: rgba(184, 134, 11, 0.15); border-color: var(--active-gold); color: var(--active-gold); }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.15); box-shadow: inset 0 0 8px rgba(212,175,55,0.3); }
+        
+        /* Contenedor flexible que evita el salto de línea */
         .top-bar-title { 
-            font-family: 'Georgia', serif; font-size: 1.2rem; font-weight: normal; flex-grow: 1; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 1px; color: white; 
+            display: flex; align-items: center; gap: 10px; flex-grow: 1; 
+            overflow: hidden; white-space: nowrap; 
+        }
+        
+        .local-name {
+            font-family: 'Georgia', serif; font-size: 1.25rem; font-weight: bold; color: #FFFFFF;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px;
+        }
+
+        /* Etiqueta Premium que se adapta o se corta, nunca salta */
+        .badge-elegant {
+            font-size: 0.75rem; font-family: 'Segoe UI', sans-serif; font-weight: bold; 
+            background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
+            color: var(--active-gold); padding: 5px 12px; border-radius: 4px; 
+            letter-spacing: 1.5px; border: 1px solid var(--active-gold); text-transform: uppercase;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 140px; flex-shrink: 1;
         }
 
         /* ========================================================= */
-        /* MENÚ LATERAL: Fondo negro, activo en Oro                  */
+        /* MENÚ LATERAL                                              */
         /* ========================================================= */
         .sidebar { 
             position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; 
             background: var(--sidebar-bg); color: #E0E0E0; padding: 20px 15px; 
             display: flex; flex-direction: column; gap: 4px; z-index: 1002; 
             transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            box-shadow: 5px 0 20px rgba(0,0,0,0.5); border-right: 1px solid #1A1A1A; overflow-y: auto; 
+            box-shadow: 5px 0 25px rgba(0,0,0,0.7); border-right: 1px solid var(--active-gold); overflow-y: auto; 
         }
         .sidebar.open { left: 0; }
         .sidebar-brand { 
@@ -130,126 +145,125 @@
         }
         .sidebar .tab-btn { 
             background: transparent; color: #CCCCCC; border: none; text-align: left; 
-            padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; 
+            padding: 14px 15px; width: 100%; border-radius: 6px; cursor: pointer; 
             font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s ease;
         }
-        .sidebar .tab-btn:hover { background: rgba(255, 255, 255, 0.03); color: #FFF; border-left: 3px solid #555; }
+        .sidebar .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #FFF; border-left: 3px solid var(--active-gold); }
         .sidebar .tab-btn.active { 
-            background: linear-gradient(90deg, #9D7B24, #735919) !important; 
-            color: #FFFFFF !important; font-weight: bold; box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3); border-left: none;
+            background: linear-gradient(90deg, #9D7B24, #5c4714) !important; 
+            color: #FFFFFF !important; font-weight: bold; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2); border-left: none;
         }
         .sidebar-overlay { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(2px); z-index: 1001; 
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(3px); z-index: 1001; 
             display: none; opacity: 0; transition: opacity 0.3s;
         }
         .sidebar-overlay.active { display: block; opacity: 1; }
 
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #CCC; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--active-gold); }
+
         /* ========================================================= */
-        /* CONTENEDORES Y TARJETAS                                   */
+        /* CONTENEDORES, TARJETAS Y BOTONES PREMIUM                  */
         /* ========================================================= */
         .main-content { max-width: 950px; margin: 0 auto; padding: 30px 20px; padding-bottom: 130px; }
         .card { 
-            background: var(--card-bg); padding: 25px; border-radius: 4px; margin-bottom: 25px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border);
-            border-top: 3px solid var(--crimson);
+            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
+            border-top: 4px solid var(--crimson);
         }
         h2 { 
-            color: var(--crimson-dark); margin-top: 0; font-size: 1.3rem; 
-            border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;
+            color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; 
+            border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px;
             display: flex; align-items: center; gap: 8px; text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* Botón Desplegable para Secciones */
+        /* Botón Desplegable Ultra-Premium */
         .toggle-section-btn {
-            background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
+            background: linear-gradient(135deg, var(--crimson-dark) 0%, var(--crimson) 100%); 
             color: var(--active-gold); border: 1px solid var(--active-gold); 
-            padding: 15px 20px; width: 100%; border-radius: 4px; cursor: pointer; 
-            font-weight: bold; font-size: 1.1rem; text-transform: uppercase; 
-            letter-spacing: 1px; transition: all 0.3s; text-align: left;
+            padding: 18px 25px; width: 100%; border-radius: 6px; cursor: pointer; 
+            font-weight: bold; font-size: 1.15rem; text-transform: uppercase; 
+            letter-spacing: 1.5px; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); text-align: left;
             display: flex; justify-content: space-between; align-items: center;
-            font-family: 'Georgia', serif; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-family: 'Georgia', serif; box-shadow: 0 6px 15px rgba(90, 17, 26, 0.35);
         }
-        .toggle-section-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .toggle-section-btn:hover { filter: brightness(1.15); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(90, 17, 26, 0.5); }
 
         .collapsible-content {
-            display: none; padding-top: 20px; animation: fadeIn 0.4s ease;
+            display: none; padding-top: 25px; animation: fadeIn 0.4s ease;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ========================================================= */
         /* FORMULARIOS                                               */
         /* ========================================================= */
         label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 15px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
         input, select { 
-            width: 100%; padding: 12px; margin-top: 5px; border: 1px solid var(--border); border-radius: 3px; font-size: 0.95rem; 
-            background-color: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 3px solid #DDD;
+            width: 100%; padding: 14px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.95rem; 
+            background-color: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD;
         }
-        input:focus, select:focus { outline: none; background-color: #FFF; border-color: var(--active-gold); border-left: 3px solid var(--active-gold); box-shadow: 0 0 8px rgba(212, 175, 55, 0.2); }
+        input:focus, select:focus { outline: none; background-color: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
         
         input[readonly] { 
-            background: var(--bg); border-left: 3px solid var(--crimson-light); 
+            background: var(--bg); border-left: 4px solid var(--crimson-light); 
             color: var(--crimson-dark); font-weight: bold; font-family: 'Courier New', Courier, monospace; 
-            font-size: 1.1rem; text-align: right;
+            font-size: 1.15rem; text-align: right;
         }
 
-        .grid-vertical { display: flex; flex-direction: column; gap: 12px; }
+        .grid-vertical { display: flex; flex-direction: column; gap: 15px; }
         .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
         @media (max-width: 768px) { .grid-4 { grid-template-columns: 1fr; } }
 
         button.btn-action { 
             background: linear-gradient(135deg, var(--crimson), var(--crimson-dark)); 
             color: var(--active-gold); border: 1px solid var(--active-gold); 
-            padding: 14px 20px; border-radius: 3px; cursor: pointer; font-weight: bold; 
-            width: 100%; margin-top: 20px; font-size: 0.95rem; text-transform: uppercase; 
-            letter-spacing: 1px; transition: all 0.3s;
+            padding: 16px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; 
+            width: 100%; margin-top: 20px; font-size: 1rem; text-transform: uppercase; 
+            letter-spacing: 1.5px; transition: all 0.3s;
         }
-        button.btn-action:hover { box-shadow: 0 6px 15px rgba(122, 23, 29, 0.3); transform: translateY(-1px); filter: brightness(1.1); }
+        button.btn-action:hover { box-shadow: 0 8px 20px rgba(122, 23, 29, 0.4); transform: translateY(-2px); filter: brightness(1.1); }
 
         /* ========================================================= */
-        /* LISTADO DE INVENTARIO CON BORDES DORADOS Y FONDOS TENUES  */
+        /* LISTADO DE INVENTARIO: FONDOS SUTILES Y BORDES DORADOS    */
         /* ========================================================= */
         .cat-header { 
             background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); 
-            color: var(--active-gold); padding: 12px 15px; margin-top: 20px; margin-bottom: 0; 
-            border: 3px solid var(--active-gold); border-bottom: none;
+            color: var(--active-gold); padding: 14px 18px; margin-top: 20px; margin-bottom: 0; 
+            border: 2px solid var(--active-gold); border-bottom: none;
             font-weight: bold; width: 100%; font-family: 'Georgia', serif;
-            letter-spacing: 1px; font-size: 1rem; border-top-left-radius: 4px; border-top-right-radius: 4px;
+            letter-spacing: 1.5px; font-size: 1.05rem; border-top-left-radius: 6px; border-top-right-radius: 6px;
         }
 
         .consulta-item { 
-            padding: 15px; font-size: 0.95rem; 
+            padding: 18px 15px; font-size: 0.95rem; 
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--active-gold); /* Fina linea dorada inferor */
-            border-left: 3px solid var(--active-gold); /* Linea dorada izquierda */
-            border-right: 3px solid var(--active-gold); /* Linea dorada derecha */
+            border-bottom: 1px solid var(--active-gold); 
+            border-left: 2px solid var(--active-gold); 
+            border-right: 2px solid var(--active-gold); 
             transition: all 0.2s;
         }
         
-        /* Tintes Transparentes según estado */
-        .row-success { background-color: rgba(46, 125, 50, 0.12) !important; }
-        .row-warning { background-color: rgba(184, 134, 11, 0.15) !important; }
-        .row-danger { background-color: rgba(139, 0, 0, 0.12) !important; }
+        /* Tintes Transparentes según estado del stock */
+        .row-success { background-color: rgba(46, 125, 50, 0.08) !important; }
+        .row-warning { background-color: rgba(184, 134, 11, 0.12) !important; }
+        .row-danger { background-color: rgba(139, 0, 0, 0.10) !important; }
         
-        .item-name { font-weight: bold; color: var(--text); display: block; margin-bottom: 3px;}
+        .item-name { font-weight: bold; color: var(--text); display: block; margin-bottom: 4px; font-size: 1.05rem;}
         .item-cat { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;}
         
         /* Badges de Cantidad (Colores Sólidos) */
         .badge-stock {
-            padding: 6px 14px; border-radius: 4px; font-family: 'Courier New', Courier, monospace;
-            font-size: 1.05rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            display: inline-block; text-align: center; min-width: 85px; letter-spacing: 0.5px;
+            padding: 8px 16px; border-radius: 4px; font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+            display: inline-block; text-align: center; min-width: 90px; letter-spacing: 1px;
         }
         .badge-stock-success { background: var(--success); color: #FFFFFF; border: 1px solid #1B5E20; }
         .badge-stock-warning { background: var(--warning); color: #000000; border: 1px solid #9D7B24; }
         .badge-stock-danger { background: var(--danger); color: #FFFFFF; border: 1px solid #5a111a; }
-
-        .badge-elegant {
-            font-size: 0.75rem; font-family: 'Segoe UI', sans-serif; font-weight: bold; 
-            background: var(--crimson); color: var(--active-gold); padding: 4px 12px; border-radius: 20px; 
-            margin-left: 15px; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
-            border: 1px solid var(--active-gold); text-transform: uppercase;
-        }
     </style>
 </head>
 <body>
@@ -265,12 +279,13 @@
 
 <div class="wrapper">
     
+    <!-- BARRA SUPERIOR ESTRUCTURADA EN LÍNEA -->
     <div class="top-bar">
-        <div class="top-bar-left">
-            <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-            <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="top-bar-title" id="main_top_title">
+            <!-- Se inyecta dinámicamente desde JS -->
+            Cargando...
         </div>
-        <div id="top_badge_container"></div>
     </div>
 
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -460,8 +475,11 @@
         let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Administrativo';
         let etiquetaModulo = "Inventario Físico"; 
 
-        document.getElementById('main_top_title').innerHTML = `🏪 ${nombreLocal}`;
-        document.getElementById('top_badge_container').innerHTML = `<span class="badge-elegant">📌 ${etiquetaModulo}</span>`;
+        // Inyección ajustada: Todo encapsulado dentro del flex para evitar desbordes
+        document.getElementById('main_top_title').innerHTML = `
+            <span class="local-name">🏪 ${nombreLocal}</span>
+            <span class="badge-elegant">📌 ${etiquetaModulo}</span>
+        `;
 
         await cargarTodoDesdeSupabase();
     }
@@ -479,7 +497,6 @@
 
             let { data: reqCat } = await window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
             if(reqCat) {
-                // Sincronización estricta de variables con la tabla catálogo para umbrales
                 CATALOGO = reqCat.map(p => ({
                     uuid: p.id, nom: p.nombre, cat: p.categoria || "General", base: p.precio_base || 0, 
                     mBase: p.moneda_base || 'USD', stock: parseFloat(p.stock) || 0, 
@@ -535,17 +552,21 @@
                 rowClass = 'row-warning';
             }
 
-            // Un solo bloque HTML por producto.
-            // Si es el último elemento de la categoría o del array, redondeamos bordes inferiores opcionalmente.
             html += `
                 <div class="consulta-item ${rowClass}">
                     <span>
                         <span class="item-name">${limpiarNombre(p.nom)}</span>
                         <span class="item-cat">Categoría: ${p.cat}</span>
                     </span>
-                    <span class="badge-stock ${badgeClass}">Und: ${formatearNumero(p.stock, 2)}</span>
+                    <span class="badge-stock ${badgeClass}">Und:<br>${formatearNumero(p.stock, 2)}</span>
                 </div>`; 
         });
+        
+        // Bordear la base de la última fila para que la línea dorada se cierre perfectamente
+        if (html !== "") {
+            html += `<div style="border-bottom: 3px solid var(--active-gold); border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; height: 3px; background: transparent; width: 100%;"></div>`;
+        }
+
         document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--text-light); text-align:center; padding: 20px; font-style:italic; border: 1px solid var(--border);">No se encontraron registros con los filtros actuales.</p>';
     }
 
@@ -566,9 +587,8 @@
         let ordPdf = document.getElementById('sel_pdf_orden').value;
         let filtroStock = document.getElementById('sel_pdf_stock').value; 
         
-        // Validación estricta que exige seleccionar todas las opciones antes de descargar
         if(!valDoc || !modMon || !ordPdf || !filtroStock) {
-            return alert("⛔ Error de Procedimiento: Por favor, despliegue y seleccione todas las opciones obligatorias del documento antes de intentar exportar el reporte.");
+            return alert("⛔ Error de Procedimiento: Por favor, seleccione todas las opciones obligatorias del documento antes de intentar exportar el reporte.");
         }
         
         if (accion === 'descargar') {
