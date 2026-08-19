@@ -11,7 +11,7 @@
     
     <style>
         /* ========================================================= */
-        /* VARIABLES DE ESTILO PREMIUM                               */
+        /* VARIABLES DE ESTILO PREMIUM (ROJO Y DORADO)               */
         /* ========================================================= */
         :root {
             --topbar-bg: #000000; 
@@ -19,21 +19,21 @@
             --active-gold: #D4AF37; 
             
             --bg: #fdfaf6; 
-            --primary: #3b0918; 
-            --secondary: #7c1126; 
+            --primary: #3b0918; /* Rojo oscuro ultra-premium */
+            --secondary: #7c1126; /* Rojo brillante */
             --danger: #b30000; 
             --success: #2ecc71; 
             --warning: #f39c12; 
             --info: #aa8c2c; 
             --text: #222; 
-            --border: #d4af37; 
+            --border: #d4af37; /* Dorado para bordes */
             --card-bg: #ffffff; 
-            --item-bg: #f9f6f0; 
+            --item-bg: #fdf8f0; 
             --muted: #666;
         }
 
         * { box-sizing: border-box; }
-        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; scroll-behavior: smooth; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -65,43 +65,45 @@
         /* ========================================================= */
         /* CONTENEDORES Y ACORDEÓN DESPLEGABLE LUGURY                */
         /* ========================================================= */
-        .main-content { padding: 20px; padding-bottom: 130px; max-width: 1200px; margin: 0 auto; }
+        .main-content { padding: 20px; padding-bottom: 130px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
         
         .card { 
-            background: var(--card-bg); border-radius: 4px; margin-bottom: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid var(--border);
+            background: var(--card-bg); border-radius: 6px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.06); 
+            border: 1px solid var(--border);
             position: relative; overflow: hidden;
         }
-        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--secondary), var(--primary)); z-index: 2; }
+        /* Borde superior dorado/rojo para realzar el lujo */
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--active-gold), var(--primary)); z-index: 2; }
         
         /* Cabecera del Acordeón */
         .card-header {
             padding: 20px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-            background: var(--card-bg); transition: background 0.3s ease; user-select: none;
+            background: var(--card-bg); transition: background 0.3s ease; user-select: none; border-bottom: 1px solid transparent;
         }
         .card-header:hover { background: var(--item-bg); }
         .card-header h2 { 
             color: var(--primary); margin: 0; font-size: 1.35rem; font-family: 'Playfair Display', serif; 
-            text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0;
+            text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0; display: flex; align-items: center; gap: 10px;
         }
         .accordion-icon {
             font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease;
         }
         
-        /* Cuerpo del Acordeón (Oculto por defecto o abierto según clase) */
+        /* Cuerpo del Acordeón (Oculto por defecto) */
         .card-body {
-            max-height: 0; overflow: hidden; padding: 0 25px; transition: max-height 0.4s cubic-bezier(0, 1, 0, 1), padding 0.3s ease;
-            background: var(--card-bg); border-top: 1px solid transparent;
+            max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease;
+            background: var(--card-bg); 
         }
+        .card.open .card-header { border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
         .card.open .card-body {
-            max-height: 3000px; padding: 0 25px 25px 25px; border-top-color: rgba(212, 175, 55, 0.2);
-            transition: max-height 0.6s ease-in-out, padding 0.3s ease;
+            max-height: 5000px; padding: 20px 25px 25px 25px; opacity: 1;
+            transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
         }
-        .card.open .accordion-icon {
-            transform: rotate(180deg);
-        }
+        .card.open .accordion-icon { transform: rotate(180deg); }
 
-        h3 { color: var(--primary); margin-top: 25px; font-size: 1.15rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; font-family: 'Playfair Display', serif; }
+        h3 { color: var(--primary); margin-top: 15px; font-size: 1.15rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; font-family: 'Playfair Display', serif; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -109,12 +111,13 @@
         @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
         .flex-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
 
-        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
+        
         input, select { 
-            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 4px; 
-            font-size: 1rem; background: var(--item-bg); transition: all 0.3s ease; color: var(--text); border-left: 4px solid var(--border); font-family: 'Roboto', sans-serif;
+            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid rgba(212, 175, 55, 0.6); border-radius: 4px; 
+            font-size: 1rem; background: var(--item-bg); transition: all 0.3s ease; color: var(--text); border-left: 4px solid var(--active-gold); font-family: 'Roboto', sans-serif;
         }
-        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--primary); border-left-color: var(--primary); box-shadow: 0 0 10px rgba(124, 17, 38, 0.15); }
 
         button { font-family: 'Playfair Display', serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
@@ -124,6 +127,8 @@
         .btn-warning { background: var(--warning); color: #fff; }
         .btn-success { background: var(--success); color: white; border-bottom: 2px solid #1e8449; }
         .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-add { background: var(--item-bg); color: var(--primary); border: 1px solid var(--border); width: auto; display: inline-block; padding: 10px 15px; border-left: 4px solid var(--active-gold);}
+        .btn-add:hover { background: var(--primary); color: var(--active-gold); }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; background: var(--card-bg); border: 1px solid var(--border); }
         th, td { border: 1px solid rgba(212, 175, 55, 0.3); padding: 12px; text-align: left; }
@@ -255,79 +260,15 @@
     <!-- CONTENIDO PRINCIPAL EN FORMATO ACORDEÓN DESPLEGABLE -->
     <div class="main-content">
         
-        <!-- Tarjeta 1: Fondo de Caja -->
-        <div class="card">
+        <!-- 1. Categorías -->
+        <div class="card" id="panel_categorias">
             <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>🏦 Fondo de Caja Manual</h2>
-                <span class="accordion-icon">▼</span>
-            </div>
-            <div class="card-body">
-                <div class="grid-4" style="padding-top: 15px;">
-                    <div><label>Fondo ($):</label><input type="number" step="0.01" id="caja_fondo_usd"></div>
-                    <div><label>Fondo (BS):</label><input type="number" step="0.01" id="caja_fondo_bs"></div>
-                    <div><label>Fondo (COP):</label><input type="number" id="caja_fondo_cop"></div>
-                    <div><label>Fondo (EUR):</label><input type="number" step="0.01" id="caja_fondo_eur"></div>
-                </div>
-                <button onclick="guardarFondoCaja()" class="btn-info">Guardar Parámetros de Fondo</button>
-            </div>
-        </div>
-        
-        <!-- Tarjeta 2: Recargas Telefónicas -->
-        <div class="card">
-            <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>📦 Recargas Telefónicas</h2>
-                <span class="accordion-icon">▼</span>
-            </div>
-            <div class="card-body">
-                <div class="grid-2" style="padding-top: 15px;">
-                    <div>
-                        <label>Operadora:</label>
-                        <select id="form_recarga_op"><option value="Digitel">Digitel</option><option value="Movistar">Movistar</option><option value="Movilnet">Movilnet</option></select>
-                    </div>
-                    <div><label>Monto a Recargar (BS):</label><input type="number" step="0.01" id="form_recarga_monto"></div>
-                </div>
-                <div class="grid-2">
-                    <div><label>Cobranza Fija (BS):</label><input type="number" step="0.01" id="form_recarga_cobro"></div>
-                    <div><label>O % de Recargo automático:</label><input type="number" step="0.01" id="form_recarga_porcentaje"></div>
-                </div>
-                <button onclick="guardarRecarga()" class="btn-info">Añadir Plan Recarga</button>
-                <div style="overflow-x: auto;">
-                    <table id="tabla_gestion_recargas" style="margin-top:15px;"></table>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Tarjeta 3: Planes de WiFi -->
-        <div class="card">
-            <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>📶 Planes de WiFi</h2>
-                <span class="accordion-icon">▼</span>
-            </div>
-            <div class="card-body">
-                <div class="grid-2" style="padding-top: 15px;">
-                    <div>
-                        <label>Categoría:</label>
-                        <select id="form_wifi_cat"><option value="Eventual">Eventual</option><option value="Frecuente">Frecuente</option></select>
-                    </div>
-                    <div><label>Descripción del Tiempo:</label><input type="text" id="form_wifi_tiempo" placeholder="Ej: 1 Hora"></div>
-                </div>
-                <label>Costo de Cobranza ($):</label><input type="number" step="0.01" id="form_wifi_cobro">
-                <button onclick="guardarWifi()" class="btn-info">Añadir Plan Wifi</button>
-                <div style="overflow-x: auto;">
-                    <table id="tabla_gestion_wifi" style="margin-top:15px;"></table>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Tarjeta 4: Categorías -->
-        <div class="card">
-            <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>📁 Categorías de Productos</h2>
+                <h2>📁 1. Categorías de Productos</h2>
                 <span class="accordion-icon">▼</span>
             </div>
             <div class="card-body">
                 <input type="hidden" id="edit_categoria_index" value="-1">
-                <div class="flex-row" style="align-items: flex-end; padding-top: 15px;">
+                <div class="flex-row" style="align-items: flex-end;">
                     <div style="flex: 1;"><input type="text" id="nueva_categoria_input" placeholder="Nombre de categoría... Ej: Dulces" style="margin-top:0;"></div>
                     <div><button id="btn_guardar_categoria" onclick="guardarCategoria()" class="btn-info" style="width:auto; margin:0; padding: 12px 20px;">Crear Categoría</button></div>
                     <div><button id="btn_cancelar_categoria" onclick="cancelarEdicionCategoria()" class="btn-danger" style="width:auto; margin:0; display:none; padding: 12px 20px;">Cancelar</button></div>
@@ -337,15 +278,15 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Tarjeta 5: Catálogo de Mercancía (Abierto por defecto para mayor comodidad) -->
-        <div class="card open">
+
+        <!-- 2. Guardar Mercancía -->
+        <div class="card" id="panel_registro_mercancia">
             <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>📦 Crear / Modificar Mercancía en Catálogo</h2>
+                <h2>📦 2. Registro y Edición de Mercancía</h2>
                 <span class="accordion-icon">▼</span>
             </div>
             <div class="card-body">
-                <p style="font-size:0.95rem; color:var(--muted); margin-bottom: 25px; text-align: center; font-family:'Playfair Display', serif; font-style:italic; padding-top: 10px;">Estructura la base de datos principal de inventario.</p>
+                <p style="font-size:0.95rem; color:var(--muted); margin-bottom: 25px; text-align: center; font-family:'Playfair Display', serif; font-style:italic;">Estructura la base de datos principal de inventario.</p>
 
                 <input type="hidden" id="edit_prod_uuid" value="">
                 
@@ -400,8 +341,16 @@
                     <div style="flex:1;"><button id="btn_guardar_producto" onclick="guardarProductoSupabase()" class="btn-info" style="margin:0;">💾 CONSOLIDAR EN CATÁLOGO</button></div>
                     <div><button id="btn_cancelar_edit" onclick="limpiarFormProducto()" class="btn-danger" style="display:none; margin:0; padding: 12px 20px;">CANCELAR EDICIÓN</button></div>
                 </div>
+            </div>
+        </div>
 
-                <h3 style="margin-top:35px;">Catálogo Actual Registrado</h3>
+        <!-- 3. Historial de Mercancía -->
+        <div class="card" id="panel_historial">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📋 3. Historial de Catálogo Actual</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
                 <div class="grid-2" style="margin-bottom: 10px;">
                     <input type="text" id="buscar_gestion_prod" class="search-input" placeholder="🔍 Buscar producto..." oninput="renderTablaGestionProductos()">
                     <select id="orden_gestion_prod" class="search-input" onchange="renderTablaGestionProductos()">
@@ -411,6 +360,70 @@
                 <div style="overflow-x:auto;">
                     <table id="tabla_gestion_productos"></table>
                 </div>
+            </div>
+        </div>
+
+        <!-- 4. Recargas Telefónicas -->
+        <div class="card" id="panel_recargas">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📱 4. Recargas Telefónicas</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-2">
+                    <div>
+                        <label>Operadora:</label>
+                        <select id="form_recarga_op"><option value="Digitel">Digitel</option><option value="Movistar">Movistar</option><option value="Movilnet">Movilnet</option></select>
+                    </div>
+                    <div><label>Monto a Recargar (BS):</label><input type="number" step="0.01" id="form_recarga_monto"></div>
+                </div>
+                <div class="grid-2">
+                    <div><label>Cobranza Fija (BS):</label><input type="number" step="0.01" id="form_recarga_cobro"></div>
+                    <div><label>O % de Recargo automático:</label><input type="number" step="0.01" id="form_recarga_porcentaje"></div>
+                </div>
+                <button onclick="guardarRecarga()" class="btn-info">Añadir Plan Recarga</button>
+                <div style="overflow-x: auto;">
+                    <table id="tabla_gestion_recargas" style="margin-top:15px;"></table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 5. Planes de WiFi -->
+        <div class="card" id="panel_wifi">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📶 5. Planes de WiFi</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-2">
+                    <div>
+                        <label>Categoría:</label>
+                        <select id="form_wifi_cat"><option value="Eventual">Eventual</option><option value="Frecuente">Frecuente</option></select>
+                    </div>
+                    <div><label>Descripción del Tiempo:</label><input type="text" id="form_wifi_tiempo" placeholder="Ej: 1 Hora"></div>
+                </div>
+                <label>Costo de Cobranza ($):</label><input type="number" step="0.01" id="form_wifi_cobro">
+                <button onclick="guardarWifi()" class="btn-info">Añadir Plan Wifi</button>
+                <div style="overflow-x: auto;">
+                    <table id="tabla_gestion_wifi" style="margin-top:15px;"></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Fondo de Caja -->
+        <div class="card" id="panel_caja">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>🏦 6. Fondo de Caja Manual</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-4">
+                    <div><label>Fondo ($):</label><input type="number" step="0.01" id="caja_fondo_usd"></div>
+                    <div><label>Fondo (BS):</label><input type="number" step="0.01" id="caja_fondo_bs"></div>
+                    <div><label>Fondo (COP):</label><input type="number" id="caja_fondo_cop"></div>
+                    <div><label>Fondo (EUR):</label><input type="number" step="0.01" id="caja_fondo_eur"></div>
+                </div>
+                <button onclick="guardarFondoCaja()" class="btn-info">Guardar Parámetros de Fondo</button>
             </div>
         </div>
 
@@ -916,11 +929,17 @@
         document.getElementById('btn_guardar_producto').innerText = "💾 ACTUALIZAR REGISTRO";
         document.getElementById('btn_cancelar_edit').style.display = "block"; 
         
-        // Abrir la tarjeta si estaba cerrada
-        let cardProd = document.getElementById('btn_guardar_producto').closest('.card');
-        if(!cardProd.classList.contains('open')) cardProd.classList.add('open');
-
-        window.scrollTo({ top: cardProd.offsetTop - 70, behavior: 'smooth' });
+        // --- INTERACCIÓN INTELIGENTE ---
+        // Abrir el panel de Registro y navegar hacia él de forma suave
+        let panelRegistro = document.getElementById('panel_registro_mercancia');
+        if(!panelRegistro.classList.contains('open')) {
+            panelRegistro.classList.add('open');
+        }
+        
+        // Pequeño retraso para permitir que la animación CSS abra la tarjeta antes del scroll
+        setTimeout(() => {
+            panelRegistro.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
     }
 
     function limpiarFormProducto() { 
