@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Vendedores | Panel Premium</title>
+    <title>Gestión de Vendedores | Panel Administrativo</title>
     <!-- Librería Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Librería jsPDF nativa para generación de comprobantes -->
@@ -13,37 +13,32 @@
     
     <style>
         /* ========================================================= */
-        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
+        /* VARIABLES DE ESTILO PREMIUM CLONADAS DE PRINCIPAL         */
         /* ========================================================= */
         :root {
-            --topbar-bg: #050505; 
-            --sidebar-bg: #080808; 
+            --topbar-bg: #000000; 
+            --sidebar-bg: #000000; 
             --active-gold: #D4AF37; 
             
-            /* Paleta Carmesí Institucional */
-            --crimson: #7A171D;
-            --crimson-dark: #4A0E12; 
-            --crimson-light: #9B222A;
-
-            /* Base y texto */
-            --bg: #FDFBF7; 
-            --text: #2A2A2A; 
-            --text-light: #555555;
-            --border: #E8E0D5; 
-            --card-bg: #FFFFFF; 
-            --item-bg: #FCFBFA; 
-            
-            /* Estados Sólidos */
-            --success: #2E7D32; 
-            --warning: #B8860B; 
-            --danger: #8B0000;
-            --info: #2c3e50;
+            --bg: #fdfaf6; 
+            --primary: #3b0918; 
+            --secondary: #7c1126; 
+            --danger: #b30000; 
+            --success: #2ecc71; 
+            --warning: #f39c12; 
+            --info: #aa8c2c; 
+            --text: #222; 
+            --border: #d4af37; 
+            --card-bg: #ffffff; 
+            --item-bg: #f9f6f0; 
+            --muted: #666;
         }
 
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
@@ -51,106 +46,129 @@
         /* ========================================================= */
         /* BARRA SUPERIOR */
         /* ========================================================= */
-        .top-bar { 
-            background: var(--topbar-bg); color: white; height: 65px; padding: 0 15px; 
-            display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
-            border-bottom: 2px solid var(--active-gold); box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
-        }
-        .menu-toggle-btn { 
-            background: transparent; border: 1px solid var(--active-gold); color: var(--active-gold); 
-            font-size: 1.5rem; cursor: pointer; width: 42px; height: 42px; padding: 0; flex-shrink: 0;
-            border-radius: 6px; display: flex; align-items: center; justify-content: center; 
-            transition: all 0.3s; padding-bottom: 3px; line-height: 1;
-        }
-        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.15); box-shadow: inset 0 0 8px rgba(212,175,55,0.3); }
-        .top-bar-title { display: flex; align-items: center; gap: 10px; flex-grow: 1; overflow: hidden; white-space: nowrap; }
-        .local-name { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: bold; color: #FFFFFF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px; }
-        .badge-elegant {
-            font-size: 0.75rem; font-family: 'Roboto', sans-serif; font-weight: bold; 
-            background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
-            color: var(--active-gold); padding: 5px 12px; border-radius: 4px; 
-            letter-spacing: 1.5px; border: 1px solid var(--active-gold); text-transform: uppercase;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; flex-shrink: 1;
-        }
+        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.5); border-bottom: 2px solid var(--border); }
+        .menu-toggle-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border); color: var(--active-gold); font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.3); }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; font-family: 'Playfair Display', serif; }
 
         /* ========================================================= */
         /* MENÚ LATERAL */
         /* ========================================================= */
-        .sidebar { 
-            position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; 
-            background: var(--sidebar-bg); color: #E0E0E0; padding: 20px 15px; 
-            display: flex; flex-direction: column; gap: 4px; z-index: 1002; 
-            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            box-shadow: 5px 0 25px rgba(0,0,0,0.7); border-right: 1px solid var(--active-gold); overflow-y: auto; 
-        }
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 4px 0 15px rgba(0,0,0,0.6); overflow-y: auto; border-right: 2px solid var(--border); }
         .sidebar.open { left: 0; }
-        .sidebar-brand { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--active-gold); text-align: center; padding-bottom: 20px; border-bottom: 1px solid #222; margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
-        .sidebar .tab-btn { background: transparent; color: #CCCCCC; border: none; text-align: left; padding: 14px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s ease; }
-        .sidebar .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #FFF; border-left: 3px solid var(--active-gold); }
-        .sidebar .tab-btn.active { background: linear-gradient(90deg, #9D7B24, #5c4714) !important; color: #FFFFFF !important; font-weight: bold; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2); border-left: none; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(3px); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; }
-        .sidebar-overlay.active { display: block; opacity: 1; }
+        .sidebar-brand { font-size: 1.4rem; font-family: 'Playfair Display', serif; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 2px; color: var(--active-gold); text-transform: uppercase; }
+        .sidebar .tab-btn { background: none; color: #ddd; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s; border-left: 3px solid transparent; }
+        .sidebar .tab-btn:hover { background: rgba(212, 175, 55, 0.1); color: white; border-left: 3px solid var(--active-gold); }
+        .sidebar .tab-btn.active { background: linear-gradient(90deg, var(--active-gold) 0%, #aa8c2c 100%) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 1001; display: none; backdrop-filter: blur(2px); }
+        .sidebar-overlay.active { display: block; }
 
         /* ========================================================= */
         /* CONTENEDORES PRINCIPALES Y TARJETAS */
         /* ========================================================= */
-        .main-content { max-width: 1100px; margin: 0 auto; padding: 30px 20px; padding-bottom: 120px; }
+        .main-content { padding: 20px; padding-bottom: 130px; max-width: 1200px; margin: 0 auto; }
         .card { 
-            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
-            border-top: 4px solid var(--crimson); position: relative; overflow: hidden;
+            background: var(--card-bg); padding: 25px; border-radius: 4px; margin-bottom: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid var(--border);
+            position: relative; overflow: hidden;
         }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--secondary), var(--primary)); }
         
-        h2 { color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { 
+            color: var(--primary); margin-top: 0; font-size: 1.5rem; border-bottom: 1px solid var(--border); 
+            padding-bottom: 10px; text-align: center; font-family: 'Playfair Display', serif; 
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;
+        }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+        
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
         input, select { 
-            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; 
-            font-size: 1rem; background: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD; font-family: 'Roboto', sans-serif;
+            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 4px; 
+            font-size: 1rem; background: var(--item-bg); transition: all 0.3s ease; color: var(--text); border-left: 4px solid var(--border); font-family: 'Roboto', sans-serif;
         }
-        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
 
-        button { font-family: 'Roboto', sans-serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button { font-family: 'Playfair Display', serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
         button:active { transform: scale(0.98); }
         
-        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger { background: var(--danger); color: white; border: 1px solid var(--primary); }
         .btn-warning { background: var(--warning); color: #fff; }
-        .btn-success { background: linear-gradient(135deg, #1e8449, #2ecc71); color: white; border-bottom: 2px solid #1e8449; }
-        .btn-info { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border: 1px solid var(--active-gold); }
-        .btn-add { background: var(--item-bg); color: var(--crimson-dark); border: 1px solid var(--crimson-dark); width: auto; display: inline-block; padding: 10px 15px; }
-        .btn-add:hover { background: var(--crimson-dark); color: var(--active-gold); }
+        .btn-success { background: var(--success); color: white; border-bottom: 2px solid #1e8449; }
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-add { background: var(--item-bg); color: var(--primary); border: 1px solid var(--border); width: auto; display: inline-block; padding: 10px 15px; border-left: 4px solid var(--active-gold);}
+        .btn-add:hover { background: var(--primary); color: var(--active-gold); }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; background: var(--card-bg); }
-        th, td { border: 1px solid var(--border); padding: 12px; text-align: left; }
-        th { background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); font-family: 'Playfair Display', serif; letter-spacing: 1px; border-color: var(--active-gold); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; background: var(--card-bg); border: 1px solid var(--border); }
+        th, td { border: 1px solid rgba(212, 175, 55, 0.3); padding: 12px; text-align: left; }
+        th { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: var(--active-gold); font-family: 'Playfair Display', serif; letter-spacing: 1px; border-color: var(--active-gold); }
 
-        .employee-card { border: 1px solid var(--border); padding: 15px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); margin-bottom: 12px; border-radius: 6px; border-left: 4px solid var(--active-gold); box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: 0.3s; }
-        .employee-card:hover { box-shadow: 0 6px 15px rgba(0,0,0,0.06); transform: translateY(-1px); }
+        .employee-card { border: 1px solid rgba(212, 175, 55, 0.4); padding: 15px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); margin-bottom: 15px; border-radius: 4px; border-left: 4px solid var(--active-gold); box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: 0.3s; }
+        .employee-card:hover { box-shadow: 0 8px 20px rgba(124, 17, 38, 0.15); transform: translateY(-2px); border-color: var(--active-gold); }
 
-        /* MODALES */
+        /* ========================================================= */
+        /* MODALES LUXURY Y PANTALLAS DE BLOQUEO                     */
+        /* ========================================================= */
+        #loading_overlay, #pantalla_bloqueo_admin {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, rgba(124, 17, 38, 0.95), rgba(59, 9, 24, 0.99));
+            z-index: 1000000; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px); transition: opacity 0.5s ease;
+        }
+        
+        /* Modal General (Edición y Vista) */
         .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
-        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
-        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--crimson-dark); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
-        .modal-close-btn:hover { background: var(--crimson); transform: scale(1.05); color: #FFF; }
-        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--crimson-dark); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 4px; width: 90%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
+        .modal-close-btn:hover { background: var(--danger); transform: scale(1.05); color: #FFF; }
+        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
         #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
 
         .search-result-item { padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
         .search-result-item:hover { background: rgba(212, 175, 55, 0.1); border-left: 3px solid var(--active-gold); }
-        
-        /* BLOQUEO Y LOGIN */
-        #pantalla_bloqueo_admin, #login_overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, rgba(74, 14, 18, 0.95), rgba(5, 5, 5, 0.98)); backdrop-filter: blur(8px); z-index: 99999; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.4s ease-in-out; }
+
+        /* Estilos del Loading Modal */
+        .loading-box {
+            background: var(--card-bg); padding: 40px; border-radius: 4px;
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 2px solid var(--active-gold);
+            position: relative; max-width: 400px; width: 90%;
+        }
+        .loading-box::before, .loading-box::after { content: ''; position: absolute; width: 30px; height: 30px; border: 2px solid var(--active-gold); }
+        .loading-box::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .loading-box::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 4px solid rgba(212, 175, 55, 0.2);
+            border-left-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+
+        .loading-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .loading-subtitle { font-family: 'Roboto', sans-serif; font-size: 0.95rem; color: var(--muted); line-height: 1.5; }
+
+        /* Estilos Bloqueo PIN */
+        #pantalla_bloqueo_admin { display: none; z-index: 999999; }
     </style>
 </head>
 <body>
 
+<!-- MODAL DE CARGA INICIAL (LUXURY) -->
+<div id="loading_overlay">
+    <div class="loading-box">
+        <div class="spinner-luxury"></div>
+        <div class="loading-title">Sincronizando Módulo</div>
+        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Cargando registros de personal, auditorías y ventas...</div>
+    </div>
+</div>
+
 <!-- 🔒 PANTALLA DE BLOQUEO ADMIN LUXURY -->
-<div id="pantalla_bloqueo_admin" style="display: none;">
-    <div class="card" style="width: 380px; text-align: center; border-top: 4px solid var(--active-gold); margin: 0; box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: #FFFFFF;">
-        <h2 style="color: var(--crimson-dark); border-bottom-color: var(--active-gold);">🔒 Acceso Protegido</h2>
-        <p style="font-size: 0.95rem; color: var(--text-light); margin-bottom: 20px;">Introduce el PIN de Administrador o Supervisor del Sistema:</p>
+<div id="pantalla_bloqueo_admin">
+    <div class="loading-box" style="padding: 30px;">
+        <h2 style="color: var(--primary); border-bottom-color: var(--active-gold); font-size: 1.3rem;">🔒 ACCESO PROTEGIDO</h2>
+        <p style="font-size: 0.95rem; color: var(--muted); margin-bottom: 20px; font-family:'Roboto', sans-serif;">Introduce el PIN de Administrador o Supervisor del Sistema:</p>
         
         <div style="position: relative; margin-bottom: 20px;">
             <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace;" onkeyup="if(event.key==='Enter') verificarPinBody()">
@@ -159,24 +177,12 @@
 
         <div id="mensaje_carga_pin" style="display: none; color: var(--success); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; font-family: 'Playfair Display', serif;">⏳ Desbloqueando módulo...</div>
 
-        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">Desbloquear Pantalla</button>
-        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">Volver al Inicio</button>
+        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">AUTENTICAR</button>
+        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">VOLVER AL INICIO</button>
     </div>
 </div>
 
-<!-- LOGIN SUPABASE LUXURY -->
-<div id="login_overlay">
-    <div class="card" style="width: 380px; text-align: center; border-top: 4px solid var(--active-gold); margin: 0; box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: #FFFFFF;">
-        <h2 style="color: var(--crimson-dark); border-bottom: none; margin-bottom: 5px;">Módulo Empresarial</h2>
-        <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 20px; font-family: 'Playfair Display', serif; font-style: italic;">Acceso a Gestión de Vendedores</p>
-        
-        <input type="email" id="login_email" placeholder="Correo electrónico" style="margin-bottom:12px;">
-        <input type="password" id="login_pass" placeholder="Contraseña" style="margin-bottom:20px;" onkeyup="if(event.key==='Enter') iniciarSesion()">
-        <button class="btn-info" onclick="iniciarSesion()" style="padding:14px; font-size:1rem; letter-spacing: 1px;">Ingresar al Sistema</button>
-    </div>
-</div>
-
-<!-- MODAL GLOBAL -->
+<!-- MODAL GLOBAL PARA EDICIONES -->
 <div id="global_modal" class="custom-modal-overlay">
     <div class="custom-modal-box">
         <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
@@ -190,13 +196,13 @@
 	<!-- BARRA SUPERIOR -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        <div class="top-bar-title" id="main_top_title">Panel Administrativo</div>
     </div>
 
     <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú Ejecutivo</div>
+        <div class="sidebar-brand">MENÚ CENTRAL</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -222,11 +228,11 @@
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
         <div class="card">
-            <h2>🧑‍💼 Registro de Empleados y Cierres</h2>
-            <p style="font-size:0.9rem; color:var(--text-light); margin-bottom: 20px;">Gestione el equipo de ventas, supervise los lotes y asigne roles y accesos.</p>
+            <h2>Gestión de Personal y Auditoría</h2>
+            <p style="font-size:0.95rem; color:var(--muted); margin-bottom: 25px; text-align: center; font-family:'Playfair Display', serif; font-style:italic;">Gestione el equipo de ventas, supervise cierres de caja y asigne privilegios de sistema.</p>
             
-            <button onclick="abrirModalNuevoEmpleado()" class="btn-add" style="width:100%; margin-bottom:20px; font-size: 1.05rem;">+ Añadir Vendedor Nuevo</button>
-            <input type="text" id="buscar_empleado" placeholder="🔍 Buscar empleado por nombre..." oninput="renderEmpleados()" style="margin-bottom:20px; font-size: 1.05rem;">
+            <button onclick="abrirModalNuevoEmpleado()" class="btn-info" style="width:100%; margin-bottom:20px; font-size: 1.05rem;">+ AÑADIR NUEVO VENDEDOR</button>
+            <input type="text" id="buscar_empleado" placeholder="🔍 Buscar por nombre o cédula..." oninput="renderEmpleados()" style="margin-bottom:20px; font-size: 1rem;">
             <div id="lista_empleados_container"></div>
         </div>
     </div>
@@ -248,25 +254,90 @@
     window.loteEditDetallesTmp = [];
 
     window.addEventListener('DOMContentLoaded', async () => {
-        await precargarConfiguracionSistema();
-
-        const { data } = await supabaseClient.auth.getSession();
-        if (data && data.session) {
-            await sincronizarSesion(data.session.user.id);
-        } else {
-            document.getElementById('login_overlay').style.display = 'flex';
+        // Redirección y carga segura inicial
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (data && data.session) {
+                await sincronizarSesion(data.session.user.id);
+            } else {
+                // Si no hay sesión, se devuelve a index directamente
+                window.location.href = 'index.html';
+            }
+        } catch(e) {
+            console.error("Fallo crítico de sesión", e);
+            window.location.href = 'index.html';
         }
     });
 
-    async function precargarConfiguracionSistema() {
+    async function sincronizarSesion(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        } else {
+            let { data: localesList } = await supabaseClient.from('locales').select('id, nombre').limit(1);
+            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        }
+
+        let conf = null, localData = null;
         try {
-            let { data: localesList } = await supabaseClient.from('locales').select('id').limit(1);
-            if (localesList && localesList.length > 0) {
-                CURRENT_LOCAL_ID = localesList[0].id;
-                let { data: conf } = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
-                if (conf) CONFIG_GLOBAL = conf;
-            }
-        } catch(e) { console.error("Error precargando configuraciones:", e); }
+            let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+            conf = resConf.data;
+        } catch(e) { console.warn("Sin configuración"); }
+
+        try {
+            let resLocal = await supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+            localData = resLocal.data;
+        } catch(e) { console.warn("Sin local"); }
+
+        if (conf) {
+            CONFIG_GLOBAL = conf;
+        }
+
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Empresarial';
+        let etiquetaModulo = "VENDEDORES"; 
+
+        document.getElementById('main_top_title').innerHTML = `
+            🏪 ${nombreLocal} 
+            <span style="font-size:0.75rem; font-family: 'Roboto', sans-serif; font-weight:bold; background: linear-gradient(90deg, var(--active-gold), #aa8c2c); color: #000; padding: 4px 10px; border-radius: 4px; margin-left: 15px; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-transform: uppercase;">
+                📌 ${etiquetaModulo}
+            </span>
+        `;
+        
+        // Cargar todos los datos
+        await cargarDatosServidor();
+
+        // Flujo UI: Ocultar carga -> Mostrar Bloqueo
+        setTimeout(() => {
+            document.getElementById('loading_overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading_overlay').style.display = 'none';
+                document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
+                document.getElementById('pin_ingreso_body').focus();
+            }, 500);
+        }, 800);
+    }
+
+    async function cargarDatosServidor() {
+        if(!CURRENT_LOCAL_ID) return;
+        const [resEmp, resCat, resLotes] = await Promise.all([
+            supabaseClient.from('empleados').select('*').eq('local_id', CURRENT_LOCAL_ID),
+            supabaseClient.from('catalogo').select('*'),
+            supabaseClient.from('lotes_diarios').select('*').eq('local_id', CURRENT_LOCAL_ID)
+        ]);
+
+        if(resEmp.data) {
+            EMPLEADOS = resEmp.data.sort((a,b) => (a.nombre + " " + a.apellido).localeCompare(b.nombre + " " + b.apellido));
+        }
+
+        if(resCat.data) CATALOGO = resCat.data;
+        if(resLotes.data) LOTES_GENERAL = resLotes.data;
+
+        renderEmpleados();
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('active');
     }
 
     function toggleVerPin() {
@@ -293,7 +364,7 @@
     async function verificarPinBody() {
         let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
         let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
-        let supervisorValido = EMPLEADOS.some(e => e.pin_acceso === pinIngresado || e.pin === pinIngresado);
+        let supervisorValido = EMPLEADOS.some(e => (e.rol === 'Administrador' || e.rol === 'Supervisor') && (e.pin_acceso === pinIngresado || e.pin === pinIngresado));
 
         if (pinIngresado === pinReal || supervisorValido) {
             document.getElementById('btn_desbloquear_pin').style.display = 'none';
@@ -302,8 +373,11 @@
             
             setTimeout(() => {
                 let pantalla = document.getElementById('pantalla_bloqueo_admin');
-                pantalla.style.animation = 'fadeIn 0.4s reverse';
-                setTimeout(() => { pantalla.style.display = 'none'; }, 300);
+                pantalla.style.opacity = '0';
+                pantalla.style.transition = 'opacity 0.4s ease';
+                setTimeout(() => { pantalla.style.display = 'none'; }, 400);
+                
+                // Reset states for next time
                 document.getElementById('btn_desbloquear_pin').style.display = 'block';
                 document.getElementById('btn_volver_pin').style.display = 'block';
                 document.getElementById('mensaje_carga_pin').style.display = 'none';
@@ -312,86 +386,16 @@
                 document.getElementById('icono_ojo_pin').innerText = '👁️';
             }, 800);
         } else {
-            alert("❌ PIN Incorrecto. Autorización denegada.");
+            alert("❌ PIN Incorrecto. Acceso Restringido.");
             document.getElementById('pin_ingreso_body').value = '';
         }
-    }
-
-    async function iniciarSesion() {
-        const email = document.getElementById('login_email').value.trim();
-        const pass = document.getElementById('login_pass').value.trim();
-        if(!email || !pass) return alert("Ingrese correo y contraseña.");
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
-        if (error) return alert("Error de acceso: " + error.message);
-        window.location.reload();
-    }
-
-    async function sincronizarSesion(userId) {
-        document.getElementById('login_overlay').style.display = 'none';
-        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
-        if (perfil && perfil.local_id) {
-            CURRENT_LOCAL_ID = perfil.local_id;
-        }
-
-        let conf = null, localData = null;
-        try {
-            let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
-            conf = resConf.data;
-        } catch(e) { console.warn("Sin configuración"); }
-
-        try {
-            let resLocal = await supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
-            localData = resLocal.data;
-        } catch(e) { console.warn("Sin local"); }
-
-        if (conf) {
-            CONFIG_GLOBAL = conf;
-        }
-
-        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Empresarial';
-        let etiquetaModulo = "Vendedores"; 
-
-        document.getElementById('main_top_title').innerHTML = `
-            <span class="local-name">🏪 ${nombreLocal}</span>
-            <span class="badge-elegant">📌 ${etiquetaModulo}</span>
-        `;
-        
-        document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
-        document.getElementById('pin_ingreso_body').focus();
-
-        await cargarDatosServidor();
-    }
-
-    async function cargarDatosServidor() {
-        if(!CURRENT_LOCAL_ID) return;
-        const [resEmp, resCat, resConf, resLotes] = await Promise.all([
-            supabaseClient.from('empleados').select('*').eq('local_id', CURRENT_LOCAL_ID),
-            supabaseClient.from('catalogo').select('*'),
-            supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single(),
-            supabaseClient.from('lotes_diarios').select('*').eq('local_id', CURRENT_LOCAL_ID)
-        ]);
-
-        if(resEmp.data) {
-            EMPLEADOS = resEmp.data.sort((a,b) => (a.nombre + " " + a.apellido).localeCompare(b.nombre + " " + b.apellido));
-        }
-
-        if(resCat.data) CATALOGO = resCat.data;
-        if(resConf.data) CONFIG_GLOBAL = resConf.data;
-        if(resLotes.data) LOTES_GENERAL = resLotes.data;
-
-        renderEmpleados();
-    }
-
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('sidebar-overlay').classList.toggle('active');
     }
 
     function renderEmpleados() {
         let q = document.getElementById('buscar_empleado').value.toLowerCase();
         let html = "";
 
-        EMPLEADOS.filter(e => (e.nombre + " " + e.apellido).toLowerCase().includes(q)).forEach(emp => {
+        EMPLEADOS.filter(e => (e.nombre + " " + e.apellido + " " + (e.cedula||"")).toLowerCase().includes(q)).forEach(emp => {
             let lotesEmp = LOTES_GENERAL.filter(l => l.vendedor_id === emp.id);
             let totalCierres = lotesEmp.length;
             let totalVenta = lotesEmp.reduce((acc, l) => acc + (parseFloat(l.total_vendido_usd) || 0), 0);
@@ -402,42 +406,42 @@
             <div class="employee-card">
                 <div style="flex: 1;">
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 5px;">
-                        <strong style="font-size:1.15rem; color:var(--crimson-dark); font-family: 'Playfair Display', serif;">${emp.nombre} ${emp.apellido}</strong>
-                        <span style="background: rgba(212, 175, 55, 0.15); color: var(--crimson-dark); font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 4px; border: 1px solid var(--active-gold); text-transform: uppercase;">📌 ${emp.rol || 'Cajero'}</span>
+                        <strong style="font-size:1.15rem; color:var(--primary); font-family: 'Playfair Display', serif;">${emp.nombre} ${emp.apellido}</strong>
+                        <span style="background: rgba(212, 175, 55, 0.15); color: var(--primary); font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 4px; border: 1px solid var(--active-gold); text-transform: uppercase;">📌 ${emp.rol || 'Cajero'}</span>
                     </div>
-                    <small style="color: var(--text-light);">C.I: ${emp.cedula || 'N/A'} | Tel: ${emp.telefono || 'N/A'}</small><br>
-                    <div style="margin-top:10px; font-size:0.9rem; display:flex; flex-wrap:wrap; gap:15px;">
-                        <span style="background: var(--bg); padding: 5px 10px; border-radius: 4px; border: 1px solid #EEE;">📦 Cierres: <strong>${totalCierres}</strong></span>
-                        <span style="background: var(--bg); padding: 5px 10px; border-radius: 4px; border: 1px solid #EEE;">💵 Venta: <strong style="color:var(--info);">$${formatearNumero(totalVenta)}</strong></span>
-                        <span style="background: var(--bg); padding: 5px 10px; border-radius: 4px; border: 1px solid #EEE;">📈 Capital: <strong style="color:var(--warning);">$${formatearNumero(totalCapital)}</strong></span>
-                        <span style="background: var(--bg); padding: 5px 10px; border-radius: 4px; border: 1px solid #EEE;">💰 Ganancia: <strong style="color:var(--success);">$${formatearNumero(totalGanancia)}</strong></span>
+                    <small style="color: var(--muted); font-family:'Roboto', sans-serif;">C.I: ${emp.cedula || 'N/A'} | Tel: ${emp.telefono || 'N/A'}</small><br>
+                    <div style="margin-top:10px; font-size:0.9rem; display:flex; flex-wrap:wrap; gap:10px; font-family:'Roboto', sans-serif;">
+                        <span style="background: var(--item-bg); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border);">📦 Cierres: <strong style="color:var(--text);">${totalCierres}</strong></span>
+                        <span style="background: var(--item-bg); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border);">💵 Venta: <strong style="color:var(--primary);">$${formatearNumero(totalVenta)}</strong></span>
+                        <span style="background: var(--item-bg); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border);">📈 Capital: <strong style="color:var(--warning);">$${formatearNumero(totalCapital)}</strong></span>
+                        <span style="background: var(--item-bg); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border);">💰 Ganancia: <strong style="color:var(--success);">$${formatearNumero(totalGanancia)}</strong></span>
                     </div>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end; margin-left: 15px;">
+                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end; margin-left: 15px; min-width: 140px;">
                     <div style="display:flex; gap:6px; width: 100%;">
                         <button class="btn-add" style="padding:8px 12px; margin:0; flex:1; font-size:0.85rem;" onclick="editarEmpleado('${emp.id}')">✏️ Editar</button>
                         <button class="btn-danger" style="padding:8px 12px; margin:0; width: auto; font-size:0.85rem;" onclick="eliminarEmpleado('${emp.id}')">🗑️</button>
                     </div>
-                    <button class="btn-info" style="padding:10px 15px; margin:0; width:100%; font-weight:bold; font-size:0.9rem; letter-spacing: 0.5px;" onclick="verVentasEmpleado('${emp.id}', '${emp.nombre} ${emp.apellido}')">📊 Ver Ventas / Lotes</button>
+                    <button class="btn-info" style="padding:10px; margin:0; width:100%; font-size:0.85rem;" onclick="verVentasEmpleado('${emp.id}', '${emp.nombre} ${emp.apellido}')">📊 AUDITORÍA</button>
                 </div>
             </div>`;
         });
 
-        document.getElementById('lista_empleados_container').innerHTML = html || '<p style="text-align:center; color:var(--muted); padding: 20px; font-style: italic;">No hay vendedores registrados.</p>';
+        document.getElementById('lista_empleados_container').innerHTML = html || '<p style="text-align:center; color:var(--muted); padding: 20px; font-style: italic; font-family:\'Playfair Display\', serif;">No se encontraron registros activos en el sistema.</p>';
     }
 
     function abrirModalNuevoEmpleado() {
-        abrirModalGlobal("Añadir Vendedor Nuevo", `
+        abrirModalGlobal("Registrar Nuevo Colaborador", `
             <div class="grid-2">
-                <div><label>Nombre:</label><input type="text" id="emp_nombre" placeholder="Nombre"></div>
-                <div><label>Apellido:</label><input type="text" id="emp_apellido" placeholder="Apellido"></div>
+                <div><label>Nombre:</label><input type="text" id="emp_nombre" placeholder="Nombres"></div>
+                <div><label>Apellido:</label><input type="text" id="emp_apellido" placeholder="Apellidos"></div>
             </div>
             <div class="grid-2">
-                <div><label>Cédula:</label><input type="text" id="emp_cedula" placeholder="V-12345678"></div>
-                <div><label>Teléfono:</label><input type="text" id="emp_telefono" placeholder="0412..."></div>
+                <div><label>Identidad (C.I):</label><input type="text" id="emp_cedula" placeholder="V-0000000"></div>
+                <div><label>Contacto:</label><input type="text" id="emp_telefono" placeholder="0412..."></div>
             </div>
             <div class="grid-2">
-                <div><label>Rol / Cargo:</label>
+                <div><label>Asignación de Rol:</label>
                     <select id="emp_rol">
                         <option value="Cajero">Cajero</option>
                         <option value="Vendedor">Vendedor</option>
@@ -446,14 +450,14 @@
                     </select>
                 </div>
                 <div>
-                    <label>PIN de Acceso (4-6 Dígitos):</label>
+                    <label>PIN de Acceso Seguro:</label>
                     <div style="position: relative;">
                         <input type="password" id="emp_pin" placeholder="0000" maxlength="6" style="padding-right: 40px; text-align: center; font-weight: bold; letter-spacing: 4px;">
                         <span onclick="togglePinModal('emp_pin', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem;" title="Ver/Ocultar PIN">👁️</span>
                     </div>
                 </div>
             </div>
-            <button onclick="guardarEmpleadoNuevo()" class="btn-success" style="margin-top:25px; padding: 15px; font-size: 1.05rem;">💾 Guardar Vendedor</button>
+            <button onclick="guardarEmpleadoNuevo()" class="btn-info" style="margin-top:25px; padding: 15px; font-size: 1.05rem;">💾 CONSOLIDAR REGISTRO</button>
         `);
     }
 
@@ -465,17 +469,17 @@
         let rol = document.getElementById('emp_rol').value;
         let pin = document.getElementById('emp_pin').value.trim() || '0000';
 
-        if(!nombre || !apellido || !cedula) return alert("Nombre, apellido y cédula son obligatorios.");
+        if(!nombre || !apellido || !cedula) return alert("Datos de identidad requeridos.");
 
-        mostrarModalLocal("Guardando", "Registrando vendedor en la base de datos...");
+        mostrarModalLocal("Registrando", "Procesando inclusión en nómina...");
         let { error } = await supabaseClient.from('empleados').insert([{
             local_id: CURRENT_LOCAL_ID, nombre, apellido, cedula, telefono, rol, pin_acceso: pin,
             prestamos_deudas: 0, historial: []
         }]);
 
-        if(error) { cerrarModalGlobal(); return alert("Error: " + error.message); }
+        if(error) { cerrarModalGlobal(); return alert("Fallo de sistema: " + error.message); }
         await cargarDatosServidor();
-        cerrarModalGlobal(); alert("✅ Vendedor registrado con éxito.");
+        cerrarModalGlobal(); alert("✅ Expediente creado satisfactoriamente.");
     }
 
     function editarEmpleado(id) {
@@ -484,18 +488,18 @@
 
         let rolActual = emp.rol || 'Cajero';
 
-        abrirModalGlobal("Modificar Vendedor", `
+        abrirModalGlobal("Actualización de Ficha", `
             <input type="hidden" id="edit_emp_id" value="${emp.id}">
             <div class="grid-2">
-                <div><label>Nombre:</label><input type="text" id="emp_nombre" value="${emp.nombre}"></div>
-                <div><label>Apellido:</label><input type="text" id="emp_apellido" value="${emp.apellido}"></div>
+                <div><label>Nombres:</label><input type="text" id="emp_nombre" value="${emp.nombre}"></div>
+                <div><label>Apellidos:</label><input type="text" id="emp_apellido" value="${emp.apellido}"></div>
             </div>
             <div class="grid-2">
-                <div><label>Cédula:</label><input type="text" id="emp_cedula" value="${emp.cedula || ''}"></div>
-                <div><label>Teléfono:</label><input type="text" id="emp_telefono" value="${emp.telefono || ''}"></div>
+                <div><label>Identidad (C.I):</label><input type="text" id="emp_cedula" value="${emp.cedula || ''}"></div>
+                <div><label>Contacto:</label><input type="text" id="emp_telefono" value="${emp.telefono || ''}"></div>
             </div>
             <div class="grid-2">
-                <div><label>Rol / Cargo:</label>
+                <div><label>Asignación de Rol:</label>
                     <select id="emp_rol">
                         <option value="Cajero" ${rolActual === 'Cajero' ? 'selected' : ''}>Cajero</option>
                         <option value="Vendedor" ${rolActual === 'Vendedor' ? 'selected' : ''}>Vendedor</option>
@@ -504,14 +508,14 @@
                     </select>
                 </div>
                 <div>
-                    <label>PIN de Acceso:</label>
+                    <label>PIN de Acceso Seguro:</label>
                     <div style="position: relative;">
                         <input type="password" id="emp_pin" value="${emp.pin_acceso || emp.pin || ''}" placeholder="0000" maxlength="6" style="padding-right: 40px; text-align: center; font-weight: bold; letter-spacing: 4px;">
                         <span onclick="togglePinModal('emp_pin', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem;" title="Ver/Ocultar PIN">👁️</span>
                     </div>
                 </div>
             </div>
-            <button onclick="actualizarEmpleadoSupabase()" class="btn-success" style="margin-top:25px; padding: 15px; font-size: 1.05rem;">💾 Guardar Cambios</button>
+            <button onclick="actualizarEmpleadoSupabase()" class="btn-info" style="margin-top:25px; padding: 15px; font-size: 1.05rem;">💾 GUARDAR MODIFICACIONES</button>
         `);
     }
 
@@ -524,65 +528,65 @@
         let rol = document.getElementById('emp_rol').value;
         let pin = document.getElementById('emp_pin').value.trim();
 
-        if(!nombre || !apellido || !cedula) return alert("Campos obligatorios vacíos.");
+        if(!nombre || !apellido || !cedula) return alert("Parámetros incompletos.");
 
-        mostrarModalLocal("Actualizando", "Sincronizando cambios...");
+        mostrarModalLocal("Actualizando", "Sincronizando modificaciones en la base de datos...");
         let { error } = await supabaseClient.from('empleados').update({
             nombre, apellido, cedula, telefono, rol, pin_acceso: pin
         }).eq('id', id);
 
-        if(error) { cerrarModalGlobal(); return alert("Error: " + error.message); }
+        if(error) { cerrarModalGlobal(); return alert("Fallo de sistema: " + error.message); }
         await cargarDatosServidor();
-        cerrarModalGlobal(); alert("✅ Vendedor actualizado con éxito.");
+        cerrarModalGlobal(); alert("✅ Ficha actualizada correctamente.");
     }
 
     async function eliminarEmpleado(id) {
-        if(!confirm("⚠️ ¿Estás seguro de eliminar este vendedor?")) return;
-        mostrarModalLocal("Eliminando", "Borrando vendedor...");
+        if(!confirm("⚠️ Acción Restringida: ¿Confirma la remoción permanente de este expediente del sistema?")) return;
+        mostrarModalLocal("Eliminando", "Depurando registro corporativo...");
         let { error } = await supabaseClient.from('empleados').delete().eq('id', id);
-        if(error) { cerrarModalGlobal(); return alert("Error: " + error.message); }
+        if(error) { cerrarModalGlobal(); return alert("Error en depuración: " + error.message); }
         await cargarDatosServidor();
-        cerrarModalGlobal(); alert("✅ Vendedor eliminado.");
+        cerrarModalGlobal(); alert("✅ Remoción completada.");
     }
 
     async function verVentasEmpleado(empId, empNombre) {
-        mostrarModalLocal("Consultando", "Buscando historial de lotes y ventas...");
+        mostrarModalLocal("Auditoría", "Extrayendo histórico comercial...");
         let { data: lotes, error } = await supabaseClient.from('lotes_diarios').select('*').eq('vendedor_id', empId).eq('local_id', CURRENT_LOCAL_ID).order('creado_en', { ascending: false });
         cerrarModalGlobal();
 
-        if(error) return alert("Error al consultar ventas: " + error.message);
-        if(!lotes || lotes.length === 0) return abrirModalGlobal(`Ventas de ${empNombre}`, "<p style='text-align:center; color:var(--muted); margin-top:20px; font-style:italic;'>No hay ventas registradas para este vendedor.</p>");
+        if(error) return alert("Fallo de consulta: " + error.message);
+        if(!lotes || lotes.length === 0) return abrirModalGlobal(`Auditoría de: ${empNombre}`, "<p style='text-align:center; color:var(--muted); margin-top:20px; font-style:italic;'>El expediente no posee movimientos comerciales asociados.</p>");
 
-        let html = `<p style="font-size:0.9rem; color:var(--text-light); margin-bottom: 15px;">Listado completo de turnos y lotes cerrados. Haga clic en PDF para generar un comprobante.</p>
-        <div style="max-height:60vh; overflow-y:auto; border: 1px solid var(--border); border-radius: 6px;">
+        let html = `<p style="font-size:0.9rem; color:var(--muted); margin-bottom: 15px;">Listado consolidado de lotes y cierres de caja. Genere comprobantes para detalle granular.</p>
+        <div style="max-height:60vh; overflow-y:auto; border: 1px solid var(--border); border-radius: 4px;">
         <table style="width:100%; font-size:0.9rem; margin:0;">
-            <tr><th style="border:none;">Fecha / Turno</th><th style="border:none;">Total Venta</th><th style="border:none;">Ganancia</th><th style="text-align:center; border:none;">Opciones</th></tr>`;
+            <tr><th style="border:none;">Período / Turno</th><th style="border:none;">Liquidación Base</th><th style="border:none;">Rendimiento</th><th style="text-align:center; border:none;">Controles</th></tr>`;
 
         lotes.forEach((l, i) => {
-            let bg = i % 2 === 0 ? "var(--white)" : "var(--item-bg)";
+            let bg = i % 2 === 0 ? "var(--card-bg)" : "var(--item-bg)";
             html += `
-            <tr style="background: ${bg}; border-bottom: 1px solid var(--border);">
-                <td style="padding: 12px;"><strong>${l.fecha}</strong><br><small style="color:var(--muted)">${l.turno || 'N/A'}</small></td>
-                <td style="padding: 12px; color:var(--info); font-weight:bold;">$${formatearNumero(l.total_vendido_usd)}</td>
+            <tr style="background: ${bg}; border-bottom: 1px solid rgba(212, 175, 55, 0.3);">
+                <td style="padding: 12px; font-family:'Roboto',sans-serif;"><strong>${l.fecha}</strong><br><small style="color:var(--muted)">${l.turno || 'N/A'}</small></td>
+                <td style="padding: 12px; color:var(--primary); font-weight:bold;">$${formatearNumero(l.total_vendido_usd)}</td>
                 <td style="padding: 12px; color:var(--success); font-weight:bold;">$${formatearNumero(l.ganancia_neta)}</td>
                 <td style="padding: 12px; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; align-items:center;">
-                    <button class="btn-add" style="padding:6px 10px; font-size:0.8rem; margin:0;" onclick="verDetallesLote('${l.id}')">👁️ Ver</button>
-                    <button class="btn-warning" style="padding:6px 10px; font-size:0.8rem; margin:0; background:var(--active-gold); border-color:var(--active-gold); color:#000;" onclick="descargarPDFLote('${l.id}')">📄 PDF</button>
-                    <button class="btn-success" style="padding:6px 10px; font-size:0.8rem; margin:0; border:none;" onclick="editarLoteVenta('${l.id}')">✏️ Editar</button>
+                    <button class="btn-add" style="padding:6px 10px; font-size:0.8rem; margin:0;" onclick="verDetallesLote('${l.id}')">👁️ Examinar</button>
+                    <button class="btn-info" style="padding:6px 10px; font-size:0.8rem; margin:0; border-color:var(--active-gold);" onclick="descargarPDFLote('${l.id}')">📄 PDF</button>
+                    <button class="btn-warning" style="padding:6px 10px; font-size:0.8rem; margin:0; border:none;" onclick="editarLoteVenta('${l.id}')">✏️ Editar</button>
                     <button class="btn-danger" style="padding:6px 10px; font-size:0.8rem; margin:0;" onclick="eliminarLoteSupabase('${l.id}')">🗑️</button>
                 </td>
             </tr>`;
         });
         html += `</table></div>`;
-        abrirModalGlobal(`Historial de Ventas: ${empNombre}`, html);
+        abrirModalGlobal(`Resumen de Auditoría: ${empNombre}`, html);
     }
 
     async function verDetallesLote(loteId) {
-        mostrarModalLocal("Cargando", "Buscando detalles del lote...");
+        mostrarModalLocal("Extrayendo", "Consolidando facturación granular...");
         let { data: detalle } = await supabaseClient.from('detalle_ventas').select('*, catalogo(*)').eq('lote_id', loteId);
         let { data: lote } = await supabaseClient.from('lotes_diarios').select('*').eq('id', loteId).single();
         cerrarModalGlobal();
-        if(!detalle) return alert("Error cargando detalles.");
+        if(!detalle) return alert("Fallo al consolidar los registros detallados.");
 
         detalle.sort((a, b) => {
             let nameA = limpiarNombre(a.catalogo?.nombre || '').toLowerCase();
@@ -592,34 +596,34 @@
 
         let trs = ""; let totalCant = 0; let totalUsd = 0;
         detalle.forEach(d => {
-            let pNom = d.catalogo ? d.catalogo.nombre : 'Producto';
+            let pNom = d.catalogo ? d.catalogo.nombre : 'Clave de Producto';
             let precioUnit = d.cantidad > 0 ? (d.subtotal_usd / d.cantidad) : 0;
             totalCant += d.cantidad; totalUsd += d.subtotal_usd;
-            trs += `<tr><td style="font-family:'Playfair Display', serif;">${limpiarNombre(pNom)}</td><td style="text-align:center;">${d.cantidad}</td><td style="text-align:right;">$${formatearNumero(precioUnit)}</td><td style="text-align:right; font-weight:bold;">$${formatearNumero(d.subtotal_usd)}</td></tr>`;
+            trs += `<tr><td style="font-family:'Playfair Display', serif;">${limpiarNombre(pNom)}</td><td style="text-align:center;">${d.cantidad}</td><td style="text-align:right;">$${formatearNumero(precioUnit)}</td><td style="text-align:right; font-weight:bold; color:var(--primary);">$${formatearNumero(d.subtotal_usd)}</td></tr>`;
         });
 
         let html = `
-            <div style="margin-bottom:12px; font-size:0.9rem; text-align:left; background:var(--item-bg); padding:12px; border-radius:6px; border:1px solid var(--border);">
-                <p style="margin:3px 0;"><strong>Fecha del Lote:</strong> ${lote.fecha}</p>
-                <p style="margin:3px 0;"><strong>Turno Operativo:</strong> ${lote.turno}</p>
+            <div style="margin-bottom:12px; font-size:0.95rem; text-align:left; background:var(--item-bg); padding:15px; border-radius:4px; border:1px solid var(--border); font-family:'Playfair Display', serif;">
+                <p style="margin:3px 0; color:var(--primary);"><strong>Fecha Fiscal:</strong> ${lote.fecha}</p>
+                <p style="margin:3px 0; color:var(--primary);"><strong>Turno de Ejecución:</strong> ${lote.turno}</p>
             </div>
-            <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden; max-height:40vh; overflow-y:auto;">
+            <div style="border: 1px solid var(--border); border-radius: 4px; overflow: hidden; max-height:40vh; overflow-y:auto;">
                 <table style="width:100%; font-size:0.9rem; margin:0;">
-                    <tr><th style="border:none;">Producto</th><th style="text-align:center; border:none;">Cant</th><th style="text-align:right; border:none;">P. Unit</th><th style="text-align:right; border:none;">Subtotal</th></tr>
+                    <tr><th style="border:none;">Mercancía</th><th style="text-align:center; border:none;">Vol.</th><th style="text-align:right; border:none;">Cotización</th><th style="text-align:right; border:none;">Monto Total</th></tr>
                     ${trs}
-                    <tr style="font-weight:bold; background:var(--item-bg);"><td colspan="2" style="text-align:right; font-family:'Playfair Display', serif; color:var(--crimson-dark);">Total General:</td><td style="text-align:center;">${totalCant}</td><td style="text-align:right; color:var(--success); font-size: 1.1rem;">$${formatearNumero(totalUsd)}</td></tr>
+                    <tr style="font-weight:bold; background:var(--item-bg);"><td colspan="2" style="text-align:right; font-family:'Playfair Display', serif; color:var(--primary); font-size:1.05rem;">CONSOLIDADO FINAL:</td><td style="text-align:center; color:var(--text);">${totalCant}</td><td style="text-align:right; color:var(--success); font-size: 1.15rem;">$${formatearNumero(totalUsd)}</td></tr>
                 </table>
             </div>
         `;
-        abrirModalGlobal("Detalle de Venta", html);
+        abrirModalGlobal("Facturación Granular", html);
     }
 
     async function editarLoteVenta(loteId) {
-        mostrarModalLocal("Cargando", "Abriendo editor inteligente...");
+        mostrarModalLocal("Análisis de Modificación", "Habilitando visor de edición inteligente...");
         let { data: detalle } = await supabaseClient.from('detalle_ventas').select('*, catalogo(*)').eq('lote_id', loteId);
         let { data: lote } = await supabaseClient.from('lotes_diarios').select('*').eq('id', loteId).single();
         cerrarModalGlobal();
-        if(!detalle) return alert("Error cargando detalles.");
+        if(!detalle) return alert("Fallo de infraestructura en despliegue de detalles.");
 
         detalle.sort((a, b) => {
             let nameA = limpiarNombre(a.catalogo?.nombre || '').toLowerCase();
@@ -650,30 +654,30 @@
         if (conteoCaja > conteoVenta) modoDetectado = 'caja';
 
         let html = `
-            <p style="font-size:0.85rem; color:var(--warning); margin-bottom:12px; font-weight: bold;">
-                ⚠️ Cualquier producto que dejes en cantidad 0 será reingresado a tu inventario. Si agregas, se restará automáticamente.
+            <p style="font-size:0.85rem; color:var(--primary); margin-bottom:12px; font-weight: bold; padding: 10px; background: rgba(212, 175, 55, 0.15); border-left: 4px solid var(--primary);">
+                ⚠️ ATENCIÓN: Las alteraciones volumétricas en el lote impactarán directamente el Inventario Físico (Retorno/Descuento de Stock).
             </p>
             
-            <div id="contenedor_tabla_edicion_lote" style="max-height:40vh; overflow-y:auto; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 6px;"></div>
+            <div id="contenedor_tabla_edicion_lote" style="max-height:40vh; overflow-y:auto; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 4px;"></div>
             
-            <div style="background: var(--item-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="background: var(--item-bg); padding: 20px; border-radius: 4px; border: 1px solid var(--border);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-                    <label style="margin:0; color:var(--crimson-dark); font-family: 'Playfair Display', serif; font-size: 1.1rem;">➕ Añadir Nuevo Producto:</label>
+                    <label style="margin:0; color:var(--primary); font-family: 'Playfair Display', serif; font-size: 1.1rem;">➕ Incorporar Referencia Catálogo:</label>
                     
                     <select id="modo_precio_lote" onchange="buscarProductoLoteEdit(document.getElementById('buscador_add_producto').value)" style="width: auto; padding: 8px; font-size: 0.9rem; border-color:var(--active-gold); background:var(--card-bg);">
-                        <option value="venta" ${modoDetectado === 'venta' ? 'selected' : ''}>🛒 Usar Precio Venta (Detal)</option>
-                        <option value="caja" ${modoDetectado === 'caja' ? 'selected' : ''}>📦 Usar Precio Base (Mayor/Caja)</option>
+                        <option value="venta" ${modoDetectado === 'venta' ? 'selected' : ''}>🛒 Coste Distribución (Detal)</option>
+                        <option value="caja" ${modoDetectado === 'caja' ? 'selected' : ''}>📦 Coste Logístico (Mayor)</option>
                     </select>
                 </div>
                 
-                <input type="text" id="buscador_add_producto" placeholder="Escribe aquí para buscar en el catálogo..." oninput="buscarProductoLoteEdit(this.value)" style="margin-bottom: 5px;">
-                <div id="resultado_busqueda_edit" style="max-height: 160px; overflow-y: auto; background: var(--card-bg); border-radius: 6px;"></div>
+                <input type="text" id="buscador_add_producto" placeholder="Escanee o ingrese parámetro de búsqueda..." oninput="buscarProductoLoteEdit(this.value)" style="margin-bottom: 5px;">
+                <div id="resultado_busqueda_edit" style="max-height: 160px; overflow-y: auto; background: var(--card-bg); border-radius: 4px;"></div>
             </div>
 
-            <button class="btn-success" style="margin-top:25px; width:100%; padding:15px; font-size:1.05rem;" onclick="guardarEdicionLoteVenta('${loteId}')">💾 Guardar Cambios y Procesar Inventario</button>
+            <button class="btn-info" style="margin-top:25px; width:100%; padding:15px; font-size:1.05rem;" onclick="guardarEdicionLoteVenta('${loteId}')">💾 CONFIRMAR AJUSTES Y SINCRONIZAR STOCK</button>
         `;
         
-        abrirModalGlobal("Editar Venta Inteligente", html);
+        abrirModalGlobal("Corrección y Arqueo de Lote", html);
         actualizarUIEdicionLote();
     }
 
@@ -689,14 +693,14 @@
             let pVenta = parseFloat(p.precio_venta) || 0;
             
             let precio = (modo === 'caja' && pBase > 0) ? pBase : pVenta;
-            let etiqueta = modo === 'caja' ? '📦 Precio Mayor' : '🛒 Precio Detal';
+            let etiqueta = modo === 'caja' ? '📦 Tasa Mayor' : '🛒 Tasa Detal';
             
             html += `<div class="search-result-item" onclick="agregarProductoALoteEdit('${p.id}', ${precio})">
-                <span style="font-family:'Playfair Display', serif;">➕ <strong>${limpiarNombre(p.nombre)}</strong> <small style="color:var(--muted); font-family:'Roboto',sans-serif;">(${etiqueta})</small></span>
-                <span style="color:var(--success); font-weight:bold; background:#e8f8f5; padding:4px 8px; border-radius:4px;">$${precio.toFixed(2)}</span>
+                <span style="font-family:'Playfair Display', serif; color:var(--primary);">➕ <strong>${limpiarNombre(p.nombre)}</strong> <small style="color:var(--muted); font-family:'Roboto',sans-serif;">(${etiqueta})</small></span>
+                <span style="color:var(--success); font-weight:bold; background:#e8f8f5; padding:4px 8px; border-radius:4px; border: 1px solid #1e8449;">$${precio.toFixed(2)}</span>
             </div>`;
         });
-        res.innerHTML = html || '<div style="padding:15px; color:var(--danger); text-align:center;">No se encontraron productos coincidentes.</div>';
+        res.innerHTML = html || '<div style="padding:15px; color:var(--danger); text-align:center;">Criterio no localizado en Catálogo Maestro.</div>';
     }
 
     function agregarProductoALoteEdit(prodId, precioAplicado) {
@@ -736,26 +740,26 @@
         });
 
         if (window.loteEditDetallesTmp.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:var(--danger); font-weight:bold; padding: 25px;">⚠️ El lote quedará vacío. Al guardar, toda la mercancía será devuelta a tu catálogo.</p>';
+            container.innerHTML = '<p style="text-align:center; color:var(--danger); font-weight:bold; padding: 25px;">⚠️ Se liquidará el lote. Retorno total al almacén asegurado.</p>';
             return;
         }
 
         let html = `<table style="width:100%; border-collapse:collapse; font-size:0.95rem; margin:0;">
-            <tr><th style="border:none;">Producto</th><th style="text-align:right; border:none;">P. Unit</th><th style="text-align:center; border:none;">Controles</th></tr>`;
+            <tr><th style="border:none;">Mercancía</th><th style="text-align:right; border:none;">P. Unit</th><th style="text-align:center; border:none;">Volumen</th></tr>`;
         
         window.loteEditDetallesTmp.forEach((d, idx) => {
-            let pNom = d.catalogo ? d.catalogo.nombre : 'Producto Desconocido';
+            let pNom = d.catalogo ? d.catalogo.nombre : 'Ref. Opaca';
             
             let pUnit = 0;
             if (d.precio_aplicado !== undefined) pUnit = d.precio_aplicado;
             else if (d.cantidad > 0) pUnit = d.subtotal_usd / d.cantidad;
             
             html += `<tr style="background: ${idx % 2 === 0 ? 'var(--card-bg)' : 'var(--item-bg)'};">
-                <td style="padding: 12px; border-bottom: 1px solid var(--border); font-family:'Playfair Display', serif;"><strong>${limpiarNombre(pNom)}</strong></td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); font-family:'Playfair Display', serif; color:var(--primary);"><strong>${limpiarNombre(pNom)}</strong></td>
                 <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align:right; color:var(--success); font-weight:bold;">$${pUnit.toFixed(2)}</td>
                 <td style="padding: 12px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:5px;">
                     <button class="btn-danger" style="padding:6px 14px; margin:0; width:auto; border-radius:4px;" onclick="modificarCantidadLoteEdit(${idx}, -1)">-</button>
-                    <input type="number" value="${d.cantidad}" style="width:55px; text-align:center; padding:6px; font-weight:bold; margin:0; border:1px solid #ccc; background:#fff; border-left:1px solid #ccc;" readonly>
+                    <input type="number" value="${d.cantidad}" style="width:55px; text-align:center; padding:6px; font-weight:bold; margin:0; border:1px solid rgba(212, 175, 55, 0.5); background:#fff;" readonly>
                     <button class="btn-success" style="padding:6px 14px; margin:0; width:auto; border-radius:4px; border-bottom:none;" onclick="modificarCantidadLoteEdit(${idx}, 1)">+</button>
                 </td>
             </tr>`;
@@ -777,7 +781,7 @@
     }
 
     async function guardarEdicionLoteVenta(loteId) {
-        mostrarModalLocal("Actualizando", "Cruzando datos con el inventario y sincronizando auditoría...");
+        mostrarModalLocal("Procesando Transacción", "Validación cruzada con Sistema de Inventario...");
         try {
             let original = window.loteEditDetallesOriginal || [];
             let actual = window.loteEditDetallesTmp || [];
@@ -851,7 +855,7 @@
                 let cat = CATALOGO.find(c => c.id === d.producto_id) || d.catalogo;
                 let pUnit = d.cantidad > 0 ? (d.subtotal_usd / d.cantidad) : 0;
                 return {
-                    nombre: limpiarNombre(cat?.nombre || 'Producto'),
+                    nombre: limpiarNombre(cat?.nombre || 'Referencia Comercial'),
                     E: 0,
                     S: d.cantidad,
                     VP: cat?.precio_venta || pUnit,
@@ -866,20 +870,20 @@
             }).eq('lote_id', loteId);
 
             cerrarModalGlobal();
-            alert("✅ Venta editada y sincronizada correctamente en todos los módulos.");
+            alert("✅ Consolidación de inventario completada sin incidencias.");
             await cargarDatosServidor();
             
         } catch(e) {
             cerrarModalGlobal();
-            alert("❌ Error durante el cruce de datos: " + e.message);
+            alert("❌ Falta de integridad en datos cruzados: " + e.message);
         }
     }
 
     // ========================================================
-    // MOTOR DE PDF NATIVO CON jspdf (ESTILO PROFESIONAL ULTRA-PREMIUM)
+    // MOTOR PDF NATIVO
     // ========================================================
     async function descargarPDFLote(loteId) {
-        mostrarModalLocal("Generando PDF", "Construyendo comprobante estructurado y elegante...");
+        mostrarModalLocal("Generando PDF", "Construyendo documento dictamen...");
         try {
             const [resDet, resLote, resCierre] = await Promise.all([
                 supabaseClient.from('detalle_ventas').select('*, catalogo(nombre)').eq('lote_id', loteId),
@@ -890,7 +894,7 @@
             cerrarModalGlobal();
             let detalle = resDet.data;
             let lote = resLote.data;
-            if(!detalle || !lote) return alert("Error al cargar los datos del comprobante.");
+            if(!detalle || !lote) return alert("El registro del comprobante se encuentra corrupto o vacío.");
 
             detalle.sort((a, b) => {
                 let nameA = limpiarNombre(a.catalogo?.nombre || '').toLowerCase();
@@ -898,8 +902,8 @@
                 return nameA.localeCompare(nameB);
             });
 
-            let empleadoCierraNom = "N/A";
-            let empleadoRecibeNom = "N/A";
+            let empleadoCierraNom = "NO ESPECIFICADO";
+            let empleadoRecibeNom = "NO ESPECIFICADO";
 
             if (resCierre.data) {
                 let idCierra = resCierre.data.empleado_cierra;
@@ -913,47 +917,45 @@
                     if (empR) empleadoRecibeNom = `${empR.nombre} ${empR.apellido}`;
                 }
             }
-            if (empleadoCierraNom === "N/A" && lote.empleados) {
+            if (empleadoCierraNom === "NO ESPECIFICADO" && lote.empleados) {
                 empleadoCierraNom = `${lote.empleados.nombre} ${lote.empleados.apellido}`;
             }
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Panel Empresarial';
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'PANEL EMPRESARIAL';
 
-            // Encabezado institucional Ultra-Premium
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(15);
-            doc.setTextColor(122, 23, 29); // Carmesí oscuro
+            doc.setTextColor(122, 23, 29); // var(--secondary) aproximado
             doc.text(nombreLocal.toUpperCase(), 14, 16);
 
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(8.5);
             doc.setTextColor(100, 100, 100);
-            doc.text("COMPROBANTE DE VENTA Y CIERRE DE TURNO", 14, 22);
+            doc.text("AUDITORÍA: CIERRE DE TURNO COMERCIAL", 14, 22);
 
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(10);
             doc.setTextColor(40, 40, 40);
-            doc.text(`Fecha: ${lote.fecha}`, 196, 16, { align: 'right' });
+            doc.text(`Corte Operativo: ${lote.fecha}`, 196, 16, { align: 'right' });
 
-            doc.setDrawColor(212, 175, 55); // Dorado
+            doc.setDrawColor(212, 175, 55); 
             doc.setLineWidth(0.8);
             doc.line(14, 26, 196, 26);
 
-            // Caja de Asesores
             doc.setFillColor(249, 248, 246);
             doc.roundedRect(14, 30, 182, 15, 2, 2, "F");
 
             doc.setFontSize(7.5);
             doc.setTextColor(100, 100, 100);
-            doc.text("ENTREGÓ (VENDEDOR):", 17, 36);
-            doc.text("RECIBIÓ (SUPERVISOR):", 110, 36);
+            doc.text("LIQUIDADOR (ENTREGA):", 17, 36);
+            doc.text("SUPERVISIÓN (RECEPCIÓN):", 110, 36);
 
             doc.setFontSize(9);
             doc.setFont("Helvetica", "bold");
-            doc.setTextColor(40, 40, 40);
+            doc.setTextColor(59, 9, 24); // var(--primary)
             doc.text(String(empleadoCierraNom.toUpperCase()), 17, 42);
             doc.text(String(empleadoRecibeNom.toUpperCase()), 110, 42);
 
@@ -964,27 +966,26 @@
 
             let posY = 51;
 
-            // Cabecera de la Tabla PDF
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(10.5);
             doc.setTextColor(122, 23, 29);
-            doc.text("Detalle de Mercancía Vendida", 14, posY);
+            doc.text("Reporte de Movimientos", 14, posY);
             
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(8);
             doc.setTextColor(100, 100, 100);
-            doc.text(`Tasas Referenciales: BS: ${tasaBs} | COP: ${tasaCop} | EUR: ${tasaEur}`, 196, posY, { align: 'right' });
+            doc.text(`Métrica Cambiaria: BS: ${tasaBs} | COP: ${tasaCop} | EUR: ${tasaEur}`, 196, posY, { align: 'right' });
 
             posY += 4;
             doc.setFontSize(8);
-            doc.setFillColor(122, 23, 29); // Fondo Carmesí
-            doc.setTextColor(212, 175, 55); // Texto Dorado
+            doc.setFillColor(122, 23, 29); 
+            doc.setTextColor(212, 175, 55); 
             doc.rect(14, posY, 182, 6.5, "F");
             doc.setFont("Helvetica", "bold");
-            doc.text("Descripción del Producto", 17, posY + 4.5);
-            doc.text("Cant", 125, posY + 4.5, { align: 'center' });
-            doc.text("Precio Unit.", 155, posY + 4.5, { align: 'right' });
-            doc.text("Total ($)", 192, posY + 4.5, { align: 'right' });
+            doc.text("Detalle de Referencia Comercial", 17, posY + 4.5);
+            doc.text("Vol", 125, posY + 4.5, { align: 'center' });
+            doc.text("Val. Unit.", 155, posY + 4.5, { align: 'right' });
+            doc.text("Importe ($)", 192, posY + 4.5, { align: 'right' });
 
             posY += 6.5;
             doc.setFont("Helvetica", "normal");
@@ -1003,7 +1004,7 @@
                     doc.rect(14, posY, 182, 6.5, "F");
                 }
                 
-                let pNom = limpiarNombre(d.catalogo ? d.catalogo.nombre : 'Producto');
+                let pNom = limpiarNombre(d.catalogo ? d.catalogo.nombre : 'Producto Genérico');
                 let precioUnit = d.cantidad > 0 ? (d.subtotal_usd / d.cantidad) : 0;
                 totalCant += d.cantidad;
                 totalUsd += d.subtotal_usd;
@@ -1020,7 +1021,6 @@
 
             posY += 6;
 
-            // Totales Finales
             if (posY > 250) {
                 doc.addPage();
                 posY = 20;
@@ -1032,27 +1032,27 @@
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(8.5);
             doc.setTextColor(100, 100, 100);
-            doc.text("Cantidad Total de Items:", 125, posY + 7);
+            doc.text("Flujo total de productos:", 125, posY + 7);
             doc.text(String(totalCant), 191, posY + 7, { align: 'right' });
 
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(9.5);
-            doc.setTextColor(122, 23, 29); // Carmesí oscuro
-            doc.text("TOTAL GENERAL VENDIDO:", 125, posY + 14);
+            doc.setTextColor(122, 23, 29);
+            doc.text("IMPORTE BRUTO FINAL:", 125, posY + 14);
             doc.text(`$${parseFloat(totalUsd).toFixed(2)}`, 191, posY + 14, { align: 'right' });
 
-            let nombreArchivo = `Comprobante_Venta_${lote.fecha}.pdf`;
+            let nombreArchivo = `Dictamen_Cierre_${lote.fecha}.pdf`;
             doc.save(nombreArchivo);
         } catch(e) {
             cerrarModalGlobal();
-            alert("❌ Error al generar el PDF: " + e.message);
+            alert("❌ Falla en la inyección de metadatos PDF: " + e.message);
             console.error(e);
         }
     }
 
     async function eliminarLoteSupabase(id) {
-        if(!confirm("⚠️ ¿Estás seguro de eliminar esta venta? La mercancía vendida retornará al inventario físico y se limpiará del control.")) return;
-        mostrarModalLocal("Eliminando", "Revirtiendo stock y borrando lote...");
+        if(!confirm("⚠️ Acción Administrativa Crítica: Esta remoción provocará una alteración en la auditoría final y devolverá el volumen logístico al almacén.")) return;
+        mostrarModalLocal("Reversión", "Liquidando lote y reestructurando Stock Maestro...");
         try {
             let { data: detalle } = await supabaseClient.from('detalle_ventas').select('*').eq('lote_id', id);
             if(detalle) {
@@ -1069,9 +1069,9 @@
             let { error } = await supabaseClient.from('lotes_diarios').delete().eq('id', id);
             if(error) throw error;
 
-            cerrarModalGlobal(); alert("✅ Venta eliminada y stock restaurado con éxito.");
+            cerrarModalGlobal(); alert("✅ Liquidación exitosa y retorno confirmado en almacén.");
             await cargarDatosServidor();
-        } catch(e) { cerrarModalGlobal(); alert("❌ Error: " + e.message); }
+        } catch(e) { cerrarModalGlobal(); alert("❌ Detención crítica: " + e.message); }
     }
 
     function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
@@ -1088,7 +1088,7 @@
         document.getElementById('global_modal').style.display = 'flex';
     }
     function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
-    function mostrarModalLocal(titulo, msg) { abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem; color:var(--crimson-dark); font-family:'Playfair Display', serif;">⏳ ${msg}</div>`); }
+    function mostrarModalLocal(titulo, msg) { abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem; color:var(--primary); font-family:'Playfair Display', serif;">⏳ ${msg}</div>`); }
 </script>
 </body>
 </html>
