@@ -191,7 +191,8 @@
     </div>
 </div>
 
-<div class="wrapper">
+<!-- IMPORTANTE: SE OCULTA LA WRAPPER (SISTEMA) HASTA QUE SE VALIDE EL PIN -->
+<div class="wrapper" id="main_wrapper" style="display: none;">
     
 	<!-- BARRA SUPERIOR -->
     <div class="top-bar">
@@ -306,12 +307,15 @@
         // Cargar todos los datos
         await cargarDatosServidor();
 
-        // Flujo UI: Ocultar carga -> Mostrar Bloqueo
+        // 1. Mostrar pantalla de PIN *debajo* del Loading
+        document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
+        document.getElementById('pantalla_bloqueo_admin').style.opacity = '1';
+
+        // 2. Desvanecer y quitar Loading
         setTimeout(() => {
             document.getElementById('loading_overlay').style.opacity = '0';
             setTimeout(() => {
                 document.getElementById('loading_overlay').style.display = 'none';
-                document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
                 document.getElementById('pin_ingreso_body').focus();
             }, 500);
         }, 800);
@@ -372,18 +376,23 @@
             document.getElementById('mensaje_carga_pin').style.display = 'block';
             
             setTimeout(() => {
+                // Hacer visible el Sistema PRINCIPAL
+                document.getElementById('main_wrapper').style.display = 'block';
+
                 let pantalla = document.getElementById('pantalla_bloqueo_admin');
                 pantalla.style.opacity = '0';
                 pantalla.style.transition = 'opacity 0.4s ease';
-                setTimeout(() => { pantalla.style.display = 'none'; }, 400);
                 
-                // Reset states for next time
-                document.getElementById('btn_desbloquear_pin').style.display = 'block';
-                document.getElementById('btn_volver_pin').style.display = 'block';
-                document.getElementById('mensaje_carga_pin').style.display = 'none';
-                document.getElementById('pin_ingreso_body').value = '';
-                document.getElementById('pin_ingreso_body').type = 'password';
-                document.getElementById('icono_ojo_pin').innerText = '👁️';
+                setTimeout(() => { 
+                    pantalla.style.display = 'none'; 
+                    // Resetear el estado para próximas visitas
+                    document.getElementById('btn_desbloquear_pin').style.display = 'block';
+                    document.getElementById('btn_volver_pin').style.display = 'block';
+                    document.getElementById('mensaje_carga_pin').style.display = 'none';
+                    document.getElementById('pin_ingreso_body').value = '';
+                    document.getElementById('pin_ingreso_body').type = 'password';
+                    document.getElementById('icono_ojo_pin').innerText = '👁️';
+                }, 400);
             }, 800);
         } else {
             alert("❌ PIN Incorrecto. Acceso Restringido.");
