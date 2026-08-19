@@ -38,6 +38,7 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
 
@@ -62,22 +63,45 @@
         .sidebar-overlay.active { display: block; }
 
         /* ========================================================= */
-        /* CONTENEDORES PRINCIPALES Y TARJETAS */
+        /* CONTENEDORES Y ACORDEÓN DESPLEGABLE LUGURY                */
         /* ========================================================= */
         .main-content { padding: 20px; padding-bottom: 130px; max-width: 1200px; margin: 0 auto; }
+        
         .card { 
-            background: var(--card-bg); padding: 25px; border-radius: 4px; margin-bottom: 20px; 
+            background: var(--card-bg); border-radius: 4px; margin-bottom: 20px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid var(--border);
             position: relative; overflow: hidden;
         }
-        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--secondary), var(--primary)); }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--secondary), var(--primary)); z-index: 2; }
         
-        h2 { 
-            color: var(--primary); margin-top: 0; font-size: 1.5rem; border-bottom: 1px solid var(--border); 
-            padding-bottom: 10px; text-align: center; font-family: 'Playfair Display', serif; 
-            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;
+        /* Cabecera del Acordeón */
+        .card-header {
+            padding: 20px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            background: var(--card-bg); transition: background 0.3s ease; user-select: none;
         }
-        h3 { color: var(--primary); margin-top: 25px; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; font-family: 'Playfair Display', serif; }
+        .card-header:hover { background: var(--item-bg); }
+        .card-header h2 { 
+            color: var(--primary); margin: 0; font-size: 1.35rem; font-family: 'Playfair Display', serif; 
+            text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0;
+        }
+        .accordion-icon {
+            font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease;
+        }
+        
+        /* Cuerpo del Acordeón (Oculto por defecto o abierto según clase) */
+        .card-body {
+            max-height: 0; overflow: hidden; padding: 0 25px; transition: max-height 0.4s cubic-bezier(0, 1, 0, 1), padding 0.3s ease;
+            background: var(--card-bg); border-top: 1px solid transparent;
+        }
+        .card.open .card-body {
+            max-height: 3000px; padding: 0 25px 25px 25px; border-top-color: rgba(212, 175, 55, 0.2);
+            transition: max-height 0.6s ease-in-out, padding 0.3s ease;
+        }
+        .card.open .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        h3 { color: var(--primary); margin-top: 25px; font-size: 1.15rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; font-family: 'Playfair Display', serif; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -108,7 +132,7 @@
         .search-input { margin-top: 0 !important; }
 
         /* ========================================================= */
-        /* MODALES LUXURY Y PANTALLAS DE BLOQUEO                     */
+        /* MODALES LUXURY Y PANTALLAS DE BLOQUEO CON SPINNER         */
         /* ========================================================= */
         #loading_overlay, #pantalla_bloqueo_admin {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -125,7 +149,7 @@
         .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
         #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
 
-        /* Estilos del Loading Modal */
+        /* Estilos del Loading Modal & Spinner */
         .loading-box {
             background: var(--card-bg); padding: 40px; border-radius: 4px;
             text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
@@ -165,6 +189,7 @@
 <!-- 🔒 PANTALLA DE BLOQUEO ADMIN LUXURY -->
 <div id="pantalla_bloqueo_admin">
     <div class="loading-box" style="padding: 30px;">
+        <div class="spinner-luxury" style="width: 35px; height: 35px; border-width: 3px; margin-bottom: 15px;"></div>
         <h2 style="color: var(--primary); border-bottom-color: var(--active-gold); font-size: 1.3rem;">🔒 ACCESO PROTEGIDO</h2>
         <p style="font-size: 0.95rem; color: var(--muted); margin-bottom: 20px; font-family:'Roboto', sans-serif;">Introduce el PIN de Administrador para gestionar el Catálogo:</p>
         
@@ -173,7 +198,10 @@
             <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
         </div>
 
-        <div id="mensaje_carga_pin" style="display: none; color: var(--success); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; font-family: 'Playfair Display', serif;">⏳ Desbloqueando módulo...</div>
+        <div id="mensaje_carga_pin" style="display: none; margin-bottom: 15px;">
+            <div class="spinner-luxury" style="width: 25px; height: 25px; border-width: 2px; margin: 0 auto 8px auto;"></div>
+            <span style="color: var(--success); font-weight: bold; font-size: 1rem; font-family: 'Playfair Display', serif;">Desbloqueando módulo...</span>
+        </div>
 
         <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">AUTENTICAR</button>
         <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">VOLVER AL INICIO</button>
@@ -224,137 +252,168 @@
         <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL -->
+    <!-- CONTENIDO PRINCIPAL EN FORMATO ACORDEÓN DESPLEGABLE -->
     <div class="main-content">
         
+        <!-- Tarjeta 1: Fondo de Caja -->
         <div class="card">
-            <h2>🏦 Fondo de Caja Manual</h2>
-            <div class="grid-4">
-                <div><label>Fondo ($):</label><input type="number" step="0.01" id="caja_fondo_usd"></div>
-                <div><label>Fondo (BS):</label><input type="number" step="0.01" id="caja_fondo_bs"></div>
-                <div><label>Fondo (COP):</label><input type="number" id="caja_fondo_cop"></div>
-                <div><label>Fondo (EUR):</label><input type="number" step="0.01" id="caja_fondo_eur"></div>
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>🏦 Fondo de Caja Manual</h2>
+                <span class="accordion-icon">▼</span>
             </div>
-            <button onclick="guardarFondoCaja()" class="btn-info">Guardar Parámetros de Fondo</button>
-        </div>
-        
-        <div class="card">
-            <h2>📦 Recargas Telefónicas</h2>
-            <div class="grid-2">
-                <div>
-                    <label>Operadora:</label>
-                    <select id="form_recarga_op"><option value="Digitel">Digitel</option><option value="Movistar">Movistar</option><option value="Movilnet">Movilnet</option></select>
+            <div class="card-body">
+                <div class="grid-4" style="padding-top: 15px;">
+                    <div><label>Fondo ($):</label><input type="number" step="0.01" id="caja_fondo_usd"></div>
+                    <div><label>Fondo (BS):</label><input type="number" step="0.01" id="caja_fondo_bs"></div>
+                    <div><label>Fondo (COP):</label><input type="number" id="caja_fondo_cop"></div>
+                    <div><label>Fondo (EUR):</label><input type="number" step="0.01" id="caja_fondo_eur"></div>
                 </div>
-                <div><label>Monto a Recargar (BS):</label><input type="number" step="0.01" id="form_recarga_monto"></div>
-            </div>
-            <div class="grid-2">
-                <div><label>Cobranza Fija (BS):</label><input type="number" step="0.01" id="form_recarga_cobro"></div>
-                <div><label>O % de Recargo automático:</label><input type="number" step="0.01" id="form_recarga_porcentaje"></div>
-            </div>
-            <button onclick="guardarRecarga()" class="btn-info">Añadir Plan Recarga</button>
-            <div style="overflow-x: auto;">
-                <table id="tabla_gestion_recargas" style="margin-top:15px;"></table>
+                <button onclick="guardarFondoCaja()" class="btn-info">Guardar Parámetros de Fondo</button>
             </div>
         </div>
         
+        <!-- Tarjeta 2: Recargas Telefónicas -->
         <div class="card">
-            <h2>📶 Planes de WiFi</h2>
-            <div class="grid-2">
-                <div>
-                    <label>Categoría:</label>
-                    <select id="form_wifi_cat"><option value="Eventual">Eventual</option><option value="Frecuente">Frecuente</option></select>
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📦 Recargas Telefónicas</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-2" style="padding-top: 15px;">
+                    <div>
+                        <label>Operadora:</label>
+                        <select id="form_recarga_op"><option value="Digitel">Digitel</option><option value="Movistar">Movistar</option><option value="Movilnet">Movilnet</option></select>
+                    </div>
+                    <div><label>Monto a Recargar (BS):</label><input type="number" step="0.01" id="form_recarga_monto"></div>
                 </div>
-                <div><label>Descripción del Tiempo:</label><input type="text" id="form_wifi_tiempo" placeholder="Ej: 1 Hora"></div>
-            </div>
-            <label>Costo de Cobranza ($):</label><input type="number" step="0.01" id="form_wifi_cobro">
-            <button onclick="guardarWifi()" class="btn-info">Añadir Plan Wifi</button>
-            <div style="overflow-x: auto;">
-                <table id="tabla_gestion_wifi" style="margin-top:15px;"></table>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>📁 Categorías de Productos</h2>
-            <input type="hidden" id="edit_categoria_index" value="-1">
-            <div class="flex-row" style="align-items: flex-end;">
-                <div style="flex: 1;"><input type="text" id="nueva_categoria_input" placeholder="Nombre de categoría... Ej: Dulces" style="margin-top:0;"></div>
-                <div><button id="btn_guardar_categoria" onclick="guardarCategoria()" class="btn-info" style="width:auto; margin:0; padding: 12px 20px;">Crear Categoría</button></div>
-                <div><button id="btn_cancelar_categoria" onclick="cancelarEdicionCategoria()" class="btn-danger" style="width:auto; margin:0; display:none; padding: 12px 20px;">Cancelar</button></div>
-            </div>
-            <div style="overflow-x: auto;">
-                <table id="tabla_gestion_categorias" style="margin-top:15px;"></table>
+                <div class="grid-2">
+                    <div><label>Cobranza Fija (BS):</label><input type="number" step="0.01" id="form_recarga_cobro"></div>
+                    <div><label>O % de Recargo automático:</label><input type="number" step="0.01" id="form_recarga_porcentaje"></div>
+                </div>
+                <button onclick="guardarRecarga()" class="btn-info">Añadir Plan Recarga</button>
+                <div style="overflow-x: auto;">
+                    <table id="tabla_gestion_recargas" style="margin-top:15px;"></table>
+                </div>
             </div>
         </div>
         
+        <!-- Tarjeta 3: Planes de WiFi -->
         <div class="card">
-            <h2>📦 Crear / Modificar Mercancía en Catálogo</h2>
-            <p style="font-size:0.95rem; color:var(--muted); margin-bottom: 25px; text-align: center; font-family:'Playfair Display', serif; font-style:italic;">Estructura la base de datos principal de inventario.</p>
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📶 Planes de WiFi</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-2" style="padding-top: 15px;">
+                    <div>
+                        <label>Categoría:</label>
+                        <select id="form_wifi_cat"><option value="Eventual">Eventual</option><option value="Frecuente">Frecuente</option></select>
+                    </div>
+                    <div><label>Descripción del Tiempo:</label><input type="text" id="form_wifi_tiempo" placeholder="Ej: 1 Hora"></div>
+                </div>
+                <label>Costo de Cobranza ($):</label><input type="number" step="0.01" id="form_wifi_cobro">
+                <button onclick="guardarWifi()" class="btn-info">Añadir Plan Wifi</button>
+                <div style="overflow-x: auto;">
+                    <table id="tabla_gestion_wifi" style="margin-top:15px;"></table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tarjeta 4: Categorías -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📁 Categorías de Productos</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <input type="hidden" id="edit_categoria_index" value="-1">
+                <div class="flex-row" style="align-items: flex-end; padding-top: 15px;">
+                    <div style="flex: 1;"><input type="text" id="nueva_categoria_input" placeholder="Nombre de categoría... Ej: Dulces" style="margin-top:0;"></div>
+                    <div><button id="btn_guardar_categoria" onclick="guardarCategoria()" class="btn-info" style="width:auto; margin:0; padding: 12px 20px;">Crear Categoría</button></div>
+                    <div><button id="btn_cancelar_categoria" onclick="cancelarEdicionCategoria()" class="btn-danger" style="width:auto; margin:0; display:none; padding: 12px 20px;">Cancelar</button></div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="tabla_gestion_categorias" style="margin-top:15px;"></table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tarjeta 5: Catálogo de Mercancía (Abierto por defecto para mayor comodidad) -->
+        <div class="card open">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📦 Crear / Modificar Mercancía en Catálogo</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.95rem; color:var(--muted); margin-bottom: 25px; text-align: center; font-family:'Playfair Display', serif; font-style:italic; padding-top: 10px;">Estructura la base de datos principal de inventario.</p>
 
-            <input type="hidden" id="edit_prod_uuid" value="">
-            
-            <div style="margin-bottom: 10px;">
-                <label>Tipo de Producto:</label>
-                <select id="form_prod_tipo" onchange="alternarTipoProducto()">
-                    <option value="simple">📦 Producto Unitario / Simple</option>
-                    <option value="preparado">☕ Producto Compuesto / Receta</option>
-                </select>
-            </div>
-            
-            <div class="grid-2">
-                <div><label>Nombre Comercial:</label><input type="text" id="form_prod_nom"></div>
-                <div><label>Categoría:</label><select id="form_prod_cat"></select></div>
-            </div>
-            
-            <div class="grid-2">
-                <div>
-                    <label>Moneda Original del Costo:</label>
-                    <select id="form_prod_moneda">
-                        <option value="USD">Dólares</option><option value="BS">Bolívares</option><option value="COP">Pesos</option><option value="EUR">Euros</option>
+                <input type="hidden" id="edit_prod_uuid" value="">
+                
+                <div style="margin-bottom: 10px;">
+                    <label>Tipo de Producto:</label>
+                    <select id="form_prod_tipo" onchange="alternarTipoProducto()">
+                        <option value="simple">📦 Producto Unitario / Simple</option>
+                        <option value="preparado">☕ Producto Compuesto / Receta</option>
                     </select>
                 </div>
-                <div><label style="color:var(--primary);">Costo de Compra (Base Real Invertida):</label><input type="number" step="0.01" id="form_prod_fuente"></div>
-            </div>
-            
-            <div class="grid-2">
-                <div><label>Precio Final de Venta:</label><input type="number" step="0.01" id="form_prod_base"></div>
-                <div></div>
-            </div>
-            
-            <div class="grid-2" id="contenedor_stock_directo">
-                <div>
-                    <label>Unidad de Medida:</label>
-                    <select id="form_prod_unidad"><option value="Unidad">Unidad</option><option value="Gramo">Gramo</option><option value="Mililitro">Mililitro</option></select>
+                
+                <div class="grid-2">
+                    <div><label>Nombre Comercial:</label><input type="text" id="form_prod_nom"></div>
+                    <div><label>Categoría:</label><select id="form_prod_cat"></select></div>
                 </div>
-                <div><label>Stock Físico Inicial:</label><input type="number" step="0.01" id="form_prod_stock"></div>
-            </div>
-            
-            <div class="grid-2" id="contenedor_umbrales" style="margin-top:15px; padding: 15px; border: 1px solid var(--border); background: var(--item-bg); border-radius: 4px;">
-                <div><label style="color:var(--warning);">Alerta Amarilla (Poco Stock):</label><input type="number" id="form_prod_u_amarillo" value="5"></div>
-                <div><label style="color:var(--danger);">Alerta Roja (Sin Stock):</label><input type="number" id="form_prod_u_rojo" value="0"></div>
-            </div>
-            
-            <div id="contenedor_receta" class="ingredientes-panel" style="display:none;">
-                <label style="color:var(--warning); font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-top: 0;">📋 Ingredientes / Insumos que lo componen</label>
-                <div id="ingredientes-container" style="margin-top: 10px;"></div>
-                <button class="btn-warning" onclick="agregarFilaIngrediente()" style="margin-top: 15px; width: auto; font-size: 0.9rem;">+ AGREGAR INSUMO</button>
-            </div>
-            
-            <div class="flex-row" style="margin-top: 25px;">
-                <div style="flex:1;"><button id="btn_guardar_producto" onclick="guardarProductoSupabase()" class="btn-info" style="margin:0;">💾 CONSOLIDAR EN CATÁLOGO</button></div>
-                <div><button id="btn_cancelar_edit" onclick="limpiarFormProducto()" class="btn-danger" style="display:none; margin:0; padding: 12px 20px;">CANCELAR EDICIÓN</button></div>
-            </div>
+                
+                <div class="grid-2">
+                    <div>
+                        <label>Moneda Original del Costo:</label>
+                        <select id="form_prod_moneda">
+                            <option value="USD">Dólares</option><option value="BS">Bolívares</option><option value="COP">Pesos</option><option value="EUR">Euros</option>
+                        </select>
+                    </div>
+                    <div><label style="color:var(--primary);">Costo de Compra (Base Real Invertida):</label><input type="number" step="0.01" id="form_prod_fuente"></div>
+                </div>
+                
+                <div class="grid-2">
+                    <div><label>Precio Final de Venta:</label><input type="number" step="0.01" id="form_prod_base"></div>
+                    <div></div>
+                </div>
+                
+                <div class="grid-2" id="contenedor_stock_directo">
+                    <div>
+                        <label>Unidad de Medida:</label>
+                        <select id="form_prod_unidad"><option value="Unidad">Unidad</option><option value="Gramo">Gramo</option><option value="Mililitro">Mililitro</option></select>
+                    </div>
+                    <div><label>Stock Físico Inicial:</label><input type="number" step="0.01" id="form_prod_stock"></div>
+                </div>
+                
+                <div class="grid-2" id="contenedor_umbrales" style="margin-top:15px; padding: 15px; border: 1px solid var(--border); background: var(--item-bg); border-radius: 4px;">
+                    <div><label style="color:var(--warning);">Alerta Amarilla (Poco Stock):</label><input type="number" id="form_prod_u_amarillo" value="5"></div>
+                    <div><label style="color:var(--danger);">Alerta Roja (Sin Stock):</label><input type="number" id="form_prod_u_rojo" value="0"></div>
+                </div>
+                
+                <div id="contenedor_receta" class="ingredientes-panel" style="display:none;">
+                    <label style="color:var(--warning); font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-top: 0;">📋 Ingredientes / Insumos que lo componen</label>
+                    <div id="ingredientes-container" style="margin-top: 10px;"></div>
+                    <button class="btn-warning" onclick="agregarFilaIngrediente()" style="margin-top: 15px; width: auto; font-size: 0.9rem;">+ AGREGAR INSUMO</button>
+                </div>
+                
+                <div class="flex-row" style="margin-top: 25px;">
+                    <div style="flex:1;"><button id="btn_guardar_producto" onclick="guardarProductoSupabase()" class="btn-info" style="margin:0;">💾 CONSOLIDAR EN CATÁLOGO</button></div>
+                    <div><button id="btn_cancelar_edit" onclick="limpiarFormProducto()" class="btn-danger" style="display:none; margin:0; padding: 12px 20px;">CANCELAR EDICIÓN</button></div>
+                </div>
 
-            <h3 style="margin-top:35px;">Catálogo Actual Registrado</h3>
-            <div class="grid-2" style="margin-bottom: 10px;">
-                <input type="text" id="buscar_gestion_prod" class="search-input" placeholder="🔍 Buscar producto..." oninput="renderTablaGestionProductos()">
-                <select id="orden_gestion_prod" class="search-input" onchange="renderTablaGestionProductos()">
-                    <option value="az">Orden Alfabético</option><option value="cat">Orden por Categoría</option>
-                </select>
-            </div>
-            <div style="overflow-x:auto;">
-                <table id="tabla_gestion_productos"></table>
+                <h3 style="margin-top:35px;">Catálogo Actual Registrado</h3>
+                <div class="grid-2" style="margin-bottom: 10px;">
+                    <input type="text" id="buscar_gestion_prod" class="search-input" placeholder="🔍 Buscar producto..." oninput="renderTablaGestionProductos()">
+                    <select id="orden_gestion_prod" class="search-input" onchange="renderTablaGestionProductos()">
+                        <option value="az">Orden Alfabético</option><option value="cat">Orden por Categoría</option>
+                    </select>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="tabla_gestion_productos"></table>
+                </div>
             </div>
         </div>
+
     </div>
 </div>
 
@@ -370,7 +429,6 @@
     let ADMIN_PASS_DB = '151016'; 
 
     window.addEventListener('DOMContentLoaded', async () => {
-        // Redirección y carga segura inicial
         try {
             const { data } = await supabaseClient.auth.getSession();
             if (data && data.session) {
@@ -383,6 +441,12 @@
             window.location.href = 'index.html';
         }
     });
+
+    // Control de Acordeón Desplegable
+    function toggleAcordeon(header) {
+        let card = header.parentElement;
+        card.classList.toggle('open');
+    }
 
     async function sincronizarSesion(userId) {
         let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
@@ -497,7 +561,6 @@
             document.getElementById('mensaje_carga_pin').style.display = 'block';
             
             setTimeout(() => {
-                // Hacer visible el Sistema PRINCIPAL
                 document.getElementById('main_wrapper').style.display = 'block';
 
                 let pantalla = document.getElementById('pantalla_bloqueo_admin');
@@ -506,7 +569,6 @@
                 
                 setTimeout(() => { 
                     pantalla.style.display = 'none'; 
-                    // Resetear el estado para próximas visitas
                     document.getElementById('btn_desbloquear_pin').style.display = 'block';
                     document.getElementById('btn_volver_pin').style.display = 'block';
                     document.getElementById('mensaje_carga_pin').style.display = 'none';
@@ -676,7 +738,7 @@
             html += `<tr style="background: ${bg}; border-bottom: 1px solid rgba(212, 175, 55, 0.3);">
                         <td style="font-family:'Playfair Display', serif; font-weight:bold; color:var(--primary); font-size:1.05rem;">${c}</td>
                         <td style="text-align:center; display:flex; justify-content:center; gap:6px;">
-                            <button class="btn-add" style="padding:4px 10px; margin:0; border-left:2px solid var(--active-gold);" onclick="editarCategoria(${i})">✏️ Editar</button>
+                            <button class="btn-info" style="padding:4px 10px; margin:0; width:auto;" onclick="editarCategoria(${i})">✏️ Editar</button>
                             <button class="btn-danger" style="padding:4px 10px; margin:0; width:auto;" onclick="eliminarCategoria(${i})">🗑️</button>
                         </td>
                     </tr>`;
@@ -853,7 +915,12 @@
 
         document.getElementById('btn_guardar_producto').innerText = "💾 ACTUALIZAR REGISTRO";
         document.getElementById('btn_cancelar_edit').style.display = "block"; 
-        window.scrollTo({ top: document.querySelector('.card:nth-child(5)').offsetTop, behavior: 'smooth' });
+        
+        // Abrir la tarjeta si estaba cerrada
+        let cardProd = document.getElementById('btn_guardar_producto').closest('.card');
+        if(!cardProd.classList.contains('open')) cardProd.classList.add('open');
+
+        window.scrollTo({ top: cardProd.offsetTop - 70, behavior: 'smooth' });
     }
 
     function limpiarFormProducto() { 
@@ -906,7 +973,7 @@
                 <td style="text-align:center; color:${p.stock > 0 ? 'var(--text)' : 'var(--danger)'}; font-weight:bold; font-size:1.1rem;">${p.tipo==='preparado'?'<span style="color:var(--muted); font-size:0.8rem;">∞</span>':p.stock}</td>
                 <td style="text-align:center;">
                     <div style="display:flex; justify-content:center; gap:5px;">
-                        <button class="btn-add" style="padding:6px 12px; margin:0;" onclick="editarProducto(${idxOriginal})">✏️</button> 
+                        <button class="btn-info" style="padding:6px 12px; margin:0; width:auto;" onclick="editarProducto(${idxOriginal})">✏️ Editar</button> 
                         <button class="btn-danger" style="padding:6px 12px; margin:0; width:auto;" onclick="eliminarProductoSupabase('${p.uuid}')">🗑️</button>
                     </div>
                 </td>
@@ -930,17 +997,7 @@
     }
     
     function mostrarModalLocal(titulo, msg) { 
-        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem; color:var(--primary); font-family:'Playfair Display', serif;">⏳ ${msg}</div>`); 
-    }
-    
-    function formatearNumero(v, d = 2) { 
-        if (isNaN(v) || v === null || v === undefined) return "0"; 
-        let num = parseFloat(v); 
-        if (d === 0) num = Math.round(num); 
-        let p = num.toFixed(d).split('.'); 
-        p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
-        if (d > 0 && p[1] === "00") return p[0]; 
-        return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px;"><div class="spinner-luxury" style="width: 35px; height: 35px; border-width: 3px;"></div><span style="font-size:1.1rem; color:var(--primary); font-family:'Playfair Display', serif;">${msg}</span></div>`); 
     }
 </script>
 </body>
