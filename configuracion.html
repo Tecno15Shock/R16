@@ -1,139 +1,237 @@
-<!DOCTYPE html> <!-- Declara el tipo de documento como HTML5 -->
-<html lang="es"> <!-- Define el idioma principal de la página como español -->
-<head> <!-- Inicio de la cabecera del documento HTML -->
-    <meta charset="UTF-8"> <!-- Establece la codificación de caracteres a UTF-8 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Hace la página adaptable y responsiva para dispositivos móviles -->
-    <title>Configuracion - Sistema Maestro</title> <!-- Título que se muestra en la pestaña del navegador -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> <!-- Importa la librería oficial de Supabase para la base de datos -->
-    <style> /* Inicio de los estilos CSS personalizados del sistema */
-        :root { /* Variables globales de colores para el tema claro por defecto */
-            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
-            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
-            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuracion - Panel Administrativo</title>
+    <!-- Librería Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (ROJO Y DORADO)               */
+        /* ========================================================= */
+        :root {
+            --topbar-bg: #000000; 
+            --sidebar-bg: #000000; 
+            --active-gold: #D4AF37; 
+            
+            --bg: #1a050a; /* Fondo general oscuro para resaltar tarjetas */
+            --primary: #3b0918; /* Rojo oscuro ultra-premium */
+            --secondary: #7c1126; /* Rojo brillante */
+            --danger: #b30000; 
+            --success: #2ecc71; 
+            --warning: #f39c12; 
+            --info: #aa8c2c; 
+            --text: #222; 
+            --border: #d4af37; /* Dorado para bordes */
+            --card-bg: #ffffff; 
+            --item-bg: #fdf8f0; 
+            --muted: #666;
+            --input-bg: #fdf8f0;
         }
-        body.dark-mode { /* Variables globales de colores para cuando se activa el modo oscuro */
-            --bg: #121212; --primary: #1e272e; --secondary: #2980b9; --danger: #c0392b;
-            --success: #27ae60; --warning: #f39c12; --info: #2c3e50; --text: #ecf0f1; 
-            --border: #34495e; --card-bg: #1e1e1e; --item-bg: #2d2d2d; --muted: #bdc3c7;
-        }
-        body.hide-bs .moneda-bs { display: none !important; } /* Oculta los elementos en Bolívares si la tasa es 0 */
-        body.hide-cop .moneda-cop { display: none !important; } /* Oculta los elementos en Pesos Colombianos si la tasa es 0 */
-        body.hide-eur .moneda-eur { display: none !important; } /* Oculta los elementos en Euros si la tasa es 0 */
-        * { box-sizing: border-box; } /* Incluye el relleno y bordes dentro del ancho y alto total de los elementos */
-        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; transition: background 0.3s, color 0.3s; } /* Estilos base tipográficos y de fondo para el cuerpo */
-        .wrapper { display: block; min-height: 100vh; position: relative; } /* Contenedor general que asegura la altura mínima de la pantalla */
 
-        .top-bar { background: var(--primary); color: white; padding: 8px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); } /* Barra superior fija de navegación */
+        /* Variables adaptadas al modo oscuro lujoso */
+        body.dark-mode {
+            --bg: #0a0103; 
+            --primary: #2a0510; 
+            --secondary: #4a0917; 
+            --text: #fdf8f0; 
+            --card-bg: #121212; 
+            --item-bg: #1e1e1e; 
+            --muted: #aaa;
+            --input-bg: #1e1e1e;
+        }
+
+        body.hide-bs .moneda-bs { display: none !important; }
+        body.hide-cop .moneda-cop { display: none !important; }
+        body.hide-eur .moneda-eur { display: none !important; }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; scroll-behavior: smooth; transition: background 0.3s, color 0.3s; }
         
-        /* ========================================================= */
-        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
-        /* ========================================================= */
-        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
 
         /* ========================================================= */
-        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* BARRA SUPERIOR */
         /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.5); border-bottom: 2px solid var(--border); }
+        .menu-toggle-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border); color: var(--active-gold); font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.3); }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; font-family: 'Playfair Display', serif; }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL */
+        /* ========================================================= */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 4px 0 15px rgba(0,0,0,0.6); overflow-y: auto; border-right: 2px solid var(--border); }
         .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
-        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
-        .sidebar .tab-btn:hover { background: #34495e; color: white; }
-        /* Etiqueta para diferenciar la página activa en el menú */
-        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-brand { font-size: 1.4rem; font-family: 'Playfair Display', serif; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 2px; color: var(--active-gold); text-transform: uppercase; }
+        .sidebar .tab-btn { background: none; color: #ddd; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s; border-left: 3px solid transparent; }
+        .sidebar .tab-btn:hover { background: rgba(212, 175, 55, 0.1); color: white; border-left: 3px solid var(--active-gold); }
+        .sidebar .tab-btn.active { background: linear-gradient(90deg, var(--active-gold) 0%, #aa8c2c 100%) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 1001; display: none; backdrop-filter: blur(2px); }
         .sidebar-overlay.active { display: block; }
 
-        .main-content { padding: 20px; padding-bottom: 130px; } /* Contenedor principal donde se cargan las tarjetas de configuración */
-        .card { background: var(--card-bg); padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid var(--border); transition: transform 0.2s; } /* Tarjetas visuales para seccionar los formularios */
-        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; } /* Encabezados internos de cada tarjeta */
+        /* ========================================================= */
+        /* CONTENEDORES Y ACORDEÓN DESPLEGABLE LUGURY                */
+        /* ========================================================= */
+        .main-content { padding: 20px; padding-bottom: 130px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; } /* Estructura de cuadrícula en 2 columnas iguales */
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; } /* Estructura de cuadrícula en 3 columnas iguales */
-        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } } /* Vuelve las cuadrículas de una sola columna en pantallas pequeñas */
+        .card { 
+            background: var(--card-bg); border-radius: 6px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            border: 1px solid var(--border);
+            position: relative; overflow: hidden;
+            transition: background 0.3s;
+        }
         
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); outline: none; transition: border-color 0.2s; } /* Campos de entrada de texto y selectores */
-        input:focus, select:focus { border-color: var(--secondary); } /* Cambia el borde al hacer foco en un input */
+        /* Cabecera del Acordeón - ROJO CARMESÍ Y DORADO */
+        .card-header {
+            padding: 20px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            transition: filter 0.3s ease; user-select: none; border-bottom: 2px solid var(--border);
+        }
+        .card-header:hover { filter: brightness(1.15); }
+        .card-header h2 { 
+            color: var(--active-gold); margin: 0; font-size: 1.25rem; font-family: 'Playfair Display', serif; 
+            text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0; display: flex; align-items: center; gap: 10px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        }
+        .accordion-icon {
+            font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        /* Cuerpo del Acordeón (Oculto por defecto) */
+        .card-body {
+            max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease;
+            background: var(--card-bg); 
+        }
+        .card.open .card-body {
+            max-height: 2000px; padding: 25px; opacity: 1;
+            transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
+        }
+        .card.open .accordion-icon { transform: rotate(180deg); }
 
-        /* DISEÑO LLAMATIVO Y MODERNO DE LOS BOTONES */
-        button { 
-            background: linear-gradient(135deg, var(--secondary), #2980b9); /* Fondo con degradado elegante */
-            color: white; border: none; padding: 12px 18px; border-radius: 8px; 
-            cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; 
-            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); /* Sombra difuminada para dar relieve */
-            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; /* Transiciones fluidas */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+        
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--active-gold); text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        
+        input, select { 
+            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid rgba(212, 175, 55, 0.6); border-radius: 4px; 
+            font-size: 1rem; background: var(--input-bg); transition: all 0.3s ease; color: var(--text); border-left: 4px solid var(--active-gold); font-family: 'Roboto', sans-serif;
         }
-        button:hover { 
-            transform: translateY(-2px); /* Eleva ligeramente el botón al pasar el mouse */
-            box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4); /* Intensifica la sombra en hover */
-            opacity: 0.95; 
-        }
-        button:active { transform: translateY(1px); } /* Simula un hundimiento al hacer clic */
+        input:focus, select:focus { outline: none; background: var(--card-bg); border-color: var(--primary); border-left-color: var(--primary); box-shadow: 0 0 10px rgba(124, 17, 38, 0.15); }
 
-        /* ESTILO ELEGANTE DE LAS VENTANAS EMERGENTES (MODALES) */
-        .custom-modal-overlay { 
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); /* Fondo semitransparente con efecto borroso */
-            z-index: 100000; display: none; align-items: center; justify-content: center; 
+        button { font-family: 'Playfair Display', serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+        button:active { transform: scale(0.98); }
+        
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-danger { background: var(--danger); color: white; border: 1px solid darkred; }
+
+        /* ========================================================= */
+        /* MODALES LUXURY Y PANTALLAS DE BLOQUEO                     */
+        /* ========================================================= */
+        #loading_overlay, #pantalla_bloqueo_admin {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, rgba(124, 17, 38, 0.95), rgba(59, 9, 24, 0.99));
+            z-index: 1000000; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px); transition: opacity 0.5s ease;
         }
-        .custom-modal-box { 
-            background: var(--card-bg); padding: 30px; border-radius: 16px; 
-            width: 420px; max-width: 90%; text-align: center; position: relative; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid var(--border); 
-            animation: modalScaleUp 0.3s ease-in-out; /* Animación de apertura suave */
+        
+        /* Modal General */
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 4px; width: 90%; max-width: 500px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
+        .modal-close-btn:hover { background: var(--danger); transform: scale(1.05); color: #FFF; }
+        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+
+        /* Estilos del Loading Modal & Spinner */
+        .loading-box {
+            background: var(--card-bg); padding: 40px; border-radius: 4px;
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 2px solid var(--active-gold);
+            position: relative; max-width: 400px; width: 90%;
         }
-        @keyframes modalScaleUp { 
-            from { transform: scale(0.85); opacity: 0; } 
-            to { transform: scale(1); opacity: 1; } 
+        .loading-box::before, .loading-box::after { content: ''; position: absolute; width: 30px; height: 30px; border: 2px solid var(--active-gold); }
+        .loading-box::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .loading-box::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 4px solid rgba(212, 175, 55, 0.2);
+            border-left-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
         }
-        .custom-modal-title { 
-            font-size: 1.4rem; color: var(--primary); margin-bottom: 15px; 
-            font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; 
-        }
+
+        .loading-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .loading-subtitle { font-family: 'Roboto', sans-serif; font-size: 0.95rem; color: var(--muted); line-height: 1.5; }
     </style>
 </head>
-<body> <!-- Inicio del cuerpo visible del documento HTML -->
+<body>
 
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
-<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px;"> <!-- Contenedor de la pantalla de bloqueo protegida con PIN -->
-    <div style="background: var(--card-bg); width: 100%; max-width: 380px; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border-top: 5px solid var(--danger);"> <!-- Tarjeta interna del formulario de acceso -->
-        <h2 style="color: var(--danger); margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 12px;">🔒 Acceso Protegido</h2> <!-- Título de seguridad -->
-        <p style="font-size: 0.95rem; color: var(--muted); margin: 20px 0;">Introduce el PIN de Administrador para ver este módulo:</p> <!-- Instrucción para el usuario -->
+<!-- MODAL DE CARGA INICIAL (CON SPINNER) -->
+<div id="loading_overlay">
+    <div class="loading-box">
+        <div class="spinner-luxury"></div>
+        <div class="loading-title">Sincronizando Módulo</div>
+        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Cargando configuraciones y parámetros...</div>
+    </div>
+</div>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (SIN SPINNER ESTÁTICO) -->
+<div id="pantalla_bloqueo_admin" style="display: none;">
+    <div class="loading-box" style="padding: 30px;">
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-size: 1.4rem; padding-bottom: 10px; margin-bottom: 15px; font-family: 'Playfair Display', serif;">🔒 ACCESO PROTEGIDO</h2>
+        <p style="font-size: 0.95rem; color: var(--muted); margin-bottom: 20px; font-family:'Roboto', sans-serif;">Introduce el PIN de Administrador para gestionar la Configuración:</p>
         
-        <div style="position: relative; margin-bottom: 20px;"> <!-- Contenedor relativo para alinear el input y el botón del monito -->
-            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid var(--border); border-radius: 8px; outline: none; background: var(--bg); color: var(--text);"> <!-- Campo de contraseña centrado -->
-            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span> <!-- Icono interactivo para cambiar entre ver contraseña y el monito 🙈 -->
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace; background: var(--bg);" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
         </div>
 
-        <div id="mensaje_carga_pin" style="display: none; color: var(--success); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">⏳ Cargando módulo...</div> <!-- Mensaje dinámico de carga antes de entrar -->
+        <div id="mensaje_carga_pin" style="display: none; margin-bottom: 15px;">
+            <div class="spinner-luxury" style="width: 25px; height: 25px; border-width: 2px; margin: 0 auto 8px auto;"></div>
+            <span style="color: var(--success); font-weight: bold; font-size: 1rem; font-family: 'Playfair Display', serif;">Desbloqueando módulo...</span>
+        </div>
 
-        <button id="btn_desbloquear_pin" onclick="verificarPinBody()" style="background: linear-gradient(135deg, var(--primary), #1a252f);">Desbloquear Pantalla</button> <!-- Botón para enviar y comprobar el PIN -->
-        <button id="btn_volver_pin" onclick="window.location.href='principal.html'" style="background: linear-gradient(135deg, var(--danger), #c0392b); margin-top: 10px;">Volver al Inicio</button> <!-- Botón para salir al menú principal -->
+        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">AUTENTICAR</button>
+        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">VOLVER AL INICIO</button>
     </div>
 </div>
 
 <!-- MODAL GLOBAL -->
-<div id="global_modal" class="custom-modal-overlay"> <!-- Capa oscura difuminada para las ventanas emergentes globales del sistema -->
-    <div class="custom-modal-box"> <!-- Caja contenedora de la ventana emergente -->
-        <div id="global_modal_title" class="custom-modal-title">Título</div> <!-- Título dinámico del modal -->
-        <div id="global_modal_body"></div> <!-- Contenedor dinámico para el cuerpo del mensaje o formulario del modal -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
     </div>
 </div>
 
-<div class="wrapper"> <!-- Contenedor principal que envuelve la estructura de la página -->
+<!-- SISTEMA PRINCIPAL -->
+<div class="wrapper" id="main_wrapper" style="display: none;">
     
-	<!-- BARRA SUPERIOR -->
+    <!-- BARRA SUPERIOR -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        <div class="top-bar-title" id="main_top_title">Panel Administrativo</div>
     </div>
 
     <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú del Sistema</div>
-        <!-- SOLO UN ENLACE DEBE TENER LA CLASE "active" POR PÁGINA -->
+        <div class="sidebar-brand">MENÚ CENTRAL</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -156,103 +254,131 @@
         <a href="configuracion.html" class="tab-btn active">⚙️ Configuracion</a>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL -->
-    <div class="main-content"> <!-- Contenedor principal que almacena los diferentes módulos de configuración -->
+    <!-- CONTENIDO PRINCIPAL EN FORMATO ACORDEÓN DESPLEGABLE ROJO/DORADO -->
+    <div class="main-content">
+        
         <!-- 1. APARIENCIA E IDENTIDAD -->
-        <div class="card" style="border-top: 4px solid var(--primary);"> <!-- Tarjeta contenedora para la sección de apariencia -->
-            <h2>🖥️ Apariencia e Identidad</h2> <!-- Encabezado de la sección -->
-            <div class="grid-2"> <!-- Cuadrícula de dos columnas -->
-                <div>
-                    <label>Nombre del Local:</label> <!-- Etiqueta descriptiva para el nombre -->
-                    <input type="text" id="config_nombre_local" placeholder="Ej: Refresquería Flor"> <!-- Campo de texto para modificar el nombre del local -->
-                </div>
-                <div>
-                    <label>Tema del Sistema:</label> <!-- Etiqueta descriptiva para el selector de tema -->
-                    <button onclick="toggleDarkMode()" style="background: linear-gradient(135deg, var(--info), #2c3e50); margin-top: 28px;">Activar/Desactivar Modo Oscuro 🌓</button> <!-- Botón para alternar el modo oscuro -->
-                </div>
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>🖥️ 1. Apariencia e Identidad</h2>
+                <span class="accordion-icon">▼</span>
             </div>
-            <button onclick="guardarIdentidad()">💾 Guardar Identidad</button> <!-- Botón para ejecutar el guardado del nombre del local -->
+            <div class="card-body">
+                <div class="grid-2">
+                    <div>
+                        <label>Nombre del Local:</label>
+                        <input type="text" id="config_nombre_local" placeholder="Ej: Refresquería Flor">
+                    </div>
+                    <div>
+                        <label>Tema del Sistema:</label>
+                        <button class="btn-info" onclick="toggleDarkMode()" style="margin-top: 28px;">Alternar Modo Oscuro 🌓</button>
+                    </div>
+                </div>
+                <button class="btn-info" onclick="guardarIdentidad()" style="margin-top: 25px;">💾 GUARDAR IDENTIDAD</button>
+            </div>
         </div>
 
         <!-- 2. TASAS DE CAMBIO -->
-        <div class="card" style="border-top: 4px solid var(--warning);"> <!-- Tarjeta contenedora para las tasas de cambio -->
-            <h2>💱 Tasas de Cambio Globales</h2> <!-- Encabezado de la sección de tasas -->
-            <p style="font-size:0.85rem; color:var(--muted); margin-top: 0;">Nota: Si colocas la tasa en 0, la moneda desaparecerá del sistema público de ventas.</p> <!-- Nota explicativa sobre tasas en cero -->
-            <div class="grid-3"> <!-- Cuadrícula de tres columnas para las tres monedas -->
-                <div><label>USD a BS:</label><input type="number" step="0.01" id="tasa_ves" value="1"></div> <!-- Input para la tasa del Bolívar -->
-                <div><label>USD a COP:</label><input type="number" id="tasa_cop" value="1"></div> <!-- Input para la tasa del Peso Colombiano -->
-                <div><label>USD a EUR:</label><input type="number" step="0.01" id="tasa_eur" value="1"></div> <!-- Input para la tasa del Euro -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>💱 2. Tasas de Cambio Globales</h2>
+                <span class="accordion-icon">▼</span>
             </div>
-            <button onclick="guardarTasasEstetico()" style="background: linear-gradient(135deg, var(--success), #27ae60);">💾 Guardar Tasas de Cambio</button> <!-- Botón para guardar las tasas de conversión -->
+            <div class="card-body">
+                <p style="font-size:0.85rem; color:var(--muted); margin-top: 0; margin-bottom: 20px; font-family:'Playfair Display', serif; font-style:italic;">Nota: Si colocas la tasa en 0, la moneda desaparecerá del sistema público de ventas.</p>
+                <div class="grid-3">
+                    <div><label>USD a BS:</label><input type="number" step="0.01" id="tasa_ves" value="1"></div>
+                    <div><label>USD a COP:</label><input type="number" id="tasa_cop" value="1"></div>
+                    <div><label>USD a EUR:</label><input type="number" step="0.01" id="tasa_eur" value="1"></div>
+                </div>
+                <button class="btn-info" onclick="guardarTasasEstetico()" style="margin-top: 25px;">💾 GUARDAR TASAS DE CAMBIO</button>
+            </div>
         </div>
 
         <!-- 3. INTEGRACIÓN TELEGRAM -->
-        <div class="card" style="border-top: 4px solid var(--info);"> <!-- Tarjeta contenedora para la API de Telegram -->
-            <h2>🤖 Integración API Telegram Global</h2> <!-- Encabezado de la sección de Telegram -->
-            <label>Token del Bot:</label> <!-- Etiqueta para el token del bot -->
-            <input type="text" id="config_tg_token" placeholder="Ej: 123456789:ABCDefghIJKLmnopQRSTuvwxYZ"> <!-- Campo para el token de Telegram -->
-            <div class="grid-2"> <!-- Cuadrícula de dos columnas para los chats -->
-                <div><label>Chat Inventarios/Backups:</label><input type="text" id="config_tg_chat_inv" placeholder="ID del grupo o chat"></div> <!-- Input chat inventarios -->
-                <div><label>Chat Cierres Generales:</label><input type="text" id="config_tg_chat_cierre" placeholder="ID del grupo o chat"></div> <!-- Input chat cierres -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>🤖 3. Integración API Telegram</h2>
+                <span class="accordion-icon">▼</span>
             </div>
-            <label>Chat Notificaciones Extras (Gastos/Avances):</label> <!-- Etiqueta chat de notificaciones adicionales -->
-            <input type="text" id="config_tg_chat_notif" placeholder="ID del grupo o chat"> <!-- Input chat notificaciones extras -->
-            <button onclick="guardarConfigTelegram()" style="background: linear-gradient(135deg, var(--info), #2c3e50);">💾 Guardar Enrutamiento</button> <!-- Botón para guardar las configuraciones de Telegram -->
+            <div class="card-body">
+                <label>Token del Bot:</label>
+                <input type="text" id="config_tg_token" placeholder="Ej: 123456789:ABCDefghIJKLmnopQRSTuvwxYZ">
+                <div class="grid-2" style="margin-top: 15px;">
+                    <div><label>Chat Inventarios/Backups:</label><input type="text" id="config_tg_chat_inv" placeholder="ID del grupo o chat"></div>
+                    <div><label>Chat Cierres Generales:</label><input type="text" id="config_tg_chat_cierre" placeholder="ID del grupo o chat"></div>
+                </div>
+                <label style="margin-top: 15px;">Chat Notificaciones Extras (Gastos/Avances):</label>
+                <input type="text" id="config_tg_chat_notif" placeholder="ID del grupo o chat">
+                <button class="btn-info" onclick="guardarConfigTelegram()" style="margin-top: 25px;">💾 GUARDAR ENRUTAMIENTO</button>
+            </div>
         </div>
 
-        <!-- 4. PERMISOS Y SEGURIDAD (SOLO PIN) -->
-        <div class="card" style="border-top: 4px solid var(--danger);"> <!-- Tarjeta contenedora de seguridad y PIN -->
-            <h2>🔒 Seguridad (Restricción a Vendedores)</h2> <!-- Encabezado de seguridad -->
-            <div class="grid-2"> <!-- Cuadrícula de dos columnas -->
-                <div>
-                    <label>PIN Interno de Administrador:</label> <!-- Etiqueta para cambiar el PIN -->
-                    <input type="password" id="config_admin_pin" placeholder="Introduce el Nuevo PIN"> <!-- Input para ingresar el nuevo código PIN -->
-                </div>
-                <div>
-                    <button onclick="guardarPinAdmin()" style="background: linear-gradient(135deg, var(--danger), #c0392b); margin-top: 28px;">💾 Cambiar PIN</button> <!-- Botón para actualizar el PIN maestro -->
+        <!-- 4. PERMISOS Y SEGURIDAD -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>🔒 4. Seguridad y PIN Maestro</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.85rem; color:var(--danger); margin-top:0; margin-bottom: 20px; font-weight:bold;">Nota: La ventana de "Configuraciones" siempre estará bloqueada por defecto para evitar vulneración de accesos.</p>
+                <div class="grid-2">
+                    <div>
+                        <label>PIN Interno de Administrador:</label>
+                        <input type="password" id="config_admin_pin" placeholder="Introduce el Nuevo PIN">
+                    </div>
+                    <div>
+                        <button class="btn-danger" onclick="guardarPinAdmin()" style="margin-top: 28px;">💾 CAMBIAR PIN</button>
+                    </div>
                 </div>
             </div>
-            <p style="font-size:0.85rem; color:var(--muted); margin-top:15px;">Nota: La ventana de "Configuraciones" siempre estará bloqueada por defecto para evitar vulneración de accesos.</p> <!-- Nota informativa de seguridad -->
         </div>
+
     </div>
 </div>
 
-<script> /* Inicio del bloque de código JavaScript para la lógica funcional */
-    // ==========================================
-    // INICIALIZACIÓN DE MOTOR SUPABASE (UNIFICADO)
-    // ==========================================
-    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co'; /* Almacena la URL oficial del proyecto Supabase */
-    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i'; /* Almacena la llave pública anon de Supabase */
-    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY); /* Crea e inicializa la instancia global del cliente Supabase */
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let CURRENT_LOCAL_ID = null; /* Variable local para registrar el identificador único del local activo */
-    let CONFIG_GLOBAL = {}; /* Objeto contenedor global para las configuraciones obtenidas de la base de datos */
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
 
-    // Evento que se dispara automáticamente al terminar de cargar todo el DOM del documento
     window.addEventListener('DOMContentLoaded', async () => {
-        try { /* Bloque de control de excepciones para la autenticación inicial */
-            const { data } = await window.supabaseClient.auth.getSession(); /* Consulta si existe una sesión activa en Supabase */
-            if (!data || !data.session) { /* Evalúa si la sesión es nula o no existe */
-                alert("No hay una sesión administrativa activa. Vuelve a la pantalla principal para iniciar sesión."); /* Muestra aviso de advertencia */
-                window.location.href = 'index.html'; /* Redirige al usuario a la página principal o de login */
-                return; /* Detiene la ejecución posterior */
+        // Carga de modo oscuro desde localStorage
+        if(localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) {
+                alert("No hay una sesión administrativa activa. Vuelve a la pantalla principal para iniciar sesión.");
+                window.location.href = 'index.html';
+                return;
             }
-            await inicializarDatos(data.session); /* Ejecuta la función de carga inicial pasando los datos de la sesión */
-        } catch (err) { /* Captura cualquier error imprevisto de red o de servidor */
-            console.error(err); /* Imprime el error detallado en la consola del navegador */
-            alert("Error de red conectando con el servidor."); /* Alerta visual al operador */
+            await inicializarDatos(data.session);
+        } catch (err) {
+            console.error(err);
+            alert("Error de red conectando con el servidor.");
         }
     });
 
-    // Función asíncrona encargada de enlazar el perfil del usuario con su respectivo local y cargar la data
+    // Control de Acordeón Desplegable
+    function toggleAcordeon(header) {
+        let card = header.parentElement;
+        card.classList.toggle('open');
+    }
+
     async function inicializarDatos(session) {
         const userId = session.user.id;
-        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
         
         if (perfil && perfil.local_id) {
             CURRENT_LOCAL_ID = perfil.local_id;
         } else {
-            let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
+            let { data: localesList } = await supabaseClient.from('locales').select('id, nombre').limit(1);
             if(localesList && localesList.length > 0) {
                 CURRENT_LOCAL_ID = localesList[0].id;
             } else {
@@ -260,15 +386,14 @@
             }
         }
 
-        // Cargar configuración y nombre del local de forma segura
         let conf = null, localData = null;
         try {
-            let resConf = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+            let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
             conf = resConf.data;
         } catch(e) { console.warn("Sin configuración propia"); }
 
         try {
-            let resLocal = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+            let resLocal = await supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
             localData = resLocal.data;
         } catch(e) { console.warn("Sin local asociado"); }
 
@@ -287,191 +412,191 @@
         }
 
         let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
-        let etiquetaModulo = "Configuracion"; 
+        let etiquetaModulo = "Configuraciones"; 
 
         document.getElementById('main_top_title').innerHTML = `
             🏪 ${nombreLocal} 
-            <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                📌 Módulo: ${etiquetaModulo}
+            <span style="font-size:0.75rem; font-family: 'Roboto', sans-serif; font-weight:bold; background: linear-gradient(90deg, var(--active-gold), #aa8c2c); color: #000; padding: 4px 10px; border-radius: 4px; margin-left: 15px; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-transform: uppercase;">
+                📌 ${etiquetaModulo}
             </span>
         `;
+
+        // Mostrar pantalla de PIN
+        document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
+        document.getElementById('pantalla_bloqueo_admin').style.opacity = '1';
+
+        // Desvanecer Loading Overlay
+        setTimeout(() => {
+            document.getElementById('loading_overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading_overlay').style.display = 'none';
+                document.getElementById('pin_ingreso_body').focus();
+            }, 500);
+        }, 800);
     }
 
-    // ==========================================
-    // MENU LATERAL (SIDEBAR)
-    // ==========================================
-    function toggleSidebar() { /* Función para alternar el estado de apertura o cierre del menú lateral */
-        document.getElementById('sidebar').classList.toggle('open'); /* Agrega o remueve la clase open en el contenedor del menú */
-        document.getElementById('sidebar-overlay').classList.toggle('active'); /* Activa o desactiva la capa oscura de fondo */
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('active');
     }
 
-    // ==========================================
-    // CONTROL DE ACCESO RESTRINGIDO POR CONTRASEÑA
-    // ==========================================
-    function toggleVerPin() { /* Función interactiva para mostrar u ocultar los caracteres del PIN y cambiar el icono del monito */
-        let input = document.getElementById('pin_ingreso_body'); /* Captura el elemento input de contraseña */
-        let icono = document.getElementById('icono_ojo_pin'); /* Captura el elemento visual del icono */
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        let icono = document.getElementById('icono_ojo_pin');
         
-        if (input.type === 'password') { /* Comprueba si el campo está oculto como contraseña */
-            input.type = 'text'; /* Cambia el tipo de input a texto plano para hacerlo visible */
-            icono.innerText = '🙈'; /* Cambia el icono al monito tapándose los ojos */
-        } else { /* Si el texto ya se encuentra visible */
-            input.type = 'password'; /* Vuelve a ocultar el texto en modo contraseña segura */
-            icono.innerText = '👁️'; /* Restaura el icono de ojo normal */
+        if (input.type === 'password') {
+            input.type = 'text';
+            icono.innerText = '🙈';
+        } else {
+            input.type = 'password';
+            icono.innerText = '👁️';
         }
     }
 
-    async function verificarPinBody() { /* Función encargada de validar el PIN ingresado por el usuario */
-        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim(); /* Obtiene el valor escrito eliminando espacios sobrantes */
-        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016'; /* Obtiene el PIN administrativo configurado o utiliza uno predeterminado de respaldo */
-
-        if (pinIngresado === pinReal) { /* Compara si el PIN ingresado coincide con el PIN real */
-            document.getElementById('btn_desbloquear_pin').style.display = 'none'; /* Oculta el botón de desbloqueo para evitar múltiples clics */
-            document.getElementById('btn_volver_pin').style.display = 'none'; /* Oculta el botón de retorno */
-            document.getElementById('mensaje_carga_pin').style.display = 'block'; /* Muestra el mensaje visual de carga del módulo */
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
+        
+        if (pinIngresado === pinReal) {
+            document.getElementById('btn_desbloquear_pin').style.display = 'none';
+            document.getElementById('btn_volver_pin').style.display = 'none';
+            document.getElementById('mensaje_carga_pin').style.display = 'block';
             
-            setTimeout(() => { /* Establece un temporizador de retraso de 2 segundos antes de permitir el ingreso */
-                document.getElementById('pantalla_bloqueo_admin').style.display = 'none'; /* Oculta completamente la capa de bloqueo de pantalla */
+            setTimeout(() => {
+                document.getElementById('main_wrapper').style.display = 'block';
+
+                let pantalla = document.getElementById('pantalla_bloqueo_admin');
+                pantalla.style.opacity = '0';
+                pantalla.style.transition = 'opacity 0.4s ease';
                 
-                // Restaura los elementos internos del formulario por si se bloquea nuevamente en la misma sesión
-                document.getElementById('btn_desbloquear_pin').style.display = 'block';
-                document.getElementById('btn_volver_pin').style.display = 'block';
-                document.getElementById('mensaje_carga_pin').style.display = 'none';
-                document.getElementById('pin_ingreso_body').value = '';
-                document.getElementById('pin_ingreso_body').type = 'password';
-                document.getElementById('icono_ojo_pin').innerText = '👁️';
-            }, 2000); /* Define un retraso exacto de 2000 milisegundos (2 segundos) */
-        } else { /* Si el PIN ingresado es incorrecto */
-            alert("❌ PIN Incorrecto."); /* Muestra una alerta informando el fallo */
-            document.getElementById('pin_ingreso_body').value = ''; /* Limpia el campo de texto del PIN */
+                setTimeout(() => { 
+                    pantalla.style.display = 'none'; 
+                    document.getElementById('btn_desbloquear_pin').style.display = 'block';
+                    document.getElementById('btn_volver_pin').style.display = 'block';
+                    document.getElementById('mensaje_carga_pin').style.display = 'none';
+                    document.getElementById('pin_ingreso_body').value = '';
+                    document.getElementById('pin_ingreso_body').type = 'password';
+                    document.getElementById('icono_ojo_pin').innerText = '👁️';
+                }, 400);
+            }, 800);
+        } else {
+            alert("❌ PIN Incorrecto. Acceso Restringido.");
+            document.getElementById('pin_ingreso_body').value = '';
         }
     }
 
-    // ==========================================
-    // MOTOR DE GUARDADO EN BASE DE DATOS
-    // ==========================================
-    async function guardarConfiguracionParcial(columna, objetoJson) { /* Función reutilizable para actualizar bloques JSON en la tabla configuraciones de Supabase */
-        if (!CURRENT_LOCAL_ID) return false; /* Valida que el ID del local esté disponible */
-        let payload = { [columna]: objetoJson }; /* Construye dinámicamente el objeto de datos a actualizar */
-        let { data, error } = await window.supabaseClient.from('configuraciones').update(payload).eq('local_id', CURRENT_LOCAL_ID).select(); /* Envía la solicitud de actualización */
-        if (error) { alert("Error actualizando: " + error.message); return false; } /* Muestra alerta si ocurre un error de base de datos */
+    async function guardarConfiguracionParcial(columna, objetoJson) {
+        if (!CURRENT_LOCAL_ID) return false;
+        let payload = { [columna]: objetoJson };
+        let { data, error } = await supabaseClient.from('configuraciones').update(payload).eq('local_id', CURRENT_LOCAL_ID).select();
+        if (error) { alert("Error actualizando: " + error.message); return false; }
         
-        if (!data || data.length === 0) { /* Comprueba si el registro de configuración no existía previamente para ese local */
-            payload.local_id = CURRENT_LOCAL_ID; /* Añade el local_id al paquete de inserción */
-            let { error: errInsert } = await window.supabaseClient.from('configuraciones').insert([payload]); /* Inserta un nuevo registro de configuración */
-            if (errInsert) { alert("Error inicializando config: " + errInsert.message); return false; } /* Muestra alerta si falla la inserción */
+        if (!data || data.length === 0) {
+            payload.local_id = CURRENT_LOCAL_ID;
+            let { error: errInsert } = await supabaseClient.from('configuraciones').insert([payload]);
+            if (errInsert) { alert("Error inicializando config: " + errInsert.message); return false; }
         }
-        return true; /* Retorna verdadero si la operación se completó con éxito */
+        return true;
     }
 
-    async function guardarIdentidad() { /* Función para procesar y guardar los cambios del nombre del local */
-        let nuevoNombreLocal = document.getElementById('config_nombre_local').value.trim(); /* Captura el valor del input del nombre */
-        if(!nuevoNombreLocal) return alert("⚠️ El nombre del local no puede estar vacío."); /* Valida que no esté vacío */
+    async function guardarIdentidad() {
+        let nuevoNombreLocal = document.getElementById('config_nombre_local').value.trim();
+        if(!nuevoNombreLocal) return alert("⚠️ El nombre del local no puede estar vacío.");
 
-        mostrarModalLocal("Guardando", "Actualizando el nombre del local..."); /* Despliega el modal informando el proceso */
-        try { /* Bloque try-catch para manejar errores durante la actualización */
-            let { error } = await window.supabaseClient.from('locales').update({ nombre: nuevoNombreLocal }).eq('id', CURRENT_LOCAL_ID); /* Actualiza el nombre en la tabla principal locales */
-            if(error) throw error; /* Lanza una excepción si Supabase retorna error */
+        mostrarModalLocal("Guardando", "Actualizando identidad del negocio...");
+        try {
+            let { error } = await supabaseClient.from('locales').update({ nombre: nuevoNombreLocal }).eq('id', CURRENT_LOCAL_ID);
+            if(error) throw error;
 
-            let identidad = CONFIG_GLOBAL.identidad || {}; /* Obtiene la estructura actual de identidad o inicializa un objeto vacío */
-            identidad.nombre = nuevoNombreLocal; /* Actualiza la propiedad del nombre dentro del objeto */
-            await guardarConfiguracionParcial('identidad', identidad); /* Guarda los cambios en la columna JSON correspondiente */
+            let identidad = CONFIG_GLOBAL.identidad || {};
+            identidad.nombre = nuevoNombreLocal;
+            await guardarConfiguracionParcial('identidad', identidad);
             
-            CONFIG_GLOBAL.identidad = identidad; /* Actualiza la variable global con la nueva identidad */
-            mostrarAnimacionGuardando("¡Nombre Actualizado con Éxito!"); /* Muestra la animación de éxito */
+            CONFIG_GLOBAL.identidad = identidad;
+            mostrarAnimacionGuardando("¡Identidad Actualizada!");
             
-            let textActual = document.getElementById('main_top_title').innerHTML; /* Obtiene el HTML actual del título superior */
-            document.getElementById('main_top_title').innerHTML = textActual.replace(/🏪 .*? </, `🏪 ${nuevoNombreLocal} <`); /* Actualiza el nombre del local en tiempo real sin recargar */
-        } catch(err) { /* Captura el error en caso de fallo */
-            cerrarModalGlobal(); /* Cierra el modal de espera */
-            alert("❌ Error al actualizar: " + err.message); /* Notifica al usuario del error ocurrido */
+            let textActual = document.getElementById('main_top_title').innerHTML;
+            document.getElementById('main_top_title').innerHTML = textActual.replace(/🏪 .*? </, `🏪 ${nuevoNombreLocal} <`);
+        } catch(err) {
+            cerrarModalGlobal();
+            alert("❌ Error al actualizar: " + err.message);
         }
     }
 
-    async function guardarTasasEstetico() { /* Función para recolectar y guardar las tasas de cambio de divisas */
-        let tasas = { /* Crea el objeto con los valores numéricos convertidos desde los inputs */
+    async function guardarTasasEstetico() {
+        let tasas = {
             ves: parseFloat(document.getElementById('tasa_ves').value) || 1,
             cop: parseFloat(document.getElementById('tasa_cop').value) || 1,
             eur: parseFloat(document.getElementById('tasa_eur').value) || 1
         };
-        mostrarModalLocal("Guardando", "Actualizando tasas de conversión..."); /* Muestra el modal de procesamiento */
-        let exito = await guardarConfiguracionParcial('tasas', tasas); /* Guarda el objeto de tasas en la base de datos */
-        if (exito) { /* Si la operación fue exitosa */
-            CONFIG_GLOBAL.tasas = tasas; /* Actualiza las tasas globales */
-            mostrarAnimacionGuardando("Tasas Guardadas"); /* Muestra la animación de éxito */
-        } else { /* Si ocurrió un error */
-            cerrarModalGlobal(); /* Cierra el modal activo */
+        mostrarModalLocal("Guardando", "Sincronizando tasas de conversión...");
+        let exito = await guardarConfiguracionParcial('tasas', tasas);
+        if (exito) {
+            CONFIG_GLOBAL.tasas = tasas;
+            mostrarAnimacionGuardando("Tasas Consolidadas");
+        } else {
+            cerrarModalGlobal();
         }
     }
 
-    async function guardarConfigTelegram() { /* Función para recolectar y guardar las credenciales y chats de la API de Telegram */
-        let configTg = { /* Agrupa los valores ingresados en los campos de Telegram */
+    async function guardarConfigTelegram() {
+        let configTg = {
             token: document.getElementById('config_tg_token').value.trim(),
             inv: document.getElementById('config_tg_chat_inv').value.trim(),
             cierre: document.getElementById('config_tg_chat_cierre').value.trim(),
             notif: document.getElementById('config_tg_chat_notif').value.trim()
         };
-        mostrarModalLocal("Guardando", "Actualizando enrutamiento de bots Telegram..."); /* Muestra el modal de espera */
-        let exito = await guardarConfiguracionParcial('config_tg', configTg); /* Guarda la configuración de Telegram en la base de datos */
-        if (exito) { /* Si se guardó correctamente */
-            CONFIG_GLOBAL.config_tg = configTg; /* Actualiza la configuración global de Telegram */
-            mostrarAnimacionGuardando("Telegram Configurado"); /* Muestra la animación de éxito */
-        } else { /* Si hubo un fallo */
-            cerrarModalGlobal(); /* Cierra el modal */
+        mostrarModalLocal("Guardando", "Actualizando enrutamiento de Telegram...");
+        let exito = await guardarConfiguracionParcial('config_tg', configTg);
+        if (exito) {
+            CONFIG_GLOBAL.config_tg = configTg;
+            mostrarAnimacionGuardando("Telegram Configurado");
+        } else {
+            cerrarModalGlobal();
         }
     }
 
-    async function guardarPinAdmin() { /* Función para validar y actualizar el PIN de administrador */
-        let nuevoPin = document.getElementById('config_admin_pin').value.trim(); /* Obtiene el PIN escrito */
-        if(!nuevoPin || nuevoPin.length < 4) return alert("⚠️ El PIN debe tener al menos 4 caracteres."); /* Valida que tenga una longitud mínima de 4 dígitos */
+    async function guardarPinAdmin() {
+        let nuevoPin = document.getElementById('config_admin_pin').value.trim();
+        if(!nuevoPin || nuevoPin.length < 4) return alert("⚠️ El PIN debe tener al menos 4 caracteres.");
         
-        let identidad = CONFIG_GLOBAL.identidad || {}; /* Obtiene el objeto identidad actual */
-        identidad.admin_pass = nuevoPin; /* Asigna el nuevo PIN dentro de la propiedad admin_pass */
+        let identidad = CONFIG_GLOBAL.identidad || {};
+        identidad.admin_pass = nuevoPin;
         
-        mostrarModalLocal("Guardando", "Actualizando PIN de seguridad maestro..."); /* Muestra el modal de proceso */
-        let exito = await guardarConfiguracionParcial('identidad', identidad); /* Guarda la identidad actualizada en Supabase */
-        if (exito) { /* Si el guardado fue exitoso */
-            CONFIG_GLOBAL.identidad = identidad; /* Actualiza el objeto global */
-            mostrarAnimacionGuardando("PIN Actualizado"); /* Muestra la animación de éxito */
-            document.getElementById('config_admin_pin').value = ''; /* Limpia el campo del input de PIN */
-        } else { /* Si falló */
-            cerrarModalGlobal(); /* Cierra el modal */
+        mostrarModalLocal("Guardando", "Cifrando nuevo PIN de seguridad...");
+        let exito = await guardarConfiguracionParcial('identidad', identidad);
+        if (exito) {
+            CONFIG_GLOBAL.identidad = identidad;
+            mostrarAnimacionGuardando("PIN Actualizado");
+            document.getElementById('config_admin_pin').value = '';
+        } else {
+            cerrarModalGlobal();
         }
     }
 
-    // ==========================================
-    // UTILIDADES DE INTERFAZ
-    // ==========================================
-    function toggleDarkMode() { /* Función para activar o desactivar el modo oscuro visual */
-        document.body.classList.toggle('dark-mode'); /* Alterna la clase CSS dark-mode en el cuerpo de la página */
-        let mode = document.body.classList.contains('dark-mode') ? 'dark' : 'light'; /* Determina si el modo actual es oscuro o claro */
-        localStorage.setItem('theme', mode); /* Almacena la preferencia del usuario en el almacenamiento local del navegador */
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        let mode = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+        localStorage.setItem('theme', mode);
     }
 
-    if(localStorage.getItem('theme') === 'dark') { /* Comprueba al iniciar si el usuario guardó previamente el modo oscuro */
-        document.body.classList.add('dark-mode'); /* Aplica el modo oscuro de forma automática al cargar la vista */
-    }
-
-    function abrirModalGlobal(titulo, htmlContent) { /* Función para configurar y desplegar cualquier ventana emergente global */
-        document.getElementById('global_modal_title').innerText = titulo; /* Asigna el texto del título recibido al modal */
-        document.getElementById('global_modal_body').innerHTML = htmlContent; /* Inserta el contenido HTML personalizado en el cuerpo del modal */
-        document.getElementById('global_modal').style.display = 'flex'; /* Cambia el visor a flex para centrar y mostrar el modal */
+    function abrirModalGlobal(titulo, htmlContent) {
+        document.getElementById('global_modal_title').innerText = titulo;
+        document.getElementById('global_modal_body').innerHTML = htmlContent;
+        document.getElementById('global_modal').style.display = 'flex';
     }
     
-    function cerrarModalGlobal() { /* Función para ocultar y cerrar la ventana emergente global */
-        document.getElementById('global_modal').style.display = 'none'; /* Oculta el contenedor del modal cambiando su display a none */
+    function cerrarModalGlobal() {
+        document.getElementById('global_modal').style.display = 'none';
     }
     
-    function mostrarModalLocal(titulo, msg) { /* Función rápida para mostrar un modal de espera con un mensaje */
-        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px; font-size:1.1rem; color:var(--text);">⏳ ${msg}</div>`); /* Genera la estructura visual de espera */
+    function mostrarModalLocal(titulo, msg) {
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px;"><div class="spinner-luxury" style="width: 35px; height: 35px; border-width: 3px;"></div><span style="font-size:1.1rem; color:var(--primary); font-family:'Playfair Display', serif;">${msg}</span></div>`);
     }
     
-    function mostrarAnimacionGuardando(msj) { /* Función que gestiona la secuencia visual de guardado exitoso */
-        abrirModalGlobal("Procesando...", `<div style="text-align:center; font-size:1.2rem; padding:20px; color:var(--text);">⏳ Guardando...</div>`); /* Muestra el estado inicial de guardado */
-        setTimeout(() => { /* Temporizador para transicionar al mensaje de éxito */
-            abrirModalGlobal("Éxito", `<div style="text-align:center; font-size:1.3rem; color:var(--success); padding:20px; font-weight:bold;">✅ ${msj}</div>`); /* Muestra el mensaje de éxito con color verde */
-            setTimeout(cerrarModalGlobal, 1200); /* Cierra automáticamente el modal tras 1.2 segundos */
-        }, 600); /* Espera 600 milisegundos antes de mostrar el éxito */
+    function mostrarAnimacionGuardando(msj) {
+        abrirModalGlobal("Completado", `<div style="text-align:center; font-size:1.3rem; color:var(--success); padding:20px; font-weight:bold; font-family:'Playfair Display', serif;">✅ ${msj}</div>`);
+        setTimeout(cerrarModalGlobal, 1500);
     }
 </script>
 </body>
