@@ -7,176 +7,232 @@
     <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Librería jsPDF nativa para exportación basada en texto y vectores -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (ROJO Y DORADO)               */
+        /* ========================================================= */
         :root {
-            --bg: #ffffff; 
-            --primary: #1A365D; /* Azul marino institucional sólido */
-            --secondary: #1A365D; 
-            --danger: #C53030; /* Rojo institucional */
-            --success: #276749; 
-            --warning: #D69E2E; 
-            --info: #1A365D; 
-            --text: #2D3748; 
-            --border: #E2E8F0; 
-            --card-bg: #FFFFFF; 
-            --input-bg: #FFFFFF; 
-            --muted: #718096;
-            --topbar-bg: #000000; /* Franja superior negra */
-            --sidebar-bg: #000000; /* Menú lateral negro */
-            --active-gold: #D4AF37; /* Dorado institucional para el menú activo */
+            --topbar-bg: #000000; 
+            --sidebar-bg: #000000; 
+            --active-gold: #D4AF37; 
+            
+            --bg: #1a050a; /* Fondo general oscuro para resaltar tarjetas */
+            --primary: #3b0918; /* Rojo oscuro ultra-premium */
+            --secondary: #7c1126; /* Rojo brillante */
+            --danger: #b30000; 
+            --success: #2ecc71; 
+            --warning: #f39c12; 
+            --info: #aa8c2c; 
+            --text: #222; 
+            --border: #d4af37; /* Dorado para bordes */
+            --card-bg: #ffffff; 
+            --item-bg: #fdf8f0; 
+            --muted: #666;
+            --input-bg: #fdf8f0;
         }
 
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; scroll-behavior: smooth; }
         
-        /* ANIMACIONES Y EFECTOS */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        #pantalla_bloqueo_admin {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(18, 18, 18, 0.75); backdrop-filter: blur(10px);
-            z-index: 99999; display: flex; align-items: center; justify-content: center;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .custom-modal-overlay { 
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); 
-            z-index: 100000; display: none; align-items: center; justify-content: center; 
-            animation: fadeIn 0.25s ease-in-out;
-        }
-        .custom-modal-box { 
-            background: var(--card-bg); padding: 25px; border-radius: 12px; 
-            width: 500px; max-width: 90%; text-align: center; position: relative; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4); 
-            animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            max-height: 90vh; overflow-y: auto;
-        }
-        .custom-modal-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
 
         /* ========================================================= */
-        /* BARRA SUPERIOR: Negro con letras blancas                  */
+        /* BARRA SUPERIOR */
         /* ========================================================= */
-        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; }
+        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.5); border-bottom: 2px solid var(--border); }
+        .menu-toggle-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border); color: var(--active-gold); font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.3); }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; font-family: 'Playfair Display', serif; }
 
         /* ========================================================= */
-        /* MENÚ LATERAL: Negro con letras blancas y activo dorado    */
+        /* MENÚ LATERAL */
         /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 4px 0 15px rgba(0,0,0,0.6); overflow-y: auto; border-right: 2px solid var(--border); }
         .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 1px; color: white; }
-        .sidebar .tab-btn { background: none; color: white; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
-        .sidebar .tab-btn:hover { background: #222222; color: white; }
-        .sidebar .tab-btn.active { background: var(--active-gold) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-brand { font-size: 1.4rem; font-family: 'Playfair Display', serif; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 2px; color: var(--active-gold); text-transform: uppercase; }
+        .sidebar .tab-btn { background: none; color: #ddd; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s; border-left: 3px solid transparent; }
+        .sidebar .tab-btn:hover { background: rgba(212, 175, 55, 0.1); color: white; border-left: 3px solid var(--active-gold); }
+        .sidebar .tab-btn.active { background: linear-gradient(90deg, var(--active-gold) 0%, #aa8c2c 100%) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 1001; display: none; backdrop-filter: blur(2px); }
         .sidebar-overlay.active { display: block; }
 
         /* ========================================================= */
-        /* ESTILO INSTITUCIONAL PARA BLOQUES (Azul marino, borde rojo) */
+        /* CONTENEDORES Y ACORDEÓN DESPLEGABLE LUGURY                */
         /* ========================================================= */
-        .card-institucional {
-            background: var(--primary) !important;
-            border: 2px solid var(--danger) !important;
-            color: #ffffff !important;
+        .main-content { padding: 20px; padding-bottom: 130px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+        
+        .card { 
+            background: var(--card-bg); border-radius: 6px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            border: 1px solid var(--border);
+            position: relative; overflow: hidden;
+            transition: background 0.3s;
         }
-        .card-institucional h2,
-        .card-institucional h3,
-        .card-institucional label {
-            color: #ffffff !important;
-            border-color: rgba(255, 255, 255, 0.2) !important;
+        
+        /* Cabecera del Acordeón - ROJO CARMESÍ Y DORADO */
+        .card-header {
+            padding: 20px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            transition: filter 0.3s ease; user-select: none; border-bottom: 2px solid var(--border);
         }
-        .card-institucional input,
-        .card-institucional select {
-            background: #ffffff !important;
-            color: var(--text) !important;
-            border-color: var(--danger) !important;
+        .card-header:hover { filter: brightness(1.15); }
+        .card-header h2 { 
+            color: var(--active-gold); margin: 0; font-size: 1.25rem; font-family: 'Playfair Display', serif; 
+            text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0; display: flex; align-items: center; gap: 10px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
         }
-        .inner-content-box {
-            background: #ffffff !important;
-            color: var(--text) !important;
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 10px;
+        .accordion-icon {
+            font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
+        
+        /* Cuerpo del Acordeón (Oculto por defecto) */
+        .card-body {
+            max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease;
+            background: var(--card-bg); 
+        }
+        .card.open .card-body {
+            max-height: 3000px; padding: 25px; opacity: 1;
+            transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
+        }
+        .card.open .accordion-icon { transform: rotate(180deg); }
 
-        .main-content { max-width: 1100px; margin: 0 auto; padding: 20px; padding-bottom: 130px; }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border); }
-        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        h3 { color: var(--primary); margin-top: 15px; font-size: 1.15rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; font-family: 'Playfair Display', serif; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        @media (max-width: 768px) { .grid-2, .grid-4 { grid-template-columns: 1fr; } }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        @media (max-width: 768px) { .grid-4, .grid-2 { grid-template-columns: 1fr; } }
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
         
-        label { font-size: 0.95rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted); }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); }
-        
-        button { background: var(--primary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: opacity 0.2s, transform 0.1s; }
-        button:hover { opacity: 0.9; }
+        input, select { 
+            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid rgba(212, 175, 55, 0.6); border-radius: 4px; 
+            font-size: 1rem; background: var(--input-bg); transition: all 0.3s ease; color: var(--text); border-left: 4px solid var(--active-gold); font-family: 'Roboto', sans-serif;
+        }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--primary); border-left-color: var(--primary); box-shadow: 0 0 10px rgba(124, 17, 38, 0.15); }
+
+        button { font-family: 'Playfair Display', serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
         button:active { transform: scale(0.98); }
-        .btn-danger { background: var(--danger); color: white; }
+        
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-danger { background: var(--danger); color: white; border: 1px solid darkred; }
         .btn-warning { background: var(--warning); color: #fff; }
-        .btn-success { background: var(--success); color: #fff; }
+        .btn-success { background: var(--success); color: white; border-bottom: 2px solid #1e8449; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
-        th { background: var(--primary); color: white; }
+        /* Estilos de las Tarjetas de Resumen (Stats) */
+        .lote-stat-box { background: var(--item-bg); padding: 15px; border: 1px solid var(--border); border-radius: 6px; text-align: center; border-bottom: 3px solid var(--primary); }
+        .lote-stat-title { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .lote-stat-val { font-size: 1.4rem; font-weight: bold; margin-top: 5px; font-family: 'Playfair Display', serif; }
 
-        .lote-stat-box { background: var(--input-bg); padding: 12px; border: 1px solid var(--border); border-radius: 6px; text-align: center; }
-        .lote-stat-title { font-size: 0.85rem; color: var(--muted); }
-        .lote-stat-val { font-size: 1.3rem; font-weight: bold; margin-top: 5px; }
+        .chart-container { position: relative; width: 100%; height: 300px; margin-top: 15px; background: #ffffff; border-radius: 6px; padding: 5px; border: 1px solid rgba(212, 175, 55, 0.3); }
 
-        .chart-container { position: relative; width: 100%; height: 300px; margin-top: 15px; background: #ffffff; border-radius: 6px; padding: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; background: var(--card-bg); border: 1px solid var(--border); }
+        th, td { border: 1px solid rgba(212, 175, 55, 0.3); padding: 12px; text-align: left; }
+        th { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: var(--active-gold); font-family: 'Playfair Display', serif; letter-spacing: 1px; border-color: var(--active-gold); }
+
+        /* ========================================================= */
+        /* MODALES LUXURY Y PANTALLAS DE BLOQUEO                     */
+        /* ========================================================= */
+        #loading_overlay, #pantalla_bloqueo_admin {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, rgba(124, 17, 38, 0.95), rgba(59, 9, 24, 0.99));
+            z-index: 1000000; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px); transition: opacity 0.5s ease;
+        }
+        
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 4px; width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
+        .modal-close-btn:hover { background: var(--danger); transform: scale(1.05); color: #FFF; }
+        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+
+        /* Estilos del Loading Modal & Spinner */
+        .loading-box {
+            background: var(--card-bg); padding: 40px; border-radius: 4px;
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 2px solid var(--active-gold);
+            position: relative; max-width: 400px; width: 90%;
+        }
+        .loading-box::before, .loading-box::after { content: ''; position: absolute; width: 30px; height: 30px; border: 2px solid var(--active-gold); }
+        .loading-box::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .loading-box::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 4px solid rgba(212, 175, 55, 0.2);
+            border-left-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+
+        .loading-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .loading-subtitle { font-family: 'Roboto', sans-serif; font-size: 0.95rem; color: var(--muted); line-height: 1.5; }
     </style>
 </head>
 <body>
 
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (ESTILO IRON MAN: ROJO, DORADO Y NEGRO LUJO) -->
-<div id="pantalla_bloqueo_admin" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(12px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px; animation: fadeIn 0.3s ease-in-out;">
-    <div style="background: linear-gradient(145deg, #161922, #0d0f15); width: 100%; max-width: 380px; padding: 35px 30px; border-radius: 16px; text-align: center; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(229, 62, 62, 0.25); border: 1px solid rgba(212, 175, 55, 0.4); border-top: 5px solid #e53e3e;">
+<!-- MODAL DE CARGA INICIAL (CON SPINNER) -->
+<div id="loading_overlay">
+    <div class="loading-box">
+        <div class="spinner-luxury"></div>
+        <div class="loading-title">Sincronizando Módulo</div>
+        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Cargando información y métricas contables...</div>
+    </div>
+</div>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (CLAVE BLANCA/CLARA) -->
+<div id="pantalla_bloqueo_admin" style="display: none;">
+    <div class="loading-box" style="padding: 30px;">
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-size: 1.4rem; padding-bottom: 10px; margin-bottom: 15px; font-family: 'Playfair Display', serif;">🔒 ACCESO PROTEGIDO</h2>
+        <p style="font-size: 0.95rem; color: var(--muted); margin-bottom: 20px; font-family:'Roboto', sans-serif;">Introduce el PIN de Administrador para ver los Balances:</p>
         
-        <h2 style="color: #f7fafc; margin-top: 0; font-size: 1.5rem; border-bottom: 2px solid rgba(212, 175, 55, 0.3); padding-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-            <span style="color: #e53e3e;">⚡</span> Acceso Protegido
-        </h2>
-        
-        <p style="font-size: 0.95rem; color: #a0aec0; margin: 20px 0; line-height: 1.4;">Introduce el PIN de Administrador para abrir este módulo:</p>
-        
-        <div style="position: relative; margin-bottom: 25px;">
-            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px 45px 12px 12px; border: 2px solid rgba(212, 175, 55, 0.4); border-radius: 8px; outline: none; background: #08090c; color: #f7fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);" onkeyup="if(event.key==='Enter') verificarPinBody()">
-            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem;" title="Ver/Ocultar contraseña">👁️</span>
+        <div style="position: relative; margin-bottom: 20px;">
+            <!-- CAMPO DE PIN EN BLANCO CLARO A SOLICITUD -->
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace; background: #ffffff; color: var(--primary); border: 2px solid var(--active-gold); border-radius: 4px; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
         </div>
 
-        <button id="btn_desbloquear_pin" onclick="verificarPinBody()" style="background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: #ffffff; border: 1px solid #fc8181; box-shadow: 0 4px 15px rgba(229, 62, 62, 0.4); text-transform: uppercase; letter-spacing: 0.8px; font-weight: bold; margin-top: 0; padding: 12px; border-radius: 8px;">Desbloquear Pantalla</button>
-        
-        <button id="btn_volver_pin" onclick="window.location.href='principal.html'" style="background: linear-gradient(135deg, #1a202c, #111827); color: #D4AF37; border: 1px solid rgba(212, 175, 55, 0.5); box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-transform: uppercase; letter-spacing: 0.8px; font-weight: bold; margin-top: 12px; padding: 12px; border-radius: 8px;">Volver al Inicio</button>
+        <div id="mensaje_carga_pin" style="display: none; margin-bottom: 15px;">
+            <div class="spinner-luxury" style="width: 25px; height: 25px; border-width: 2px; margin: 0 auto 8px auto;"></div>
+            <span style="color: var(--success); font-weight: bold; font-size: 1rem; font-family: 'Playfair Display', serif;">Desbloqueando módulo...</span>
+        </div>
+
+        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">AUTENTICAR</button>
+        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">VOLVER AL INICIO</button>
     </div>
 </div>
 
 <!-- MODAL GLOBAL -->
 <div id="global_modal" class="custom-modal-overlay">
     <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
         <div id="global_modal_title" class="custom-modal-title">Título</div>
         <div id="global_modal_body"></div>
     </div>
 </div>
 
-<div class="wrapper">
+<div class="wrapper" id="main_wrapper" style="display: none;">
     
     <!-- BARRA SUPERIOR -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        <div class="top-bar-title" id="main_top_title">Panel Administrativo</div>
     </div>
 
     <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú del Sistema</div>
+        <div class="sidebar-brand">MENÚ CENTRAL</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -200,82 +256,131 @@
     </div>
 
     <div class="main-content">
-        <!-- FILTRO DE FECHA -->
-        <div class="card card-institucional">
-            <div class="grid-2">
-                <div><label>Filtrar por fecha específica:</label><input type="date" id="balance_filtro_fecha" onchange="renderBalanceLotes()"></div>
-                <div><label>&nbsp;</label><button onclick="document.getElementById('balance_filtro_fecha').value=''; renderBalanceLotes();" style="margin-top:5px; width:100%; background: var(--danger); color: white; border: none;">Ver Historial Completo</button></div>
+        
+        <!-- 1. FILTRO DE FECHA -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📅 1. Búsqueda y Filtros Temporales</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-2">
+                    <div>
+                        <label>Filtrar por fecha específica:</label>
+                        <input type="date" id="balance_filtro_fecha" onchange="renderBalanceLotes()">
+                    </div>
+                    <div>
+                        <label>&nbsp;</label>
+                        <button class="btn-info" onclick="document.getElementById('balance_filtro_fecha').value=''; renderBalanceLotes();" style="margin-top:5px; width:100%;">VER HISTORIAL COMPLETO</button>
+                    </div>
+                </div>
             </div>
         </div>
         
-        <!-- TARJETAS DE RESUMEN -->
-        <div class="grid-4" style="margin-bottom: 20px;">
-            <div class="lote-stat-box"><div class="lote-stat-title">Ventas Totales ($)</div><div class="lote-stat-val" id="st_ventas" style="color:var(--info);">$0.00</div></div>
-            <div class="lote-stat-box"><div class="lote-stat-title">Recuperación Capital</div><div class="lote-stat-val" id="st_capital" style="color:var(--primary);">$0.00</div></div>
-            <div class="lote-stat-box"><div class="lote-stat-title">Ganancia Lotes</div><div class="lote-stat-val" id="st_ganancia" style="color:var(--success);">$0.00</div></div>
-            <div class="lote-stat-box"><div class="lote-stat-title">Gastos Totales (Operativos + Avances)</div><div class="lote-stat-val" id="st_gastos" style="color:var(--danger);">$0.00</div></div>
-        </div>
-
-        <!-- SECCIÓN DE GRÁFICAS ESTADÍSTICAS -->
-        <div class="card card-institucional">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 5px; margin-bottom: 10px;">
-                <h2 style="margin: 0; border: none; color: #fff;">📈 Gráficas de Rendimiento</h2>
-                <select id="selector_periodo_grafica" style="width: 180px; margin: 0; padding: 6px;" onchange="actualizarGraficaVentas()">
-                    <option value="diario" selected>Diario</option>
-                    <option value="semanal">Semanal</option>
-                    <option value="mensual">Mensual</option>
-                    <option value="anual">Anual</option>
-                </select>
+        <!-- 2. RESUMEN FINANCIERO -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>💰 2. Resumen Financiero Consolidado</h2>
+                <span class="accordion-icon">▼</span>
             </div>
-            <div class="chart-container">
-                <canvas id="chartVentas"></canvas>
+            <div class="card-body">
+                <div class="grid-4" style="margin-top: 15px;">
+                    <div class="lote-stat-box"><div class="lote-stat-title">Ventas Totales ($)</div><div class="lote-stat-val" id="st_ventas" style="color:var(--info);">$0.00</div></div>
+                    <div class="lote-stat-box"><div class="lote-stat-title">Recuperación Capital</div><div class="lote-stat-val" id="st_capital" style="color:var(--primary);">$0.00</div></div>
+                    <div class="lote-stat-box" style="border-bottom-color: var(--success);"><div class="lote-stat-title">Ganancia Lotes</div><div class="lote-stat-val" id="st_ganancia" style="color:var(--success);">$0.00</div></div>
+                    <div class="lote-stat-box" style="border-bottom-color: var(--danger);"><div class="lote-stat-title">Gastos Totales (Op+Av)</div><div class="lote-stat-val" id="st_gastos" style="color:var(--danger);">$0.00</div></div>
+                </div>
             </div>
         </div>
 
+        <!-- 3. GRÁFICAS DE RENDIMIENTO -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📈 3. Gráficas de Rendimiento</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; margin-top: 15px;">
+                    <select id="selector_periodo_grafica" style="width: 200px; margin: 0; padding: 10px;" onchange="actualizarGraficaVentas()">
+                        <option value="diario" selected>Rendimiento Diario</option>
+                        <option value="semanal">Rendimiento Semanal</option>
+                        <option value="mensual">Rendimiento Mensual</option>
+                        <option value="anual">Rendimiento Anual</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartVentas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. MÉTRICAS COMPLEMENTARIAS -->
         <div class="grid-2">
             <!-- PRODUCTOS MÁS VENDIDOS -->
-            <div class="card card-institucional">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 5px; margin-bottom: 10px;">
-                    <h2 style="margin: 0; border: none; color: #fff;">🏆 Productos Más Vendidos</h2>
-                    <button class="btn-warning" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin: 0;" onclick="abrirModalDetalleProductos()">Ver más</button>
+            <div class="card">
+                <div class="card-header" onclick="toggleAcordeon(this)">
+                    <h2 style="font-size: 1.1rem;">🏆 4. Productos Estrella</h2>
+                    <span class="accordion-icon">▼</span>
                 </div>
-                <div class="chart-container" style="height: 250px;">
-                    <canvas id="chartProductos"></canvas>
+                <div class="card-body">
+                    <button class="btn-info" style="width: auto; padding: 8px 15px; font-size: 0.8rem; float: right; margin-bottom: 10px; margin-top:10px;" onclick="abrirModalDetalleProductos()">VER ANÁLISIS COMPLETO</button>
+                    <div style="clear: both;"></div>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="chartProductos"></canvas>
+                    </div>
                 </div>
             </div>
+            
             <!-- VENDEDORES CON MAYOR GANANCIA -->
-            <div class="card card-institucional">
-                <h2 style="color: #fff; border-color: rgba(255,255,255,0.2);">🧑‍💼 Vendedores con Mayor Ganancia</h2>
-                <div class="chart-container" style="height: 250px;">
-                    <canvas id="chartVendedores"></canvas>
+            <div class="card">
+                <div class="card-header" onclick="toggleAcordeon(this)">
+                    <h2 style="font-size: 1.1rem;">🧑‍💼 5. Rendimiento Vendedores</h2>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 250px; margin-top: 48px;">
+                        <canvas id="chartVendedores"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- TABLAS DE HISTORIAL -->
-        <div class="card card-institucional">
-            <h3 style="color: #fff; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom:5px; margin-top:0;">📋 Historial de Lotes / Cierres de Turno</h3>
-            <div class="inner-content-box" style="overflow-x:auto;">
-                <table id="tabla_lotes_diarios">
-                    <tr><th>Fecha</th><th>Turno</th><th>Vendedor</th><th>Venta Total</th><th>Capital</th><th>Ganancia</th><th>Acción</th></tr>
-                </table>
+        <!-- 6. HISTORIAL DE LOTES -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📋 6. Historial de Cierres (Lotes)</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div style="overflow-x:auto; margin-top: 15px;">
+                    <table id="tabla_lotes_diarios">
+                        <tr><th>Fecha</th><th>Turno</th><th>Vendedor</th><th>Venta Total</th><th>Capital</th><th>Ganancia</th><th>Acción</th></tr>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div class="card card-institucional">
-            <h3 style="color: #fff; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom:5px; margin-top:0;">💸 Historial de Gastos Operativos y Avances de Cierre</h3>
-            <div class="inner-content-box" style="overflow-x:auto;">
-                <table id="tabla_gastos_operativos">
-                    <tr><th>Fecha</th><th>Concepto / Tipo</th><th>Monto (USD)</th><th>Referencia / Detalle</th></tr>
-                </table>
+        <!-- 7. HISTORIAL DE GASTOS -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>💸 7. Historial de Gastos y Avances</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div style="overflow-x:auto; margin-top: 15px;">
+                    <table id="tabla_gastos_operativos">
+                        <tr><th style="border-left:none;">Fecha</th><th>Concepto / Tipo</th><th>Monto (USD)</th><th style="border-right:none;">Referencia / Detalle</th></tr>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- BOTONES INFERIORES -->
-    <div style="max-width: 1100px; margin: 0 auto; padding: 0 20px;">
-        <button onclick="generarPDFBalanceLotes()" style="margin-bottom: 10px; background: var(--primary); color: white; width: 100%;">📄 Descargar PDF de Balance y Gráficas</button>
-        <button class="btn-danger" style="background: var(--danger); color: white;" onclick="abrirMenuOpcionesEliminacion()">🗑️ Opciones de Borrado de Historial</button>
+        <!-- BOTONES INFERIORES -->
+        <div style="margin-top: 20px;">
+            <button class="btn-info" onclick="generarPDFBalanceLotes()" style="margin-bottom: 15px; width: 100%; padding: 15px; font-size: 1.1rem;">📄 DESCARGAR REPORTE DE BALANCE (PDF)</button>
+            <button class="btn-danger" style="width: 100%; padding: 15px;" onclick="abrirMenuOpcionesEliminacion()">🗑️ OPCIONES DE DEPURACIÓN E HISTORIAL</button>
+        </div>
+
     </div>
 </div>
 
@@ -295,11 +400,9 @@
     let chartVendedoresInstancia = null;
 
     window.addEventListener('DOMContentLoaded', async () => {
-        abrirModalGlobal("Autenticando", "Verificando sesión activa...");
         try {
             const { data } = await supabaseClient.auth.getSession();
             if (!data || !data.session) {
-                cerrarModalGlobal();
                 alert("No hay una sesión activa.");
                 window.location.href = 'index.html';
                 return;
@@ -307,10 +410,17 @@
             await inicializarDatos(data.session.user.id);
         } catch (err) { 
             console.error(err);
-            cerrarModalGlobal();
             alert("Error de red conectando con el servidor.");
         }
     });
+
+    // Control de Acordeón Desplegable (Con recálculo para Chart.js)
+    function toggleAcordeon(header) {
+        let card = header.parentElement;
+        card.classList.toggle('open');
+        // Fuerza a las gráficas a redimensionarse una vez completada la transición del acordeón
+        setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 350);
+    }
 
     function toggleSidebar() { 
         document.getElementById('sidebar').classList.toggle('open'); 
@@ -341,18 +451,28 @@
             
                 document.getElementById('main_top_title').innerHTML = `
                     🏪 ${nombreLocal} 
-                    <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        📌 Módulo: ${etiquetaModulo}
+                    <span style="font-size:0.75rem; font-family: 'Roboto', sans-serif; font-weight:bold; background: linear-gradient(90deg, var(--active-gold), #aa8c2c); color: #000; padding: 4px 10px; border-radius: 4px; margin-left: 15px; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-transform: uppercase;">
+                        📌 ${etiquetaModulo}
                     </span>
                 `;
             }
         } else {
-            cerrarModalGlobal();
             return alert("Error: Perfil no vinculado a un local.");
         }
 
-        cerrarModalGlobal();
         await renderBalanceLotes();
+
+        // Mostrar pantalla de PIN y ocultar loader
+        document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
+        document.getElementById('pantalla_bloqueo_admin').style.opacity = '1';
+
+        setTimeout(() => {
+            document.getElementById('loading_overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading_overlay').style.display = 'none';
+                document.getElementById('pin_ingreso_body').focus();
+            }, 500);
+        }, 800);
     }
     
     async function verificarPinBody() {
@@ -360,24 +480,31 @@
         let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
         let btn = document.getElementById('btn_desbloquear_pin');
 
-        btn.innerHTML = "⏳ Cargando...";
-        btn.disabled = true;
-
-        await new Promise(resolve => setTimeout(resolve, 800));
-
         if (pinIngresado === pinReal) {
-            let pantalla = document.getElementById('pantalla_bloqueo_admin');
-            pantalla.style.animation = 'fadeIn 0.3s reverse';
+            btn.style.display = 'none';
+            document.getElementById('btn_volver_pin').style.display = 'none';
+            document.getElementById('mensaje_carga_pin').style.display = 'block';
+            
             setTimeout(() => {
-                pantalla.style.display = 'none';
-                btn.innerHTML = "Desbloquear Pantalla";
-                btn.disabled = false;
-            }, 300);
+                document.getElementById('main_wrapper').style.display = 'block';
+
+                let pantalla = document.getElementById('pantalla_bloqueo_admin');
+                pantalla.style.opacity = '0';
+                pantalla.style.transition = 'opacity 0.4s ease';
+                
+                setTimeout(() => { 
+                    pantalla.style.display = 'none'; 
+                    btn.style.display = 'block';
+                    document.getElementById('btn_volver_pin').style.display = 'block';
+                    document.getElementById('mensaje_carga_pin').style.display = 'none';
+                    document.getElementById('pin_ingreso_body').value = '';
+                    document.getElementById('pin_ingreso_body').type = 'password';
+                    document.getElementById('icono_ojo_pin').innerText = '👁️';
+                }, 400);
+            }, 800);
         } else {
-            alert("❌ PIN Incorrecto.");
+            alert("❌ PIN Incorrecto. Acceso Restringido.");
             document.getElementById('pin_ingreso_body').value = '';
-            btn.innerHTML = "Desbloquear Pantalla";
-            btn.disabled = false;
         }
     }
 
@@ -421,47 +548,50 @@
         document.getElementById('st_ganancia').innerText = `$${totGanancia.toFixed(2)}`;
         document.getElementById('st_gastos').innerText = `$${totGastos.toFixed(2)}`;
 
-        let htmlLotes = `<tr><th>Fecha</th><th>Turno</th><th>Vendedor</th><th>Venta Total</th><th>Capital</th><th>Ganancia</th><th>Acción</th></tr>`;
-        lotesFiltrados.forEach(l => {
+        let htmlLotes = `<tr><th style="border-left:none;">Fecha</th><th>Turno</th><th>Vendedor</th><th>Venta Total</th><th>Capital</th><th>Ganancia</th><th style="border-right:none; text-align:center;">Acción</th></tr>`;
+        lotesFiltrados.forEach((l, idx) => {
             let empNom = l.empleados ? `${l.empleados.nombre} ${l.empleados.apellido}` : 'Desconocido';
+            let bg = idx % 2 === 0 ? "var(--card-bg)" : "var(--item-bg)";
             htmlLotes += `
-            <tr>
+            <tr style="background: ${bg}; border-bottom: 1px solid rgba(212, 175, 55, 0.3);">
                 <td>${l.fecha}</td>
                 <td>${l.turno || 'N/A'}</td>
                 <td>${empNom}</td>
                 <td style="color:var(--info); font-weight:bold;">$${parseFloat(l.total_vendido_usd).toFixed(2)}</td>
                 <td>$${parseFloat(l.capital_invertido).toFixed(2)}</td>
                 <td style="color:var(--success); font-weight:bold;">$${parseFloat(l.ganancia_neta).toFixed(2)}</td>
-                <td><button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="eliminarLoteSupabase('${l.id}')">🗑️ Reintegrar y Borrar</button></td>
+                <td style="text-align:center;"><button class="btn-danger" style="padding:6px 12px; margin:0; width:auto; border-radius:4px;" onclick="eliminarLoteSupabase('${l.id}')">🗑️ REINTEGRAR Y BORRAR</button></td>
             </tr>`;
         });
         document.getElementById('tabla_lotes_diarios').innerHTML = htmlLotes;
 
-        let htmlGastos = `<tr><th>Fecha</th><th>Concepto / Tipo</th><th>Monto (USD)</th><th>Referencia / Detalle</th></tr>`;
-        gastosFiltrados.forEach(g => {
-            let nombreServicio = g.servicios_bancarios ? g.servicios_bancarios.nombre : (g.nota || 'Gasto Operativo');
-            htmlGastos += `
-            <tr>
-                <td>${g.fecha}</td>
-                <td><strong>${nombreServicio}</strong><br><small>Gasto Operativo</small></td>
-                <td style="text-align:right;"><strong style="color:var(--danger);">$${parseFloat(g.monto_usd).toFixed(2)}</strong></td>
-                <td>${g.referencia || 'N/A'}</td>
-            </tr>`;
-        });
-
+        let htmlGastos = `<tr><th style="border-left:none;">Fecha</th><th>Concepto / Tipo</th><th>Monto (USD)</th><th style="border-right:none;">Referencia / Detalle</th></tr>`;
+        
+        // Consolidación y renderizado
+        let arrGastos = [];
+        gastosFiltrados.forEach(g => arrGastos.push({fecha: g.fecha, concepto: g.servicios_bancarios ? g.servicios_bancarios.nombre : (g.nota || 'Gasto Operativo'), monto: parseFloat(g.monto_usd), ref: g.referencia || 'N/A', subtipo: 'Gasto Operativo'}));
+        
         lotesFiltrados.forEach(l => {
             if(l.ingresos && l.ingresos.avances && parseFloat(l.ingresos.avances) > 0) {
-                htmlGastos += `
-                <tr>
-                    <td>${l.fecha}</td>
-                    <td><strong>Avance / Retiro de Caja</strong><br><small>Cierre Turno: ${l.turno || 'N/A'}</small></td>
-                    <td style="text-align:right;"><strong style="color:var(--danger);">$${parseFloat(l.ingresos.avances).toFixed(2)}</strong></td>
-                    <td>Registrado en Cierre de Caja</td>
-                </tr>`;
+                arrGastos.push({fecha: l.fecha, concepto: 'Avance / Retiro de Caja', monto: parseFloat(l.ingresos.avances), ref: 'Registrado en Cierre de Caja', subtipo: `Cierre Turno: ${l.turno || 'N/A'}`});
             }
         });
 
-        document.getElementById('tabla_gastos_operativos').innerHTML = htmlGastos || '<tr><td colspan="4" style="text-align:center;">No hay gastos ni avances registrados.</td></tr>';
+        if(arrGastos.length === 0){
+            htmlGastos += '<tr><td colspan="4" style="text-align:center; padding: 20px;">No hay gastos ni avances registrados.</td></tr>';
+        } else {
+            arrGastos.forEach((g, idx) => {
+                let bg = idx % 2 === 0 ? "var(--card-bg)" : "var(--item-bg)";
+                htmlGastos += `
+                <tr style="background: ${bg}; border-bottom: 1px solid rgba(212, 175, 55, 0.3);">
+                    <td>${g.fecha}</td>
+                    <td><strong style="color:var(--primary); font-family:'Playfair Display', serif;">${g.concepto}</strong><br><small style="color:var(--muted);">${g.subtipo}</small></td>
+                    <td style="text-align:right;"><strong style="color:var(--danger);">$${g.monto.toFixed(2)}</strong></td>
+                    <td>${g.ref}</td>
+                </tr>`;
+            });
+        }
+        document.getElementById('tabla_gastos_operativos').innerHTML = htmlGastos;
 
         renderizarGraficas();
     }
@@ -469,7 +599,7 @@
     async function eliminarLoteSupabase(loteId) {
         if(!confirm("⚠️ ¿Estás seguro de eliminar este lote? \n\nAl hacerlo, el sistema reintegrará automáticamente al inventario físico (catálogo) las cantidades exactas de los productos vendidos.")) return;
         
-        abrirModalGlobal("Procesando", "Reintegrando stock y eliminando lote...");
+        mostrarModalLocal("Procesando", "Reintegrando stock y depurando lote...");
         try {
             let detallesLote = DATOS_DETALLES_CACHE.filter(d => d.lote_id === loteId);
             for (let item of detallesLote) {
@@ -495,38 +625,38 @@
 
     function abrirMenuOpcionesEliminacion() {
         let html = `
-            <div style="text-align: left; display: flex; flex-direction: column; gap: 12px;">
-                <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">Selecciona el criterio de borrado. Cada opción reintegrará automáticamente el stock al inventario:</p>
+            <div style="text-align: left; display: flex; flex-direction: column; gap: 15px;">
+                <p style="color: var(--muted); font-size: 0.95rem; margin: 0; font-family:'Roboto', sans-serif;">Selecciona el criterio de borrado. Cada opción reintegrará automáticamente el stock al inventario:</p>
                 
-                <div style="background: var(--input-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                <div style="background: var(--item-bg); padding: 15px; border-radius: 4px; border: 1px solid rgba(212, 175, 55, 0.4);">
                     <label style="margin-top:0;">Borrar por Día Específico:</label>
                     <div style="display: flex; gap: 8px; margin-top: 5px;">
                         <input type="date" id="del_fecha" style="margin:0;">
-                        <button class="btn-danger" style="margin:0; width: auto; padding: 6px 12px;" onclick="ejecutarBorradoPorCriterio('dia')">Borrar Día</button>
+                        <button class="btn-danger" style="margin:0; width: auto; padding: 6px 15px; border-radius:4px;" onclick="ejecutarBorradoPorCriterio('dia')">Ejecutar</button>
                     </div>
                 </div>
 
-                <div style="background: var(--input-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                <div style="background: var(--item-bg); padding: 15px; border-radius: 4px; border: 1px solid rgba(212, 175, 55, 0.4);">
                     <label style="margin-top:0;">Borrar por Mes (YYYY-MM):</label>
                     <div style="display: flex; gap: 8px; margin-top: 5px;">
                         <input type="month" id="del_mes" style="margin:0;">
-                        <button class="btn-danger" style="margin:0; width: auto; padding: 6px 12px;" onclick="ejecutarBorradoPorCriterio('mes')">Borrar Mes</button>
+                        <button class="btn-danger" style="margin:0; width: auto; padding: 6px 15px; border-radius:4px;" onclick="ejecutarBorradoPorCriterio('mes')">Ejecutar</button>
                     </div>
                 </div>
 
-                <div style="background: var(--input-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                <div style="background: var(--item-bg); padding: 15px; border-radius: 4px; border: 1px solid rgba(212, 175, 55, 0.4);">
                     <label style="margin-top:0;">Borrar por Año (YYYY):</label>
                     <div style="display: flex; gap: 8px; margin-top: 5px;">
                         <input type="number" id="del_anio" placeholder="2026" style="margin:0;" min="2020" max="2050">
-                        <button class="btn-danger" style="margin:0; width: auto; padding: 6px 12px;" onclick="ejecutarBorradoPorCriterio('anio')">Borrar Año</button>
+                        <button class="btn-danger" style="margin:0; width: auto; padding: 6px 15px; border-radius:4px;" onclick="ejecutarBorradoPorCriterio('anio')">Ejecutar</button>
                     </div>
                 </div>
 
-                <div style="background: rgba(231, 76, 60, 0.1); padding: 10px; border-radius: 6px; border: 1px solid var(--danger); text-align: center;">
-                    <button class="btn-danger" style="margin:0; width: 100%;" onclick="ejecutarBorradoPorCriterio('todo')">⚠️ BORRAR TODO EL HISTORIAL</button>
+                <div style="background: rgba(179, 0, 0, 0.1); padding: 15px; border-radius: 4px; border: 1px solid var(--danger); text-align: center;">
+                    <button class="btn-danger" style="margin:0; width: 100%;" onclick="ejecutarBorradoPorCriterio('todo')">⚠️ PURGAR TODO EL HISTORIAL</button>
                 </div>
             </div>
-            <button class="btn-warning" style="margin-top: 15px;" onclick="cerrarModalGlobal()">Cancelar</button>
+            <button class="btn-warning" style="margin-top: 15px;" onclick="cerrarModalGlobal()">CANCELAR</button>
         `;
         abrirModalGlobal("🗑️ Opciones de Borrado de Historial", html);
     }
@@ -558,7 +688,7 @@
         }
 
         cerrarModalGlobal();
-        abrirModalGlobal("Procesando Borrado", "Reintegrando stock y eliminando registros seleccionados...");
+        mostrarModalLocal("Procesando Borrado", "Reintegrando stock y depurando registros seleccionados...");
 
         try {
             for (let l of lotesAEliminar) {
@@ -590,6 +720,10 @@
         renderizarGraficaProductosResumen();
         renderizarGraficaVendedores();
     }
+
+    // Configuración general para dar estética a Chart.js
+    Chart.defaults.color = '#666';
+    Chart.defaults.font.family = "'Roboto', sans-serif";
 
     function actualizarGraficaVentas() {
         let periodo = document.getElementById('selector_periodo_grafica').value;
@@ -626,18 +760,23 @@
                 datasets: [{
                     label: 'Ventas Totales ($)',
                     data: valores,
-                    borderColor: '#1A365D',
-                    backgroundColor: 'rgba(26, 54, 93, 0.1)',
+                    borderColor: '#D4AF37', // Dorado
+                    backgroundColor: 'rgba(212, 175, 55, 0.15)',
                     borderWidth: 2,
                     fill: true,
-                    tension: 0.2
+                    tension: 0.3,
+                    pointBackgroundColor: '#3b0918',
+                    pointBorderColor: '#D4AF37'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
+                scales: { 
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
             }
         });
     }
@@ -663,28 +802,31 @@
                 datasets: [{
                     label: 'Unidades Vendidas',
                     data: ordenados.map(o => o.cant),
-                    backgroundColor: '#276749',
-                    borderWidth: 1
+                    backgroundColor: '#7c1126', // Rojo brillante
+                    borderRadius: 4,
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
+                scales: { 
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
             }
         });
     }
 
     function abrirModalDetalleProductos() {
         let html = `
-            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;">Gráfica detallada de todos los productos ordenados por volumen de ventas:</p>
-            <div style="position: relative; width: 100%; height: 420px; max-height: 60vh;">
+            <p style="color: var(--muted); font-size: 0.95rem; margin-bottom: 15px; font-family:'Roboto', sans-serif;">Gráfica detallada de todos los productos ordenados por volumen de ventas:</p>
+            <div style="position: relative; width: 100%; height: 420px; max-height: 60vh; background: var(--card-bg); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 4px; padding: 10px;">
                 <canvas id="chartProductosDetalle"></canvas>
             </div>
-            <button class="btn-success" style="margin-top: 15px;" onclick="cerrarModalGlobal()">Cerrar</button>
         `;
-        abrirModalGlobal("Detalle Completo de Productos Más Vendidos", html);
+        abrirModalGlobal("ANÁLISIS COMPLETO DE PRODUCTOS", html);
         
         setTimeout(() => {
             let conteoProd = {};
@@ -704,8 +846,8 @@
                     datasets: [{
                         label: 'Unidades Vendidas',
                         data: ordenados.map(o => o.cant),
-                        backgroundColor: '#276749',
-                        borderWidth: 1
+                        backgroundColor: '#D4AF37', // Dorado
+                        borderRadius: 3
                     }]
                 },
                 options: {
@@ -713,7 +855,10 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true } }
+                    scales: { 
+                        x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        y: { grid: { display: false } }
+                    }
                 }
             });
         }, 150);
@@ -739,7 +884,9 @@
                 labels: ordenados.map(o => o.nombre),
                 datasets: [{
                     data: ordenados.map(o => o.ganancia),
-                    backgroundColor: ['#1A365D', '#C53030', '#D69E2E', '#276749', '#718096']
+                    backgroundColor: ['#3b0918', '#7c1126', '#D4AF37', '#b30000', '#aa8c2c'], // Paleta premium
+                    borderWidth: 2,
+                    borderColor: '#fff'
                 }]
             },
             options: {
@@ -751,7 +898,7 @@
     }
 
     async function generarPDFBalanceLotes() {
-        abrirModalGlobal("Generando PDF", "Construyendo documento estructurado con datos nativos...");
+        mostrarModalLocal("Generando PDF", "Construyendo documento estructurado con estética corporativa...");
 
         try {
             const { jsPDF } = window.jspdf;
@@ -762,35 +909,36 @@
             let fechaStr = fechaFiltro || fechaHoy;
             let nombreArchivo = `Balance_Financiero_${fechaStr}.pdf`;
 
-            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Sistema';
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Sistema Empresarial';
             let stVentas = document.getElementById('st_ventas').innerText;
             let stCapital = document.getElementById('st_capital').innerText;
             let stGanancia = document.getElementById('st_ganancia').innerText;
             let stGastos = document.getElementById('st_gastos').innerText;
 
+            // ESTÉTICA PREMIUM PARA EL PDF
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(16);
-            doc.setTextColor(26, 54, 93);
+            doc.setTextColor(59, 9, 24); // Primary Red
             doc.text(nombreLocal, 14, 18);
 
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(10);
-            doc.setTextColor(113, 128, 150);
+            doc.setTextColor(100, 100, 100);
             doc.text("Reporte Consolidado de Balance Financiero", 14, 24);
             doc.text(`Fecha de Emisión / Filtro: ${fechaStr}`, 14, 30);
 
-            doc.setDrawColor(26, 54, 93);
-            doc.setLineWidth(0.5);
+            doc.setDrawColor(212, 175, 55); // Gold line
+            doc.setLineWidth(0.6);
             doc.line(14, 34, 196, 34);
 
-            doc.setFillColor(248, 249, 250);
+            doc.setFillColor(253, 248, 240); // Item BG
             doc.roundedRect(14, 40, 43, 18, 2, 2, "F");
             doc.roundedRect(61, 40, 43, 18, 2, 2, "F");
             doc.roundedRect(108, 40, 43, 18, 2, 2, "F");
             doc.roundedRect(155, 40, 41, 18, 2, 2, "F");
 
             doc.setFontSize(7);
-            doc.setTextColor(113, 128, 150);
+            doc.setTextColor(100, 100, 100);
             doc.text("VENTAS TOTALES", 17, 45);
             doc.text("RECUP. CAPITAL", 64, 45);
             doc.text("GANANCIA NETA", 111, 45);
@@ -798,26 +946,26 @@
 
             doc.setFontSize(10);
             doc.setFont("Helvetica", "bold");
-            doc.setTextColor(26, 54, 93);
+            doc.setTextColor(59, 9, 24); // Primary Red
             doc.text(stVentas, 17, 53);
-            doc.setTextColor(45, 55, 72);
+            doc.setTextColor(34, 34, 34);
             doc.text(stCapital, 64, 53);
-            doc.setTextColor(39, 103, 73);
+            doc.setTextColor(39, 103, 73); // Success Green
             doc.text(stGanancia, 111, 53);
-            doc.setTextColor(197, 48, 48);
+            doc.setTextColor(179, 0, 0); // Danger Red
             doc.text(stGastos, 158, 53);
 
             let posY = 68;
 
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(11);
-            doc.setTextColor(26, 54, 93);
+            doc.setTextColor(59, 9, 24);
             doc.text("Historial de Cierres de Turno (Lotes)", 14, posY);
 
             posY += 5;
             doc.setFontSize(8.5);
-            doc.setFillColor(26, 54, 93);
-            doc.setTextColor(255, 255, 255);
+            doc.setFillColor(59, 9, 24); // Cabecera Roja
+            doc.setTextColor(212, 175, 55); // Texto Dorado
             doc.rect(14, posY, 182, 7, "F");
             doc.text("Fecha", 15, posY + 5);
             doc.text("Turno", 38, posY + 5);
@@ -866,13 +1014,13 @@
 
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(11);
-            doc.setTextColor(197, 48, 48);
+            doc.setTextColor(59, 9, 24);
             doc.text("Historial de Gastos Operativos y Avances de Cierre", 14, posY);
 
             posY += 5;
             doc.setFontSize(8.5);
-            doc.setFillColor(197, 48, 48);
-            doc.setTextColor(255, 255, 255);
+            doc.setFillColor(59, 9, 24); // Cabecera Roja
+            doc.setTextColor(212, 175, 55); // Texto Dorado
             doc.rect(14, posY, 182, 7, "F");
             doc.text("Fecha", 16, posY + 5);
             doc.text("Concepto / Tipo", 50, posY + 5);
@@ -942,6 +1090,9 @@
         document.getElementById('global_modal').style.display = 'flex'; 
     }
     function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
+    function mostrarModalLocal(titulo, msg) { 
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px;"><div class="spinner-luxury" style="width: 35px; height: 35px; border-width: 3px;"></div><span style="font-size:1.1rem; color:var(--primary); font-family:'Playfair Display', serif;">${msg}</span></div>`); 
+    }
 </script>
 </body>
 </html>
