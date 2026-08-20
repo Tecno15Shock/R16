@@ -3,115 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>👥 Clientes y Fiados - Sistema Maestro</title>
+    <title>👥 Clientes y Fiados</title>
     <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c; --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; --border: #ddd; --card-bg: #ffffff; --input-bg: #ffffff; --muted: #7f8c8d; }
-        body.dark-mode { --bg: #121212; --primary: #1e272e; --secondary: #2980b9; --danger: #c0392b; --success: #27ae60; --warning: #f39c12; --info: #2c3e50; --text: #ecf0f1; --border: #34495e; --card-bg: #1e1e1e; --input-bg: #2d2d2d; --muted: #bdc3c7; }
-        * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; transition: background 0.3s, color 0.3s; }
-        
-        /* ANIMACIONES Y EFECTOS TRANSLÚCIDOS */
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        #pantalla_bloqueo_admin {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(18, 18, 18, 0.75); backdrop-filter: blur(10px);
-            z-index: 99999; display: flex; align-items: center; justify-content: center;
-            animation: fadeIn 0.3s ease-in-out;
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (ROJO Y DORADO)               */
+        /* ========================================================= */
+        :root {
+            --topbar-bg: #000000; 
+            --sidebar-bg: #000000; 
+            --active-gold: #D4AF37; 
+            
+            --bg: #1a050a; /* Fondo general oscuro */
+            --primary: #3b0918; /* Rojo oscuro ultra-premium */
+            --secondary: #7c1126; /* Rojo brillante */
+            --danger: #b30000; 
+            --success: #2ecc71; 
+            --warning: #f39c12; 
+            --info: #aa8c2c; 
+            --text: #222; 
+            --border: #d4af37; /* Dorado para bordes */
+            --card-bg: #ffffff; 
+            --item-bg: #fdf8f0; 
+            --muted: #666;
+            --input-bg: #fdf8f0;
         }
 
-        /* ========================================================= */
-        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
-        /* ========================================================= */
-        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; scroll-behavior: smooth; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
 
         /* ========================================================= */
-        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* BARRA SUPERIOR */
         /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.5); border-bottom: 2px solid var(--border); }
+        .menu-toggle-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border); color: var(--active-gold); font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.3); }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; font-family: 'Playfair Display', serif; }
+
+        /* ========================================================= */
+        /* MENÚ LATERAL */
+        /* ========================================================= */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 4px 0 15px rgba(0,0,0,0.6); overflow-y: auto; border-right: 2px solid var(--border); }
         .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
-        .sidebar a, .sidebar .tab-btn { background: none; color: white !important; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
-        .sidebar .tab-btn:hover { background: #34495e; color: white; }
-        /* Etiqueta para diferenciar la página activa en el menú */
-        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-brand { font-size: 1.4rem; font-family: 'Playfair Display', serif; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 2px; color: var(--active-gold); text-transform: uppercase; }
+        .sidebar .tab-btn { background: none; color: #ddd; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s; border-left: 3px solid transparent; }
+        .sidebar .tab-btn:hover { background: rgba(212, 175, 55, 0.1); color: white; border-left: 3px solid var(--active-gold); }
+        .sidebar .tab-btn.active { background: linear-gradient(90deg, var(--active-gold) 0%, #aa8c2c 100%) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 1001; display: none; backdrop-filter: blur(2px); }
         .sidebar-overlay.active { display: block; }
 
-        .main-content { max-width: 900px; margin: 0 auto; padding: 20px; padding-bottom: 130px; }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        /* ========================================================= */
+        /* CONTENEDORES Y ACORDEÓN DESPLEGABLE LUXURY                */
+        /* ========================================================= */
+        .main-content { padding: 20px; padding-bottom: 130px; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .card { 
+            background: var(--card-bg); border-radius: 6px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            border: 1px solid var(--border);
+            position: relative; overflow: hidden;
+            transition: background 0.3s;
+        }
+        
+        /* Cabecera del Acordeón */
+        .card-header {
+            padding: 20px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            transition: filter 0.3s ease; user-select: none; border-bottom: 2px solid var(--border);
+        }
+        .card-header:hover { filter: brightness(1.15); }
+        .card-header h2 { 
+            color: var(--active-gold); margin: 0; font-size: 1.25rem; font-family: 'Playfair Display', serif; 
+            text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0; display: flex; align-items: center; gap: 10px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        }
+        .accordion-icon {
+            font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        /* Cuerpo del Acordeón (Oculto por defecto) */
+        .card-body {
+            max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease;
+            background: var(--card-bg); 
+        }
+        .card.open .card-body {
+            max-height: 2500px; padding: 25px; opacity: 1;
+            transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
+        }
+        .card.open .accordion-icon { transform: rotate(180deg); }
+
+        h4 { color: var(--primary); margin-top: 15px; font-size: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; font-family: 'Playfair Display', serif; text-transform: uppercase; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
-
-        label { font-size: 0.95rem; font-weight: bold; display: block; margin-top: 10px; color: var(--muted); }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: var(--input-bg); color: var(--text); }
         
-        button { background: var(--secondary); color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; transition: opacity 0.2s, transform 0.1s; }
-        button:hover { opacity: 0.9; }
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        
+        input, select { 
+            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid rgba(212, 175, 55, 0.6); border-radius: 4px; 
+            font-size: 1rem; background: var(--input-bg); transition: all 0.3s ease; color: var(--text); border-left: 4px solid var(--active-gold); font-family: 'Roboto', sans-serif;
+        }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--primary); border-left-color: var(--primary); box-shadow: 0 0 10px rgba(124, 17, 38, 0.15); }
+
+        button { font-family: 'Playfair Display', serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
         button:active { transform: scale(0.98); }
-        .btn-danger { background: var(--danger); }
+        
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-danger { background: var(--danger); color: white; border: 1px solid darkred; }
         .btn-warning { background: var(--warning); color: #fff; }
-        .btn-info { background: var(--info); }
-        .btn-success { background: var(--success); }
+        .btn-success { background: var(--success); color: white; border-bottom: 2px solid #1e8449; }
 
-        .pending-header { background: var(--card-bg); padding: 15px; border-radius: 8px; text-align: center; border: 2px solid var(--warning); margin-bottom: 20px; font-size: 1.2rem; font-weight: bold; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .pending-header span { font-size: 1.6rem; color: var(--danger); display: block; margin-top: 5px; }
+        .pending-header { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            padding: 25px; border-radius: 6px; text-align: center; border: 2px solid var(--active-gold); 
+            margin-bottom: 20px; font-size: 1.1rem; font-weight: bold; color: var(--active-gold); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .pending-header span { font-size: 2.2rem; color: #ffffff; display: block; margin-top: 5px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); }
         
-        .zebra-item { border-bottom: 1px solid var(--border); padding: 12px 15px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; }
-        .zebra-item:nth-child(even) { background-color: rgba(0,0,0,0.02); }
+        .zebra-item { border-bottom: 1px solid rgba(212, 175, 55, 0.3); padding: 18px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); transition: background 0.3s; }
+        .zebra-item:nth-child(even) { background: var(--item-bg); }
+        .zebra-item:hover { background: rgba(212, 175, 55, 0.05); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; border: 1px solid rgba(212, 175, 55, 0.3); }
+        th, td { border: 1px solid rgba(212, 175, 55, 0.3); padding: 10px; text-align: left; }
+        th { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: var(--active-gold); font-family: 'Playfair Display', serif; border-color: var(--active-gold); }
+
+        /* ========================================================= */
+        /* MODALES Y PANTALLA DE BLOQUEO                             */
+        /* ========================================================= */
+        #loading_overlay, #pantalla_bloqueo_admin {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, rgba(124, 17, 38, 0.95), rgba(59, 9, 24, 0.99));
+            z-index: 1000000; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px); transition: opacity 0.5s ease;
+        }
         
-        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
-        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 600px; max-width: 90%; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 15px 35px rgba(0,0,0,0.4); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 4px; width: 90%; max-width: 650px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
+        .modal-close-btn:hover { background: var(--danger); transform: scale(1.05); color: #FFF; }
+        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+
+        .loading-box {
+            background: var(--card-bg); padding: 40px; border-radius: 4px;
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 2px solid var(--active-gold);
+            position: relative; max-width: 400px; width: 90%;
+        }
+        .loading-box::before, .loading-box::after { content: ''; position: absolute; width: 30px; height: 30px; border: 2px solid var(--active-gold); }
+        .loading-box::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .loading-box::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 4px solid rgba(212, 175, 55, 0.2);
+            border-left-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+
+        .loading-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .loading-subtitle { font-family: 'Roboto', sans-serif; font-size: 0.95rem; color: var(--muted); line-height: 1.5; }
     </style>
 </head>
 <body>
 
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (TRANSLÚCIDA Y ANIMADA) -->
-<div id="pantalla_bloqueo_admin">
-    <div class="card" style="width: 350px; text-align: center; border-top: 4px solid var(--danger); margin: 0; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
-        <h2 style="color: var(--danger);">🔒 Acceso Protegido</h2>
-        <p style="font-size: 0.9rem; color: var(--muted);">Introduce el PIN de Administrador para ver este módulo:</p>
-        <div style="position: relative; margin-bottom: 15px;">
-            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px; width: 100%; padding-right: 45px; margin-top: 0;" onkeyup="if(event.key==='Enter') verificarPinBody()">
-            <span onclick="toggleVerPin()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
+<!-- MODAL DE CARGA INICIAL -->
+<div id="loading_overlay">
+    <div class="loading-box">
+        <div class="spinner-luxury"></div>
+        <div class="loading-title">Sincronizando Módulo</div>
+        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Cargando cartera de clientes y cuentas...</div>
+    </div>
+</div>
+
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (CLAVE BLANCA/CLARA) -->
+<div id="pantalla_bloqueo_admin" style="display: none;">
+    <div class="loading-box" style="padding: 30px;">
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-size: 1.4rem; padding-bottom: 10px; margin-bottom: 15px; font-family: 'Playfair Display', serif;">🔒 ACCESO PROTEGIDO</h2>
+        <p style="font-size: 0.95rem; color: var(--muted); margin-bottom: 20px; font-family:'Roboto', sans-serif;">Introduce el PIN de Administrador para gestionar Clientes:</p>
+        
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace; background: #ffffff; color: var(--primary); border: 2px solid var(--active-gold); border-radius: 4px; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
         </div>
-        <button id="btn_desbloquear" onclick="verificarPinBody()" style="background: var(--primary); margin-top: 0;">Desbloquear Pantalla</button>
-        <button onclick="window.history.back()" style="background: var(--danger); margin-top: 8px;">Volver Atrás</button>
+
+        <div id="mensaje_carga_pin" style="display: none; margin-bottom: 15px;">
+            <div class="spinner-luxury" style="width: 25px; height: 25px; border-width: 2px; margin: 0 auto 8px auto;"></div>
+            <span style="color: var(--success); font-weight: bold; font-size: 1rem; font-family: 'Playfair Display', serif;">Desbloqueando módulo...</span>
+        </div>
+
+        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">AUTENTICAR</button>
+        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">VOLVER AL INICIO</button>
     </div>
 </div>
 
 <!-- MODAL GLOBAL -->
 <div id="global_modal" class="custom-modal-overlay">
     <div class="custom-modal-box">
-        <div id="global_modal_title" style="font-size: 1.3rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 10px;">Título</div>
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
         <div id="global_modal_body"></div>
     </div>
 </div>
 
-<div class="wrapper">
+<div class="wrapper" id="main_wrapper" style="display: none;">
     
-	<!-- BARRA SUPERIOR -->
+    <!-- BARRA SUPERIOR -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        <div class="top-bar-title" id="main_top_title">Panel Administrativo</div>
     </div>
 
     <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú del Sistema</div>
-        <!-- SOLO UN ENLACE DEBE TENER LA CLASE "active" POR PÁGINA -->
+        <div class="sidebar-brand">MENÚ CENTRAL</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -135,17 +257,35 @@
     </div>
 
     <div class="main-content">
+        <!-- ESTADÍSTICA PRINCIPAL -->
         <div class="pending-header">
-            Total Pendiente por Cobrar
+            TOTAL CAPITAL POR COBRAR (CALLE)
             <span id="tot_pendiente_clientes">$0.00</span>
         </div>
 
-        <div class="card" style="border-top: 4px solid #e74c3c;">
-            <h2>Registro de Clientes</h2>
-            <button onclick="abrirModalNuevoCliente()" style="background: var(--primary); margin-bottom:10px;">+ Añadir Cliente Nuevo</button>
-            <input type="text" id="buscar_cliente" placeholder="🔍 Buscar cliente por nombre..." oninput="renderClientes()">
-            <div id="lista_clientes_container" style="margin-top: 15px;"></div>
+        <!-- ACORDEÓN ÚNICO: CARTERA DE CLIENTES -->
+        <div class="card open"> <!-- Abierto por defecto al ser la función principal -->
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>👥 Registro de Clientes y Fiados</h2>
+                <span class="accordion-icon" style="transform: rotate(180deg);">▼</span>
+            </div>
+            <div class="card-body" style="max-height: 5000px; padding: 25px; opacity: 1;">
+                
+                <div class="grid-2" style="align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <input type="text" id="buscar_cliente" placeholder="🔍 Buscar cliente por nombre o cédula..." oninput="renderClientes()" style="margin-top:0;">
+                    </div>
+                    <div>
+                        <button class="btn-info" onclick="abrirModalNuevoCliente()" style="margin-top:0;">➕ AÑADIR CLIENTE NUEVO</button>
+                    </div>
+                </div>
+
+                <div id="lista_clientes_container" style="border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 4px; overflow: hidden;">
+                    <!-- Se inyecta dinámicamente -->
+                </div>
+            </div>
         </div>
+
     </div>
 </div>
 
@@ -160,11 +300,9 @@
     let CATALOGO = [];
 
     window.addEventListener('DOMContentLoaded', async () => {
-        abrirModalGlobal("Autenticando", "Verificando sesión activa...");
         try {
             const { data } = await supabaseClient.auth.getSession();
             if (!data || !data.session) {
-                cerrarModalGlobal();
                 alert("No hay una sesión activa.");
                 window.location.href = 'index.html';
                 return;
@@ -172,10 +310,20 @@
             await inicializarDatos(data.session.user.id);
         } catch (err) { 
             console.error(err);
-            cerrarModalGlobal();
             alert("Error de red conectando con el servidor.");
         }
     });
+
+    function toggleAcordeon(header) {
+        let card = header.parentElement;
+        let icon = header.querySelector('.accordion-icon');
+        card.classList.toggle('open');
+        if (card.classList.contains('open')) {
+            icon.style.transform = "rotate(180deg)";
+        } else {
+            icon.style.transform = "rotate(0deg)";
+        }
+    }
 
     function toggleSidebar() { 
         document.getElementById('sidebar').classList.toggle('open'); 
@@ -184,30 +332,13 @@
 
     function toggleVerPin() {
         let input = document.getElementById('pin_ingreso_body');
-        input.type = input.type === 'password' ? 'text' : 'password';
-    }
-
-    async function verificarPinBody() {
-        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
-        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
-        let btn = document.getElementById('btn_desbloquear');
-
-        btn.innerHTML = "⏳ Cargando...";
-        btn.disabled = true;
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        if (pinIngresado === pinReal) {
-            let pantalla = document.getElementById('pantalla_bloqueo_admin');
-            pantalla.style.animation = 'fadeIn 0.3s reverse';
-            setTimeout(() => {
-                pantalla.style.display = 'none';
-            }, 300);
+        let icono = document.getElementById('icono_ojo_pin');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icono.innerText = '🙈';
         } else {
-            alert("❌ PIN Incorrecto.");
-            document.getElementById('pin_ingreso_body').value = '';
-            btn.innerHTML = "Desbloquear Pantalla";
-            btn.disabled = false;
+            input.type = 'password';
+            icono.innerText = '👁️';
         }
     }
 
@@ -216,7 +347,6 @@
         if (perfil && perfil.local_id) {
             CURRENT_LOCAL_ID = perfil.local_id;
             
-            // Cargar configuración y nombre del local de forma segura
             let conf = null, localData = null;
             try {
                 let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
@@ -237,17 +367,59 @@
 
             document.getElementById('main_top_title').innerHTML = `
                 🏪 ${nombreLocal} 
-                <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    📌 Módulo: ${etiquetaModulo}
+                <span style="font-size:0.75rem; font-family: 'Roboto', sans-serif; font-weight:bold; background: linear-gradient(90deg, var(--active-gold), #aa8c2c); color: #000; padding: 4px 10px; border-radius: 4px; margin-left: 15px; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-transform: uppercase;">
+                    📌 ${etiquetaModulo}
                 </span>
             `;
         } else {
-            cerrarModalGlobal();
             return alert("Error: Perfil no vinculado a un local.");
         }
 
         await cargarDatosSupabase();
-        cerrarModalGlobal();
+
+        document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
+        document.getElementById('pantalla_bloqueo_admin').style.opacity = '1';
+
+        setTimeout(() => {
+            document.getElementById('loading_overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading_overlay').style.display = 'none';
+                document.getElementById('pin_ingreso_body').focus();
+            }, 500);
+        }, 800);
+    }
+
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
+        let btn = document.getElementById('btn_desbloquear_pin');
+
+        if (pinIngresado === pinReal) {
+            btn.style.display = 'none';
+            document.getElementById('btn_volver_pin').style.display = 'none';
+            document.getElementById('mensaje_carga_pin').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('main_wrapper').style.display = 'block';
+
+                let pantalla = document.getElementById('pantalla_bloqueo_admin');
+                pantalla.style.opacity = '0';
+                pantalla.style.transition = 'opacity 0.4s ease';
+                
+                setTimeout(() => { 
+                    pantalla.style.display = 'none'; 
+                    btn.style.display = 'block';
+                    document.getElementById('btn_volver_pin').style.display = 'block';
+                    document.getElementById('mensaje_carga_pin').style.display = 'none';
+                    document.getElementById('pin_ingreso_body').value = '';
+                    document.getElementById('pin_ingreso_body').type = 'password';
+                    document.getElementById('icono_ojo_pin').innerText = '👁️';
+                }, 400);
+            }, 800);
+        } else {
+            alert("❌ PIN Incorrecto. Acceso Restringido.");
+            document.getElementById('pin_ingreso_body').value = '';
+        }
     }
 
     async function cargarDatosSupabase() {
@@ -282,38 +454,46 @@
     function renderClientes() {
         let q = document.getElementById('buscar_cliente').value.toLowerCase();
         let html = "";
-        let filtrados = CLIENTES.filter(c => c.nom.toLowerCase().includes(q));
+        let filtrados = CLIENTES.filter(c => c.nom.toLowerCase().includes(q) || c.ced.toLowerCase().includes(q));
 
-        filtrados.forEach((c) => {
-            html += `
-            <div class="zebra-item">
-                <div style="flex:1;"><strong>${c.nom}</strong><br><small>C.I: ${c.ced || 'N/A'} | Dirección: ${c.dir || 'N/A'}</small></div>
-                <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
-                    <span style="color:var(--danger); font-weight:bold; font-size:1.1rem;">$${c.deudaUsd.toFixed(2)}</span>
-                    <div style="display:flex; gap:5px;">
-                        <button class="btn-info" style="padding:4px 8px; margin:0;" onclick="editarCliente('${c.id}')">✏️</button>
-                        <button class="btn-warning" style="padding:4px 8px; margin:0; font-weight:bold;" onclick="gestionarCuentaCliente('${c.id}')">👁️ Gestión / Deuda</button>
-                        <button class="btn-danger" style="padding:4px 8px; margin:0;" onclick="eliminarClienteSupabase('${c.id}')">🗑️</button>
+        if (filtrados.length === 0) {
+            html = '<div style="padding: 30px; text-align: center; color: var(--muted); background: var(--item-bg); font-style: italic;">No se encontraron registros de clientes.</div>';
+        } else {
+            filtrados.forEach((c) => {
+                html += `
+                <div class="zebra-item">
+                    <div style="flex:1;">
+                        <strong style="font-size: 1.1rem; color: var(--primary); font-family: 'Playfair Display', serif;">${c.nom}</strong><br>
+                        <small style="color: var(--muted);">C.I: <strong>${c.ced || 'N/A'}</strong> | Dirección: <strong>${c.dir || 'N/A'}</strong></small>
                     </div>
-                </div>
-            </div>`;
-        });
+                    <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                        <span style="color:var(--danger); font-weight:bold; font-size:1.4rem; font-family: 'Playfair Display', serif;">$${c.deudaUsd.toFixed(2)}</span>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-info" style="padding:6px 10px; margin:0; width:auto; border-radius:4px;" onclick="editarCliente('${c.id}')" title="Editar">✏️</button>
+                            <button class="btn-warning" style="padding:6px 12px; margin:0; width:auto; border-radius:4px;" onclick="gestionarCuentaCliente('${c.id}')">⚙️ GESTIÓN DE CUENTA</button>
+                            <button class="btn-danger" style="padding:6px 10px; margin:0; width:auto; border-radius:4px;" onclick="eliminarClienteSupabase('${c.id}')" title="Eliminar">🗑️</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
 
-        document.getElementById('lista_clientes_container').innerHTML = html || '<p style="color:var(--muted); text-align:center;">No hay clientes almacenados o registrados.</p>';
+        document.getElementById('lista_clientes_container').innerHTML = html;
         
         let tC = CLIENTES.reduce((acc, c) => acc + (c.deudaUsd || 0), 0);
         document.getElementById('tot_pendiente_clientes').innerText = `$${tC.toFixed(2)}`;
     }
 
     function abrirModalNuevoCliente() {
-        abrirModalGlobal("Añadir Cliente Nuevo", `
+        abrirModalGlobal("👤 Añadir Cliente Nuevo", `
             <div class="grid-2">
-                <div><label>Nombres y Apellidos:</label><input type="text" id="c_nom"></div>
-                <div><label>Cédula:</label><input type="text" id="c_ced"></div>
+                <div><label>Nombres y Apellidos:</label><input type="text" id="c_nom" placeholder="Ej: Juan Pérez"></div>
+                <div><label>Cédula de Identidad:</label><input type="text" id="c_ced" placeholder="Ej: 12345678"></div>
             </div>
-            <label>Dirección:</label><input type="text" id="c_dir">
-            <button onclick="guardarClienteNuevo()" style="background:var(--success); margin-top:15px;">💾 Guardar Cliente</button>
-            <button class="btn-warning" style="margin-top:5px;" onclick="cerrarModalGlobal()">Cancelar</button>
+            <label>Dirección Física:</label><input type="text" id="c_dir" placeholder="Referencia de ubicación...">
+            
+            <button class="btn-info" onclick="guardarClienteNuevo()" style="margin-top: 25px;">💾 REGISTRAR CLIENTE</button>
+            <button class="btn-warning" style="margin-top: 10px;" onclick="cerrarModalGlobal()">CANCELAR</button>
         `);
     }
 
@@ -321,10 +501,10 @@
         let n = document.getElementById('c_nom').value.trim();
         let c = document.getElementById('c_ced').value.trim();
         let d = document.getElementById('c_dir').value.trim();
-        if (!n) return alert("El nombre del cliente es obligatorio.");
+        if (!n) return alert("⚠️ El nombre del cliente es obligatorio.");
 
         let payload = { local_id: CURRENT_LOCAL_ID, nombre: n, cedula: c, direccion: d, deuda_usd: 0, historial: [] };
-        mostrarModalLocal("Guardando", "Registrando cliente en la base de datos...");
+        mostrarModalLocal("Guardando", "Almacenando ficha en la base de datos...");
         try {
             await supabaseClient.from('clientes').insert([payload]);
             await cargarDatosSupabase();
@@ -334,14 +514,15 @@
 
     function editarCliente(id) {
         let cli = CLIENTES.find(c => c.id === id); if(!cli) return;
-        abrirModalGlobal("Editar Datos de Cliente", `
+        abrirModalGlobal("✏️ Editar Perfil de Cliente", `
             <div class="grid-2">
                 <div><label>Nombres y Apellidos:</label><input type="text" id="edit_c_nom" value="${cli.nom}"></div>
-                <div><label>Cédula:</label><input type="text" id="edit_c_ced" value="${cli.ced}"></div>
+                <div><label>Cédula de Identidad:</label><input type="text" id="edit_c_ced" value="${cli.ced}"></div>
             </div>
-            <label>Dirección:</label><input type="text" id="edit_c_dir" value="${cli.dir}">
-            <button onclick="guardarEdicionCliente('${id}')" style="background:var(--success); margin-top:15px;">💾 Actualizar Datos</button>
-            <button class="btn-warning" style="margin-top:5px;" onclick="cerrarModalGlobal()">Cancelar</button>
+            <label>Dirección Física:</label><input type="text" id="edit_c_dir" value="${cli.dir}">
+            
+            <button class="btn-info" onclick="guardarEdicionCliente('${id}')" style="margin-top: 25px;">💾 ACTUALIZAR DATOS</button>
+            <button class="btn-warning" style="margin-top: 10px;" onclick="cerrarModalGlobal()">CANCELAR</button>
         `);
     }
 
@@ -349,9 +530,9 @@
         let n = document.getElementById('edit_c_nom').value.trim();
         let c = document.getElementById('edit_c_ced').value.trim();
         let d = document.getElementById('edit_c_dir').value.trim();
-        if(!n) return alert("El nombre no puede estar vacío.");
+        if(!n) return alert("⚠️ El nombre no puede estar vacío.");
 
-        mostrarModalLocal("Actualizando", "Guardando cambios...");
+        mostrarModalLocal("Actualizando", "Guardando modificaciones...");
         try {
             await supabaseClient.from('clientes').update({ nombre: n, cedula: c, direccion: d }).eq('id', id);
             await cargarDatosSupabase();
@@ -360,8 +541,8 @@
     }
 
     async function eliminarClienteSupabase(id) {
-        if(!confirm("⚠️ ¿Estás seguro de eliminar este cliente del sistema? Se perderá su registro y deudas asociadas.")) return;
-        mostrarModalLocal("Eliminando", "Borrando cliente...");
+        if(!confirm("⚠️ ADVERTENCIA CRÍTICA: ¿Estás seguro de eliminar este cliente del sistema?\n\nSe perderá su registro y todas las deudas asociadas de forma irreversible.")) return;
+        mostrarModalLocal("Eliminando", "Borrando ficha y deudas...");
         try {
             await supabaseClient.from('clientes').delete().eq('id', id);
             await cargarDatosSupabase();
@@ -375,42 +556,73 @@
         let optCatalogo = CATALOGO.map(p => `<option value="${p.uuid}" data-venta="${p.ventaRef}" data-caja="${p.base}">[Stock: ${p.stock}] ${p.nom}</option>`).join('');
 
         let html = `
-            <div style="text-align:center; margin-bottom:15px; font-size:1.2rem;">Deuda Actual: <strong style="color:var(--danger);">$${cli.deudaUsd.toFixed(2)}</strong></div>
-            <button class="btn-info" style="width:100%; margin-bottom:15px; padding:10px;" onclick="generarPDFEstadoCuenta('${id}')">📄 Generar Estado de Cuenta PDF (Formal)</button>
+            <div style="text-align:center; margin-bottom: 20px; font-size:1.2rem; background: var(--item-bg); padding: 15px; border-radius: 4px; border: 1px solid rgba(212, 175, 55, 0.4);">
+                Balance Pendiente Actual: <strong style="color:var(--danger); font-size: 1.8rem; font-family: 'Playfair Display', serif; display: block; margin-top: 5px;">$${cli.deudaUsd.toFixed(2)}</strong>
+            </div>
             
-            <div style="background:var(--input-bg); padding:10px; border:1px solid var(--border); border-radius:6px; margin-bottom:10px;">
-                <h4 style="margin:0 0 10px 0; color:var(--primary);">1. Cargar Deuda con Inventario</h4>
+            <button class="btn-success" style="width:100%; margin-bottom:20px; margin-top:0;" onclick="generarPDFEstadoCuenta('${id}')">📄 GENERAR ESTADO DE CUENTA (PDF FORMAL)</button>
+            
+            <div style="background:var(--card-bg); padding:20px; border:1px solid rgba(212, 175, 55, 0.4); border-radius:4px; margin-bottom:15px;">
+                <h4 style="margin:0 0 15px 0;">📦 1. Cargar Deuda con Inventario Físico</h4>
                 <div class="grid-2">
-                    <select id="gc_prod_id"><option value="">Seleccionar Mercancía...</option>${optCatalogo}</select>
-                    <input type="number" id="gc_prod_cant" placeholder="Cantidad" value="1">
+                    <div>
+                        <label style="margin-top:0;">Seleccionar Mercancía:</label>
+                        <select id="gc_prod_id"><option value="">Seleccione un producto...</option>${optCatalogo}</select>
+                    </div>
+                    <div>
+                        <label style="margin-top:0;">Cantidad (Unidades):</label>
+                        <input type="number" id="gc_prod_cant" placeholder="Ej: 1" value="1">
+                    </div>
                 </div>
-                <div class="grid-2" style="margin-top:8px;">
-                    <select id="gc_prod_tipo"><option value="venta">Precio Público</option><option value="caja">Precio Interno</option></select>
-                    <input type="text" id="gc_prod_nota" placeholder="Nota opcional...">
+                <div class="grid-2" style="margin-top:12px;">
+                    <div>
+                        <label style="margin-top:0;">Tarifa a Aplicar:</label>
+                        <select id="gc_prod_tipo"><option value="venta">Precio Público</option><option value="caja">Precio Interno (Base)</option></select>
+                    </div>
+                    <div>
+                        <label style="margin-top:0;">Nota / Observación:</label>
+                        <input type="text" id="gc_prod_nota" placeholder="Opcional...">
+                    </div>
                 </div>
-                <button class="btn-primary" style="width:100%; padding:8px; margin-top:8px; background:var(--primary);" onclick="ejecutarDeudaProducto('${id}')">Fiar Producto (Descuenta Stock)</button>
+                <button class="btn-info" style="width:100%; margin-top: 20px;" onclick="ejecutarDeudaProducto('${id}')">FIAR PRODUCTO Y DESCONTAR STOCK</button>
             </div>
 
-            <div style="background:var(--input-bg); padding:10px; border:1px solid var(--border); border-radius:6px; margin-bottom:10px;">
-                <h4 style="margin:0 0 10px 0; color:var(--primary);">2. Cargo o Abono Manual</h4>
-                <div class="grid-3">
-                    <select id="gc_man_accion"><option value="sumar">➕ Añadir Deuda</option><option value="restar">➖ Abonar/Pagar</option></select>
-                    <input type="number" step="0.01" id="gc_man_monto" placeholder="Monto ($)">
-                    <input type="text" id="gc_man_nota" placeholder="Motivo">
+            <div style="background:var(--card-bg); padding:20px; border:1px solid rgba(212, 175, 55, 0.4); border-radius:4px; margin-bottom:15px;">
+                <h4 style="margin:0 0 15px 0;">💵 2. Cargo o Abono Monetario Manual</h4>
+                <div class="grid-3" style="align-items: end;">
+                    <div>
+                        <label style="margin-top:0;">Tipo de Operación:</label>
+                        <select id="gc_man_accion"><option value="sumar">➕ Añadir Deuda Extra</option><option value="restar">➖ Registrar Abono / Pago</option></select>
+                    </div>
+                    <div>
+                        <label style="margin-top:0;">Monto a Procesar ($):</label>
+                        <input type="number" step="0.01" id="gc_man_monto" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label style="margin-top:0;">Concepto / Motivo:</label>
+                        <input type="text" id="gc_man_nota" placeholder="Referencia Zelle, Efectivo...">
+                    </div>
                 </div>
-                <button class="btn-info" style="width:100%; padding:8px; margin-top:8px;" onclick="ejecutarDeudaManual('${id}')">Ejecutar Acción Manual</button>
+                <button class="btn-info" style="width:100%; margin-top: 20px;" onclick="ejecutarDeudaManual('${id}')">PROCESAR TRANSACCIÓN MANUAL</button>
             </div>
 
-            <h4 style="margin:0 0 5px 0; border-bottom:1px solid var(--border);">Historial de Movimientos</h4>
-            <div style="max-height:220px; overflow-y:auto; border:1px solid var(--border);">
-                <table style="width:100%; font-size:0.8rem; text-align:left;">
-                    <tr style="background:var(--primary); color:#fff;"><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Saldo</th></tr>
-                    ${cli.historial && cli.historial.length > 0 ? cli.historial.map(h => `<tr><td>${h.fecha}</td><td><strong>${h.tipo}</strong><br><span style="color:var(--muted)">${h.nota||''}</span></td><td style="color:${parseFloat(h.monto)<0?'var(--success)':'var(--danger)'}">$${parseFloat(h.monto).toFixed(2)}</td><td><strong>$${parseFloat(h.saldo_resultante).toFixed(2)}</strong></td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center; color:var(--muted);">Sin movimientos registrados.</td></tr>'}
+            <h4 style="margin:0 0 10px 0; border-bottom:1px solid var(--border);">📋 Historial de Movimientos</h4>
+            <div style="max-height:250px; overflow-y:auto; border:1px solid rgba(212, 175, 55, 0.4); border-radius: 4px;">
+                <table style="width:100%; font-size:0.85rem; text-align:left; margin-top:0; border: none;">
+                    <tr><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Saldo Final</th></tr>
+                    ${cli.historial && cli.historial.length > 0 ? cli.historial.map((h, i) => `
+                    <tr style="background: ${i % 2 === 0 ? 'var(--card-bg)' : 'var(--item-bg)'}; border-bottom: 1px solid rgba(212, 175, 55, 0.2);">
+                        <td>${h.fecha}</td>
+                        <td><strong style="color:var(--primary);">${h.tipo}</strong><br><span style="color:var(--muted)">${h.nota||''}</span></td>
+                        <td style="font-weight:bold; color:${parseFloat(h.monto)<0?'var(--success)':'var(--danger)'}">${parseFloat(h.monto)<0?'-$':'+$'}${Math.abs(parseFloat(h.monto)).toFixed(2)}</td>
+                        <td><strong style="font-family:'Playfair Display', serif; font-size: 1rem;">$${parseFloat(h.saldo_resultante).toFixed(2)}</strong></td>
+                    </tr>`).join('') : '<tr><td colspan="4" style="text-align:center; padding: 20px; color:var(--muted); font-style:italic;">No se registran movimientos en el historial.</td></tr>'}
                 </table>
             </div>
-            <button class="btn-warning" style="margin-top:15px;" onclick="cerrarModalGlobal()">Cerrar</button>
+            
+            <button class="btn-warning" style="margin-top:20px;" onclick="cerrarModalGlobal()">CERRAR PANEL</button>
         `;
-        abrirModalGlobal(`Gestión: ${cli.nom}`, html);
+        abrirModalGlobal(`⚙️ Panel de Gestión: ${cli.nom}`, html);
     }
 
     async function ejecutarDeudaProducto(clienteId) {
@@ -420,15 +632,15 @@
         let tipo = document.getElementById('gc_prod_tipo').value; 
         let nota = document.getElementById('gc_prod_nota').value.trim();
         
-        if(!prodUuid || isNaN(cant) || cant <= 0) return alert("Selecciona un producto y cantidad válida.");
+        if(!prodUuid || isNaN(cant) || cant <= 0) return alert("⚠️ Selecciona un producto y define una cantidad válida.");
         let pRef = CATALOGO.find(x => x.uuid === prodUuid);
-        if(pRef.stock < cant) return alert("No hay stock suficiente en inventario.");
+        if(pRef.stock < cant) return alert("❌ Error: No hay stock suficiente en inventario para procesar el fiado.");
         
         let precio = tipo === 'venta' ? pRef.ventaRef : pRef.base; 
         let cargoTotal = precio * cant;
         
-        mostrarModalLocal("Procesando", "Cargando deuda...");
-        await transaccionCliente(clienteId, cargoTotal, `Fío: ${cant}x ${pRef.nom} (${tipo})`, nota);
+        mostrarModalLocal("Procesando", "Cargando deuda e impactando inventario...");
+        await transaccionCliente(clienteId, cargoTotal, `Fío Mercancía: ${cant}x ${pRef.nom} (${tipo.toUpperCase()})`, nota);
         pRef.stock -= cant;
         await supabaseClient.from('catalogo').update({ stock: pRef.stock }).eq('id', prodUuid);
         await cargarDatosSupabase(); 
@@ -440,11 +652,11 @@
         let monto = parseFloat(document.getElementById('gc_man_monto').value); 
         let nota = document.getElementById('gc_man_nota').value.trim();
         
-        if(isNaN(monto) || monto <= 0 || !nota) return alert("Monto y justificación requeridos.");
+        if(isNaN(monto) || monto <= 0 || !nota) return alert("⚠️ El monto y el concepto (motivo) son obligatorios para procesar la transacción.");
         let valorFinal = accion === 'restar' ? -monto : monto; 
-        let etiqueta = accion === 'restar' ? "Abono / Pago" : "Cargo Manual Extra";
+        let etiqueta = accion === 'restar' ? "Abono / Pago Recibido" : "Cargo Monetario Manual";
         
-        mostrarModalLocal("Procesando", "Registrando...");
+        mostrarModalLocal("Procesando", "Registrando transacción en el libro...");
         await transaccionCliente(clienteId, valorFinal, etiqueta, nota);
         await cargarDatosSupabase(); 
         gestionarCuentaCliente(clienteId);
@@ -454,12 +666,15 @@
         let cli = CLIENTES.find(c => c.id === clienteId);
         let hist = cli.historial || []; 
         let nDeuda = (parseFloat(cli.deudaUsd) || 0) + montoCambio;
-        hist.unshift({ fecha: new Date().toLocaleString(), tipo: tipoTx, monto: montoCambio, nota: nota, saldo_resultante: nDeuda });
+        
+        let fechaActual = new Date().toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+        hist.unshift({ fecha: fechaActual, tipo: tipoTx, monto: montoCambio, nota: nota, saldo_resultante: nDeuda });
         await supabaseClient.from('clientes').update({ deuda_usd: nDeuda, historial: hist }).eq('id', clienteId);
     }
 
     // =========================================================================
-    // EXPORTACIÓN A PDF CORPORATIVO / FORMAL DEL ESTADO DE CUENTA
+    // EXPORTACIÓN A PDF CORPORATIVO (ESTILO PREMIUM CARMESÍ Y DORADO)
     // =========================================================================
     function generarPDFEstadoCuenta(clienteId) {
         let cli = CLIENTES.find(c => c.id === clienteId);
@@ -467,163 +682,185 @@
 
         const { jsPDF } = window.jspdf || {};
         if (!jsPDF) {
-            return alert("Error: La librería jsPDF no está cargada correctamente.");
+            return alert("Error: La librería de generación PDF no está cargada.");
         }
 
-        let doc = new jsPDF();
-        let nombreLocal = CONFIG_GLOBAL?.identidad?.nombre || 'Sistema Comercial';
+        mostrarModalLocal("Generando PDF", "Construyendo documento formal de cobranza...");
 
-        // Título Principal del Reporte
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(15);
-        doc.setTextColor(41, 128, 185); 
-        doc.text("ESTADO DE CUENTA Y RELACIÓN DE DEUDA", 105, 18, { align: "center" });
+        setTimeout(() => {
+            try {
+                let doc = new jsPDF();
+                let nombreLocal = CONFIG_GLOBAL?.identidad?.nombre || 'Sistema Comercial Premium';
 
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text("Establecimiento: " + nombreLocal, 105, 24, { align: "center" });
-        doc.text("Fecha de Emisión: " + new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), 105, 29, { align: "center" });
+                // Título Principal
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(16);
+                doc.setTextColor(59, 9, 24); // Primary Red
+                doc.text(nombreLocal, 105, 18, { align: "center" });
 
-        // Línea divisoria
-        doc.setDrawColor(200, 200, 200);
-        doc.line(14, 33, 196, 33);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.setTextColor(124, 17, 38); // Secondary Red
+                doc.text("ESTADO DE CUENTA Y RELACIÓN DE BALANCE", 105, 25, { align: "center" });
 
-        // Datos del Cliente
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.setTextColor(44, 62, 80);
-        doc.text("DATOS DEL CLIENTE / TITULAR:", 14, 40);
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Fecha de Emisión: ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()}`, 105, 30, { align: "center" });
 
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.setTextColor(50, 50, 50);
-        doc.text(`Nombre / Razón Social: ${cli.nom}`, 14, 46);
-        doc.text(`Cédula / C.I.: ${cli.ced || 'N/A'}`, 14, 52);
-        doc.text(`Dirección: ${cli.dir || 'N/A'}`, 14, 58);
+                // Línea divisoria dorada
+                doc.setDrawColor(212, 175, 55);
+                doc.setLineWidth(0.6);
+                doc.line(14, 34, 196, 34);
 
-        // Resumen de Deuda Destacado (Caja)
-        doc.setFillColor(245, 247, 250);
-        doc.rect(14, 64, 182, 16, "F");
-        doc.setDrawColor(210, 220, 230);
-        doc.rect(14, 64, 182, 16);
+                // Datos del Cliente (Fondo suave)
+                doc.setFillColor(253, 248, 240); // Item BG
+                doc.roundedRect(14, 38, 182, 22, 2, 2, "F");
+                doc.setDrawColor(212, 175, 55);
+                doc.roundedRect(14, 38, 182, 22, 2, 2);
 
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(41, 128, 185);
-        doc.text("BALANCE TOTAL PENDIENTE:", 18, 74);
-        doc.setFontSize(13);
-        doc.setTextColor(231, 76, 60); 
-        doc.text(`$${cli.deudaUsd.toFixed(2)}`, 185, 74, { align: "right" });
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(10);
+                doc.setTextColor(59, 9, 24);
+                doc.text("DATOS DEL TITULAR / CLIENTE:", 18, 44);
 
-        // Tabla de Historial
-        let startY = 88;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.setTextColor(44, 62, 80);
-        doc.text("HISTORIAL DETALLADO DE MOVIMIENTOS", 14, startY);
-        startY += 4;
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(45, 55, 72);
+                doc.text(`Razón Social / Nombre: ${cli.nom}`, 18, 49);
+                doc.text(`Documento de Identidad: ${cli.ced || 'N/A'}`, 18, 54);
+                doc.text(`Dirección Física: ${cli.dir || 'No registrada'}`, 18, 59);
 
-        function dibujarCabeceraTabla(yPos) {
-            doc.setFillColor(41, 128, 185);
-            doc.rect(14, yPos, 182, 7, "F");
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(8.5);
-            doc.setTextColor(255, 255, 255);
-            doc.text("Fecha", 16, yPos + 4.8);
-            doc.text("Concepto y Observaciones", 46, yPos + 4.8);
-            doc.text("Monto", 150, yPos + 4.8, { align: "right" });
-            doc.text("Saldo Ref.", 190, yPos + 4.8, { align: "right" });
-        }
-
-        dibujarCabeceraTabla(startY);
-        startY += 7;
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.setTextColor(50, 50, 50);
-
-        let historial = cli.historial || [];
-        if (historial.length === 0) {
-            startY += 8;
-            doc.text("No se registran movimientos ni deudas previas en el historial del cliente.", 105, startY, { align: "center" });
-        } else {
-            historial.forEach((h, index) => {
-                let fechaStr = String(h.fecha || '');
-                let tipoStr = String(h.tipo || '');
-                let notaStr = h.nota ? ` - ${h.nota}` : '';
-                let conceptoCompleto = tipoStr + notaStr;
-                let montoNum = parseFloat(h.monto) || 0;
-                let saldoNum = parseFloat(h.saldo_resultante) || 0;
-
-                let montoStr = (montoNum > 0 ? "+$" : "$") + montoNum.toFixed(2);
-                let saldoStr = "$" + saldoNum.toFixed(2);
-
-                // Márgenes y saltos de línea estrictos por bloques para evitar colisiones
-                let lineasFecha = doc.splitTextToSize(fechaStr, 28);
-                let lineasConcepto = doc.splitTextToSize(conceptoCompleto, 100);
+                // Bloque de Balance Resaltado
+                doc.setFillColor(59, 9, 24); // Rojo oscuro
+                doc.roundedRect(14, 65, 182, 15, 2, 2, "F");
                 
-                let maxLines = Math.max(lineasFecha.length, lineasConcepto.length, 1);
-                let rowHeight = (maxLines * 4.5) + 4;
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(212, 175, 55); // Letras doradas
+                doc.text("BALANCE TOTAL ADEUDADO AL CORTE:", 18, 74);
+                
+                doc.setFontSize(14);
+                doc.setTextColor(255, 255, 255); // Letras Blancas
+                doc.text(`$${cli.deudaUsd.toFixed(2)}`, 190, 75, { align: "right" });
 
-                if (startY + rowHeight > 275) {
+                // Cabecera Tabla Historial
+                let startY = 88;
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(59, 9, 24);
+                doc.text("HISTORIAL DETALLADO DE MOVIMIENTOS", 14, startY);
+                startY += 4;
+
+                function dibujarCabeceraTabla(yPos) {
+                    doc.setFillColor(59, 9, 24);
+                    doc.rect(14, yPos, 182, 7, "F");
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(212, 175, 55); // Textos dorados en cabecera
+                    doc.text("Fecha Transacción", 16, yPos + 4.8);
+                    doc.text("Concepto y Observaciones", 48, yPos + 4.8);
+                    doc.text("Monto ($)", 150, yPos + 4.8, { align: "right" });
+                    doc.text("Saldo Resultante", 192, yPos + 4.8, { align: "right" });
+                }
+
+                dibujarCabeceraTabla(startY);
+                startY += 7;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8.5);
+
+                let historial = cli.historial || [];
+                if (historial.length === 0) {
+                    startY += 8;
+                    doc.setTextColor(100, 100, 100);
+                    doc.text("No se registran movimientos ni obligaciones en el historial contable del cliente.", 105, startY, { align: "center" });
+                } else {
+                    historial.forEach((h, index) => {
+                        let fechaStr = String(h.fecha || '');
+                        let tipoStr = String(h.tipo || '');
+                        let notaStr = h.nota ? ` - ${h.nota}` : '';
+                        let conceptoCompleto = tipoStr + notaStr;
+                        let montoNum = parseFloat(h.monto) || 0;
+                        let saldoNum = parseFloat(h.saldo_resultante) || 0;
+
+                        let montoStr = (montoNum > 0 ? "+ " : "") + montoNum.toFixed(2);
+                        let saldoStr = "$" + saldoNum.toFixed(2);
+
+                        let lineasFecha = doc.splitTextToSize(fechaStr, 30);
+                        let lineasConcepto = doc.splitTextToSize(conceptoCompleto, 95);
+                        
+                        let maxLines = Math.max(lineasFecha.length, lineasConcepto.length, 1);
+                        let rowHeight = (maxLines * 4.5) + 4;
+
+                        if (startY + rowHeight > 270) {
+                            doc.addPage();
+                            startY = 20;
+                            dibujarCabeceraTabla(startY);
+                            startY += 7;
+                        }
+
+                        if (index % 2 === 0) {
+                            doc.setFillColor(249, 249, 249);
+                            doc.rect(14, startY, 182, rowHeight, "F");
+                        }
+
+                        doc.setDrawColor(230, 230, 230);
+                        doc.rect(14, startY, 182, rowHeight);
+
+                        let textY = startY + 4.5;
+                        doc.setTextColor(45, 55, 72);
+                        doc.text(lineasFecha, 16, textY);
+                        doc.text(lineasConcepto, 48, textY);
+                        
+                        if (montoNum < 0) {
+                            doc.setTextColor(39, 103, 73); // Verde éxito para abonos
+                        } else {
+                            doc.setTextColor(179, 0, 0); // Rojo peligro para deuda
+                        }
+                        doc.text(montoStr, 150, textY, { align: "right" });
+
+                        doc.setFont("helvetica", "bold");
+                        doc.setTextColor(59, 9, 24);
+                        doc.text(saldoStr, 192, textY, { align: "right" });
+                        doc.setFont("helvetica", "normal");
+
+                        startY += rowHeight;
+                    });
+                }
+
+                // Bloque de Aviso Formal
+                let textoAviso = "AVISO DE COBRANZA: El presente documento constituye un estado de cuenta informativo, formal y auditable sobre las obligaciones financieras vigentes con nuestra institución. Solicitamos amablemente verificar los montos expuestos y proceder con la cancelación de los saldos deudores a la brevedad posible.";
+                let lineasAviso = doc.splitTextToSize(textoAviso, 174);
+                let avisoHeight = (lineasAviso.length * 4.5) + 8;
+
+                if (startY + avisoHeight + 15 > 280) {
                     doc.addPage();
                     startY = 20;
-                    dibujarCabeceraTabla(startY);
-                    startY += 7;
-                }
-
-                if (index % 2 === 0) {
-                    doc.setFillColor(248, 249, 250);
-                    doc.rect(14, startY, 182, rowHeight, "F");
-                }
-
-                doc.setDrawColor(220, 220, 220);
-                doc.rect(14, startY, 182, rowHeight);
-
-                let textY = startY + 4.5;
-                doc.text(lineasFecha, 16, textY);
-                doc.text(lineasConcepto, 46, textY);
-                
-                if (montoNum < 0) {
-                    doc.setTextColor(39, 174, 96); // Verde para abonos/pagos
                 } else {
-                    doc.setTextColor(231, 76, 60); // Rojo para cargos/fíos
+                    startY += 10;
                 }
-                doc.text(montoStr, 150, textY, { align: "right" });
 
-                doc.setTextColor(50, 50, 50);
-                doc.text(saldoStr, 190, textY, { align: "right" });
+                doc.setFillColor(253, 248, 240); // Fondo suave
+                doc.rect(14, startY, 182, avisoHeight, "F");
+                doc.setDrawColor(212, 175, 55); // Borde dorado
+                doc.rect(14, startY, 182, avisoHeight);
 
-                startY += rowHeight;
-            });
-        }
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(124, 17, 38);
+                doc.text("NOTA IMPORTANTE:", 18, startY + 5);
 
-        // Bloque de Aviso de Cobranza Formal
-        let textoAviso = "NOTIFICACIÓN DE COBRANZA: El presente documento constituye un estado de cuenta informativo y formal sobre las obligaciones financieras pendientes con nuestro establecimiento. Solicitamos verificar su saldo y proceder con la cancelación a la brevedad posible.";
-        let lineasAviso = doc.splitTextToSize(textoAviso, 174);
-        let avisoHeight = (lineasAviso.length * 4) + 8;
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(60, 60, 60);
+                doc.text(lineasAviso, 18, startY + 10);
 
-        if (startY + avisoHeight + 10 > 275) {
-            doc.addPage();
-            startY = 20;
-        }
-
-        startY += 6;
-        doc.setFillColor(253, 246, 227);
-        doc.rect(14, startY, 182, avisoHeight, "F");
-        doc.setDrawColor(241, 196, 15);
-        doc.rect(14, startY, 182, avisoHeight);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
-        doc.setTextColor(211, 84, 0);
-        doc.text("AVISO IMPORTANTE DE COBRANZA:", 17, startY + 4);
-
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(60, 60, 60);
-        doc.text(lineasAviso, 17, startY + 9);
-
-        doc.save(`Estado_de_Cuenta_${cli.nom.replace(/\s+/g, '_')}.pdf`);
+                doc.save(`Estado_de_Cuenta_${cli.nom.replace(/\s+/g, '_')}.pdf`);
+                cerrarModalGlobal();
+            } catch(e) {
+                cerrarModalGlobal();
+                alert("Error al generar el PDF: " + e.message);
+            }
+        }, 300);
     }
 
     function abrirModalGlobal(titulo, htmlContent) { 
@@ -632,7 +869,9 @@
         document.getElementById('global_modal').style.display = 'flex'; 
     }
     function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
-    function mostrarModalLocal(titulo, msg) { abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px;">⏳ ${msg}</div>`); }
+    function mostrarModalLocal(titulo, msg) { 
+        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px;"><div class="spinner-luxury" style="width: 35px; height: 35px; border-width: 3px;"></div><span style="font-size:1.1rem; color:var(--primary); font-family:'Playfair Display', serif;">${msg}</span></div>`); 
+    }
 </script>
 </body>
 </html>
