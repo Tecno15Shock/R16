@@ -93,13 +93,14 @@
             font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
         
+        /* Acordeón cerrado por defecto */
         .card-body {
             max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
             transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease;
             background: var(--card-bg); 
         }
         .card.open .card-body {
-            max-height: 2000px; padding: 25px; opacity: 1;
+            max-height: 8000px; padding: 25px; opacity: 1; /* Aumentado drásticamente para máxima expansión */
             transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
         }
         .card.open .accordion-icon { transform: rotate(180deg); }
@@ -120,19 +121,26 @@
         .btn-success { background: linear-gradient(135deg, var(--success), #1e8449); color: white; border-bottom: 2px solid #145a32; }
         .btn-warning { background: linear-gradient(135deg, var(--warning), #d35400); color: #fff; }
         .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-danger { background: var(--danger); color: white; border: 1px solid darkred; }
 
         /* Estilos de Lista y Tabla */
-        .consulta-item { border-bottom: 1px solid rgba(212, 175, 55, 0.3); padding: 15px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); transition: background 0.3s; }
+        .consulta-item { border-bottom: 1px solid rgba(212, 175, 55, 0.3); padding: 18px; font-size: 0.95rem; display: flex; flex-direction: column; gap: 12px; background: var(--card-bg); transition: background 0.3s; }
         .consulta-item:nth-child(even) { background: var(--item-bg); }
         .consulta-item:hover { background: rgba(212, 175, 55, 0.05); }
+
+        .action-row {
+            display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 4px; border: 1px dashed rgba(212, 175, 55, 0.4);
+            flex-wrap: wrap; /* Permitir apilamiento en pantallas pequeñas */
+        }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; border: 1px solid rgba(212, 175, 55, 0.3); }
         th, td { border: 1px solid rgba(212, 175, 55, 0.3); padding: 12px; text-align: left; }
         th { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: var(--active-gold); font-family: 'Playfair Display', serif; border-color: var(--active-gold); }
 
-        /* Contenedores con scroll */
+        /* Contenedores con scroll amplio para albergar mercancía */
         .list-container {
-            max-height: 350px; overflow-y: auto; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 4px; margin-top: 15px; background: var(--card-bg);
+            max-height: 65vh; /* Ampliado para cubrir la mayor parte de la pantalla visible */
+            overflow-y: auto; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 4px; margin-top: 15px; background: var(--card-bg);
         }
 
         /* ========================================================= */
@@ -183,14 +191,13 @@
     </div>
 </div>
 
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (CLAVE BLANCA/CLARA) -->
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
 <div id="pantalla_bloqueo_admin" style="display: none;">
     <div class="loading-box" style="padding: 30px;">
         <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-size: 1.4rem; padding-bottom: 10px; margin-bottom: 15px; font-family: 'Playfair Display', serif;">🔒 ACCESO PROTEGIDO</h2>
         <p style="font-size: 0.95rem; color: var(--muted); margin-bottom: 20px; font-family:'Roboto', sans-serif;">Introduce el PIN de Administrador para abrir este módulo:</p>
         
         <div style="position: relative; margin-bottom: 20px;">
-            <!-- CAMPO DE PIN EN BLANCO CLARO -->
             <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace; background: #ffffff; color: var(--primary); border: 2px solid var(--active-gold); border-radius: 4px; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);" onkeyup="if(event.key==='Enter') verificarPinBody()">
             <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
         </div>
@@ -251,14 +258,17 @@
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
         
-        <!-- ACORDEÓN 1: REGISTRO DE MERCANCÍA -->
-        <div class="card open">
+        <!-- ACORDEÓN 1: REGISTRO DE MERCANCÍA / MERMAS -->
+        <!-- Cerrado por defecto eliminando la clase 'open' -->
+        <div class="card">
             <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>🚚 1. Ingreso de Mercancía</h2>
-                <span class="accordion-icon" style="transform: rotate(180deg);">▼</span>
+                <h2>🚚 1. Ingreso de Mercancía y Control</h2>
+                <span class="accordion-icon">▼</span>
             </div>
-            <div class="card-body" style="max-height: 2000px; padding: 25px; opacity: 1;">
-                <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 15px;">Registra la entrada de nueva mercancía para sumar stock directamente a tu inventario.</p>
+            <div class="card-body">
+                <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 15px;">
+                    Registra la entrada de mercancía o ajusta el inventario por motivos de mermas y averías justificadas.
+                </p>
                 
                 <div class="grid-2" style="margin-bottom:15px; align-items: end;">
                     <div>
@@ -280,17 +290,22 @@
             </div>
         </div>
 
-        <!-- ACORDEÓN 2: HISTORIAL DE ENTRADAS -->
+        <!-- ACORDEÓN 2: HISTORIAL DE ENTRADAS / SALIDAS -->
+        <!-- Cerrado por defecto -->
         <div class="card">
             <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>📋 2. Historial de Entradas</h2>
+                <h2>📋 2. Historial de Transacciones (Proveedores/Mermas)</h2>
                 <span class="accordion-icon">▼</span>
             </div>
             <div class="card-body">
                 <button class="btn-info" style="margin-bottom: 15px; width:100%;" onclick="cargarHistorialProveedores()">🔄 ACTUALIZAR HISTORIAL</button>
-                <div class="list-container" style="max-height: 400px; margin-top: 0;">
+                <div class="list-container" style="margin-top: 0;">
                     <table id="tabla_historial_proveedores" style="margin-top: 0; border: none;">
-                        <tr><th style="border-left:none;">Fecha / Hora</th><th>Producto</th><th style="border-right:none; text-align: center;">Cantidad Entrante</th></tr>
+                        <tr>
+                            <th style="border-left:none;">Fecha / Hora</th>
+                            <th>Producto y Referencia</th>
+                            <th style="border-right:none; text-align: center;">Movimiento</th>
+                        </tr>
                     </table>
                 </div>
             </div>
@@ -409,17 +424,10 @@
 
         if (conf) {
             CONFIG_GLOBAL = conf;
-            if (conf.identidad && conf.identidad.admin_pass) {
-                ADMIN_PASS_DB = conf.identidad.admin_pass;
-            }
-        }
-
-        if (localData && localData.password_admin) {
-            ADMIN_PASS_DB = localData.password_admin;
         }
 
         let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
-        let etiquetaModulo = "Proveedores";
+        let etiquetaModulo = "Proveedores / Ajustes";
 
         document.getElementById('main_top_title').innerHTML = `
             🏪 ${nombreLocal} 
@@ -461,39 +469,72 @@
             let realIdx = CATALOGO.findIndex(x => x.uuid === p.uuid);
             html += `
             <div class="consulta-item">
-                <div>
-                    <strong style="font-size: 1.05rem; color: var(--primary); font-family: 'Playfair Display', serif;">${p.nom}</strong><br>
-                    <small style="color:var(--muted);">Categoría: <strong>${p.cat}</strong> | Stock Actual: <strong style="color:var(--success); font-size: 1.1rem;">${p.stock}</strong></small>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="font-size: 1.05rem; color: var(--primary); font-family: 'Playfair Display', serif;">${p.nom}</strong><br>
+                        <small style="color:var(--muted);">Categoría: <strong>${p.cat}</strong> | Stock Actual: <strong style="color:var(--success); font-size: 1.1rem;">${p.stock}</strong></small>
+                    </div>
                 </div>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <input type="number" step="0.01" id="cant_prov_${realIdx}" placeholder="Cant." style="width:80px; text-align:center; font-weight:bold; margin-top:0; border-color: var(--active-gold);">
-                    <button class="btn-success" style="padding:10px 15px; margin:0; width:auto; border-radius:4px;" onclick="registrarEntradaProveedor(${realIdx})">➕ Añadir</button>
+                
+                <div class="action-row">
+                    <input type="number" step="0.01" id="cant_prov_${realIdx}" placeholder="Cant." style="flex: 1; max-width: 90px; text-align:center; font-weight:bold; margin-top:0; border-color: var(--active-gold);">
+                    
+                    <input type="text" id="nota_prov_${realIdx}" placeholder="Nota / Justificación (Obligatoria para merma)" style="flex: 3; min-width: 200px; margin-top:0; font-size: 0.9rem;">
+                    
+                    <div style="display:flex; gap: 8px;">
+                        <button class="btn-success" style="padding:10px 15px; margin:0; width:auto; border-radius:4px;" onclick="procesarStock(${realIdx}, 'sumar')" title="Añadir stock desde proveedor">➕ AÑADIR</button>
+                        
+                        <button class="btn-danger" style="padding:10px 15px; margin:0; width:auto; border-radius:4px; border: 1px solid var(--danger);" onclick="procesarStock(${realIdx}, 'restar')" title="Registrar pérdida, avería o merma">➖ MERMA</button>
+                    </div>
                 </div>
             </div>`;
         });
         document.getElementById('lista_proveedores_entrada').innerHTML = html || '<p style="text-align:center; padding:30px; font-style: italic; color: var(--muted);">No se encontraron productos coincidentes.</p>';
     }
 
-    async function registrarEntradaProveedor(idx) {
+    async function procesarStock(idx, accion) {
         let p = CATALOGO[idx];
         let cant = parseFloat(document.getElementById(`cant_prov_${idx}`).value) || 0;
-        if(cant <= 0) return alert("⚠️ Ingresa una cantidad válida mayor a 0.");
+        let notaInput = document.getElementById(`nota_prov_${idx}`).value.trim();
 
-        let nuevoStock = (parseFloat(p.stock) || 0) + cant;
-        mostrarModalLocal("Registrando", "Ingresando mercancía al inventario...");
+        if (cant <= 0) return alert("⚠️ Ingresa una cantidad válida mayor a 0 para procesar la transacción.");
+
+        if (accion === 'restar' && notaInput === '') {
+            return alert("❌ ERROR DE SEGURIDAD: Para registrar una reducción de inventario (pérdida, merma o avería) es OBLIGATORIO ingresar una justificación en el campo de texto.");
+        }
+
+        let mensajeAccion = accion === 'sumar' ? "añadiendo" : "retirando";
+        if (!confirm(`¿Estás seguro de que deseas ${accion} ${cant} unidades a ${p.nom}?`)) return;
+
+        let nuevoStock = accion === 'sumar' ? (parseFloat(p.stock) || 0) + cant : (parseFloat(p.stock) || 0) - cant;
+        let logCantidad = accion === 'sumar' ? cant : -cant; // Negativo para restas
+        let logNota = accion === 'sumar' ? (notaInput || 'Ingreso por Proveedor') : `Pérdida/Avería: ${notaInput}`;
+
+        mostrarModalLocal("Procesando", `Actualizando inventario y registrando auditoría...`);
+        
         try {
+            // Actualizar Stock en Catalogo
             await supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', p.uuid);
+            
+            // Insertar Historial
             await supabaseClient.from('proveedores_historial_entradas').insert([{
-                local_id: CURRENT_LOCAL_ID, producto_id: p.uuid, cantidad: cant, nota: 'Ingreso por Proveedor'
+                local_id: CURRENT_LOCAL_ID, 
+                producto_id: p.uuid, 
+                cantidad: logCantidad, 
+                nota: logNota
             }]);
+            
             p.stock = nuevoStock;
             
-            document.getElementById(`cant_prov_${idx}`).value = ''; // Limpiar input
+            // Limpiar inputs
+            document.getElementById(`cant_prov_${idx}`).value = ''; 
+            document.getElementById(`nota_prov_${idx}`).value = ''; 
+            
             renderProveedoresEntrada();
             cargarHistorialProveedores();
             
             cerrarModalGlobal();
-            alert(`✅ Entrada registrada con éxito: +${cant} ${p.nom}`);
+            alert(accion === 'sumar' ? `✅ Entrada registrada con éxito: +${cant} ${p.nom}` : `⚠️ Merma procesada: -${cant} ${p.nom}`);
         } catch(err) { 
             cerrarModalGlobal(); 
             alert("❌ Error de servidor: " + err.message); 
@@ -505,17 +546,30 @@
         if(!tablaEl) return;
         try {
             let { data } = await supabaseClient.from('proveedores_historial_entradas').select('*, catalogo(nombre)').eq('local_id', CURRENT_LOCAL_ID).order('fecha', { ascending: false });
-            let html = `<tr><th style="border-left:none;">Fecha / Hora</th><th>Producto</th><th style="border-right:none; text-align: center;">Cantidad Entrante</th></tr>`;
+            let html = `<tr><th style="border-left:none;">Fecha / Hora</th><th>Producto y Referencia</th><th style="border-right:none; text-align: center;">Movimiento</th></tr>`;
+            
             if(!data || data.length === 0) {
-                html += `<tr><td colspan="3" style="text-align:center; padding: 30px; color: var(--muted); font-style: italic;">No hay registros de entradas en el historial.</td></tr>`;
+                html += `<tr><td colspan="3" style="text-align:center; padding: 30px; color: var(--muted); font-style: italic;">No hay registros en el historial de transacciones.</td></tr>`;
             } else {
                 data.forEach((h, i) => {
                     let nombreProd = h.catalogo ? h.catalogo.nombre : 'Desconocido';
+                    let esPositivo = parseFloat(h.cantidad) > 0;
+                    let color = esPositivo ? 'var(--success)' : 'var(--danger)';
+                    let signo = esPositivo ? '+' : ''; // El signo negativo ya viene en el valor si es menor a 0
+                    let notaFormat = h.nota ? `<br><small style="color:var(--muted); font-style: italic;">Ref: ${h.nota}</small>` : '';
+
                     html += `
                     <tr style="background: ${i % 2 === 0 ? 'var(--card-bg)' : 'var(--item-bg)'}; border-bottom: 1px solid rgba(212, 175, 55, 0.2);">
                         <td style="font-size: 0.85rem; color: var(--muted);">${new Date(h.fecha).toLocaleString()}</td>
-                        <td><strong style="color: var(--primary); font-family: 'Playfair Display', serif;">${nombreProd}</strong></td>
-                        <td style="text-align:center; color:var(--success); font-weight:bold; font-size: 1.1rem; font-family: 'Playfair Display', serif;">+${h.cantidad}</td>
+                        
+                        <td>
+                            <strong style="color: var(--primary); font-family: 'Playfair Display', serif;">${nombreProd}</strong>
+                            ${notaFormat}
+                        </td>
+                        
+                        <td style="text-align:center; color:${color}; font-weight:bold; font-size: 1.15rem; font-family: 'Playfair Display', serif;">
+                            ${signo}${h.cantidad}
+                        </td>
                     </tr>`;
                 });
             }
