@@ -3,65 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avances / Retiros</title>
+    <title>💸 Avances / Retiros</title>
+    <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (ROJO Y DORADO)               */
+        /* ========================================================= */
         :root {
-            --bg: #f4f4f9; --primary: #2c3e50; --secondary: #3498db; --danger: #e74c3c;
-            --success: #2ecc71; --warning: #f39c12; --info: #34495e; --text: #333; 
-            --border: #ddd; --card-bg: #ffffff; --item-bg: #fdfdfd; --muted: #7f8c8d;
+            --topbar-bg: #000000; 
+            --sidebar-bg: #000000; 
+            --active-gold: #D4AF37; 
+            
+            --bg: #1a050a; 
+            --primary: #3b0918; 
+            --secondary: #7c1126; 
+            --danger: #b30000; 
+            --success: #2ecc71; 
+            --warning: #f39c12; 
+            --info: #aa8c2c; 
+            --text: #222; 
+            --border: #d4af37; 
+            --card-bg: #ffffff; 
+            --item-bg: #fdf8f0; 
+            --muted: #666;
+            --input-bg: #fdf8f0;
         }
+
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        .wrapper { display: block; min-height: 100vh; position: relative; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; scroll-behavior: smooth; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
 
         /* ========================================================= */
-        /* BARRA SUPERIOR: Dimensiones fijas y separación de letras  */
+        /* BARRA SUPERIOR */
         /* ========================================================= */
-        .top-bar { background: var(--primary); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .menu-toggle-btn { background: rgba(255, 255, 255, 0.12); border: none; color: white; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; }
+        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.5); border-bottom: 2px solid var(--border); }
+        .menu-toggle-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border); color: var(--active-gold); font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.3); }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; font-family: 'Playfair Display', serif; }
 
         /* ========================================================= */
-        /* MENÚ LATERAL: Ancho estándar (300px) y botones uniformes  */
+        /* MENÚ LATERAL */
         /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--primary); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 4px 0 15px rgba(0,0,0,0.6); overflow-y: auto; border-right: 2px solid var(--border); }
         .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; margin-bottom: 10px; letter-spacing: 1px; }
-        .sidebar .tab-btn { background: none; color: white; /* <-- Cambiado a blanco */border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.3px; }
-        .sidebar .tab-btn:hover { background: #34495e; color: white; }
-        /* Etiqueta para diferenciar la página activa en el menú */
-        .sidebar .tab-btn.active { background: var(--secondary); color: white; font-weight: bold; border-left: 4px solid #fff; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1001; display: none; }
+        .sidebar-brand { font-size: 1.4rem; font-family: 'Playfair Display', serif; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 2px; color: var(--active-gold); text-transform: uppercase; }
+        .sidebar .tab-btn { background: none; color: #ddd; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s; border-left: 3px solid transparent; }
+        .sidebar .tab-btn:hover { background: rgba(212, 175, 55, 0.1); color: white; border-left: 3px solid var(--active-gold); }
+        .sidebar .tab-btn.active { background: linear-gradient(90deg, var(--active-gold) 0%, #aa8c2c 100%) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 1001; display: none; backdrop-filter: blur(2px); }
         .sidebar-overlay.active { display: block; }
 
-        .main-content { padding: 20px; max-width: 800px; margin: 0 auto; }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border);}
-        h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        /* ========================================================= */
+        /* CONTENEDORES Y ACORDEÓN LUXURY                            */
+        /* ========================================================= */
+        .main-content { padding: 20px; padding-bottom: 130px; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        label { font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 5px; color: var(--muted);}
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 1.1rem; }
+        .card { 
+            background: var(--card-bg); border-radius: 6px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            border: 1px solid var(--border);
+            position: relative; overflow: hidden;
+            transition: background 0.3s;
+        }
         
-        .calc-display { background:var(--primary); padding:20px; border-radius:8px; text-align:center; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
-        .calc-display .title { font-size: 0.9rem; color: #bdc3c7; margin-bottom: 10px; }
-        .calc-res.main { font-size:2.2rem; color:#2ecc71; font-weight:bold; margin-bottom: 5px; }
-        .calc-res.sub { font-size:1.2rem; color:#bdc3c7; }
+        .card-header {
+            padding: 20px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            transition: filter 0.3s ease; user-select: none; border-bottom: 2px solid var(--border);
+        }
+        .card-header:hover { filter: brightness(1.15); }
+        .card-header h2 { 
+            color: var(--active-gold); margin: 0; font-size: 1.25rem; font-family: 'Playfair Display', serif; 
+            text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0; display: flex; align-items: center; gap: 10px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        }
+        .accordion-icon {
+            font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .card-body {
+            max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease;
+            background: var(--card-bg); 
+        }
+        .card.open .card-body {
+            max-height: 3000px; padding: 25px; opacity: 1;
+            transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
+        }
+        .card.open .accordion-icon { transform: rotate(180deg); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 15px; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-bottom: 6px; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        input, select { 
+            width: 100%; padding: 12px; border: 1px solid rgba(212, 175, 55, 0.6); border-radius: 4px; 
+            font-size: 1.05rem; background: var(--input-bg); transition: all 0.3s ease; color: var(--text); border-left: 4px solid var(--active-gold); font-family: 'Roboto', sans-serif;
+        }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--primary); border-left-color: var(--primary); box-shadow: 0 0 10px rgba(124, 17, 38, 0.15); }
+
+        /* DISPLAY DE CÁLCULO LUXURY */
+        .calc-display { 
+            background: linear-gradient(135deg, var(--primary) 0%, #1a050a 100%); 
+            padding: 25px; border-radius: 6px; text-align: center; 
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.2); 
+            border: 1px solid var(--active-gold); margin-top: 20px;
+        }
+        .calc-display .title { 
+            font-size: 0.85rem; color: var(--active-gold); margin-bottom: 8px; font-weight: bold;
+            font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .calc-res.main { 
+            font-size: 2.5rem; color: var(--success); font-weight: bold; margin-bottom: 4px;
+            font-family: 'Playfair Display', serif; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .calc-res.sub { 
+            font-size: 1.25rem; color: #e0e0e0; font-weight: bold;
+            font-family: 'Roboto', sans-serif; letter-spacing: 0.5px;
+        }
+
+        button.btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; cursor: pointer;}
+
+        /* ========================================================= */
+        /* MODALES Y CARGADOR                                       */
+        /* ========================================================= */
+        #loading_overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, rgba(124, 17, 38, 0.95), rgba(59, 9, 24, 0.99));
+            z-index: 1000000; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px); transition: opacity 0.5s ease;
+        }
+        
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 4px; width: 90%; max-width: 450px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); text-align: center; }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
+        .modal-close-btn:hover { background: var(--danger); transform: scale(1.05); color: #FFF; }
+        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .loading-box {
+            background: var(--card-bg); padding: 40px; border-radius: 4px;
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 2px solid var(--active-gold);
+            position: relative; max-width: 400px; width: 90%;
+        }
+        .loading-box::before, .loading-box::after { content: ''; position: absolute; width: 30px; height: 30px; border: 2px solid var(--active-gold); }
+        .loading-box::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .loading-box::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 4px solid rgba(212, 175, 55, 0.2);
+            border-left-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+
+        .loading-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .loading-subtitle { font-family: 'Roboto', sans-serif; font-size: 0.95rem; color: var(--muted); line-height: 1.5; }
     </style>
 </head>
 <body>
 
+<!-- MODAL DE CARGA INICIAL -->
+<div id="loading_overlay">
+    <div class="loading-box">
+        <div class="spinner-luxury"></div>
+        <div class="loading-title">Sincronizando Módulo</div>
+        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Cargando tasas de cambio y configuraciones de avance...</div>
+    </div>
+</div>
+
+<!-- MODAL GLOBAL ELEGANTE -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" class="custom-modal-title">Aviso</div>
+        <div id="global_modal_body" style="font-size: 1rem; color: var(--text); line-height: 1.5; margin-bottom: 15px;"></div>
+        <button onclick="cerrarModalGlobal()" class="btn-info" style="padding: 10px; width: 100%;">ACEPTAR</button>
+    </div>
+</div>
+
+<div class="wrapper" id="main_wrapper">
+    
     <!-- BARRA SUPERIOR -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        <div class="top-bar-title" id="main_top_title">Panel Administrativo</div>
     </div>
 
     <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú del Sistema</div>
-        <!-- SOLO UN ENLACE DEBE TENER LA CLASE "active" POR PÁGINA -->
+        <div class="sidebar-brand">MENÚ CENTRAL</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -84,40 +226,53 @@
         <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
     </div>
 
+    <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
-        <div class="card" style="border-top: 4px solid #e67e22;">
-            <h2>💸 Retiro / Avance Efectivo</h2>
-            <div class="grid-2">
-                <div>
-                    <label>Moneda Solicitada (Retiro):</label>
-                    <select id="avance_moneda" onchange="calcularAvance()">
-                        <option value="BS">Bolívares (BS)</option>
-                        <option value="USD">Dólares (USD)</option>
-                        <option value="COP">Pesos (COP)</option>
-                        <option value="EUR">Euros (EUR)</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Monto Solicitado:</label>
-                    <input type="number" step="0.01" id="avance_monto" oninput="calcularAvance()" placeholder="0.00">
-                </div>
+        <div class="card open">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>💸 Calculadora de Retiro / Avance de Efectivo</h2>
+                <span class="accordion-icon" style="transform: rotate(180deg);">▼</span>
             </div>
-            
-            <div style="margin-bottom: 20px;">
-                <label>Porcentaje de Cobro (Comisión %):</label>
-                <input type="number" step="0.1" id="avance_porcentaje" oninput="calcularAvance()" placeholder="Ej: 10">
-            </div>
+            <div class="card-body">
+                <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 20px;">
+                    Calcula automáticamente el cobro al cliente incluyendo la comisión porcentual sobre el avance de efectivo.
+                </p>
 
-            <div class="calc-display">
-                <div class="title">DEBES COBRAR AL CLIENTE (INCLUYE COMISIÓN):</div>
-                <div class="calc-res main" id="avance_res_usd">$ 0.00</div>
-                <div class="calc-res sub" id="avance_res_bs">0.00 BS</div>
+                <div class="grid-2">
+                    <div>
+                        <label>Moneda Solicitada (Retiro):</label>
+                        <select id="avance_moneda" onchange="calcularAvance()">
+                            <option value="BS">Bolívares (BS)</option>
+                            <option value="USD" selected>Dólares (USD)</option>
+                            <option value="COP">Pesos (COP)</option>
+                            <option value="EUR">Euros (EUR)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Monto Solicitado:</label>
+                        <input type="number" step="0.01" id="avance_monto" oninput="calcularAvance()" placeholder="0.00">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label>Porcentaje de Cobro (Comisión %):</label>
+                    <input type="number" step="0.1" id="avance_porcentaje" oninput="calcularAvance()" placeholder="Ej: 10">
+                </div>
+
+                <div class="calc-display">
+                    <div class="title">💳 DEBES COBRAR AL CLIENTE (INCLUYE COMISIÓN):</div>
+                    <div class="calc-res main" id="avance_res_usd">$ 0.00</div>
+                    <div class="calc-res sub" id="avance_res_bs">0.00 BS</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // ==========================================
+    // MOTOR DE CONEXIÓN SUPABASE GLOBAL
+    // ==========================================
     window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
     window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
     window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
@@ -126,16 +281,41 @@
     let CONFIG_GLOBAL = {};
 
     window.addEventListener('DOMContentLoaded', async () => {
-        const { data } = await window.supabaseClient.auth.getSession();
-        if (data && data.session) await sincronizarSesionSupabase(data.session);
-        else window.location.href = 'index.html';
+        try {
+            const { data } = await window.supabaseClient.auth.getSession();
+            if (data && data.session) {
+                await sincronizarSesionSupabase(data.session);
+            } else {
+                alert("No hay una sesión activa.");
+                window.location.href = 'index.html';
+            }
+        } catch (err) {
+            console.error("Error de autenticación:", err);
+        }
     });
+
+    function toggleAcordeon(header) {
+        let card = header.parentElement;
+        let icon = header.querySelector('.accordion-icon');
+        card.classList.toggle('open');
+        if (card.classList.contains('open')) {
+            icon.style.transform = "rotate(180deg)";
+        } else {
+            icon.style.transform = "rotate(0deg)";
+        }
+    }
+
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('open'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    }
 
     async function sincronizarSesionSupabase(session) {
         const userId = session.user.id;
         let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
-        if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
-        else {
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        } else {
             let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
             if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
         }
@@ -145,33 +325,46 @@
     async function cargarTodoDesdeSupabase(email, nombrePerfil) {
         if(!CURRENT_LOCAL_ID) return;
         try {
-            let { data: localData } = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).single();
-            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            let { data: localData } = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
             
             if (conf) {
                 CONFIG_GLOBAL = conf;
             }
 
-            // =================================================================
-            // MODIFICA SOLO ESTA ETIQUETA SEGÚN EL ARCHIVO HTML EN EL QUE ESTÉS
-            // Ejemplo: "Avances / Retiros", "Inventario Físico", "Precios", etc.
             let nombreLocal = localData?.nombre || CONFIG_GLOBAL.identidad?.nombre || 'Sistema';
             let etiquetaModulo = "Avances / Retiros"; 
 
             document.getElementById('main_top_title').innerHTML = `
                 🏪 ${nombreLocal} 
-                <span style="font-size:0.85rem; font-weight:bold; background: var(--secondary); color: white; padding: 4px 10px; border-radius: 6px; margin-left: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    📌 Módulo: ${etiquetaModulo}
+                <span style="font-size:0.75rem; font-family: 'Roboto', sans-serif; font-weight:bold; background: linear-gradient(90deg, var(--active-gold), #aa8c2c); color: #000; padding: 4px 10px; border-radius: 4px; margin-left: 15px; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-transform: uppercase;">
+                    📌 ${etiquetaModulo}
                 </span>
             `;
 
             if (typeof calcularAvance === 'function') calcularAvance();
-        } catch(e) { console.error(e); }
+
+            // Ocultar pantalla de carga inicial
+            setTimeout(() => {
+                document.getElementById('loading_overlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading_overlay').style.display = 'none';
+                }, 500);
+            }, 800);
+
+        } catch(e) { 
+            console.error("Error al cargar configuración:", e); 
+        }
     }
 
-    function toggleSidebar() { 
-        document.getElementById('sidebar').classList.toggle('open'); 
-        document.getElementById('sidebar-overlay').classList.toggle('active'); 
+    function abrirModalGlobal(titulo, htmlContenido) {
+        document.getElementById('global_modal_title').innerText = titulo;
+        document.getElementById('global_modal_body').innerHTML = htmlContenido;
+        document.getElementById('global_modal').style.display = 'flex';
+    }
+
+    function cerrarModalGlobal() {
+        document.getElementById('global_modal').style.display = 'none';
     }
 
     function calcularAvance() {
@@ -179,11 +372,13 @@
         let moneda = document.getElementById('avance_moneda').value;
         let porcentaje = parseFloat(document.getElementById('avance_porcentaje').value) || 0;
         
-        let t = CONFIG_GLOBAL.tasas || { ves: 1, cop: 1, eur: 1 };
-        let tv = parseFloat(t.ves) || 1, tc = parseFloat(t.cop) || 1, te = parseFloat(t.eur) || 1;
+        let t = CONFIG_GLOBAL.tasas || CONFIG_GLOBAL.tasas_cambio || { ves: 1, cop: 1, eur: 1 };
+        let tv = parseFloat(t.ves || t.bs || 1);
+        let tc = parseFloat(t.cop || 1);
+        let te = parseFloat(t.eur || 1);
         
         // Conversión a USD base
-        let montoUsd = parseFloat(moneda === 'BS' ? monto / tv : moneda === 'COP' ? monto / tc : moneda === 'EUR' ? monto / te : monto);
+        let montoUsd = parseFloat(moneda === 'BS' ? (tv > 0 ? monto / tv : 0) : moneda === 'COP' ? (tc > 0 ? monto / tc : 0) : moneda === 'EUR' ? (te > 0 ? monto / te : 0) : monto);
         
         let comisionUsd = montoUsd * (porcentaje / 100);
         let totalCobrarUsd = montoUsd + comisionUsd;
