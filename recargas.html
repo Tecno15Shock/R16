@@ -90,6 +90,11 @@
         .accordion-icon {
             font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
+
+        /* Estilos específicos para las cabeceras por operadora */
+        .header-digitel { background: linear-gradient(135deg, #002266 0%, #004080 100%); }
+        .header-movistar { background: linear-gradient(135deg, #005c8a 0%, #0088cc 100%); }
+        .header-movilnet { background: linear-gradient(135deg, #993300 0%, #cc4400 100%); }
         
         .card-body {
             max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
@@ -101,24 +106,6 @@
             transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
         }
         .card.open .accordion-icon { transform: rotate(180deg); }
-
-        /* BOTONES DE SELECCIÓN DE OPERADORA */
-        .op-selector-container {
-            display: flex; gap: 12px; margin-top: 10px; margin-bottom: 20px; flex-wrap: wrap;
-        }
-        
-        .btn-op-service { 
-            padding: 16px; font-size: 1.05rem; font-weight: bold; color: white; border: 1px solid var(--border); 
-            border-radius: 4px; cursor: pointer; flex: 1; min-width: 150px; text-align: center; 
-            font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: all 0.3s;
-        }
-        .btn-op-service:hover { transform: translateY(-3px); filter: brightness(1.2); box-shadow: 0 8px 18px rgba(0,0,0,0.25); }
-        .btn-op-service:active { transform: scale(0.97); }
-
-        .btn-digitel { background: linear-gradient(135deg, #003399, #0052cc); }
-        .btn-movistar { background: linear-gradient(135deg, #007bb6, #00aae4); }
-        .btn-movilnet { background: linear-gradient(135deg, #cc4400, #ff5500); }
 
         /* GRILLA DE TARJETAS DE PLANES DE RECARGA */
         .service-card-grid { 
@@ -151,9 +138,9 @@
         button.btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; cursor: pointer;}
 
         /* ========================================================= */
-        /* MODALES Y PANTALLA DE BLOQUEO                             */
+        /* MODALES Y CARGADOR                                       */
         /* ========================================================= */
-        #loading_overlay, #pantalla_bloqueo_admin {
+        #loading_overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: radial-gradient(circle at center, rgba(124, 17, 38, 0.95), rgba(59, 9, 24, 0.99));
             z-index: 1000000; display: flex; align-items: center; justify-content: center;
@@ -197,27 +184,6 @@
     </div>
 </div>
 
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (CLAVE BLANCA/CLARA) -->
-<div id="pantalla_bloqueo_admin" style="display: none;">
-    <div class="loading-box" style="padding: 30px;">
-        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-size: 1.4rem; padding-bottom: 10px; margin-bottom: 15px; font-family: 'Playfair Display', serif;">🔒 ACCESO PROTEGIDO</h2>
-        <p style="font-size: 0.95rem; color: var(--muted); margin-bottom: 20px; font-family:'Roboto', sans-serif;">Introduce el PIN de Administrador para abrir este módulo:</p>
-        
-        <div style="position: relative; margin-bottom: 20px;">
-            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding: 12px; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace; background: #ffffff; color: var(--primary); border: 2px solid var(--active-gold); border-radius: 4px; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);" onkeyup="if(event.key==='Enter') verificarPinBody()">
-            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
-        </div>
-
-        <div id="mensaje_carga_pin" style="display: none; margin-bottom: 15px;">
-            <div class="spinner-luxury" style="width: 25px; height: 25px; border-width: 2px; margin: 0 auto 8px auto;"></div>
-            <span style="color: var(--success); font-weight: bold; font-size: 1rem; font-family: 'Playfair Display', serif;">Desbloqueando módulo...</span>
-        </div>
-
-        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px; width:100%;">AUTENTICAR</button>
-        <button id="btn_volver_pin" class="btn-info" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem; background: linear-gradient(135deg, #1a202c, #111827); border-color: #333; color:#fff; width:100%;">VOLVER AL INICIO</button>
-    </div>
-</div>
-
 <!-- MODAL GLOBAL ELEGANTE -->
 <div id="global_modal" class="custom-modal-overlay">
     <div class="custom-modal-box">
@@ -228,7 +194,7 @@
     </div>
 </div>
 
-<div class="wrapper" id="main_wrapper" style="display: none;">
+<div class="wrapper" id="main_wrapper">
     
     <!-- BARRA SUPERIOR -->
     <div class="top-bar">
@@ -264,32 +230,46 @@
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
-        <!-- ACORDEÓN PRINCIPAL DE RECARGAS -->
-        <div class="card open">
-            <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>📱 Servicios de Recargas Telefónicas</h2>
-                <span class="accordion-icon" style="transform: rotate(180deg);">▼</span>
+        
+        <!-- ACORDEÓN 1: DIGITEL -->
+        <div class="card">
+            <div class="card-header header-digitel" onclick="toggleAcordeon(this)">
+                <h2>📶 Recargas Digitel</h2>
+                <span class="accordion-icon">▼</span>
             </div>
             <div class="card-body">
-                <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 15px;">
-                    Selecciona una operadora para visualizar los planes disponibles y el cálculo automático de cobranza multimoneda:
-                </p>
-
-                <!-- BOTONES DE SELECCIÓN DE OPERADORA -->
-                <div class="op-selector-container">
-                    <button class="btn-op-service btn-digitel" onclick="renderServicioRecarga('Digitel')">Digitel</button>
-                    <button class="btn-op-service btn-movistar" onclick="renderServicioRecarga('Movistar')">Movistar</button>
-                    <button class="btn-op-service btn-movilnet" onclick="renderServicioRecarga('Movilnet')">Movilnet</button>
-                </div>
-
-                <!-- GRILLA DINÁMICA DE PLANES -->
-                <div id="cat_recargas_container" class="service-card-grid">
-                    <p style="text-align:center; color:var(--muted); grid-column:1/-1; margin-top:20px; font-style: italic;">
-                        Cargando planes de recarga desde el servidor...
-                    </p>
+                <div id="container_digitel" class="service-card-grid">
+                    <p style="text-align:center; color:var(--muted); grid-column:1/-1; padding: 20px;">Cargando planes de Digitel...</p>
                 </div>
             </div>
         </div>
+
+        <!-- ACORDEÓN 2: MOVISTAR -->
+        <div class="card">
+            <div class="card-header header-movistar" onclick="toggleAcordeon(this)">
+                <h2>📱 Recargas Movistar</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div id="container_movistar" class="service-card-grid">
+                    <p style="text-align:center; color:var(--muted); grid-column:1/-1; padding: 20px;">Cargando planes de Movistar...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACORDEÓN 3: MOVILNET -->
+        <div class="card">
+            <div class="card-header header-movilnet" onclick="toggleAcordeon(this)">
+                <h2>📞 Recargas Movilnet</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div id="container_movilnet" class="service-card-grid">
+                    <p style="text-align:center; color:var(--muted); grid-column:1/-1; padding: 20px;">Cargando planes de Movilnet...</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -335,51 +315,6 @@
         document.getElementById('sidebar-overlay').classList.toggle('active'); 
     }
 
-    function toggleVerPin() {
-        let input = document.getElementById('pin_ingreso_body');
-        let icono = document.getElementById('icono_ojo_pin');
-        if (input.type === 'password') {
-            input.type = 'text';
-            icono.innerText = '🙈';
-        } else {
-            input.type = 'password';
-            icono.innerText = '👁️';
-        }
-    }
-
-    async function verificarPinBody() {
-        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
-        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
-        let btn = document.getElementById('btn_desbloquear_pin');
-
-        if (pinIngresado === pinReal) {
-            btn.style.display = 'none';
-            document.getElementById('btn_volver_pin').style.display = 'none';
-            document.getElementById('mensaje_carga_pin').style.display = 'block';
-            
-            setTimeout(() => {
-                document.getElementById('main_wrapper').style.display = 'block';
-
-                let pantalla = document.getElementById('pantalla_bloqueo_admin');
-                pantalla.style.opacity = '0';
-                pantalla.style.transition = 'opacity 0.4s ease';
-                
-                setTimeout(() => { 
-                    pantalla.style.display = 'none'; 
-                    btn.style.display = 'block';
-                    document.getElementById('btn_volver_pin').style.display = 'block';
-                    document.getElementById('mensaje_carga_pin').style.display = 'none';
-                    document.getElementById('pin_ingreso_body').value = '';
-                    document.getElementById('pin_ingreso_body').type = 'password';
-                    document.getElementById('icono_ojo_pin').innerText = '👁️';
-                }, 400);
-            }, 800);
-        } else {
-            alert("❌ PIN Incorrecto. Acceso Restringido.");
-            document.getElementById('pin_ingreso_body').value = '';
-        }
-    }
-
     async function sincronizarSesionSupabase(session) {
         const userId = session.user.id;
         let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
@@ -422,18 +357,16 @@
                 </span>
             `;
              
-            // Renderizar Movistar por defecto al entrar
-            renderServicioRecarga('Movistar');
+            // Renderizar los planes en cada menú de operadora
+            renderServicioRecarga('Digitel', 'container_digitel');
+            renderServicioRecarga('Movistar', 'container_movistar');
+            renderServicioRecarga('Movilnet', 'container_movilnet');
 
-            // Mostrar pantalla de bloqueo PIN
-            document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
-            document.getElementById('pantalla_bloqueo_admin').style.opacity = '1';
-
+            // Ocultar pantalla de carga inicial
             setTimeout(() => {
                 document.getElementById('loading_overlay').style.opacity = '0';
                 setTimeout(() => {
                     document.getElementById('loading_overlay').style.display = 'none';
-                    document.getElementById('pin_ingreso_body').focus();
                 }, 500);
             }, 800);
 
@@ -453,8 +386,8 @@
         document.getElementById('global_modal').style.display = 'none';
     }
 
-    // LÓGICA DEL MÓDULO (RECARGAS) CON ORDEN ESTRICTO: BS, USD, COP, EUR
-    function renderServicioRecarga(op) {
+    // LÓGICA DEL MÓDULO (RECARGAS POR CONTENEDOR Y OPERADORA)
+    function renderServicioRecarga(op, containerId) {
         let recargasData = CONFIG_GLOBAL.recargas || [];
         let filtrados = [];
 
@@ -483,7 +416,6 @@
             let totalCop = tasaVes > 0 ? (totalBs / tasaVes) * tasaCop : 0;
             let totalEur = tasaVes > 0 ? (totalBs / tasaVes) * tasaEur : 0;
 
-            // Lista estricta en el orden requerido: BS (con comisión), USD, COP, EUR
             let listaCobranza = [
                 { codigo: 'BS', simbolo: 'Bs', valor: totalBs, decimales: 2 },
                 { codigo: 'USD', simbolo: '$', valor: totalUsd, decimales: 2 },
@@ -528,8 +460,8 @@
             `;
         });
         
-        let cont = document.getElementById('cat_recargas_container');
-        if(cont) cont.innerHTML = html || `<p style="color:var(--muted); text-align:center; grid-column:1/-1; padding: 30px; font-style: italic;">No hay planes configurados para la operadora ${op}. Puedes agregarlos desde el módulo de Configuración.</p>`;
+        let cont = document.getElementById(containerId);
+        if(cont) cont.innerHTML = html || `<p style="color:var(--muted); text-align:center; grid-column:1/-1; padding: 25px; font-style: italic;">No hay planes configurados para ${op}. Puedes añadirlos desde el módulo de Configuración.</p>`;
     }
 
     function formatearNumero(v, d = 2) { 
