@@ -21,15 +21,15 @@
             --sidebar-bg: #000000; 
             --active-gold: #D4AF37; 
             
-            --bg: #1a050a; /* Fondo general oscuro para resaltar tarjetas */
-            --primary: #3b0918; /* Rojo oscuro ultra-premium */
-            --secondary: #7c1126; /* Rojo brillante */
+            --bg: #1a050a; 
+            --primary: #3b0918; 
+            --secondary: #7c1126; 
             --danger: #b30000; 
             --success: #2ecc71; 
             --warning: #f39c12; 
             --info: #aa8c2c; 
             --text: #222; 
-            --border: #d4af37; /* Dorado para bordes */
+            --border: #d4af37; 
             --card-bg: #ffffff; 
             --item-bg: #fdf8f0; 
             --muted: #666;
@@ -40,7 +40,6 @@
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; scroll-behavior: smooth; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -67,7 +66,7 @@
         .sidebar-overlay.active { display: block; }
 
         /* ========================================================= */
-        /* CONTENEDORES Y ACORDEÓN DESPLEGABLE LUGURY                */
+        /* CONTENEDORES Y ACORDEÓN DESPLEGABLE LUXURY                */
         /* ========================================================= */
         .main-content { padding: 20px; padding-bottom: 130px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
         
@@ -79,7 +78,6 @@
             transition: background 0.3s;
         }
         
-        /* Cabecera del Acordeón - ROJO CARMESÍ Y DORADO */
         .card-header {
             padding: 20px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
@@ -95,14 +93,13 @@
             font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
         
-        /* Cuerpo del Acordeón (Oculto por defecto) */
         .card-body {
             max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
             transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease;
             background: var(--card-bg); 
         }
         .card.open .card-body {
-            max-height: 3000px; padding: 25px; opacity: 1;
+            max-height: 3500px; padding: 25px; opacity: 1;
             transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
         }
         .card.open .accordion-icon { transform: rotate(180deg); }
@@ -110,8 +107,9 @@
         h3 { color: var(--primary); margin-top: 15px; font-size: 1.15rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; font-family: 'Playfair Display', serif; }
 
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        @media (max-width: 768px) { .grid-2, .grid-4 { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
         
         label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
         
@@ -130,7 +128,6 @@
         .btn-warning { background: var(--warning); color: #fff; }
         .btn-success { background: var(--success); color: white; border-bottom: 2px solid #1e8449; }
 
-        /* Estilos de las Tarjetas de Resumen (Stats) */
         .lote-stat-box { background: var(--item-bg); padding: 15px; border: 1px solid var(--border); border-radius: 6px; text-align: center; border-bottom: 3px solid var(--primary); }
         .lote-stat-title { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
         .lote-stat-val { font-size: 1.4rem; font-weight: bold; margin-top: 5px; font-family: 'Playfair Display', serif; }
@@ -141,8 +138,17 @@
         th, td { border: 1px solid rgba(212, 175, 55, 0.3); padding: 12px; text-align: left; }
         th { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: var(--active-gold); font-family: 'Playfair Display', serif; letter-spacing: 1px; border-color: var(--active-gold); }
 
+        /* Contenedor con scroll fluido para historiales largos */
+        .table-scroll-container {
+            max-height: 450px;
+            overflow-y: auto;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+
         /* ========================================================= */
-        /* MODALES LUXURY Y PANTALLAS DE BLOQUEO                     */
+        /* MODALES Y PANTALLA DE BLOQUEO                             */
         /* ========================================================= */
         #loading_overlay, #pantalla_bloqueo_admin {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -152,13 +158,12 @@
         }
         
         .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
-        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 4px; width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
+        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 4px; width: 90%; max-width: 650px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
         .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
         .modal-close-btn:hover { background: var(--danger); transform: scale(1.05); color: #FFF; }
         .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
         #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
 
-        /* Estilos del Loading Modal & Spinner */
         .loading-box {
             background: var(--card-bg); padding: 40px; border-radius: 4px;
             text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
@@ -181,12 +186,12 @@
 </head>
 <body>
 
-<!-- MODAL DE CARGA INICIAL (CON SPINNER) -->
+<!-- MODAL DE CARGA INICIAL -->
 <div id="loading_overlay">
     <div class="loading-box">
         <div class="spinner-luxury"></div>
         <div class="loading-title">Sincronizando Módulo</div>
-        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Cargando información y métricas contables...</div>
+        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Cargando información contable y métricas...</div>
     </div>
 </div>
 
@@ -276,14 +281,48 @@
                 </div>
             </div>
         </div>
-        
-        <!-- 2. RESUMEN FINANCIERO -->
+
+        <!-- 2. EMPLEADO DEL MES -->
         <div class="card">
             <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>💰 2. Resumen Financiero Consolidado</h2>
+                <h2>🏆 2. Empleado del Mes</h2>
                 <span class="accordion-icon">▼</span>
             </div>
             <div class="card-body">
+                <div class="grid-2" style="align-items: center; margin-bottom: 15px;">
+                    <div>
+                        <label>Seleccionar Mes a Evaluar:</label>
+                        <select id="select_mes_empleado" onchange="calcularEmpleadoDelMes()">
+                            <!-- Se llena dinámicamente -->
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn-info" onclick="calcularEmpleadoDelMes()" style="margin-top: 28px;">🔄 ACTUALIZAR RANKING</button>
+                    </div>
+                </div>
+                <div id="resultado_empleado_mes" style="background: var(--item-bg); padding: 20px; border-radius: 6px; border: 1px solid var(--border); text-align: center;">
+                    <p style="color: var(--muted); margin:0;">Selecciona un mes para ver el desempeño de los vendedores.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 3. RESUMEN FINANCIERO CONSOLIDADO -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>💰 3. Resumen Financiero Consolidado</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-2" style="margin-bottom: 15px;">
+                    <div>
+                        <label>Filtrar Resumen por Mes:</label>
+                        <input type="month" id="resumen_mes_filtro" onchange="renderBalanceLotes()">
+                    </div>
+                    <div>
+                        <label>&nbsp;</label>
+                        <button class="btn-info" onclick="document.getElementById('resumen_mes_filtro').value=''; renderBalanceLotes();" style="margin-top: 5px;">VER TODO EL AÑO / HISTORIAL</button>
+                    </div>
+                </div>
                 <div class="grid-4" style="margin-top: 15px;">
                     <div class="lote-stat-box"><div class="lote-stat-title">Ventas Totales ($)</div><div class="lote-stat-val" id="st_ventas" style="color:var(--info);">$0.00</div></div>
                     <div class="lote-stat-box"><div class="lote-stat-title">Recuperación Capital</div><div class="lote-stat-val" id="st_capital" style="color:var(--primary);">$0.00</div></div>
@@ -293,20 +332,31 @@
             </div>
         </div>
 
-        <!-- 3. GRÁFICAS DE RENDIMIENTO -->
+        <!-- 4. GRÁFICAS DE RENDIMIENTO -->
         <div class="card">
             <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>📈 3. Gráficas de Rendimiento</h2>
+                <h2>📈 4. Gráficas de Rendimiento</h2>
                 <span class="accordion-icon">▼</span>
             </div>
             <div class="card-body">
-                <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; margin-top: 15px;">
-                    <select id="selector_periodo_grafica" style="width: 200px; margin: 0; padding: 10px;" onchange="actualizarGraficaVentas()">
-                        <option value="diario" selected>Rendimiento Diario</option>
-                        <option value="semanal">Rendimiento Semanal</option>
-                        <option value="mensual">Rendimiento Mensual</option>
-                        <option value="anual">Rendimiento Anual</option>
-                    </select>
+                <div class="grid-3" style="align-items: center; margin-bottom: 10px; margin-top: 15px;">
+                    <div>
+                        <label>Fecha de Inicio:</label>
+                        <input type="date" id="chart_start_date" onchange="actualizarGraficaVentas()">
+                    </div>
+                    <div>
+                        <label>Período de Análisis:</label>
+                        <select id="selector_periodo_grafica" onchange="actualizarGraficaVentas()">
+                            <option value="diario" selected>Rendimiento Diario</option>
+                            <option value="semanal">Rendimiento Semanal</option>
+                            <option value="mensual">Rendimiento Mensual</option>
+                            <option value="anual">Rendimiento Anual</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>&nbsp;</label>
+                        <button class="btn-success" onclick="generarPDFGrafica()" style="margin-top: 5px;">📄 DESCARGAR GRÁFICA (PDF)</button>
+                    </div>
                 </div>
                 <div class="chart-container">
                     <canvas id="chartVentas"></canvas>
@@ -314,17 +364,19 @@
             </div>
         </div>
 
-        <!-- 4. MÉTRICAS COMPLEMENTARIAS -->
+        <!-- 5. MÉTRICAS COMPLEMENTARIAS (PRODUCTOS Y VENDEDORES) -->
         <div class="grid-2">
             <!-- PRODUCTOS MÁS VENDIDOS -->
             <div class="card">
                 <div class="card-header" onclick="toggleAcordeon(this)">
-                    <h2 style="font-size: 1.1rem;">🏆 4. Productos Estrella</h2>
+                    <h2 style="font-size: 1.1rem;">🏆 5. Productos Estrella</h2>
                     <span class="accordion-icon">▼</span>
                 </div>
                 <div class="card-body">
-                    <button class="btn-info" style="width: auto; padding: 8px 15px; font-size: 0.8rem; float: right; margin-bottom: 10px; margin-top:10px;" onclick="abrirModalDetalleProductos()">VER ANÁLISIS COMPLETO</button>
-                    <div style="clear: both;"></div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; margin-bottom: 10px;">
+                        <button class="btn-info" style="font-size: 0.8rem; padding: 8px 10px; margin:0;" onclick="abrirModalDetalleProductos()">VER ANÁLISIS COMPLETO</button>
+                        <button class="btn-success" style="font-size: 0.8rem; padding: 8px 10px; margin:0;" onclick="generarPDFProductos()">📄 DESCARGAR PDF</button>
+                    </div>
                     <div class="chart-container" style="height: 250px;">
                         <canvas id="chartProductos"></canvas>
                     </div>
@@ -334,40 +386,54 @@
             <!-- VENDEDORES CON MAYOR GANANCIA -->
             <div class="card">
                 <div class="card-header" onclick="toggleAcordeon(this)">
-                    <h2 style="font-size: 1.1rem;">🧑‍💼 5. Rendimiento Vendedores</h2>
+                    <h2 style="font-size: 1.1rem;">🧑‍💼 6. Rendimiento Vendedores</h2>
                     <span class="accordion-icon">▼</span>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container" style="height: 250px; margin-top: 48px;">
+                    <div class="chart-container" style="height: 280px; margin-top: 18px;">
                         <canvas id="chartVendedores"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 6. HISTORIAL DE LOTES -->
+        <!-- 7. HISTORIAL DE LOTES -->
         <div class="card">
             <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>📋 6. Historial de Cierres (Lotes)</h2>
+                <h2>📋 7. Historial de Cierres (Lotes)</h2>
                 <span class="accordion-icon">▼</span>
             </div>
             <div class="card-body">
-                <div style="overflow-x:auto; margin-top: 15px;">
+                <div class="grid-2" style="margin-top: 15px; align-items: center;">
+                    <div>
+                        <label>Filtro de Rango Rápido:</label>
+                        <select id="filtro_rango_historial" onchange="renderBalanceLotes()">
+                            <option value="todos" selected>Mostrar Todo el Historial</option>
+                            <option value="semanal">Última Semana</option>
+                            <option value="quincena">Última Quincena</option>
+                            <option value="mes">Último Mes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <p style="font-size: 0.85rem; color: var(--muted); margin: 0; text-align: right;">Desplázate verticalmente para ver todos los registros pasados.</p>
+                    </div>
+                </div>
+                <div class="table-scroll-container">
                     <table id="tabla_lotes_diarios">
-                        <tr><th>Fecha</th><th>Turno</th><th>Vendedor</th><th>Venta Total</th><th>Capital</th><th>Ganancia</th><th>Acción</th></tr>
+                        <tr><th style="border-left:none;">Fecha</th><th>Turno</th><th>Vendedor</th><th>Venta Total</th><th>Capital</th><th>Ganancia</th><th style="border-right:none; text-align:center;">Acción</th></tr>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- 7. HISTORIAL DE GASTOS -->
+        <!-- 8. HISTORIAL DE GASTOS -->
         <div class="card">
             <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>💸 7. Historial de Gastos y Avances</h2>
+                <h2>💸 8. Historial de Gastos y Avances</h2>
                 <span class="accordion-icon">▼</span>
             </div>
             <div class="card-body">
-                <div style="overflow-x:auto; margin-top: 15px;">
+                <div class="table-scroll-container" style="margin-top: 15px;">
                     <table id="tabla_gastos_operativos">
                         <tr><th style="border-left:none;">Fecha</th><th>Concepto / Tipo</th><th>Monto (USD)</th><th style="border-right:none;">Referencia / Detalle</th></tr>
                     </table>
@@ -375,9 +441,12 @@
             </div>
         </div>
 
-        <!-- BOTONES INFERIORES -->
-        <div style="margin-top: 20px;">
-            <button class="btn-info" onclick="generarPDFBalanceLotes()" style="margin-bottom: 15px; width: 100%; padding: 15px; font-size: 1.1rem;">📄 DESCARGAR REPORTE DE BALANCE (PDF)</button>
+        <!-- BOTONES INFERIORES DE DESCARGA Y DEPURACIÓN -->
+        <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+            <div class="grid-2">
+                <button class="btn-info" onclick="generarPDFBalanceLotes('mes')" style="padding: 15px;">📄 DESCARGAR REPORTE MENSUAL (PDF)</button>
+                <button class="btn-info" onclick="generarPDFBalanceLotes('anio')" style="padding: 15px;">📈 DESCARGAR RESUMEN ANUAL (PDF)</button>
+            </div>
             <button class="btn-danger" style="width: 100%; padding: 15px;" onclick="abrirMenuOpcionesEliminacion()">🗑️ OPCIONES DE DEPURACIÓN E HISTORIAL</button>
         </div>
 
@@ -414,11 +483,9 @@
         }
     });
 
-    // Control de Acordeón Desplegable (Con recálculo para Chart.js)
     function toggleAcordeon(header) {
         let card = header.parentElement;
         card.classList.toggle('open');
-        // Fuerza a las gráficas a redimensionarse una vez completada la transición del acordeón
         setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 350);
     }
 
@@ -461,8 +528,8 @@
         }
 
         await renderBalanceLotes();
+        poblarSelectMesesEmpleado();
 
-        // Mostrar pantalla de PIN y ocultar loader
         document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
         document.getElementById('pantalla_bloqueo_admin').style.opacity = '1';
 
@@ -508,8 +575,105 @@
         }
     }
 
+    function poblarSelectMesesEmpleado() {
+        let mesesSet = new Set();
+        DATOS_LOTES_CACHE.forEach(l => {
+            if(l.fecha) {
+                let anioMes = l.fecha.substring(0, 7); // YYYY-MM
+                mesesSet.add(anioMes);
+            }
+        });
+
+        let select = document.getElementById('select_mes_empleado');
+        select.innerHTML = '';
+        let mesesArr = Array.from(mesesSet).sort().reverse();
+
+        if(mesesArr.length === 0) {
+            select.innerHTML = '<option value="">No hay registros disponibles</option>';
+            return;
+        }
+
+        const nombresMeses = {
+            '01': 'Enero', '02': 'Febrero', '03': 'Marzo', '04': 'Abril',
+            '05': 'Mayo', '06': 'Junio', '07': 'Julio', '08': 'Agosto',
+            '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre'
+        };
+
+        mesesArr.forEach(m => {
+            let [anio, mesNum] = m.split('-');
+            let nombreMes = nombresMeses[mesNum] || mesNum;
+            let opt = document.createElement('option');
+            opt.value = m;
+            opt.text = `${nombreMes} ${anio}`;
+            select.appendChild(opt);
+        });
+
+        calcularEmpleadoDelMes();
+    }
+
+    function calcularEmpleadoDelMes() {
+        let mesSeleccionado = document.getElementById('select_mes_empleado').value;
+        let contenedor = document.getElementById('resultado_empleado_mes');
+        if(!mesSeleccionado) {
+            contenedor.innerHTML = '<p style="color:var(--muted); margin:0;">Selecciona un mes válido.</p>';
+            return;
+        }
+
+        let lotesMes = DATOS_LOTES_CACHE.filter(l => l.fecha && l.fecha.startsWith(mesSeleccionado));
+        if(lotesMes.length === 0) {
+            contenedor.innerHTML = `<p style="color:var(--danger); margin:0; font-weight:bold;">No hay registros de ventas para el período ${mesSeleccionado}.</p>`;
+            return;
+        }
+
+        let rendimientoVendedores = {};
+        lotesMes.forEach(l => {
+            let empNom = l.empleados ? `${l.empleados.nombre} ${l.empleados.apellido}` : 'Vendedor Desconocido';
+            if(!rendimientoVendedores[empNom]) {
+                rendimientoVendedores[empNom] = { ventas: 0, ganancia: 0, turnos: 0 };
+            }
+            rendimientoVendedores[empNom].ventas += parseFloat(l.total_vendido_usd) || 0;
+            rendimientoVendedores[empNom].ganancia += parseFloat(l.ganancia_neta) || 0;
+            rendimientoVendedores[empNom].turnos += 1;
+        });
+
+        let ranking = Object.keys(rendimientoVendedores).map(nombre => ({
+            nombre,
+            ventas: rendimientoVendedores[nombre].ventas,
+            ganancia: rendimientoVendedores[nombre].ganancia,
+            turnos: rendimientoVendedores[nombre].turnos
+        })).sort((a, b) => b.ventas - a.ventas);
+
+        let ganador = ranking[0];
+
+        let html = `
+            <div style="background: linear-gradient(135deg, #3b0918, #7c1126); color: #D4AF37; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #D4AF37; text-align: center;">
+                <h3 style="color: #D4AF37; margin: 0 0 5px 0; border: none; font-size: 1.3rem;">🥇 EMPLEADO DEL MES: ${ganador.nombre.toUpperCase()}</h3>
+                <p style="color: #fff; margin: 0; font-size: 1rem;">Ventas Totales: <strong>$${ganador.ventas.toFixed(2)}</strong> | Ganancia Generada: <strong>$${ganador.ganancia.toFixed(2)}</strong> (${ganador.turnos} turnos cubiertos)</p>
+            </div>
+            <table style="margin-top: 5px;">
+                <tr><th style="border-left:none;">Posición / Vendedor</th><th>Turnos</th><th>Venta Total ($)</th><th style="border-right:none;">Ganancia Neta ($)</th></tr>
+        `;
+
+        ranking.forEach((r, idx) => {
+            let medalla = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : '👤'));
+            let bg = idx === 0 ? 'rgba(212, 175, 55, 0.15)' : 'var(--card-bg)';
+            html += `
+                <tr style="background: ${bg};">
+                    <td><strong>${medalla} ${r.nombre}</strong></td>
+                    <td>${r.turnos}</td>
+                    <td style="color:var(--info); font-weight:bold;">$${r.ventas.toFixed(2)}</td>
+                    <td style="color:var(--success); font-weight:bold;">$${r.ganancia.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+        html += `</table>`;
+        contenedor.innerHTML = html;
+    }
+
     async function renderBalanceLotes() {
         let filtroFecha = document.getElementById('balance_filtro_fecha').value;
+        let filtroMesResumen = document.getElementById('resumen_mes_filtro').value;
+        let filtroRangoHistorial = document.getElementById('filtro_rango_historial').value;
         
         const [resLotes, resGastos, resDetalles] = await Promise.all([
             supabaseClient.from('lotes_diarios').select('*, empleados(nombre, apellido)').eq('local_id', CURRENT_LOCAL_ID).order('creado_en', { ascending: false }),
@@ -521,21 +685,25 @@
         DATOS_GASTOS_CACHE = resGastos.data || [];
         DATOS_DETALLES_CACHE = resDetalles.data || [];
 
-        let lotesFiltrados = DATOS_LOTES_CACHE;
-        let gastosFiltrados = DATOS_GASTOS_CACHE;
+        // Filtro para Resumen Financiero
+        let lotesResumen = DATOS_LOTES_CACHE;
+        let gastosResumen = DATOS_GASTOS_CACHE;
 
-        if(filtroFecha) {
-            lotesFiltrados = lotesFiltrados.filter(l => l.fecha === filtroFecha);
-            gastosFiltrados = gastosFiltrados.filter(g => g.fecha === filtroFecha);
+        if (filtroMesResumen) {
+            lotesResumen = lotesResumen.filter(l => l.fecha && l.fecha.startsWith(filtroMesResumen));
+            gastosResumen = gastosResumen.filter(g => g.fecha && g.fecha.startsWith(filtroMesResumen));
+        } else if (filtroFecha) {
+            lotesResumen = lotesResumen.filter(l => l.fecha === filtroFecha);
+            gastosResumen = gastosResumen.filter(g => g.fecha === filtroFecha);
         }
 
-        let totVentas = lotesFiltrados.reduce((acc, l) => acc + (parseFloat(l.total_vendido_usd) || 0), 0);
-        let totCapital = lotesFiltrados.reduce((acc, l) => acc + (parseFloat(l.capital_invertido) || 0), 0);
-        let totGanancia = lotesFiltrados.reduce((acc, l) => acc + (parseFloat(l.ganancia_neta) || 0), 0);
+        let totVentas = lotesResumen.reduce((acc, l) => acc + (parseFloat(l.total_vendido_usd) || 0), 0);
+        let totCapital = lotesResumen.reduce((acc, l) => acc + (parseFloat(l.capital_invertido) || 0), 0);
+        let totGanancia = lotesResumen.reduce((acc, l) => acc + (parseFloat(l.ganancia_neta) || 0), 0);
         
-        let totGastosOperativos = gastosFiltrados.reduce((acc, g) => acc + (parseFloat(g.monto_usd) || 0), 0);
+        let totGastosOperativos = gastosResumen.reduce((acc, g) => acc + (parseFloat(g.monto_usd) || 0), 0);
         let totAvancesCierre = 0;
-        lotesFiltrados.forEach(l => {
+        lotesResumen.forEach(l => {
             if(l.ingresos && l.ingresos.avances) {
                 totAvancesCierre += parseFloat(l.ingresos.avances) || 0;
             }
@@ -548,8 +716,20 @@
         document.getElementById('st_ganancia').innerText = `$${totGanancia.toFixed(2)}`;
         document.getElementById('st_gastos').innerText = `$${totGastos.toFixed(2)}`;
 
+        // Filtro para Historial de Cierres (Lotes) con rangos rápidos o fecha
+        let lotesHistorial = DATOS_LOTES_CACHE;
+        if(filtroFecha) {
+            lotesHistorial = lotesHistorial.filter(l => l.fecha === filtroFecha);
+        } else if(filtroRangoHistorial !== 'todos') {
+            let hoy = new Date();
+            let diasAtras = filtroRangoHistorial === 'semanal' ? 7 : (filtroRangoHistorial === 'quincena' ? 15 : 30);
+            let fechaLimite = new Date();
+            fechaLimite.setDate(hoy.getDate() - diasAtras);
+            lotesHistorial = lotesHistorial.filter(l => new Date(l.fecha) >= fechaLimite);
+        }
+
         let htmlLotes = `<tr><th style="border-left:none;">Fecha</th><th>Turno</th><th>Vendedor</th><th>Venta Total</th><th>Capital</th><th>Ganancia</th><th style="border-right:none; text-align:center;">Acción</th></tr>`;
-        lotesFiltrados.forEach((l, idx) => {
+        lotesHistorial.forEach((l, idx) => {
             let empNom = l.empleados ? `${l.empleados.nombre} ${l.empleados.apellido}` : 'Desconocido';
             let bg = idx % 2 === 0 ? "var(--card-bg)" : "var(--item-bg)";
             htmlLotes += `
@@ -565,13 +745,14 @@
         });
         document.getElementById('tabla_lotes_diarios').innerHTML = htmlLotes;
 
+        let gastosHistorial = DATOS_GASTOS_CACHE;
+        if(filtroFecha) gastosHistorial = gastosHistorial.filter(g => g.fecha === filtroFecha);
+
         let htmlGastos = `<tr><th style="border-left:none;">Fecha</th><th>Concepto / Tipo</th><th>Monto (USD)</th><th style="border-right:none;">Referencia / Detalle</th></tr>`;
-        
-        // Consolidación y renderizado
         let arrGastos = [];
-        gastosFiltrados.forEach(g => arrGastos.push({fecha: g.fecha, concepto: g.servicios_bancarios ? g.servicios_bancarios.nombre : (g.nota || 'Gasto Operativo'), monto: parseFloat(g.monto_usd), ref: g.referencia || 'N/A', subtipo: 'Gasto Operativo'}));
+        gastosHistorial.forEach(g => arrGastos.push({fecha: g.fecha, concepto: g.servicios_bancarios ? g.servicios_bancarios.nombre : (g.nota || 'Gasto Operativo'), monto: parseFloat(g.monto_usd), ref: g.referencia || 'N/A', subtipo: 'Gasto Operativo'}));
         
-        lotesFiltrados.forEach(l => {
+        lotesHistorial.forEach(l => {
             if(l.ingresos && l.ingresos.avances && parseFloat(l.ingresos.avances) > 0) {
                 arrGastos.push({fecha: l.fecha, concepto: 'Avance / Retiro de Caja', monto: parseFloat(l.ingresos.avances), ref: 'Registrado en Cierre de Caja', subtipo: `Cierre Turno: ${l.turno || 'N/A'}`});
             }
@@ -617,6 +798,7 @@
             cerrarModalGlobal();
             alert("✅ Lote eliminado correctamente y stock reintegrado.");
             await renderBalanceLotes();
+            poblarSelectMesesEmpleado();
         } catch(e) {
             cerrarModalGlobal();
             alert("❌ Error al procesar la eliminación: " + e.message);
@@ -709,6 +891,7 @@
             cerrarModalGlobal();
             alert("✅ Registros eliminados exitosamente y stock reintegrado.");
             await renderBalanceLotes();
+            poblarSelectMesesEmpleado();
         } catch (e) {
             cerrarModalGlobal();
             alert("❌ Error durante el proceso de borrado: " + e.message);
@@ -721,15 +904,20 @@
         renderizarGraficaVendedores();
     }
 
-    // Configuración general para dar estética a Chart.js
     Chart.defaults.color = '#666';
     Chart.defaults.font.family = "'Roboto', sans-serif";
 
     function actualizarGraficaVentas() {
         let periodo = document.getElementById('selector_periodo_grafica').value;
+        let fechaInicio = document.getElementById('chart_start_date').value;
         let agrupado = {};
 
-        DATOS_LOTES_CACHE.forEach(l => {
+        let lotesFiltrados = DATOS_LOTES_CACHE;
+        if(fechaInicio) {
+            lotesFiltrados = lotesFiltrados.filter(l => l.fecha && l.fecha >= fechaInicio);
+        }
+
+        lotesFiltrados.forEach(l => {
             let fechaObj = new Date(l.fecha + 'T00:00:00');
             let clave = l.fecha;
 
@@ -760,7 +948,7 @@
                 datasets: [{
                     label: 'Ventas Totales ($)',
                     data: valores,
-                    borderColor: '#D4AF37', // Dorado
+                    borderColor: '#D4AF37',
                     backgroundColor: 'rgba(212, 175, 55, 0.15)',
                     borderWidth: 2,
                     fill: true,
@@ -802,7 +990,7 @@
                 datasets: [{
                     label: 'Unidades Vendidas',
                     data: ordenados.map(o => o.cant),
-                    backgroundColor: '#7c1126', // Rojo brillante
+                    backgroundColor: '#7c1126',
                     borderRadius: 4,
                     borderWidth: 0
                 }]
@@ -825,6 +1013,7 @@
             <div style="position: relative; width: 100%; height: 420px; max-height: 60vh; background: var(--card-bg); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 4px; padding: 10px;">
                 <canvas id="chartProductosDetalle"></canvas>
             </div>
+            <button class="btn-success" style="margin-top: 15px;" onclick="generarPDFProductos()">📄 DESCARGAR PDF DE PRODUCTOS</button>
         `;
         abrirModalGlobal("ANÁLISIS COMPLETO DE PRODUCTOS", html);
         
@@ -846,7 +1035,7 @@
                     datasets: [{
                         label: 'Unidades Vendidas',
                         data: ordenados.map(o => o.cant),
-                        backgroundColor: '#D4AF37', // Dorado
+                        backgroundColor: '#D4AF37',
                         borderRadius: 3
                     }]
                 },
@@ -884,7 +1073,7 @@
                 labels: ordenados.map(o => o.nombre),
                 datasets: [{
                     data: ordenados.map(o => o.ganancia),
-                    backgroundColor: ['#3b0918', '#7c1126', '#D4AF37', '#b30000', '#aa8c2c'], // Paleta premium
+                    backgroundColor: ['#3b0918', '#7c1126', '#D4AF37', '#b30000', '#aa8c2c'],
                     borderWidth: 2,
                     borderColor: '#fff'
                 }]
@@ -897,103 +1086,226 @@
         });
     }
 
-    async function generarPDFBalanceLotes() {
-        mostrarModalLocal("Generando PDF", "Construyendo documento estructurado con estética corporativa...");
-
+    async function generarPDFGrafica() {
+        mostrarModalLocal("Generando PDF", "Exportando gráfica de rendimiento...");
         try {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Sistema';
 
-            let fechaFiltro = document.getElementById('balance_filtro_fecha').value;
-            let fechaHoy = new Date().toISOString().split('T')[0];
-            let fechaStr = fechaFiltro || fechaHoy;
-            let nombreArchivo = `Balance_Financiero_${fechaStr}.pdf`;
-
-            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Sistema Empresarial';
-            let stVentas = document.getElementById('st_ventas').innerText;
-            let stCapital = document.getElementById('st_capital').innerText;
-            let stGanancia = document.getElementById('st_ganancia').innerText;
-            let stGastos = document.getElementById('st_gastos').innerText;
-
-            // ESTÉTICA PREMIUM PARA EL PDF
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(16);
-            doc.setTextColor(59, 9, 24); // Primary Red
+            doc.setTextColor(59, 9, 24);
             doc.text(nombreLocal, 14, 18);
 
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(10);
             doc.setTextColor(100, 100, 100);
-            doc.text("Reporte Consolidado de Balance Financiero", 14, 24);
-            doc.text(`Fecha de Emisión / Filtro: ${fechaStr}`, 14, 30);
+            doc.text("Reporte Gráfico de Rendimiento de Ventas", 14, 24);
+            doc.text(`Fecha de Emisión: ${new Date().toISOString().split('T')[0]}`, 14, 30);
 
-            doc.setDrawColor(212, 175, 55); // Gold line
+            doc.setDrawColor(212, 175, 55);
             doc.setLineWidth(0.6);
             doc.line(14, 34, 196, 34);
 
-            doc.setFillColor(253, 248, 240); // Item BG
-            doc.roundedRect(14, 40, 43, 18, 2, 2, "F");
-            doc.roundedRect(61, 40, 43, 18, 2, 2, "F");
-            doc.roundedRect(108, 40, 43, 18, 2, 2, "F");
-            doc.roundedRect(155, 40, 41, 18, 2, 2, "F");
+            let canvasImg = chartVentasInstancia.toBase64Image();
+            doc.addImage(canvasImg, 'PNG', 14, 40, 182, 100);
 
-            doc.setFontSize(7);
-            doc.setTextColor(100, 100, 100);
-            doc.text("VENTAS TOTALES", 17, 45);
-            doc.text("RECUP. CAPITAL", 64, 45);
-            doc.text("GANANCIA NETA", 111, 45);
-            doc.text("GASTOS TOTALES", 158, 45);
+            doc.save("Reporte_Rendimiento_Grafico.pdf");
+            cerrarModalGlobal();
+        } catch(e) {
+            cerrarModalGlobal();
+            alert("Error al generar PDF de gráfica: " + e.message);
+        }
+    }
 
-            doc.setFontSize(10);
-            doc.setFont("Helvetica", "bold");
-            doc.setTextColor(59, 9, 24); // Primary Red
-            doc.text(stVentas, 17, 53);
-            doc.setTextColor(34, 34, 34);
-            doc.text(stCapital, 64, 53);
-            doc.setTextColor(39, 103, 73); // Success Green
-            doc.text(stGanancia, 111, 53);
-            doc.setTextColor(179, 0, 0); // Danger Red
-            doc.text(stGastos, 158, 53);
-
-            let posY = 68;
+    async function generarPDFProductos() {
+        mostrarModalLocal("Generando PDF", "Exportando reporte detallado de productos...");
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Sistema';
 
             doc.setFont("Helvetica", "bold");
-            doc.setFontSize(11);
+            doc.setFontSize(16);
             doc.setTextColor(59, 9, 24);
-            doc.text("Historial de Cierres de Turno (Lotes)", 14, posY);
+            doc.text(nombreLocal, 14, 18);
 
-            posY += 5;
-            doc.setFontSize(8.5);
-            doc.setFillColor(59, 9, 24); // Cabecera Roja
-            doc.setTextColor(212, 175, 55); // Texto Dorado
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text("Reporte Detallado de Productos Más Vendidos", 14, 24);
+
+            doc.setDrawColor(212, 175, 55);
+            doc.line(14, 30, 196, 30);
+
+            let posY = 40;
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setFillColor(59, 9, 24);
+            doc.setTextColor(212, 175, 55);
             doc.rect(14, posY, 182, 7, "F");
-            doc.text("Fecha", 15, posY + 5);
-            doc.text("Turno", 38, posY + 5);
-            doc.text("Vendedor", 62, posY + 5);
-            doc.text("Venta Total", 112, posY + 5);
-            doc.text("Capital", 138, posY + 5);
-            doc.text("Ganancia", 168, posY + 5);
+            doc.text("Producto", 16, posY + 5);
+            doc.text("Unidades Vendidas", 140, posY + 5);
 
             posY += 7;
             doc.setFont("Helvetica", "normal");
             doc.setTextColor(45, 55, 72);
 
-            let lotesFiltrados = fechaFiltro ? DATOS_LOTES_CACHE.filter(l => l.fecha === fechaFiltro) : DATOS_LOTES_CACHE;
+            let conteoProd = {};
+            DATOS_DETALLES_CACHE.forEach(d => {
+                let nombre = d.catalogo ? d.catalogo.nombre : 'Producto';
+                if (!conteoProd[nombre]) conteoProd[nombre] = 0;
+                conteoProd[nombre] += parseFloat(d.cantidad) || 0;
+            });
+            let ordenados = Object.keys(conteoProd).map(k => ({ nombre: k, cant: conteoProd[k] })).sort((a, b) => b.cant - a.cant);
 
-            if (lotesFiltrados.length === 0) {
+            ordenados.forEach((item, idx) => {
+                if (posY > 270) { doc.addPage(); posY = 20; }
+                if (idx % 2 === 0) { doc.setFillColor(249, 249, 249); doc.rect(14, posY, 182, 6.5, "F"); }
+                doc.text(String(item.nombre), 16, posY + 4.5);
+                doc.text(String(item.cant), 140, posY + 4.5);
+                posY += 6.5;
+            });
+
+            doc.save("Reporte_Productos_Estrella.pdf");
+            cerrarModalGlobal();
+        } catch(e) {
+            cerrarModalGlobal();
+            alert("Error al generar PDF de productos: " + e.message);
+        }
+    }
+
+    async function generarPDFBalanceLotes(tipoReporte) {
+        let mensajeProceso = tipoReporte === 'anio' ? "Construyendo resumen anual por empleado..." : "Construyendo reporte mensual consolidado...";
+        mostrarModalLocal("Generando PDF", mensajeProceso);
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let filtroMes = document.getElementById('resumen_mes_filtro').value;
+            let fechaHoy = new Date().toISOString().split('T')[0];
+            let nombreArchivo = tipoReporte === 'anio' ? `Resumen_Anual_${fechaHoy.substring(0,4)}.pdf` : `Balance_Mensual_${filtroMes || fechaHoy.substring(0,7)}.pdf`;
+
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Sistema Empresarial';
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(16);
+            doc.setTextColor(59, 9, 24);
+            doc.text(nombreLocal, 14, 18);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text(tipoReporte === 'anio' ? "Resumen Consolidado Anual por Vendedor" : "Reporte Consolidado Mensual Financiero", 14, 24);
+            doc.text(`Período / Filtro: ${filtroMes || (tipoReporte === 'anio' ? fechaHoy.substring(0,4) : 'General')}`, 14, 30);
+
+            doc.setDrawColor(212, 175, 55);
+            doc.setLineWidth(0.6);
+            doc.line(14, 34, 196, 34);
+
+            let posY = 45;
+
+            if (tipoReporte === 'anio') {
+                // Resumen Anual por Empleado (sin turnos, ventas totales del empleado en el año/período)
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(12);
+                doc.setTextColor(59, 9, 24);
+                doc.text("Resumen Anual de Rendimiento por Empleado", 14, posY);
+
                 posY += 6;
-                doc.text("No hay lotes registrados para este periodo.", 15, posY);
-                posY += 8;
+                doc.setFontSize(9);
+                doc.setFillColor(59, 9, 24);
+                doc.setTextColor(212, 175, 55);
+                doc.rect(14, posY, 182, 7, "F");
+                doc.text("Empleado / Vendedor", 16, posY + 5);
+                doc.text("Total Turnos", 90, posY + 5);
+                doc.text("Venta Total Acumulada", 130, posY + 5);
+
+                posY += 7;
+                doc.setFont("Helvetica", "normal");
+                doc.setTextColor(45, 55, 72);
+
+                let anioActual = fechaHoy.substring(0, 4);
+                let lotesAnio = DATOS_LOTES_CACHE.filter(l => l.fecha && l.fecha.startsWith(anioActual));
+                let resumenEmp = {};
+
+                lotesAnio.forEach(l => {
+                    let empNom = l.empleados ? `${l.empleados.nombre} ${l.empleados.apellido}` : 'Desconocido';
+                    if(!resumenEmp[empNom]) resumenEmp[empNom] = { turnos: 0, ventas: 0 };
+                    resumenEmp[empNom].turnos += 1;
+                    resumenEmp[empNom].ventas += parseFloat(l.total_vendido_usd) || 0;
+                });
+
+                let arrRes = Object.keys(resumenEmp).map(k => ({ nombre: k, ...resumenEmp[k] }));
+                arrRes.forEach((item, idx) => {
+                    if (posY > 270) { doc.addPage(); posY = 20; }
+                    if (idx % 2 === 0) { doc.setFillColor(249, 249, 249); doc.rect(14, posY, 182, 6.5, "F"); }
+                    doc.text(String(item.nombre), 16, posY + 4.5);
+                    doc.text(String(item.turnos), 90, posY + 4.5);
+                    doc.text(`$${item.ventas.toFixed(2)}`, 130, posY + 4.5);
+                    posY += 6.5;
+                });
+
             } else {
+                // Reporte Mensual Consolidado estándar
+                let stVentas = document.getElementById('st_ventas').innerText;
+                let stCapital = document.getElementById('st_capital').innerText;
+                let stGanancia = document.getElementById('st_ganancia').innerText;
+                let stGastos = document.getElementById('st_gastos').innerText;
+
+                doc.setFillColor(253, 248, 240);
+                doc.roundedRect(14, posY, 43, 18, 2, 2, "F");
+                doc.roundedRect(61, posY, 43, 18, 2, 2, "F");
+                doc.roundedRect(108, posY, 43, 18, 2, 2, "F");
+                doc.roundedRect(155, posY, 41, 18, 2, 2, "F");
+
+                doc.setFontSize(7);
+                doc.setTextColor(100, 100, 100);
+                doc.text("VENTAS TOTALES", 17, posY + 5);
+                doc.text("RECUP. CAPITAL", 64, posY + 5);
+                doc.text("GANANCIA NETA", 111, posY + 5);
+                doc.text("GASTOS TOTALES", 158, posY + 5);
+
+                doc.setFontSize(10);
+                doc.setFont("Helvetica", "bold");
+                doc.setTextColor(59, 9, 24);
+                doc.text(stVentas, 17, posY + 13);
+                doc.setTextColor(34, 34, 34);
+                doc.text(stCapital, 64, posY + 13);
+                doc.setTextColor(39, 103, 73);
+                doc.text(stGanancia, 111, posY + 13);
+                doc.setTextColor(179, 0, 0);
+                doc.text(stGastos, 158, posY + 13);
+
+                posY += 28;
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(59, 9, 24);
+                doc.text("Historial de Cierres de Turno (Mes)", 14, posY);
+
+                posY += 5;
+                doc.setFontSize(8.5);
+                doc.setFillColor(59, 9, 24);
+                doc.setTextColor(212, 175, 55);
+                doc.rect(14, posY, 182, 7, "F");
+                doc.text("Fecha", 15, posY + 5);
+                doc.text("Turno", 38, posY + 5);
+                doc.text("Vendedor", 62, posY + 5);
+                doc.text("Venta Total", 112, posY + 5);
+                doc.text("Capital", 138, posY + 5);
+                doc.text("Ganancia", 168, posY + 5);
+
+                posY += 7;
+                doc.setFont("Helvetica", "normal");
+                doc.setTextColor(45, 55, 72);
+
+                let lotesFiltrados = filtroMes ? DATOS_LOTES_CACHE.filter(l => l.fecha && l.fecha.startsWith(filtroMes)) : DATOS_LOTES_CACHE;
+
                 lotesFiltrados.forEach((l, idx) => {
-                    if (posY > 270) {
-                        doc.addPage();
-                        posY = 20;
-                    }
-                    if (idx % 2 === 0) {
-                        doc.setFillColor(249, 249, 249);
-                        doc.rect(14, posY, 182, 6.5, "F");
-                    }
+                    if (posY > 270) { doc.addPage(); posY = 20; }
+                    if (idx % 2 === 0) { doc.setFillColor(249, 249, 249); doc.rect(14, posY, 182, 6.5, "F"); }
                     let empNom = l.empleados ? `${l.empleados.nombre} ${l.empleados.apellido}` : 'Desconocido';
                     doc.text(String(l.fecha || ''), 15, posY + 4.5);
                     doc.text(String(l.turno || 'N/A'), 38, posY + 4.5);
@@ -1005,81 +1317,11 @@
                 });
             }
 
-            posY += 10;
-
-            if (posY > 250) {
-                doc.addPage();
-                posY = 20;
-            }
-
-            doc.setFont("Helvetica", "bold");
-            doc.setFontSize(11);
-            doc.setTextColor(59, 9, 24);
-            doc.text("Historial de Gastos Operativos y Avances de Cierre", 14, posY);
-
-            posY += 5;
-            doc.setFontSize(8.5);
-            doc.setFillColor(59, 9, 24); // Cabecera Roja
-            doc.setTextColor(212, 175, 55); // Texto Dorado
-            doc.rect(14, posY, 182, 7, "F");
-            doc.text("Fecha", 16, posY + 5);
-            doc.text("Concepto / Tipo", 50, posY + 5);
-            doc.text("Monto (USD)", 120, posY + 5);
-            doc.text("Detalle / Ref", 150, posY + 5);
-
-            posY += 7;
-            doc.setFont("Helvetica", "normal");
-            doc.setTextColor(45, 55, 72);
-
-            let gastosFiltrados = fechaFiltro ? DATOS_GASTOS_CACHE.filter(g => g.fecha === fechaFiltro) : DATOS_GASTOS_CACHE;
-
-            let listaGastosConsolidados = [];
-            gastosFiltrados.forEach(g => {
-                listaGastosConsolidados.push({
-                    fecha: g.fecha,
-                    concepto: g.servicios_bancarios ? g.servicios_bancarios.nombre : (g.nota || 'Gasto Operativo'),
-                    monto: parseFloat(g.monto_usd || 0),
-                    ref: g.referencia || 'N/A'
-                });
-            });
-
-            lotesFiltrados.forEach(l => {
-                if (l.ingresos && l.ingresos.avances && parseFloat(l.ingresos.avances) > 0) {
-                    listaGastosConsolidados.push({
-                        fecha: l.fecha,
-                        concepto: `Avance / Retiro de Caja (Turno: ${l.turno || 'N/A'})`,
-                        monto: parseFloat(l.ingresos.avances),
-                        ref: 'Cierre de Caja'
-                    });
-                }
-            });
-
-            if (listaGastosConsolidados.length === 0) {
-                posY += 6;
-                doc.text("No hay gastos ni avances registrados para este periodo.", 16, posY);
-            } else {
-                listaGastosConsolidados.forEach((item, idx) => {
-                    if (posY > 270) {
-                        doc.addPage();
-                        posY = 20;
-                    }
-                    if (idx % 2 === 0) {
-                        doc.setFillColor(249, 249, 249);
-                        doc.rect(14, posY, 182, 6.5, "F");
-                    }
-                    doc.text(String(item.fecha || ''), 16, posY + 4.5);
-                    doc.text(String(item.concepto), 50, posY + 4.5);
-                    doc.text(`$${item.monto.toFixed(2)}`, 120, posY + 4.5);
-                    doc.text(String(item.ref), 150, posY + 4.5);
-                    posY += 6.5;
-                });
-            }
-
             doc.save(nombreArchivo);
             cerrarModalGlobal();
         } catch (e) {
             cerrarModalGlobal();
-            alert("❌ Error al generar el PDF estructurado: " + e.message);
+            alert("❌ Error al generar el PDF: " + e.message);
             console.error(e);
         }
     }
