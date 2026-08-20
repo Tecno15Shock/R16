@@ -384,40 +384,44 @@
 
         let divisasConfig = CONFIG_GLOBAL.divisas || {};
         let tasasConfig = CONFIG_GLOBAL.tasas || CONFIG_GLOBAL.tasas_cambio || {};
+        let tasaVes = parseFloat(tasasConfig.ves || tasasConfig.bs || 1);
+        let tasaCop = parseFloat(tasasConfig.cop || 1);
+        let tasaEur = parseFloat(tasasConfig.eur || 1);
 
-        let monedasActivas = [];
-        if (typeof divisasConfig === 'object' && Object.keys(divisasConfig).length > 0) {
-            for (let [key, val] of Object.entries(divisasConfig)) {
-                if (val.activa || val.activo || val === true) {
-                    monedasActivas.push({
-                        codigo: key.toUpperCase(),
-                        simbolo: val.simbolo || (key === 'usd' ? '$' : key === 'ves' ? 'Bs' : key.toUpperCase()),
-                        tasa: parseFloat(val.tasa || val.valor || tasasConfig[key] || tasasConfig[key.toLowerCase()] || (key === 'usd' ? 1 : 1))
-                    });
-                }
-            }
-        }
-        if (monedasActivas.length === 0) {
-            monedasActivas.push({ codigo: 'USD', simbolo: '$', tasa: 1 });
-            let tasaVes = parseFloat(tasasConfig.ves || tasasConfig.bs || 1);
-            monedasActivas.push({ codigo: 'VES', simbolo: 'Bs', tasa: tasaVes });
-            if (tasasConfig.cop) {
-                monedasActivas.push({ codigo: 'COP', simbolo: 'COP', tasa: parseFloat(tasasConfig.cop) });
-            }
-        }
-
+        // Lista estricta de divisas requeridas: BS, USD, COP, EUR
         let html = "";
         planes.forEach((p) => {
             let costoUsd = parseFloat(p.cobro || p.precio || p.costo || 0);
             
+            let totalBs = costoUsd * tasaVes;
+            let totalCop = tasaVes > 0 ? (totalBs / tasaVes) * tasaCop : costoUsd * tasaCop;
+            let totalEur = tasaVes > 0 ? (totalBs / tasaVes) * tasaEur : (tasaEur > 0 ? costoUsd / tasaEur : costoUsd);
+
+            let listaCobranza = [
+                { codigo: 'BS', simbolo: 'Bs', valor: totalBs, decimales: 2 },
+                { codigo: 'USD', simbolo: '$', valor: costoUsd, decimales: 2 },
+                { codigo: 'COP', simbolo: 'COP', valor: totalCop, decimales: 0 },
+                { codigo: 'EUR', simbolo: '€', valor: totalEur, decimales: 2 }
+            ];
+
             let htmlMonedas = "";
-            monedasActivas.forEach(m => {
-                let valorCalculado = m.codigo === 'USD' ? costoUsd : (costoUsd * m.tasa);
-                htmlMonedas += `
-                    <div class="divisa-line">
-                        <span style="font-weight: bold; color: var(--primary);">${m.codigo}:</span>
-                        <span style="font-weight: bold; color: var(--secondary); font-family: 'Playfair Display', serif;">${m.simbolo}${formatearNumero(valorCalculado)}</span>
-                    </div>`;
+            listaCobranza.forEach(m => {
+                let keyConfig = m.codigo.toLowerCase();
+                let divConfig = divisasConfig[keyConfig] || divisasConfig[m.codigo];
+                let estaActiva = true;
+                if (divConfig && typeof divConfig === 'object') {
+                    estaActiva = divConfig.activa || divConfig.activo || false;
+                } else if (divConfig === false) {
+                    estaActiva = false;
+                }
+
+                if (estaActiva || m.codigo === 'BS' || m.codigo === 'USD' || m.codigo === 'EUR') {
+                    htmlMonedas += `
+                        <div class="divisa-line">
+                            <span style="font-weight: bold; color: var(--primary);">${m.codigo}:</span>
+                            <span style="font-weight: bold; color: var(--secondary); font-family: 'Playfair Display', serif;">${m.simbolo}${formatearNumero(m.valor, m.decimales)}</span>
+                        </div>`;
+                }
             });
 
             html += `
