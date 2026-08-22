@@ -4,215 +4,208 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📋 Control de Inventario | Panel Premium</title>
+    <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Fuentes Ultra-Premium -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     
     <style>
         /* ========================================================= */
-        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
+        /* VARIABLES DE ESTILO PREMIUM (ROJO Y DORADO)               */
         /* ========================================================= */
         :root {
-            --topbar-bg: #050505; 
-            --sidebar-bg: #080808; 
+            --topbar-bg: #000000; 
+            --sidebar-bg: #000000; 
             --active-gold: #D4AF37; 
             
-            /* Paleta Carmesí Institucional */
-            --crimson: #7A171D;
-            --crimson-dark: #4A0E12; 
-            --crimson-light: #9B222A;
-
-            /* Base y texto */
-            --bg: #FDFBF7; 
-            --text: #2A2A2A; 
-            --text-light: #555555;
-            --border: #E8E0D5; 
-            --card-bg: #FFFFFF; 
-            --item-bg: #FCFBFA; 
-            
-            /* Estados Sólidos */
-            --success: #2E7D32; 
-            --warning: #B8860B; 
-            --danger: #8B0000;
-            --info: #2c3e50;
+            --bg: #1a050a; 
+            --primary: #3b0918; 
+            --secondary: #7c1126; 
+            --danger: #b30000; 
+            --success: #2ecc71; 
+            --warning: #f39c12; 
+            --info: #aa8c2c; 
+            --text: #222; 
+            --border: #d4af37; 
+            --card-bg: #ffffff; 
+            --item-bg: #fdf8f0; 
+            --muted: #666;
+            --input-bg: #fdf8f0;
         }
 
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; scroll-behavior: smooth; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
 
         /* ========================================================= */
-        /* PANTALLA DE BLOQUEO ADMIN LUXURY                          */
+        /* BARRA SUPERIOR */
         /* ========================================================= */
-        #pantalla_bloqueo_admin {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, rgba(74, 14, 18, 0.95), rgba(5, 5, 5, 0.98));
-            backdrop-filter: blur(8px);
-            z-index: 99999; display: flex; align-items: center; justify-content: center;
-            animation: fadeIn 0.4s ease-in-out;
-        }
+        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.5); border-bottom: 2px solid var(--border); }
+        .menu-toggle-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border); color: var(--active-gold); font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.3); }
+        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; font-family: 'Playfair Display', serif; }
 
         /* ========================================================= */
-        /* PANTALLA DE CARGA MOTIVACIONAL                            */
+        /* MENÚ LATERAL */
         /* ========================================================= */
-        #loading_overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, var(--crimson-dark) 0%, #1a0507 100%);
-            z-index: 1000000; display: flex; justify-content: center; align-items: center;
-            transition: opacity 0.8s ease, visibility 0.8s;
-        }
-        .loading-card {
-            background: #ffffff; padding: 50px 40px; text-align: center; width: 85%;
-            max-width: 450px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative;
-            border-radius: 4px;
-        }
-        .loading-card::before, .loading-card::after {
-            content: ''; position: absolute; width: 40px; height: 40px; border-color: var(--active-gold); border-style: solid;
-        }
-        .loading-card::before { top: 15px; left: 15px; border-width: 3px 0 0 3px; }
-        .loading-card::after { bottom: 15px; right: 15px; border-width: 0 3px 3px 0; }
-        
-        .spinner-luxury {
-            width: 50px; height: 50px; border: 3px solid rgba(212, 175, 55, 0.2);
-            border-top-color: var(--active-gold); border-radius: 50%;
-            animation: spin 1s linear infinite; margin: 0 auto 25px auto;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .loading-title {
-            color: var(--crimson-dark); font-family: 'Georgia', serif; font-size: 1.4rem; 
-            letter-spacing: 3px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;
-        }
-        .loading-subtitle { color: #666; font-style: italic; font-size: 1.05rem; margin-bottom: 25px; font-family: 'Georgia', serif; line-height: 1.5; }
-
-        .wrapper { display: block; min-height: 100vh; position: relative; }
-
-        /* ========================================================= */
-        /* BARRA SUPERIOR: Ajuste Estricto en Línea                  */
-        /* ========================================================= */
-        .top-bar { 
-            background: var(--topbar-bg); color: white; height: 65px; padding: 0 15px; 
-            display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
-            border-bottom: 2px solid var(--active-gold); box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
-        }
-        .menu-toggle-btn { 
-            background: transparent; border: 1px solid var(--active-gold); color: var(--active-gold); 
-            font-size: 1.5rem; cursor: pointer; width: 42px; height: 42px; padding: 0; flex-shrink: 0;
-            border-radius: 6px; display: flex; align-items: center; justify-content: center; 
-            transition: all 0.3s; padding-bottom: 3px; line-height: 1;
-        }
-        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.15); box-shadow: inset 0 0 8px rgba(212,175,55,0.3); }
-        .top-bar-title { display: flex; align-items: center; gap: 10px; flex-grow: 1; overflow: hidden; white-space: nowrap; }
-        .local-name { font-family: 'Georgia', serif; font-size: 1.25rem; font-weight: bold; color: #FFFFFF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px; }
-        .badge-elegant {
-            font-size: 0.75rem; font-family: 'Segoe UI', sans-serif; font-weight: bold; 
-            background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
-            color: var(--active-gold); padding: 5px 12px; border-radius: 4px; 
-            letter-spacing: 1.5px; border: 1px solid var(--active-gold); text-transform: uppercase;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; flex-shrink: 1;
-        }
-
-        /* ========================================================= */
-        /* MENÚ LATERAL                                              */
-        /* ========================================================= */
-        .sidebar { 
-            position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; 
-            background: var(--sidebar-bg); color: #E0E0E0; padding: 20px 15px; 
-            display: flex; flex-direction: column; gap: 4px; z-index: 1002; 
-            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            box-shadow: 5px 0 25px rgba(0,0,0,0.7); border-right: 1px solid var(--active-gold); overflow-y: auto; 
-        }
+        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 4px 0 15px rgba(0,0,0,0.6); overflow-y: auto; border-right: 2px solid var(--border); }
         .sidebar.open { left: 0; }
-        .sidebar-brand { font-family: 'Georgia', serif; font-size: 1.1rem; color: var(--active-gold); text-align: center; padding-bottom: 20px; border-bottom: 1px solid #222; margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
-        .sidebar .tab-btn { background: transparent; color: #CCCCCC; border: none; text-align: left; padding: 14px 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s ease; }
-        .sidebar .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #FFF; border-left: 3px solid var(--active-gold); }
-        .sidebar .tab-btn.active { background: linear-gradient(90deg, #9D7B24, #5c4714) !important; color: #FFFFFF !important; font-weight: bold; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2); border-left: none; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(3px); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; }
-        .sidebar-overlay.active { display: block; opacity: 1; }
-        
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: #CCC; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--active-gold); }
+        .sidebar-brand { font-size: 1.4rem; font-family: 'Playfair Display', serif; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 2px; color: var(--active-gold); text-transform: uppercase; }
+        .sidebar .tab-btn { background: none; color: #ddd; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s; border-left: 3px solid transparent; }
+        .sidebar .tab-btn:hover { background: rgba(212, 175, 55, 0.1); color: white; border-left: 3px solid var(--active-gold); }
+        .sidebar .tab-btn.active { background: linear-gradient(90deg, var(--active-gold) 0%, #aa8c2c 100%) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 1001; display: none; backdrop-filter: blur(2px); }
+        .sidebar-overlay.active { display: block; }
 
         /* ========================================================= */
-        /* CONTENEDORES PRINCIPALES Y TARJETAS                       */
+        /* CONTENEDORES Y ACORDEÓN DESPLEGABLE LUXURY                */
         /* ========================================================= */
-        .main-content { max-width: 1100px; margin: 0 auto; padding: 30px 20px; padding-bottom: 120px; }
+        .main-content { padding: 20px; padding-bottom: 130px; max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+        
         .card { 
-            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
-            border-top: 4px solid var(--crimson);
+            background: var(--card-bg); border-radius: 6px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            border: 1px solid var(--border);
+            position: relative; overflow: hidden;
+            transition: background 0.3s;
         }
-        h2 { color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-family: 'Georgia', serif; text-transform: uppercase; letter-spacing: 1px; }
         
-        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
-        input, select { 
-            width: 100%; padding: 12px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; 
-            font-size: 0.95rem; background: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD;
+        .card-header {
+            padding: 20px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            transition: filter 0.3s ease; user-select: none; border-bottom: 2px solid var(--border);
         }
-        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
+        .card-header:hover { filter: brightness(1.15); }
+        .card-header h2 { 
+            color: var(--active-gold); margin: 0; font-size: 1.25rem; font-family: 'Playfair Display', serif; 
+            text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0; display: flex; align-items: center; gap: 10px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        }
+        .accordion-icon {
+            font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .card-body {
+            max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease;
+            background: var(--card-bg); 
+        }
+        .card.open .card-body {
+            max-height: 5000px; padding: 25px; opacity: 1;
+            transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
+        }
+        .card.open .accordion-icon { transform: rotate(180deg); }
 
-        button { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button { font-family: 'Playfair Display', serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
         button:active { transform: scale(0.98); }
         
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-warning { background: var(--warning); color: #fff; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-info { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-success { background: linear-gradient(135deg, var(--success), #1e8449); color: white; border-bottom: 2px solid #145a32; }
+        .btn-warning { background: linear-gradient(135deg, var(--warning), #d35400); color: #fff; }
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-danger { background: var(--danger); color: white; border: 1px solid darkred; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; background: var(--card-bg); }
-        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
-        th { background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); font-family: 'Georgia', serif; letter-spacing: 1px; border-color: var(--active-gold); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; border: 1px solid rgba(212, 175, 55, 0.3); }
+        th, td { border: 1px solid rgba(212, 175, 55, 0.3); padding: 10px; text-align: left; }
+        th { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: var(--active-gold); font-family: 'Playfair Display', serif; border-color: var(--active-gold); }
 
+        /* ========================================================= */
+        /* MODALES Y PANTALLA DE BLOQUEO                             */
+        /* ========================================================= */
+        #loading_overlay, #pantalla_bloqueo_admin {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, rgba(124, 17, 38, 0.95), rgba(59, 9, 24, 0.99));
+            z-index: 1000000; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px); transition: opacity 0.5s ease;
+        }
+        
         .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
-        .custom-modal-box { background: var(--card-bg); padding: 25px; border-radius: 8px; width: 850px; max-width: 95%; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); max-height: 90vh; overflow-y: auto; animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
-        .custom-modal-title { font-family: 'Georgia', serif; font-size: 1.4rem; color: var(--crimson-dark); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 4px; width: 90%; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
+        .modal-close-btn:hover { background: var(--danger); transform: scale(1.05); color: #FFF; }
+        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+
+        .loading-box {
+            background: var(--card-bg); padding: 40px; border-radius: 4px;
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 2px solid var(--active-gold);
+            position: relative; max-width: 400px; width: 90%;
+        }
+        .loading-box::before, .loading-box::after { content: ''; position: absolute; width: 30px; height: 30px; border: 2px solid var(--active-gold); }
+        .loading-box::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .loading-box::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 4px solid rgba(212, 175, 55, 0.2);
+            border-left-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+
+        .loading-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .loading-subtitle { font-family: 'Roboto', sans-serif; font-size: 0.95rem; color: var(--muted); line-height: 1.5; }
     </style>
 </head>
 <body>
 
+<!-- MODAL DE CARGA INICIAL -->
 <div id="loading_overlay">
-    <div class="loading-card">
+    <div class="loading-box">
         <div class="spinner-luxury"></div>
-        <div class="loading-title">Construyendo su Panel</div>
-        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Sincronizando el control de auditoría de inventario con los servidores seguros...</div>
+        <div class="loading-title">Sincronizando Módulo</div>
+        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Cargando auditoría de inventario y cierres...</div>
     </div>
 </div>
 
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
 <div id="pantalla_bloqueo_admin" style="display: none;">
-    <div class="card" style="width: 380px; text-align: center; border-top: 4px solid var(--active-gold); margin: 0; box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: #FFFFFF;">
-        <h2 style="color: var(--crimson-dark); border-bottom-color: var(--active-gold);">🔒 Acceso Protegido</h2>
-        <p style="font-size: 0.95rem; color: var(--text-light); margin-bottom: 20px;">Introduce el PIN de Administrador para ver este módulo gerencial:</p>
+    <div class="loading-box" style="padding: 30px;">
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-size: 1.4rem; padding-bottom: 10px; margin-bottom: 15px; font-family: 'Playfair Display', serif;">🔒 ACCESO PROTEGIDO</h2>
+        <p style="font-size: 0.95rem; color: var(--muted); margin-bottom: 20px; font-family:'Roboto', sans-serif;">Introduce el PIN de Administrador para abrir este módulo:</p>
+        
         <div style="position: relative; margin-bottom: 20px;">
-            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace;" onkeyup="if(event.key==='Enter') verificarPinBody()">
-            <span onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace; background: #ffffff; color: var(--primary); border: 2px solid var(--active-gold); border-radius: 4px; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
         </div>
-        <button id="btn_desbloquear" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">Desbloquear Pantalla</button>
-        <button onclick="window.history.back()" class="btn-danger" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">Volver Atrás</button>
+
+        <div id="mensaje_carga_pin" style="display: none; margin-bottom: 15px;">
+            <div class="spinner-luxury" style="width: 25px; height: 25px; border-width: 2px; margin: 0 auto 8px auto;"></div>
+            <span style="color: var(--success); font-weight: bold; font-size: 1rem; font-family: 'Playfair Display', serif;">Desbloqueando módulo...</span>
+        </div>
+
+        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">AUTENTICAR</button>
+        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem; background: linear-gradient(135deg, #1a202c, #111827); border-color: #333;">VOLVER AL INICIO</button>
     </div>
 </div>
 
+<!-- MODAL GLOBAL -->
 <div id="global_modal" class="custom-modal-overlay">
     <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
         <div id="global_modal_title" class="custom-modal-title">Título</div>
         <div id="global_modal_body"></div>
     </div>
 </div>
 
-<div class="wrapper">
+<div class="wrapper" id="main_wrapper" style="display: none;">
     
-	<div class="top-bar">
+	<!-- BARRA SUPERIOR -->
+    <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">Cargando...</div>
+        <div class="top-bar-title" id="main_top_title">Panel Administrativo</div>
     </div>
 
+    <!-- MENÚ LATERAL -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">Menú Ejecutivo</div>
+        <div class="sidebar-brand">MENÚ CENTRAL</div>
         <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
         <a href="precios.html" class="tab-btn">💰 Precios</a>
         <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
@@ -235,15 +228,23 @@
         <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
     </div>
 
+    <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
-        <div class="card">
-            <h2>📋 Control de Inventario (Auditoría de Cierres)</h2>
-            <p style="font-size:0.9rem; color:var(--text-light); margin-bottom: 20px;">Historial de cierres sincronizado con todos los productos del catálogo en orden alfabético.</p>
-            
-            <div style="overflow-x:auto;">
-                <table id="tabla_control_inventario_cierres">
-                    <tr><th>Fecha</th><th>Entregó</th><th>Recibió</th><th>Tasa BS</th><th>Total Venta ($)</th><th>Acciones</th></tr>
-                </table>
+        <div class="card open">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📋 Control de Inventario (Auditoría de Cierres)</h2>
+                <span class="accordion-icon" style="transform: rotate(180deg);">▼</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.95rem; color:var(--muted); margin-top: 0; margin-bottom: 20px;">
+                    Historial de cierres sincronizado con todos los productos del catálogo en orden alfabético.
+                </p>
+                
+                <div style="overflow-x:auto;">
+                    <table id="tabla_control_inventario_cierres">
+                        <tr><th>Fecha</th><th>Entregó</th><th>Recibió</th><th>Tasa BS</th><th>Total Venta ($)</th><th>Acciones</th></tr>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -263,7 +264,6 @@
         try {
             const { data } = await supabaseClient.auth.getSession();
             if (!data || !data.session) { 
-                ocultarLoadingInicial(); 
                 alert("Sin sesión activa."); 
                 window.location.href = 'index.html';
                 return; 
@@ -271,15 +271,17 @@
             await inicializarDatos(data.session.user.id);
         } catch (err) { 
             console.error(err); 
-            ocultarLoadingInicial(); 
         }
     });
 
-    function ocultarLoadingInicial() {
-        let loader = document.getElementById('loading_overlay');
-        if (loader) {
-            loader.style.opacity = '0';
-            setTimeout(() => { loader.style.display = 'none'; }, 800);
+    function toggleAcordeon(header) {
+        let card = header.parentElement;
+        let icon = header.querySelector('.accordion-icon');
+        card.classList.toggle('open');
+        if (card.classList.contains('open')) {
+            icon.style.transform = "rotate(180deg)";
+        } else {
+            icon.style.transform = "rotate(0deg)";
         }
     }
 
@@ -290,28 +292,46 @@
 
     function toggleVerPin() {
         let input = document.getElementById('pin_ingreso_body');
-        input.type = input.type === 'password' ? 'text' : 'password';
+        let icono = document.getElementById('icono_ojo_pin');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icono.innerText = '🙈';
+        } else {
+            input.type = 'password';
+            icono.innerText = '👁️';
+        }
     }
 
     async function verificarPinBody() {
         let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
         let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
-        let btn = document.getElementById('btn_desbloquear');
-
-        btn.innerHTML = "⏳ Verificando...";
-        btn.disabled = true;
-
-        await new Promise(resolve => setTimeout(resolve, 800));
+        let btn = document.getElementById('btn_desbloquear_pin');
 
         if (pinIngresado === pinReal) {
-            let pantalla = document.getElementById('pantalla_bloqueo_admin');
-            pantalla.style.animation = 'fadeIn 0.4s reverse';
-            setTimeout(() => { pantalla.style.display = 'none'; }, 400);
+            btn.style.display = 'none';
+            document.getElementById('btn_volver_pin').style.display = 'none';
+            document.getElementById('mensaje_carga_pin').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('main_wrapper').style.display = 'block';
+
+                let pantalla = document.getElementById('pantalla_bloqueo_admin');
+                pantalla.style.opacity = '0';
+                pantalla.style.transition = 'opacity 0.4s ease';
+                
+                setTimeout(() => { 
+                    pantalla.style.display = 'none'; 
+                    btn.style.display = 'block';
+                    document.getElementById('btn_volver_pin').style.display = 'block';
+                    document.getElementById('mensaje_carga_pin').style.display = 'none';
+                    document.getElementById('pin_ingreso_body').value = '';
+                    document.getElementById('pin_ingreso_body').type = 'password';
+                    document.getElementById('icono_ojo_pin').innerText = '👁️';
+                }, 400);
+            }, 800);
         } else {
-            alert("❌ PIN Incorrecto.");
+            alert("❌ PIN Incorrecto. Acceso Restringido.");
             document.getElementById('pin_ingreso_body').value = '';
-            btn.innerHTML = "Desbloquear Pantalla";
-            btn.disabled = false;
         }
     }
 
@@ -339,8 +359,10 @@
             let etiquetaModulo = "Control Inventario"; 
 
             document.getElementById('main_top_title').innerHTML = `
-                <span class="local-name">🏪 ${nombreLocal}</span>
-                <span class="badge-elegant">📌 ${etiquetaModulo}</span>
+                🏪 ${nombreLocal} 
+                <span style="font-size:0.75rem; font-family: 'Roboto', sans-serif; font-weight:bold; background: linear-gradient(90deg, var(--active-gold), #aa8c2c); color: #000; padding: 4px 10px; border-radius: 4px; margin-left: 15px; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-transform: uppercase;">
+                    📌 ${etiquetaModulo}
+                </span>
             `;
 
             let { data: catData } = await supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
@@ -348,18 +370,21 @@
                 CATALOGO = catData;
             }
         } else {
-            ocultarLoadingInicial();
             return alert("Error: Perfil no vinculado a un local.");
         }
         
-        // 1. Ocultar pantalla de carga motivacional primero
-        ocultarLoadingInicial();
-        
-        // 2. Mostrar pantalla de bloqueo protegida con animación lujosa
         document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
-        document.getElementById('pin_ingreso_body').focus();
+        document.getElementById('pantalla_bloqueo_admin').style.opacity = '1';
 
         await cargarHistorialControlInventario();
+
+        setTimeout(() => {
+            document.getElementById('loading_overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading_overlay').style.display = 'none';
+                document.getElementById('pin_ingreso_body').focus();
+            }, 500);
+        }, 800);
     }
 
     async function cargarHistorialControlInventario() {
@@ -388,7 +413,7 @@
             let html = `<tr><th>Fecha</th><th>Entregó</th><th>Recibió</th><th>Tasa BS</th><th>Total Venta ($)</th><th>Acciones</th></tr>`;
             
             if(!data || data.length === 0) {
-                html += `<tr><td colspan="6" style="text-align:center; padding: 20px; color:var(--text-light); font-style:italic;">No hay controles registrados en Supabase.</td></tr>`;
+                html += `<tr><td colspan="6" style="text-align:center; padding: 20px; color:var(--muted); font-style:italic;">No hay controles registrados en Supabase.</td></tr>`;
             } else {
                 datosControlInventario = data;
                 data.forEach((c, idx) => {
@@ -402,8 +427,8 @@
                         <td style="text-align:center;">${c.tasa_usd_bs || 1}</td>
                         <td style="text-align:right; font-weight:bold; color:var(--success);">$${parseFloat(c.total_usd || 0).toFixed(2)}</td>
                         <td style="text-align:center; display:flex; gap:6px; justify-content:center;">
-                            <button class="btn-info" style="padding:6px 12px; margin:0; font-size:0.85rem;" onclick="abrirAuditoria(${idx})">🔒 Ver / Editar</button>
-                            <button class="btn-danger" style="padding:6px 10px; margin:0; font-size:0.85rem;" onclick="eliminarControlInventario('${c.id}')">🗑️</button>
+                            <button class="btn-info" style="padding:6px 12px; margin:0; font-size:0.85rem; width:auto;" onclick="abrirAuditoria(${idx})">🔒 Ver / Editar</button>
+                            <button class="btn-danger" style="padding:6px 10px; margin:0; font-size:0.85rem; width:auto;" onclick="eliminarControlInventario('${c.id}', '${c.fecha}')">🗑️</button>
                         </td>
                     </tr>`;
                 });
@@ -423,6 +448,7 @@
             mapaGuardados[nombreLimpio.toLowerCase()] = {
                 nombre: nombreLimpio,
                 E: d.E ?? d.entrada ?? 0,
+                E_prov: d.E_prov ?? d.E_Proveedor ?? 0,
                 S: d.S ?? d.salida ?? 0,
                 VP: d.VP ?? d.cantidad ?? 0,
                 PI: d.PI ?? d.precio_interno ?? 0,
@@ -441,6 +467,7 @@
                 listaFinal.push({
                     nombre: nombreCat,
                     E: 0,
+                    E_prov: 0,
                     S: 0,
                     VP: 0,
                     PI: parseFloat(cat.precio_venta || cat.precio_base || 0),
@@ -468,20 +495,22 @@
         window.currentAuditoriaEditIndex = idx;
         window.currentDetallesEditados = detalles;
 
-        let htmlTabla = `<table style="width:100%; border-collapse:collapse; text-align:center; font-size:0.9rem;">
+        let htmlTabla = `<table style="width:100%; border-collapse:collapse; text-align:center; font-size:0.85rem;">
             <tr>
                 <th style="padding:8px; text-align:left;">Producto</th>
-                <th style="width:10%;">E</th>
-                <th style="width:10%;">S</th>
-                <th style="width:12%;">V.P</th>
-                <th style="width:15%;">P. Interno</th>
-                <th style="width:15%;">V. Total</th>
+                <th style="width:9%;">E</th>
+                <th style="width:12%; color: var(--active-gold);">E. Prov</th>
+                <th style="width:9%;">S</th>
+                <th style="width:11%;">V.P</th>
+                <th style="width:14%;">P. Interno</th>
+                <th style="width:14%;">V. Total</th>
             </tr>`;
         
         detalles.forEach((d, i) => {
             htmlTabla += `<tr>
                 <td style="text-align:left;">${d.nombre}</td>
                 <td><input type="number" id="input_e_${i}" value="${d.E}" style="width:100%; text-align:center; padding:4px;" onchange="recalcularFilaAuditoria(${i})"></td>
+                <td><input type="number" id="input_eprov_${i}" value="${d.E_prov || 0}" style="width:100%; text-align:center; padding:4px; font-weight:bold; background: rgba(212, 175, 55, 0.1);" onchange="recalcularFilaAuditoria(${i})"></td>
                 <td><input type="number" id="input_s_${i}" value="${d.S}" style="width:100%; text-align:center; padding:4px;" onchange="recalcularFilaAuditoria(${i})"></td>
                 <td><input type="number" id="input_vp_${i}" value="${d.VP}" step="any" style="width:100%; text-align:center; padding:4px; font-weight:bold; color:var(--success);" onchange="recalcularFilaAuditoria(${i})"></td>
                 <td><input type="number" id="input_pi_${i}" value="${d.PI}" step="any" style="width:100%; text-align:right; padding:4px;" onchange="recalcularFilaAuditoria(${i})"></td>
@@ -491,13 +520,13 @@
         htmlTabla += `</table>`;
 
         let htmlVista = `
-            <div style="margin-bottom:12px; font-size:0.9rem; text-align:left; background:var(--item-bg); padding:12px; border-radius:6px; border:1px solid var(--border);">
+            <div style="margin-bottom:12px; font-size:0.9rem; text-align:left; background:var(--item-bg); padding:12px; border-radius:4px; border:1px solid var(--border);">
                 <p style="margin:3px 0;"><strong>Vendedor Entregó:</strong> ${nomCierra}</p>
                 <p style="margin:3px 0;"><strong>Vendedor Recibió:</strong> ${nomRecibe}</p>
                 <p style="margin:3px 0;"><strong>Tasa USD/BS:</strong> ${registro.tasa_usd_bs || 1}</p>
             </div>
-            <p style="font-size:0.85rem; color:var(--warning); text-align:left; margin-bottom:8px;">ℹ️ Todos los productos están ordenados alfabéticamente. Modifica lo que necesites y guarda.</p>
-            <div style="background:var(--card-bg); border:1px solid var(--border); padding:5px; max-height:300px; overflow-y:auto; border-radius:6px;">${htmlTabla}</div>
+            <p style="font-size:0.85rem; color:var(--warning); text-align:left; margin-bottom:8px;">ℹ️ Todos los productos están ordenados alfabéticamente. La casilla "E. Prov" registra la mercancía ingresada/retirada desde proveedores.</p>
+            <div style="background:var(--card-bg); border:1px solid var(--border); padding:5px; max-height:350px; overflow-y:auto; border-radius:4px;">${htmlTabla}</div>
             
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; gap:10px;">
                 <button class="btn-success" style="margin:0; width:50%;" onclick="guardarCambiosAuditoriaManual()">💾 Guardar en Supabase</button>
@@ -528,6 +557,7 @@
 
         detalles.forEach((d, i) => {
             let eVal = parseFloat(document.getElementById(`input_e_${i}`).value) || 0;
+            let eProvVal = parseFloat(document.getElementById(`input_eprov_${i}`).value) || 0;
             let sVal = parseFloat(document.getElementById(`input_s_${i}`).value) || 0;
             let vpVal = parseFloat(document.getElementById(`input_vp_${i}`).value) || 0;
             let piVal = parseFloat(document.getElementById(`input_pi_${i}`).value) || 0;
@@ -538,6 +568,7 @@
             nuevosDetalles.push({
                 nombre: d.nombre,
                 E: eVal,
+                E_prov: eProvVal,
                 S: sVal,
                 VP: vpVal,
                 PI: piVal,
@@ -545,7 +576,7 @@
             });
         });
 
-        mostrarModalLocal("Sincronizando", "Actualizando cambios con Supabase...");
+        mostrarModalLocal("Sincronizando", "Actualizando cambios en Supabase...");
         try {
             let { error } = await supabaseClient
                 .from('control_inventario_cierres')
@@ -558,7 +589,7 @@
             if(error) throw error;
 
             cerrarModalGlobal();
-            alert("✅ Cambios actualizados correctamente en Supabase.");
+            alert("✅ Cambios actualizados correctamente.");
             await cargarHistorialControlInventario();
         } catch (e) {
             cerrarModalGlobal();
@@ -566,18 +597,48 @@
         }
     }
 
-    async function eliminarControlInventario(id) {
-        if(!confirm("⚠️ ¿Estás seguro de eliminar este registro de control de inventario de Supabase?")) return;
-        mostrarModalLocal("Eliminando", "Borrando registro...");
+    async function eliminarControlInventario(id, fechaRegistro) {
+        let fechaCierre = new Date(fechaRegistro);
+        let ahora = new Date();
+        
+        // Verificar si pertenece al mes/año actual
+        let esMesActual = (fechaCierre.getMonth() === ahora.getMonth() && fechaCierre.getFullYear() === ahora.getFullYear());
+
+        let mensajeConfirmacion = esMesActual
+            ? "⚠️ Este control pertenece al MES ACTUAL. Al eliminarlo, se restablecerá en el inventario actual la cantidad de productos vendidos. ¿Deseas continuar?"
+            : "⚠️ Este control pertenece a un MES VIEJO (Histórico). Se eliminará directamente sin modificar ni restablecer el inventario actual. ¿Deseas continuar?";
+
+        if(!confirm(mensajeConfirmacion)) return;
+
+        mostrarModalLocal("Eliminando", "Procesando eliminación del registro...");
         try {
+            // Si es mes actual, restablecer lo vendido en el catálogo
+            if (esMesActual) {
+                let registroObj = datosControlInventario.find(c => c.id === id);
+                if (registroObj && Array.isArray(registroObj.detalles_json)) {
+                    for (let d of registroObj.detalles_json) {
+                        let vpVendida = parseFloat(d.VP ?? d.cantidad ?? 0);
+                        if (vpVendida > 0) {
+                            let nombreProd = limpiarNombre(d.nombre);
+                            let prodEnCat = CATALOGO.find(p => limpiarNombre(p.nombre).toLowerCase() === nombreProd.toLowerCase());
+                            if (prodEnCat) {
+                                let stockNuevo = (parseFloat(prodEnCat.stock) || 0) + vpVendida;
+                                await supabaseClient.from('catalogo').update({ stock: stockNuevo }).eq('id', prodEnCat.id);
+                            }
+                        }
+                    }
+                }
+            }
+
             let { error } = await supabaseClient.from('control_inventario_cierres').delete().eq('id', id);
             if(error) throw error;
+            
             cerrarModalGlobal();
-            alert("✅ Registro eliminado correctamente.");
+            alert("✅ Control de inventario eliminado correctamente.");
             await cargarHistorialControlInventario();
         } catch(e) {
             cerrarModalGlobal();
-            alert("❌ Error: " + e.message);
+            alert("❌ Error al eliminar: " + e.message);
         }
     }
 
@@ -645,9 +706,10 @@
         doc.setTextColor(212, 175, 55);
         doc.rect(14, posY, 182, 6.5, "F");
         doc.text("Descripción del Producto", 17, posY + 4.5);
-        doc.text("E", 110, posY + 4.5, { align: 'center' });
-        doc.text("S", 125, posY + 4.5, { align: 'center' });
-        doc.text("V.P", 142, posY + 4.5, { align: 'center' });
+        doc.text("E", 98, posY + 4.5, { align: 'center' });
+        doc.text("E.Prov", 112, posY + 4.5, { align: 'center' });
+        doc.text("S", 126, posY + 4.5, { align: 'center' });
+        doc.text("V.P", 140, posY + 4.5, { align: 'center' });
         doc.text("P. Int.", 165, posY + 4.5, { align: 'right' });
         doc.text("Total ($)", 192, posY + 4.5, { align: 'right' });
 
@@ -666,9 +728,10 @@
             }
 
             doc.text(String(d.nombre), 17, posY + 4.5);
-            doc.text(String(d.E), 110, posY + 4.5, { align: 'center' });
-            doc.text(String(d.S), 125, posY + 4.5, { align: 'center' });
-            doc.text(String(d.VP), 142, posY + 4.5, { align: 'center' });
+            doc.text(String(d.E), 98, posY + 4.5, { align: 'center' });
+            doc.text(String(d.E_prov || 0), 112, posY + 4.5, { align: 'center' });
+            doc.text(String(d.S), 126, posY + 4.5, { align: 'center' });
+            doc.text(String(d.VP), 140, posY + 4.5, { align: 'center' });
             doc.text(`$${parseFloat(d.PI).toFixed(2)}`, 165, posY + 4.5, { align: 'right' });
             doc.setFont("Helvetica", "bold");
             doc.text(`$${parseFloat(d.VT).toFixed(2)}`, 192, posY + 4.5, { align: 'right' });
@@ -705,7 +768,7 @@
         document.getElementById('global_modal').style.display = 'flex'; 
     }
     function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
-    function mostrarModalLocal(t, m) { abrirModalGlobal(t, `<div style="padding:15px; font-weight:bold; color:var(--crimson-dark);">⏳ ${m}</div>`); }
+    function mostrarModalLocal(t, m) { abrirModalGlobal(t, `<div style="padding:15px; text-align:center;"><div class="spinner-luxury" style="width: 35px; height: 35px; border-width: 3px; margin: 0 auto 10px auto;"></div><span style="font-weight:bold; color:var(--primary); font-family:'Playfair Display', serif;">${m}</span></div>`); }
 </script>
 </body>
 </html>
