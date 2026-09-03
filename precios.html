@@ -3,462 +3,404 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Precios | Panel Premium</title>
+    <title>Consulta de Precios | Panel Empresarial</title>
+
+    <!-- Depedencias Centrales del Sistema -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    
+    <script src="motor.js"></script>
+    <script src="plantilla_base.js"></script>
+
     <style>
-        /* ========================================================= */
-        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
-        /* ========================================================= */
-        :root {
-            --topbar-bg: #050505; 
-            --sidebar-bg: #080808; 
-            --active-gold: #D4AF37; 
-            
-            /* Paleta Carmesí Institucional */
-            --crimson: #7A171D;
-            --crimson-dark: #4A0E12; 
-            --crimson-light: #9B222A;
-
-            /* Base y texto */
-            --bg: #FDFBF7; 
-            --text: #2A2A2A; 
-            --text-light: #555555;
-            --border: #E8E0D5; 
-            --card-bg: #FFFFFF; 
-            --item-bg: #FCFBFA; 
-            
-            /* Estados Sólidos (para alertas visuales) */
-            --success: #2E7D32; 
-            --warning: #B8860B; 
-            --danger: #8B0000;
+        /* Estilos específicos de la lista de catálogo adaptados a plantilla_base */
+        .card-busqueda {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-top: 4px solid var(--primary);
         }
 
-        body.hide-bs .moneda-bs { display: none !important; }
-        body.hide-cop .moneda-cop { display: none !important; }
-        body.hide-eur .moneda-eur { display: none !important; }
-
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        .wrapper { display: block; min-height: 100vh; position: relative; }
-
-        h1, h2, h3, .serif-font { font-family: 'Georgia', 'Times New Roman', serif; letter-spacing: 0.5px; }
-
-        /* ========================================================= */
-        /* PANTALLA DE CARGA LUXURY                                  */
-        /* ========================================================= */
-        #loading_overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, var(--crimson-dark) 0%, #1a0507 100%);
-            z-index: 1000000; display: flex; justify-content: center; align-items: center;
-            transition: opacity 0.8s ease, visibility 0.8s;
-        }
-        .loading-card {
-            background: #ffffff; padding: 50px 40px; text-align: center; width: 85%;
-            max-width: 450px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative;
-            border-radius: 4px;
-        }
-        .loading-card::before, .loading-card::after {
-            content: ''; position: absolute; width: 40px; height: 40px; border-color: var(--active-gold); border-style: solid;
-        }
-        .loading-card::before { top: 15px; left: 15px; border-width: 3px 0 0 3px; }
-        .loading-card::after { bottom: 15px; right: 15px; border-width: 0 3px 3px 0; }
-        
-        .spinner-luxury {
-            width: 50px; height: 50px; border: 3px solid rgba(212, 175, 55, 0.2);
-            border-top-color: var(--active-gold); border-radius: 50%;
-            animation: spin 1s linear infinite; margin: 0 auto 25px auto;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .loading-title {
-            color: var(--crimson-dark); font-family: 'Georgia', serif; font-size: 1.4rem; 
-            letter-spacing: 3px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;
-        }
-        .loading-subtitle { color: #666; font-style: italic; font-size: 1.05rem; margin-bottom: 25px; font-family: 'Georgia', serif; line-height: 1.5; }
-
-        /* ========================================================= */
-        /* BARRA SUPERIOR: Ajuste Estricto en Línea                  */
-        /* ========================================================= */
-        .top-bar { 
-            background: var(--topbar-bg); color: white; height: 65px; padding: 0 15px; 
-            display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; 
-            border-bottom: 2px solid var(--active-gold); box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
-        }
-        
-        .menu-toggle-btn { 
-            background: transparent; border: 1px solid var(--active-gold); color: var(--active-gold); 
-            font-size: 1.5rem; cursor: pointer; width: 42px; height: 42px; padding: 0; flex-shrink: 0;
-            border-radius: 6px; display: flex; align-items: center; justify-content: center; 
-            transition: all 0.3s; padding-bottom: 3px; line-height: 1;
-        }
-        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.15); box-shadow: inset 0 0 8px rgba(212,175,55,0.3); }
-        
-        .top-bar-title { 
-            display: flex; align-items: center; gap: 10px; flex-grow: 1; 
-            overflow: hidden; white-space: nowrap; 
-        }
-        
-        .local-name {
-            font-family: 'Georgia', serif; font-size: 1.25rem; font-weight: bold; color: #FFFFFF;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px;
-        }
-
-        .badge-elegant {
-            font-size: 0.75rem; font-family: 'Segoe UI', sans-serif; font-weight: bold; 
-            background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
-            color: var(--active-gold); padding: 5px 12px; border-radius: 4px; 
-            letter-spacing: 1.5px; border: 1px solid var(--active-gold); text-transform: uppercase;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            max-width: 140px; flex-shrink: 1;
-        }
-
-        /* ========================================================= */
-        /* MENÚ LATERAL                                              */
-        /* ========================================================= */
-        .sidebar { 
-            position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; 
-            background: var(--sidebar-bg); color: #E0E0E0; padding: 20px 15px; 
-            display: flex; flex-direction: column; gap: 4px; z-index: 1002; 
-            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            box-shadow: 5px 0 25px rgba(0,0,0,0.7); border-right: 1px solid var(--active-gold); overflow-y: auto; 
-        }
-        .sidebar.open { left: 0; }
-        .sidebar-brand { 
-            font-family: 'Georgia', serif; font-size: 1.1rem; color: var(--active-gold);
-            text-align: center; padding-bottom: 20px; border-bottom: 1px solid #222; 
-            margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase;
-        }
-        .sidebar .tab-btn { 
-            background: transparent; color: #CCCCCC; border: none; text-align: left; 
-            padding: 14px 15px; width: 100%; border-radius: 6px; cursor: pointer; 
-            font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s ease;
-        }
-        .sidebar .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #FFF; border-left: 3px solid var(--active-gold); }
-        .sidebar .tab-btn.active { 
-            background: linear-gradient(90deg, #9D7B24, #5c4714) !important; 
-            color: #FFFFFF !important; font-weight: bold; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2); border-left: none;
-        }
-        .sidebar-overlay { 
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(3px); z-index: 1001; 
-            display: none; opacity: 0; transition: opacity 0.3s;
-        }
-        .sidebar-overlay.active { display: block; opacity: 1; }
-        
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: #CCC; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--active-gold); }
-
-        /* ========================================================= */
-        /* CONTENEDORES PRINCIPALES Y BUSCADOR                       */
-        /* ========================================================= */
-        .main-content { max-width: 950px; margin: 0 auto; padding: 30px 20px; padding-bottom: 130px; }
-        .card { 
-            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
-            border-top: 4px solid var(--crimson);
-        }
-        h2 { 
-            color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; 
-            border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px;
-            display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px;}
-        @media (max-width: 900px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 600px) { .grid-4 { grid-template-columns: 1fr; } }
-
-        input, select { 
-            width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 4px; 
-            font-size: 0.95rem; font-family: 'Roboto', sans-serif; background: #fff; color: var(--text);
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); outline: none; transition: all 0.3s ease;
-            border-left: 4px solid #DDD;
-        }
-        input:focus, select:focus { border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
-        
-        /* ========================================================= */
-        /* LISTADO DE PRECIOS Y MENSAJES COMERCIALES DE STOCK        */
-        /* ========================================================= */
         .cat-header { 
-            background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); 
-            color: var(--active-gold); padding: 14px 18px; margin-top: 20px; margin-bottom: 0; 
-            border: 2px solid var(--active-gold); border-bottom: none;
-            font-weight: bold; width: 100%; font-family: 'Georgia', serif;
-            letter-spacing: 1.5px; font-size: 1.05rem; border-top-left-radius: 6px; border-top-right-radius: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary)); 
+            color: var(--active-gold); 
+            padding: 12px 18px; 
+            margin-top: 20px; 
+            border: 1px solid var(--active-gold); 
+            font-weight: bold; 
+            font-family: var(--title-font);
+            letter-spacing: 1.5px; 
+            font-size: 1.05rem; 
+            border-top-left-radius: var(--border-radius); 
+            border-top-right-radius: var(--border-radius);
+            text-transform: uppercase;
         }
-        
+
+        /* Listado estilo cebra */
+        .zebra-list {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
         .zebra-list .consulta-item { 
-            border-bottom: 1px solid var(--active-gold); padding: 18px 15px; font-size: 0.95rem; 
-            display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; 
-            border-left: 2px solid var(--active-gold); border-right: 2px solid var(--active-gold);
-            transition: background 0.2s;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2); 
+            padding: 16px 18px; 
+            font-size: 0.95rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            gap: 15px; 
+            background-color: var(--card-bg);
+            transition: background 0.2s ease;
         }
-        .zebra-list .consulta-item:hover { background-color: rgba(212, 175, 55, 0.05); }
-        
-        .item-info { display: flex; flex-direction: column; gap: 4px; }
-        .item-name { font-weight: bold; color: var(--text); font-size: 1.05rem; }
-        .item-cat { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        /* Estilos para el indicador comercial de inventario */
+
+        .zebra-list .consulta-item:nth-child(even) { 
+            background-color: rgba(212, 175, 55, 0.04); 
+        }
+
+        .zebra-list .consulta-item:hover { 
+            background-color: rgba(212, 175, 55, 0.12); 
+        }
+
+        .item-info { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+        }
+
+        .item-name { 
+            font-weight: bold; 
+            color: var(--text); 
+            font-size: 1.05rem; 
+            font-family: var(--main-font);
+        }
+
+        .item-cat { 
+            font-size: 0.8rem; 
+            color: var(--text); 
+            opacity: 0.7;
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
+
+        /* Indicador comercial de stock */
         .stock-indicator {
-            font-size: 0.85rem; font-style: italic; font-weight: 600;
-            display: inline-block; padding-bottom: 3px; letter-spacing: 0.5px;
-            margin-top: 6px;
+            font-size: 0.82rem; 
+            font-style: italic; 
+            font-weight: 600;
+            display: inline-block; 
+            padding-bottom: 2px; 
+            letter-spacing: 0.5px;
+            margin-top: 4px;
         }
         .stock-success { color: var(--success); border-bottom: 2px solid var(--success); }
         .stock-warning { color: var(--warning); border-bottom: 2px solid var(--warning); }
         .stock-danger { color: var(--danger); border-bottom: 2px solid var(--danger); }
-        
-        .precio-stack { text-align: right; line-height: 1.5; background: #fff; padding: 10px 15px; border-radius: 6px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .precio-stack strong { color: var(--crimson-dark); font-size: 1.25rem; font-family: 'Georgia', serif; display: block; margin-bottom: 5px; }
-        .precio-stack .bs { font-size: 0.9rem; color: #27ae60; font-weight: bold; }
-        .precio-stack .cop { font-size: 0.9rem; color: #d35400; font-weight: bold; }
-        .precio-stack .eur { font-size: 0.9rem; color: #8e44ad; font-weight: bold; }
 
+        /* Pila de Precios Multi-moneda */
+        .precio-stack { 
+            text-align: right; 
+            line-height: 1.4; 
+            background: var(--input-bg); 
+            padding: 10px 15px; 
+            border-radius: var(--border-radius); 
+            border: 1px solid rgba(212, 175, 55, 0.4); 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            min-width: 140px;
+        }
+
+        .precio-stack .label-precio {
+            font-size: 0.7rem; 
+            color: var(--text); 
+            opacity: 0.8;
+            font-weight: bold; 
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .precio-stack .monto-base { 
+            color: var(--primary); 
+            font-size: 1.25rem; 
+            font-family: var(--title-font); 
+            font-weight: bold;
+            display: block; 
+            margin-bottom: 4px; 
+        }
+
+        .precio-stack .monto-secundario { 
+            font-size: 0.88rem; 
+            font-weight: bold; 
+            display: block;
+            font-family: var(--main-font);
+        }
+
+        .monto-secundario.c-ves { color: #27ae60; }
+        .monto-secundario.c-cop { color: #d35400; }
+        .monto-secundario.c-eur { color: #8e44ad; }
+        .monto-secundario.c-gen { color: var(--text); opacity: 0.9; }
+
+        @media (max-width: 600px) {
+            .zebra-list .consulta-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .precio-stack {
+                width: 100%;
+                text-align: left;
+                margin-top: 8px;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div id="loading_overlay">
-    <div class="loading-card">
-        <div class="spinner-luxury"></div>
-        <div class="loading-title">Actualizando Catálogo</div>
-        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Sincronizando la información de precios y disponibilidad con los servidores seguros...</div>
-    </div>
-</div>
+<div class="wrapper" id="main_wrapper" style="display: none;">
+    <main class="main-content">
+        
+        <h1 style="color: var(--primary); font-family: var(--title-font); text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; margin-top: 0;">
+            💰 Consulta General de Precios
+        </h1>
 
-<div class="wrapper">
-
-    <div class="top-bar">
-        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">
-            Cargando...
-        </div>
-    </div>
-
-    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
-    <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">MENÚ EJECUTIVO</div>
-        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
-        <a href="precios.html" class="tab-btn active">💰 Precios</a>
-        <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
-        <a href="recargas.html" class="tab-btn">📱 Recargas Telefónicas</a>
-        <a href="wifi.html" class="tab-btn">📶 WiFi Ticket</a>
-        <a href="avances.html" class="tab-btn">💸 Avances / Retiros</a>
-        <a href="conversor.html" class="tab-btn">🧮 Conversor Monetario</a>
-        <a href="facturar.html" class="tab-btn">🛒 Facturar Venta</a>
-        <a href="caja_registradora.html" class="tab-btn">🧾 Caja Registradora</a>
-        <a href="control_inventario.html" class="tab-btn">📋 Control Inventario</a>
-        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
-        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
-        <a href="proveedores.html" class="tab-btn">🚚 Proveedores</a>
-        <a href="pagos_servicios.html" class="tab-btn">🧾 Pagos y Servicios</a>
-        <a href="conciliacion_pto.html" class="tab-btn">💳 Conciliación Pto</a>
-        <a href="conciliacion_bio.html" class="tab-btn">💳 Conciliación Bio</a>
-        <a href="empleados.html" class="tab-btn">🧑‍💼 Vendedores</a>
-        <a href="clientes.html" class="tab-btn">👥 Clientes y Fiados</a>
-        <a href="gestion_catalogo.html" class="tab-btn">📁 Gestión de Catálogo</a>
-        <a href="configuracion.html" class="tab-btn">⚙️ Configuracion</a>
-    </div>
-
-    <div class="main-content">
-        <div class="card">
-            <h2 class="serif-font">💰 Consulta General de Precios</h2>
-            <div class="grid-4">
-                <input type="text" id="buscar_caja" placeholder="🔍 Buscar producto..." oninput="renderConsultaInicial()">
-                <select id="orden_inicial" onchange="renderConsultaInicial()">
-                    <option value="az" selected>Ordenar Alfabéticamente</option>
-                    <option value="cat">Ordenar por Categoría</option>
-                </select>
-                <select id="filtro_stock_caja" style="border-left-color: var(--active-gold);" onchange="renderConsultaInicial()">
-                    <option value="con_stock" selected>Ocultar Agotados (Disponibles)</option>
-                    <option value="todos">Mostrar Todo el Catálogo</option>
-                </select>
-            </div>
-            
-            <div id="lista_inicial_contenido" class="zebra-list">
-                <p style="text-align:center; color:var(--muted); font-style: italic;">Preparando el catálogo...</p>
+        <div class="card-busqueda">
+            <div class="grid-2" style="grid-template-columns: 2fr 1fr 1fr; gap: 12px;">
+                <div>
+                    <label style="font-weight: bold; font-size: 0.85rem;">Buscar Producto:</label>
+                    <input type="text" id="buscar_caja" placeholder="🔍 Escriba un nombre..." oninput="UIPrecios.renderConsulta()">
+                </div>
+                <div>
+                    <label style="font-weight: bold; font-size: 0.85rem;">Ordenamiento:</label>
+                    <select id="orden_inicial" onchange="UIPrecios.renderConsulta()">
+                        <option value="az" selected>Alfabéticamente (A-Z)</option>
+                        <option value="cat">Por Categoría</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight: bold; font-size: 0.85rem;">Filtro de Inventario:</label>
+                    <select id="filtro_stock_caja" onchange="UIPrecios.renderConsulta()">
+                        <option value="con_stock" selected>Solo Disponibles</option>
+                        <option value="todos">Todo el Catálogo</option>
+                    </select>
+                </div>
             </div>
         </div>
-    </div>
+
+        <div id="lista_inicial_contenido" class="zebra-list">
+            <p style="text-align:center; color: var(--text); padding: 30px; font-style: italic;">Preparando el catálogo de productos...</p>
+        </div>
+
+    </main>
 </div>
 
 <script>
-    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
-    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
-    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+    const UIPrecios = {
+        catalogo: [],
+        configuracion: {},
 
-    let CURRENT_LOCAL_ID = null;
-    let CONFIG_GLOBAL = {};
-    let CATALOGO = [];
+        async init() {
+            UIBase.mostrarCargando("Sincronizando Catálogo", "Cargando precios y tasas del sistema...");
+            try {
+                const estado = await AppMotor.inicializar();
+                this.configuracion = estado.configuracion || {};
+                this.catalogo = estado.catalogo || [];
 
-    window.addEventListener('DOMContentLoaded', async () => {
-        const { data } = await window.supabaseClient.auth.getSession();
-        if (data && data.session) await sincronizarSesionSupabase(data.session);
-        else window.location.href = 'index.html';
+                const nombreLocal = estado.datosLocal?.nombre || this.configuracion?.identidad?.nombre || 'Sistema';
+                UIBase.sincronizarNombreLocal(nombreLocal);
+
+                // Verificación de bloqueo configurado desde la matriz de permisos
+                const permisos = this.configuracion.permisos_modulos || {};
+                const moduloBloqueado = permisos.precios && permisos.precios.general;
+                const tienePin = !!this.configuracion.identidad?.admin_pass;
+
+                if (tienePin && moduloBloqueado) {
+                    UIBase.ocultarCargando();
+                    UIBase.bloquearPantallaPIN((pin) => {
+                        const esValido = AppMotor.verificarPinAdministrador(pin);
+                        if (esValido) {
+                            document.getElementById('main_wrapper').style.display = 'block';
+                            UIPrecios.renderConsulta();
+                        }
+                        return esValido;
+                    });
+                } else {
+                    UIBase.ocultarCargando();
+                    document.getElementById('main_wrapper').style.display = 'block';
+                    this.renderConsulta();
+                }
+            } catch (err) {
+                UIBase.ocultarCargando();
+                if (err.message === "NoAutorizado") {
+                    window.location.href = 'index.html';
+                } else {
+                    alert("Error al cargar la consulta de precios: " + err.message);
+                }
+            }
+        },
+
+        /*
+         * Detecta la moneda y calcula con precisión según las reglas de multiplicación o división
+         */
+        convertirYCalcularMonedas(precioOriginal, monedaProducto) {
+            const tasasConfig = this.configuracion.tasas || { moneda_base: 'USD', secundarias: [] };
+            const mBaseSistema = tasasConfig.moneda_base || 'USD';
+            const secundarias = tasasConfig.secundarias || [];
+
+            let precioMBase = parseFloat(precioOriginal) || 0;
+
+            // 1. Si el producto viene en una moneda distinta a la base, convertir a la moneda base del sistema
+            if (monedaProducto && monedaProducto !== mBaseSistema) {
+                const configMonedaProd = secundarias.find(s => s.code === monedaProducto);
+                if (configMonedaProd && parseFloat(configMonedaProd.tasa) > 0) {
+                    const tasa = parseFloat(configMonedaProd.tasa);
+                    if (configMonedaProd.operacion === 'dividir') {
+                        precioMBase = precioMBase * tasa;
+                    } else {
+                        precioMBase = precioMBase / tasa;
+                    }
+                }
+            }
+
+            // 2. Calcular montos para la moneda base y solo las monedas secundarias activas/configuradas
+            const conversiones = [];
+
+            // Moneda Base
+            conversiones.push({
+                code: mBaseSistema,
+                monto: precioMBase,
+                esBase: true
+            });
+
+            // Monedas secundarias disponibles
+            secundarias.forEach(sec => {
+                const tasa = parseFloat(sec.tasa) || 0;
+                if (tasa > 0) {
+                    let montoCalculado = 0;
+                    if (sec.operacion === 'dividir') {
+                        montoCalculado = precioMBase / tasa;
+                    } else { // 'multiplicar'
+                        montoCalculado = precioMBase * tasa;
+                    }
+
+                    conversiones.push({
+                        code: sec.code,
+                        monto: montoCalculado,
+                        esBase: false
+                    });
+                }
+            });
+
+            return conversiones;
+        },
+
+        renderConsulta() {
+            const query = (document.getElementById('buscar_caja').value || "").toLowerCase().trim();
+            const orden = document.getElementById('orden_inicial').value;
+            const filtroStock = document.getElementById('filtro_stock_caja').value;
+
+            // Filtrado por búsqueda de texto
+            let items = this.catalogo.filter(p => (p.nombre || "").toLowerCase().includes(query));
+
+            // Filtro por stock
+            if (filtroStock === 'con_stock') {
+                items = items.filter(p => parseFloat(p.stock || 0) > 0);
+            }
+
+            // Ordenamiento
+            items.sort((a, b) => {
+                const nomA = this.limpiarNombre(a.nombre);
+                const nomB = this.limpiarNombre(b.nombre);
+                if (orden === 'cat') {
+                    const catA = (a.categoria || "General").toLowerCase();
+                    const catB = (b.categoria || "General").toLowerCase();
+                    return catA.localeCompare(catB) || nomA.localeCompare(nomB);
+                }
+                return nomA.localeCompare(nomB);
+            });
+
+            const contenedor = document.getElementById('lista_inicial_contenido');
+            if (items.length === 0) {
+                contenedor.innerHTML = '<div style="color: var(--text); text-align:center; padding: 25px; font-style: italic; background: var(--card-bg);">No se encontraron productos que coincidan con la búsqueda.</div>';
+                return;
+            }
+
+            let html = "";
+            let categoriaActual = "";
+
+            items.forEach(p => {
+                const catProducto = p.categoria || "General";
+
+                // Encabezados de categoría en caso de elegir ordenamiento por categoría
+                if (orden === 'cat' && catProducto !== categoriaActual) {
+                    categoriaActual = catProducto;
+                    html += `<div class="cat-header">${categoriaActual}</div>`;
+                }
+
+                // Cálculo de precios e indicadores
+                const preciosCalculados = this.convertirYCalcularMonedas(p.precio_base || 0, p.moneda_base || 'USD');
+                const stockVal = parseFloat(p.stock) || 0;
+                const uAmarillo = parseFloat(p.umbral_amarillo) || 5;
+                const uRojo = parseFloat(p.umbral_rojo) || 0;
+
+                let msgText = "Disponible en Stock";
+                let msgClass = "stock-success";
+
+                if (stockVal <= uRojo) {
+                    msgText = "Mercancía Agotada";
+                    msgClass = "stock-danger";
+                } else if (stockVal <= uAmarillo) {
+                    msgText = "Últimas Unidades";
+                    msgClass = "stock-warning";
+                }
+
+                // Renderizado de lista de precios
+                let stackHtml = '<div class="precio-stack"><div class="label-precio">💰 Precio</div>';
+                
+                preciosCalculados.forEach(c => {
+                    const montoFormateado = this.formatearNumero(c.monto, c.code === 'COP' ? 0 : 2);
+                    if (c.esBase) {
+                        stackHtml += `<strong class="monto-base">${c.code} ${montoFormateado}</strong>`;
+                    } else {
+                        const claseColor = c.code === 'VES' ? 'c-ves' : c.code === 'COP' ? 'c-cop' : c.code === 'EUR' ? 'c-eur' : 'c-gen';
+                        stackHtml += `<span class="monto-secundario ${claseColor}">${c.code} ${montoFormateado}</span>`;
+                    }
+                });
+                stackHtml += '</div>';
+
+                html += `
+                    <div class="consulta-item">
+                        <div class="item-info">
+                            <span class="item-name">${this.limpiarNombre(p.nombre)}</span>
+                            ${orden !== 'cat' ? `<span class="item-cat">Categoría: ${catProducto}</span>` : ''}
+                            <div><span class="stock-indicator ${msgClass}">${msgText}</span></div>
+                        </div>
+                        ${stackHtml}
+                    </div>
+                `;
+            });
+
+            contenedor.innerHTML = html;
+        },
+
+        limpiarNombre(n) { 
+            return (n || "").replace(/box_-/g, "").trim(); 
+        },
+
+        formatearNumero(valor, decimales = 2) {
+            if (isNaN(valor) || valor == null) return "0";
+            let num = parseFloat(valor);
+            if (decimales === 0) num = Math.round(num);
+            let partes = num.toFixed(decimales).split('.');
+            partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            if (decimales > 0 && partes[1] === "00") return partes[0];
+            return partes.length > 1 ? partes[0] + "," + partes[1] : partes[0];
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        UIPrecios.init();
     });
-
-    async function sincronizarSesionSupabase(session) {
-        try {
-            const userId = session.user.id;
-            let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
-            if (perfil && perfil.local_id) {
-                CURRENT_LOCAL_ID = perfil.local_id;
-            } else {
-                let { data: localesList } = await window.supabaseClient.from('locales').select('id, nombre').limit(1);
-                if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
-            }
-
-            let conf = null, localData = null;
-            try {
-                let resConf = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
-                conf = resConf.data;
-            } catch(e) { console.warn("Sin configuración"); }
-
-            try {
-                let resLocal = await window.supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
-                localData = resLocal.data;
-            } catch(e) { console.warn("Sin local"); }
-
-            if (conf) {
-                CONFIG_GLOBAL = conf;
-                actualizarVisibilidadMonedas();
-            }
-
-            let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Empresarial';
-            let etiquetaModulo = "Precios"; 
-
-            document.getElementById('main_top_title').innerHTML = `
-                <span class="local-name">🏪 ${nombreLocal}</span>
-                <span class="badge-elegant">📌 ${etiquetaModulo}</span>
-            `;
-
-            await cargarTodoDesdeSupabase(session.user.email, perfil?.nombre);
-            
-            setTimeout(() => {
-                document.getElementById('loading_overlay').style.opacity = '0';
-                document.getElementById('loading_overlay').style.transition = 'opacity 0.8s ease';
-                setTimeout(() => {
-                    document.getElementById('loading_overlay').style.display = 'none';
-                }, 800);
-            }, 1200);
-
-        } catch (error) {
-            console.error("Error al inicializar:", error);
-            document.getElementById('loading_overlay').style.display = 'none';
-        }
-    }
-
-    async function cargarTodoDesdeSupabase(email, nombrePerfil) {
-        if(!CURRENT_LOCAL_ID) return;
-        try {
-            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
-            if (conf) {
-                CONFIG_GLOBAL = conf;
-                actualizarVisibilidadMonedas();
-            }
-
-            let { data: reqCat } = await window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
-            if(reqCat) {
-                CATALOGO = reqCat.map(p => ({
-                    uuid: p.id, nom: p.nombre, cat: p.categoria || "General", 
-                    base: p.precio_base || 0, mBase: p.moneda_base || 'USD', 
-                    stock: parseFloat(p.stock) || 0, 
-                    umbralAmarillo: parseFloat(p.umbral_amarillo) || 5, 
-                    umbralRojo: parseFloat(p.umbral_rojo) || 0
-                }));
-            }
-            renderConsultaInicial();
-        } catch(e) { console.error(e); }
-    }
-
-    function toggleSidebar() { 
-        document.getElementById('sidebar').classList.toggle('open'); 
-        document.getElementById('sidebar-overlay').classList.toggle('active'); 
-    }
-
-    function renderConsultaInicial() {
-        let q = document.getElementById('buscar_caja').value.toLowerCase();
-        let ord = document.getElementById('orden_inicial').value;
-        let filtroStock = document.getElementById('filtro_stock_caja').value;
-        
-        let arr = CATALOGO.filter(p => p.nom.toLowerCase().includes(q));
-        if (filtroStock === 'con_stock') arr = arr.filter(p => parseFloat(p.stock) > 0);
-        
-        arr.sort((a,b) => ord === 'cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom))); 
-        
-        let html = "";
-        let tasas = CONFIG_GLOBAL.tasas || { ves: 1, cop: 1, eur: 1 };
-        let tv = parseFloat(tasas.ves) || 1, tc = parseFloat(tasas.cop) || 1, te = parseFloat(tasas.eur) || 1;
-        let categoriaActual = "";
-
-        arr.forEach(p => { 
-            if (ord === 'cat' && p.cat !== categoriaActual) {
-                categoriaActual = p.cat;
-                html += `<div class="cat-header">${categoriaActual.toUpperCase()}</div>`;
-            }
-
-            let b = convertirA_USD(p.base, p.mBase || 'USD'); 
-            let stockVal = p.stock;
-            
-            // Lógica Comercial de Stock (Sin números)
-            let msgText = "Disponible en Stock";
-            let msgClass = "stock-success";
-            
-            if (stockVal <= p.umbralRojo) {
-                msgText = "Mercancía Agotada";
-                msgClass = "stock-danger";
-            } else if (stockVal <= p.umbralAmarillo) {
-                msgText = "Últimas Unidades";
-                msgClass = "stock-warning";
-            }
-            
-            let precioHtml = `<div class="precio-stack">
-                <div style="font-size:0.75rem; color:var(--text-light); font-weight:bold; letter-spacing: 1px;">💰 PRECIO</div>
-                <strong>$${formatearNumero(b)}</strong>
-                <div class="bs moneda-bs">${formatearNumero(b * tv)} BS</div>
-                <div class="cop moneda-cop">${formatearNumero(b * tc, 0)} COP</div>
-                <div class="eur moneda-eur">${formatearNumero(b * te)} EUR</div>
-            </div>`;
-
-            html += `<div class="consulta-item">
-                <div class="item-info">
-                    <span class="item-name">${limpiarNombre(p.nom)}</span>
-                    ${ord !== 'cat' ? `<span class="item-cat">Categoría: ${p.cat}</span>` : ''}
-                    <div><span class="stock-indicator ${msgClass}">${msgText}</span></div>
-                </div>
-                ${precioHtml}
-            </div>`; 
-        });
-        
-        if (html !== "") {
-            html += `<div style="border-bottom: 3px solid var(--active-gold); border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; height: 3px; background: transparent; width: 100%;"></div>`;
-        }
-        
-        document.getElementById('lista_inicial_contenido').innerHTML = html || '<p style="color:var(--text-light); text-align:center; padding: 20px; font-style: italic; border: 1px solid var(--border);">No se encontraron productos que coincidan con su búsqueda.</p>';
-    }
-
-    function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
-    function formatearNumero(v, d = 2) { 
-        if (isNaN(v) || v == null) return "0"; 
-        let num = parseFloat(v); if (d === 0) num = Math.round(num); 
-        let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
-        if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
-    }
-    function convertirA_USD(m, mon) { 
-        let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 };
-        return parseFloat(mon === 'BS' ? m / t.ves : mon === 'COP' ? m / t.cop : mon === 'EUR' ? m / t.eur : m); 
-    }
-    function actualizarVisibilidadMonedas() { 
-        let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 };
-        parseFloat(t.ves) === 0 ? document.body.classList.add('hide-bs') : document.body.classList.remove('hide-bs');
-        parseFloat(t.cop) === 0 ? document.body.classList.add('hide-cop') : document.body.classList.remove('hide-cop');
-        parseFloat(t.eur) === 0 ? document.body.classList.add('hide-eur') : document.body.classList.remove('hide-eur'); 
-    }
 </script>
 </body>
 </html>
