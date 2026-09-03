@@ -3,601 +3,506 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuracion - Panel Administrativo</title>
-    <!-- Librería Supabase -->
+    <title>Configuración - Sistema Administrativo</title>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Fuentes Ultra-Premium -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* ========================================================= */
-        /* VARIABLES DE ESTILO PREMIUM (ROJO Y DORADO)               */
-        /* ========================================================= */
-        :root {
-            --topbar-bg: #000000; 
-            --sidebar-bg: #000000; 
-            --active-gold: #D4AF37; 
-            
-            --bg: #1a050a; /* Fondo general oscuro para resaltar tarjetas */
-            --primary: #3b0918; /* Rojo oscuro ultra-premium */
-            --secondary: #7c1126; /* Rojo brillante */
-            --danger: #b30000; 
-            --success: #2ecc71; 
-            --warning: #f39c12; 
-            --info: #aa8c2c; 
-            --text: #222; 
-            --border: #d4af37; /* Dorado para bordes */
-            --card-bg: #ffffff; 
-            --item-bg: #fdf8f0; 
-            --muted: #666;
-            --input-bg: #fdf8f0;
-        }
-
-        /* Variables adaptadas al modo oscuro lujoso */
-        body.dark-mode {
-            --bg: #0a0103; 
-            --primary: #2a0510; 
-            --secondary: #4a0917; 
-            --text: #fdf8f0; 
-            --card-bg: #121212; 
-            --item-bg: #1e1e1e; 
-            --muted: #aaa;
-            --input-bg: #1e1e1e;
-        }
-
-        body.hide-bs .moneda-bs { display: none !important; }
-        body.hide-cop .moneda-cop { display: none !important; }
-        body.hide-eur .moneda-eur { display: none !important; }
-
-        * { box-sizing: border-box; }
-        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; scroll-behavior: smooth; transition: background 0.3s, color 0.3s; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
-
-        /* ========================================================= */
-        /* BARRA SUPERIOR */
-        /* ========================================================= */
-        .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.5); border-bottom: 2px solid var(--border); }
-        .menu-toggle-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border); color: var(--active-gold); font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
-        .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.3); }
-        .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; display: flex; align-items: center; color: white; font-family: 'Playfair Display', serif; }
-
-        /* ========================================================= */
-        /* MENÚ LATERAL */
-        /* ========================================================= */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 4px 0 15px rgba(0,0,0,0.6); overflow-y: auto; border-right: 2px solid var(--border); }
-        .sidebar.open { left: 0; }
-        .sidebar-brand { font-size: 1.4rem; font-family: 'Playfair Display', serif; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #333333; margin-bottom: 10px; letter-spacing: 2px; color: var(--active-gold); text-transform: uppercase; }
-        .sidebar .tab-btn { background: none; color: #ddd; border: none; text-align: left; padding: 12px 15px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 0.95rem; display: block; text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s; border-left: 3px solid transparent; }
-        .sidebar .tab-btn:hover { background: rgba(212, 175, 55, 0.1); color: white; border-left: 3px solid var(--active-gold); }
-        .sidebar .tab-btn.active { background: linear-gradient(90deg, var(--active-gold) 0%, #aa8c2c 100%) !important; color: #000000 !important; font-weight: bold; border-left: 4px solid #ffffff; box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 1001; display: none; backdrop-filter: blur(2px); }
-        .sidebar-overlay.active { display: block; }
-
-        /* ========================================================= */
-        /* CONTENEDORES Y ACORDEÓN DESPLEGABLE LUGURY                */
-        /* ========================================================= */
-        .main-content { padding: 20px; padding-bottom: 130px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
-        
-        .card { 
-            background: var(--card-bg); border-radius: 6px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
-            border: 1px solid var(--border);
-            position: relative; overflow: hidden;
-            transition: background 0.3s;
-        }
-        
-        /* Cabecera del Acordeón - ROJO CARMESÍ Y DORADO */
-        .card-header {
-            padding: 20px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
-            transition: filter 0.3s ease; user-select: none; border-bottom: 2px solid var(--border);
-        }
-        .card-header:hover { filter: brightness(1.15); }
-        .card-header h2 { 
-            color: var(--active-gold); margin: 0; font-size: 1.25rem; font-family: 'Playfair Display', serif; 
-            text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0; display: flex; align-items: center; gap: 10px;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
-        }
-        .accordion-icon {
-            font-size: 1.2rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-        
-        /* Cuerpo del Acordeón (Oculto por defecto) */
-        .card-body {
-            max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0;
-            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease;
-            background: var(--card-bg); 
-        }
-        .card.open .card-body {
-            max-height: 2000px; padding: 25px; opacity: 1;
-            transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease;
-        }
-        .card.open .accordion-icon { transform: rotate(180deg); }
-
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
-        
-        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 12px; color: var(--active-gold); text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
-        
-        input, select { 
-            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid rgba(212, 175, 55, 0.6); border-radius: 4px; 
-            font-size: 1rem; background: var(--input-bg); transition: all 0.3s ease; color: var(--text); border-left: 4px solid var(--active-gold); font-family: 'Roboto', sans-serif;
-        }
-        input:focus, select:focus { outline: none; background: var(--card-bg); border-color: var(--primary); border-left-color: var(--primary); box-shadow: 0 0 10px rgba(124, 17, 38, 0.15); }
-
-        button { font-family: 'Playfair Display', serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
-        button:active { transform: scale(0.98); }
-        
-        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
-        .btn-danger { background: var(--danger); color: white; border: 1px solid darkred; }
-
-        /* ========================================================= */
-        /* MODALES LUXURY Y PANTALLAS DE BLOQUEO                     */
-        /* ========================================================= */
-        #loading_overlay, #pantalla_bloqueo_admin {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, rgba(124, 17, 38, 0.95), rgba(59, 9, 24, 0.99));
-            z-index: 1000000; display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(8px); transition: opacity 0.5s ease;
-        }
-        
-        /* Modal General */
-        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
-        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 4px; width: 90%; max-width: 500px; max-height: 90vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
-        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-family: Arial, sans-serif; padding:0; margin:0;}
-        .modal-close-btn:hover { background: var(--danger); transform: scale(1.05); color: #FFF; }
-        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
-        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
-
-        /* Estilos del Loading Modal & Spinner */
-        .loading-box {
-            background: var(--card-bg); padding: 40px; border-radius: 4px;
-            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            border: 2px solid var(--active-gold);
-            position: relative; max-width: 400px; width: 90%;
-        }
-        .loading-box::before, .loading-box::after { content: ''; position: absolute; width: 30px; height: 30px; border: 2px solid var(--active-gold); }
-        .loading-box::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
-        .loading-box::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
-
-        .spinner-luxury {
-            width: 50px; height: 50px; border: 4px solid rgba(212, 175, 55, 0.2);
-            border-left-color: var(--active-gold); border-radius: 50%;
-            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
-        }
-
-        .loading-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-        .loading-subtitle { font-family: 'Roboto', sans-serif; font-size: 0.95rem; color: var(--muted); line-height: 1.5; }
-    </style>
+    <script src="motor.js"></script>
+    <script src="plantilla_base.js"></script>
 </head>
 <body>
 
-<!-- MODAL DE CARGA INICIAL (CON SPINNER) -->
-<div id="loading_overlay">
-    <div class="loading-box">
-        <div class="spinner-luxury"></div>
-        <div class="loading-title">Sincronizando Módulo</div>
-        <div class="loading-subtitle">"El éxito está en los detalles."<br><br>Cargando configuraciones y parámetros...</div>
-    </div>
-</div>
-
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (SIN SPINNER ESTÁTICO) -->
-<div id="pantalla_bloqueo_admin" style="display: none;">
-    <div class="loading-box" style="padding: 30px;">
-        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-size: 1.4rem; padding-bottom: 10px; margin-bottom: 15px; font-family: 'Playfair Display', serif;">🔒 ACCESO PROTEGIDO</h2>
-        <p style="font-size: 0.95rem; color: var(--muted); margin-bottom: 20px; font-family:'Roboto', sans-serif;">Introduce el PIN de Administrador para gestionar la Configuración:</p>
-        
-        <div style="position: relative; margin-bottom: 20px;">
-            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace; background: var(--bg);" onkeyup="if(event.key==='Enter') verificarPinBody()">
-            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
-        </div>
-
-        <div id="mensaje_carga_pin" style="display: none; margin-bottom: 15px;">
-            <div class="spinner-luxury" style="width: 25px; height: 25px; border-width: 2px; margin: 0 auto 8px auto;"></div>
-            <span style="color: var(--success); font-weight: bold; font-size: 1rem; font-family: 'Playfair Display', serif;">Desbloqueando módulo...</span>
-        </div>
-
-        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()" style="margin-top: 0; font-size: 1rem; padding: 14px; letter-spacing: 1.5px;">AUTENTICAR</button>
-        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">VOLVER AL INICIO</button>
-    </div>
-</div>
-
-<!-- MODAL GLOBAL -->
-<div id="global_modal" class="custom-modal-overlay">
-    <div class="custom-modal-box">
-        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
-        <div id="global_modal_title" class="custom-modal-title">Título</div>
-        <div id="global_modal_body"></div>
-    </div>
-</div>
-
-<!-- SISTEMA PRINCIPAL -->
 <div class="wrapper" id="main_wrapper" style="display: none;">
-    
-    <!-- BARRA SUPERIOR -->
-    <div class="top-bar">
-        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <div class="top-bar-title" id="main_top_title">Panel Administrativo</div>
-    </div>
+    <main class="main-content">
+        <h1 style="color: var(--primary); font-family: var(--title-font); text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px;">Ajustes del Sistema</h1>
 
-    <!-- MENÚ LATERAL -->
-    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
-    <div id="sidebar" class="sidebar">
-        <div class="sidebar-brand">MENÚ CENTRAL</div>
-        <a href="principal.html" class="tab-btn">🏠 Menú Principal</a>
-        <a href="precios.html" class="tab-btn">💰 Precios</a>
-        <a href="inventario.html" class="tab-btn">📦 Inventario Físico</a>
-        <a href="recargas.html" class="tab-btn">📱 Recargas Telefónicas</a>
-        <a href="wifi.html" class="tab-btn">📶 WiFi Ticket</a>
-        <a href="avances.html" class="tab-btn">💸 Avances / Retiros</a>
-        <a href="conversor.html" class="tab-btn">🧮 Conversor Monetario</a>
-        <a href="facturar.html" class="tab-btn">🛒 Facturar Venta</a>
-        <a href="caja_registradora.html" class="tab-btn">🧾 Caja Registradora</a>
-        <a href="control_inventario.html" class="tab-btn">📋 Control Inventario</a>
-        <a href="balance.html" class="tab-btn">📊 Balance y Lotes</a>
-        <a href="capital.html" class="tab-btn">📈 Capital e Inventario</a>
-        <a href="proveedores.html" class="tab-btn">🚚 Proveedores</a>
-        <a href="pagos_servicios.html" class="tab-btn">🧾 Pagos y Servicios</a>
-        <a href="conciliacion_pto.html" class="tab-btn">💳 Conciliación Pto</a>
-        <a href="conciliacion_bio.html" class="tab-btn">💳 Conciliación Bio</a>
-        <a href="empleados.html" class="tab-btn">🧑‍💼 Vendedores</a>
-        <a href="clientes.html" class="tab-btn">👥 Clientes y Fiados</a>
-        <a href="gestion_catalogo.html" class="tab-btn">📁 Gestión de Catálogo</a>
-        <a href="configuracion.html" class="tab-btn active">⚙️ Configuracion</a>
-    </div>
-
-    <!-- CONTENIDO PRINCIPAL EN FORMATO ACORDEÓN DESPLEGABLE ROJO/DORADO -->
-    <div class="main-content">
-        
-        <!-- 1. APARIENCIA E IDENTIDAD -->
-        <div class="card">
-            <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>🖥️ 1. Apariencia e Identidad</h2>
-                <span class="accordion-icon">▼</span>
+        <!-- 1. IDENTIDAD -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-identidad', 'icon-identidad', this)">
+                <h2 class="acordeon-title">🏪 1. Identidad</h2>
+                <span id="icon-identidad" style="color: var(--active-gold);">▼</span>
             </div>
-            <div class="card-body">
+            <div id="sec-identidad" class="acordeon-content">
+                <label>Nombre del Establecimiento:</label>
+                <input type="text" id="cfg_nombre_local" placeholder="Ej: Refresquería Flor">
+                <button class="btn-info" onclick="UIConfig.guardarIdentidad()">💾 Guardar Nombre</button>
+            </div>
+        </div>
+
+        <!-- 2. SEGURIDAD Y BLOQUEO DE MÓDULOS -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-seguridad', 'icon-seguridad', this)">
+                <h2 class="acordeon-title">🔒 2. Seguridad y Permisos</h2>
+                <span id="icon-seguridad" style="color: var(--active-gold);">▼</span>
+            </div>
+            <div id="sec-seguridad" class="acordeon-content">
+                <div class="grid-2" style="margin-bottom: 20px; border-bottom: 1px solid var(--active-gold); padding-bottom: 20px;">
+                    <div>
+                        <label>Contraseña General (PIN Maestro):</label>
+                        <input type="password" id="cfg_admin_pin" placeholder="Dejar en blanco para no cambiar">
+                    </div>
+                    <div>
+                        <button class="btn-info" onclick="UIConfig.guardarPinGeneral()" style="margin-top: 28px;">💾 Guardar Contraseña</button>
+                    </div>
+                </div>
+                <h3 style="color: var(--primary); font-family: var(--title-font);">Control de Acceso por Módulos</h3>
+                <div style="overflow-x: auto;">
+                    <table class="tabla-permisos">
+                        <thead><tr><th>Módulo</th><th>🔒 General</th><th>👑 Admin</th><th>👁️ Sup</th><th>🛒 Vend</th></tr></thead>
+                        <tbody id="lista_modulos_bloqueo"></tbody>
+                    </table>
+                </div>
+                <button class="btn-info" onclick="UIConfig.guardarPermisosModulos()">💾 Guardar Matriz</button>
+            </div>
+        </div>
+
+        <!-- 3. TEMA VISUAL Y TIPOGRAFÍA (ALOJADO EN SUPABASE) -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-tema', 'icon-tema', this)">
+                <h2 class="acordeon-title">🎨 3. Tema Visual y Tipografía</h2>
+                <span id="icon-tema" style="color: var(--active-gold);">▼</span>
+            </div>
+            <div id="sec-tema" class="acordeon-content">
                 <div class="grid-2">
                     <div>
-                        <label>Nombre del Local:</label>
-                        <input type="text" id="config_nombre_local" placeholder="Ej: Refresquería Flor">
+                        <label>Seleccione la Arquitectura Visual (Estilo):</label>
+                        <select id="cfg_selector_tema">
+                            <option value="premium">🏛️ Premium (Clásico / Carmesí Sobrio)</option>
+                            <option value="oscuro">👑 Oscuro Imperial</option>
+                            <option value="navideno">🎄 Navideño</option>
+                            <option value="halloween">🎃 Halloween</option>
+                        </select>
                     </div>
                     <div>
-                        <label>Tema del Sistema:</label>
-                        <button class="btn-info" onclick="toggleDarkMode()" style="margin-top: 28px;">Alternar Modo Oscuro 🌓</button>
+                        <label>Seleccione la Tipografía General:</label>
+                        <select id="cfg_selector_tipografia">
+                            <option value="roboto">Roboto (Estándar Limpio)</option>
+                            <option value="montserrat">Montserrat & Cinzel (Elegante)</option>
+                            <option value="inter">Inter & Oswald (Moderno Ejecutivo)</option>
+                            <option value="lato">Lato & Georgia (Tradicional)</option>
+                        </select>
                     </div>
                 </div>
-                <button class="btn-info" onclick="guardarIdentidad()" style="margin-top: 25px;">💾 GUARDAR IDENTIDAD</button>
+                <button class="btn-info" onclick="UIConfig.guardarTemaYTipografia()" style="margin-top: 20px;">💾 Guardar Estilo y Tipografía en Base de Datos</button>
             </div>
         </div>
 
-        <!-- 2. TASAS DE CAMBIO -->
-        <div class="card">
-            <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>💱 2. Tasas de Cambio Globales</h2>
-                <span class="accordion-icon">▼</span>
+        <!-- 4. SISTEMA MONETARIO (AMÉRICA Y EURO) -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-monedas', 'icon-monedas', this)">
+                <h2 class="acordeon-title">💵 4. Sistema Monetario</h2>
+                <span id="icon-monedas" style="color: var(--active-gold);">▼</span>
             </div>
-            <div class="card-body">
-                <p style="font-size:0.85rem; color:var(--muted); margin-top: 0; margin-bottom: 20px; font-family:'Playfair Display', serif; font-style:italic;">Nota: Si colocas la tasa en 0, la moneda desaparecerá del sistema público de ventas.</p>
-                <div class="grid-3">
-                    <div><label>USD a BS:</label><input type="number" step="0.01" id="tasa_ves" value="1"></div>
-                    <div><label>USD a COP:</label><input type="number" id="tasa_cop" value="1"></div>
-                    <div><label>USD a EUR:</label><input type="number" step="0.01" id="tasa_eur" value="1"></div>
+            <div id="sec-monedas" class="acordeon-content">
+                <div class="grid-2">
+                    <div>
+                        <label>Moneda Base del Sistema (Actualiza símbolo sin alterar valores históricos):</label>
+                        <select id="select_moneda_base" onchange="UIConfig.actualizarVistasFormulas()"></select>
+                    </div>
+                    <div>
+                        <button class="btn-success" onclick="UIConfig.agregarFilaMonedaSecundaria()" style="margin-top: 28px;">➕ Añadir Moneda</button>
+                    </div>
                 </div>
-                <button class="btn-info" onclick="guardarTasasEstetico()" style="margin-top: 25px;">💾 GUARDAR TASAS DE CAMBIO</button>
+                <div style="margin-top: 20px;">
+                    <label>Monedas Secundarias (América y Euro):</label>
+                    <div id="contenedor_monedas_secundarias"></div>
+                </div>
+                <button class="btn-info" onclick="UIConfig.guardarEstructuraMonetaria()" style="margin-top: 20px;">💾 Guardar Moneda Base y Tasas</button>
             </div>
         </div>
 
-        <!-- 3. INTEGRACIÓN TELEGRAM -->
-        <div class="card">
-            <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>🤖 3. Integración API Telegram</h2>
-                <span class="accordion-icon">▼</span>
+        <!-- 5. TELEGRAM Y NOTIFICACIONES -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-telegram', 'icon-telegram', this)">
+                <h2 class="acordeon-title">🤖 5. Telegram</h2>
+                <span id="icon-telegram" style="color: var(--active-gold);">▼</span>
             </div>
-            <div class="card-body">
-                <label>Token del Bot:</label>
-                <input type="text" id="config_tg_token" placeholder="Ej: 123456789:ABCDefghIJKLmnopQRSTuvwxYZ">
+            <div id="sec-telegram" class="acordeon-content">
+                <label>Token del Bot de Telegram:</label>
+                <input type="text" id="cfg_tg_token">
                 <div class="grid-2" style="margin-top: 15px;">
-                    <div><label>Chat Inventarios/Backups:</label><input type="text" id="config_tg_chat_inv" placeholder="ID del grupo o chat"></div>
-                    <div><label>Chat Cierres Generales:</label><input type="text" id="config_tg_chat_cierre" placeholder="ID del grupo o chat"></div>
+                    <div><label>Chat Inventarios (ID):</label><input type="text" id="cfg_tg_inv"></div>
+                    <div><label>Chat Cierres (ID):</label><input type="text" id="cfg_tg_cierre"></div>
                 </div>
-                <label style="margin-top: 15px;">Chat Notificaciones Extras (Gastos/Avances):</label>
-                <input type="text" id="config_tg_chat_notif" placeholder="ID del grupo o chat">
-                <button class="btn-info" onclick="guardarConfigTelegram()" style="margin-top: 25px;">💾 GUARDAR ENRUTAMIENTO</button>
+                <label style="margin-top: 15px;">Chat Gastos (ID):</label>
+                <input type="text" id="cfg_tg_extras">
+                <h3 style="color: var(--primary); font-family: var(--title-font); margin-top: 25px;">Reglas</h3>
+                <label class="switch-label"><span>Enviar Resumen Cierre</span><input type="checkbox" id="cfg_notif_cierre" class="check-rol"></label>
+                <label class="switch-label"><span>Notificar Gastos</span><input type="checkbox" id="cfg_notif_gastos" class="check-rol"></label>
+                <label class="switch-label"><span>Alerta Inventario</span><input type="checkbox" id="cfg_notif_inventario" class="check-rol"></label>
+                <button class="btn-info" onclick="UIConfig.guardarTelegram()" style="margin-top: 20px;">💾 Guardar Telegram</button>
             </div>
         </div>
 
-        <!-- 4. PERMISOS Y SEGURIDAD -->
-        <div class="card">
-            <div class="card-header" onclick="toggleAcordeon(this)">
-                <h2>🔒 4. Seguridad y PIN Maestro</h2>
-                <span class="accordion-icon">▼</span>
+        <!-- 6. MANTENIMIENTO Y BORRADO DE DATOS -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-borrado', 'icon-borrado', this)">
+                <h2 class="acordeon-title">🗑️ 6. Mantenimiento de Datos</h2>
+                <span id="icon-borrado" style="color: var(--active-gold);">▼</span>
             </div>
-            <div class="card-body">
-                <p style="font-size:0.85rem; color:var(--danger); margin-top:0; margin-bottom: 20px; font-weight:bold;">Nota: La ventana de "Configuraciones" siempre estará bloqueada por defecto para evitar vulneración de accesos.</p>
-                <div class="grid-2">
+            <div id="sec-borrado" class="acordeon-content">
+                <h3 style="color: var(--primary); font-family: var(--title-font);">Borrado Detallado</h3>
+                <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 15px;">Seleccione área y rango. Acción irreversible.</p>
+                
+                <div class="grid-2" style="align-items: end; gap: 15px;">
                     <div>
-                        <label>PIN Interno de Administrador:</label>
-                        <input type="password" id="config_admin_pin" placeholder="Introduce el Nuevo PIN">
+                        <label>Módulo a Limpiar:</label>
+                        <select id="cfg_borrado_modulo">
+                            <option value="facturacion">🛒 Historial de Facturación</option>
+                            <option value="cierres_caja">🧾 Historial de Cierres</option>
+                            <option value="gastos_avances">💸 Gastos y Avances</option>
+                            <option value="movimientos_inv">📦 Movimientos Inventario</option>
+                        </select>
                     </div>
                     <div>
-                        <button class="btn-danger" onclick="guardarPinAdmin()" style="margin-top: 28px;">💾 CAMBIAR PIN</button>
+                        <label>Rango de Tiempo:</label>
+                        <select id="cfg_borrado_rango" onchange="UIConfig.toggleInputsBorrado(this.value)">
+                            <option value="todo">⚠️ Todo el Historial</option>
+                            <option value="mes">📅 Por Mes</option>
+                            <option value="ano">📆 Por Año</option>
+                        </select>
                     </div>
+                </div>
+
+                <div id="cont_borrado_mes" style="display: none; margin-top: 15px;">
+                    <label>Seleccione el Mes:</label>
+                    <input type="month" id="cfg_val_mes">
+                </div>
+                <div id="cont_borrado_ano" style="display: none; margin-top: 15px;">
+                    <label>Escriba el Año (Ej: 2026):</label>
+                    <input type="number" id="cfg_val_ano" min="2020" max="2100">
+                </div>
+
+                <button class="btn-warning" style="margin-top: 20px;" onclick="UIConfig.solicitarBorradoParcial()">🧹 Ejecutar Limpieza</button>
+
+                <div class="danger-zone">
+                    <div class="danger-title">⚠️ ZONA DE RIESGO: Borrado Global</div>
+                    <p style="font-size: 0.85rem; color: var(--text); font-weight: bold;">Restablecerá el sistema a fábrica. Elimina TODOS los datos. <strong>NO se puede deshacer.</strong></p>
+                    <button class="btn-danger" style="margin-top: 10px; width: 100%;" onclick="UIConfig.solicitarBorradoGlobal()">💥 FORMATEAR SISTEMA (BORRADO GLOBAL)</button>
                 </div>
             </div>
         </div>
 
-    </div>
+    </main>
 </div>
 
 <script>
-    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Catálogo completo de América del Norte, Central, del Sur y el Euro
+    const CATALOGO_MONEDAS = [
+        // América del Norte
+        { code: 'USD', name: '🇺🇸 Dólar estadounidense ($)' },
+        { code: 'CAD', name: '🇨🇦 Dólar canadiense (CA$)' },
+        { code: 'MXN', name: '🇲🇽 Peso mexicano ($)' },
+        // América Central y el Caribe
+        { code: 'BZD', name: '🇧🇿 Dólar beliceño (BZ$)' },
+        { code: 'CRC', name: '🇨🇷 Colón costarricense (₡)' },
+        { code: 'GTQ', name: '🇬🇹 Quetzal guatemalteco (Q)' },
+        { code: 'HNL', name: '🇭🇳 Lempira hondureño (L)' },
+        { code: 'NIO', name: '🇳🇮 Córdoba nicaragüense (C$)' },
+        { code: 'PAB', name: '🇵🇦 Balboa panameño (B/.)' },
+        { code: 'DOP', name: '🇩🇴 Peso dominicano (RD$)' },
+        { code: 'CUP', name: '🇨🇺 Peso cubano ($)' },
+        // América del Sur
+        { code: 'ARS', name: '🇦🇷 Peso argentino ($)' },
+        { code: 'BOB', name: '🇧🇴 Boliviano (Bs.)' },
+        { code: 'BRL', name: '🇧🇷 Real brasileño (R$)' },
+        { code: 'CLP', name: '🇨🇱 Peso chileno ($)' },
+        { code: 'COP', name: '🇨🇴 Peso colombiano ($)' },
+        { code: 'GYD', name: '🇬🇾 Dólar guyanés (G$)' },
+        { code: 'PYG', name: '🇵🇾 Guaraní paraguayo (₲)' },
+        { code: 'PEN', name: '🇵🇪 Sol peruano (S/)' },
+        { code: 'SRD', name: '🇸🇷 Dólar surinamés ($)' },
+        { code: 'UYU', name: '🇺🇾 Peso uruguayo ($U)' },
+        { code: 'VES', name: '🇻🇪 Bolívar venezolano (Bs.)' },
+        // Internacional / Adicional solicitado
+        { code: 'EUR', name: '🇪🇺 Euro (€)' }
+    ];
 
-    let CURRENT_LOCAL_ID = null;
-    let CONFIG_GLOBAL = {};
+    const MODULOS_SISTEMA = [
+        { id: 'precios', nombre: '💰 Precios' }, { id: 'inventario', nombre: '📦 Inventario' },
+        { id: 'trabajos_servicios', nombre: '📱 Servicios' }, { id: 'avances', nombre: '💸 Avances' },
+        { id: 'conversor', nombre: '🧮 Conversor' }, { id: 'facturar', nombre: '🛒 Facturar' },
+        { id: 'caja_registradora', nombre: '🧾 Caja' }, { id: 'control_inventario', nombre: '📋 Control Inv' },
+        { id: 'balance', nombre: '📊 Balance' }, { id: 'capital', nombre: '📈 Capital' },
+        { id: 'proveedores', nombre: '🚚 Proveedores' }, { id: 'pagos_servicios', nombre: '🧾 Pagos' },
+        { id: 'conciliacion', nombre: '💳 Conciliación' }, { id: 'empleados', nombre: '🧑‍💼 Vendedores' },
+        { id: 'clientes', nombre: '👥 Clientes' }, { id: 'gestion_catalogo', nombre: '📁 Catálogo' },
+        { id: 'reglas_laborales', nombre: '⚖️ Reglas Laborales' }
+    ];
 
-    window.addEventListener('DOMContentLoaded', async () => {
-        // Carga de modo oscuro desde localStorage
-        if(localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark-mode');
-        }
+    const UIConfig = {
+        async init() {
+            UIBase.mostrarCargando("Verificando", "Validando credenciales...");
+            this.poblarSelectoresCatologos();
+            this.generarTablaModulos();
 
-        try {
-            const { data } = await supabaseClient.auth.getSession();
-            if (!data || !data.session) {
-                alert("No hay una sesión administrativa activa. Vuelve a la pantalla principal para iniciar sesión.");
-                window.location.href = 'index.html';
-                return;
+            try {
+                const estado = await AppMotor.inicializar();
+                const conf = estado.configuracion || {};
+                const nombreLocal = estado.datosLocal?.nombre || conf?.identidad?.nombre || 'Sistema';
+
+                UIBase.sincronizarNombreLocal(nombreLocal);
+
+                // Cargar Apariencia desde Base de Datos (Supabase)
+                if (conf.apariencia) {
+                    const temaSupabase = conf.apariencia.tema || 'premium';
+                    const tipoSupabase = conf.apariencia.tipografia || 'roboto';
+                    document.getElementById('cfg_selector_tema').value = temaSupabase;
+                    document.getElementById('cfg_selector_tipografia').value = tipoSupabase;
+                    UIBase.aplicarTemaYTipografiaGlobal(temaSupabase, tipoSupabase);
+                } else {
+                    document.getElementById('cfg_selector_tema').value = localStorage.getItem('app_theme_name') || 'premium';
+                    document.getElementById('cfg_selector_tipografia').value = localStorage.getItem('app_typography_name') || 'roboto';
+                }
+
+                if (conf.identidad?.admin_pass) {
+                    UIBase.ocultarCargando();
+                    UIBase.bloquearPantallaPIN((pin) => AppMotor.verificarPinAdministrador(pin));
+                } else {
+                    UIBase.ocultarCargando();
+                    document.getElementById('main_wrapper').style.display = 'block';
+                }
+                this.cargarDatosEnVista(conf, estado.datosLocal);
+            } catch (err) {
+                UIBase.ocultarCargando();
+                if (err.message === "NoAutorizado") window.location.href = 'index.html';
+                else alert("Error: " + err.message);
             }
-            await inicializarDatos(data.session);
-        } catch (err) {
-            console.error(err);
-            alert("Error de red conectando con el servidor.");
-        }
-    });
+        },
 
-    // Control de Acordeón Desplegable
-    function toggleAcordeon(header) {
-        let card = header.parentElement;
-        card.classList.toggle('open');
-    }
-
-    async function inicializarDatos(session) {
-        const userId = session.user.id;
-        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
-        
-        if (perfil && perfil.local_id) {
-            CURRENT_LOCAL_ID = perfil.local_id;
-        } else {
-            let { data: localesList } = await supabaseClient.from('locales').select('id, nombre').limit(1);
-            if(localesList && localesList.length > 0) {
-                CURRENT_LOCAL_ID = localesList[0].id;
+        toggleSeccion(id, iconId, elementHeader) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(iconId);
+            if (el.style.display === 'block') {
+                el.style.display = 'none';
+                icon.innerText = '▼';
+                elementHeader.classList.remove('abierto');
             } else {
-                return alert("Error: Perfil no vinculado a un local.");
+                el.style.display = 'block';
+                icon.innerText = '▲';
+                elementHeader.classList.add('abierto');
             }
-        }
+        },
 
-        let conf = null, localData = null;
-        try {
-            let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
-            conf = resConf.data;
-        } catch(e) { console.warn("Sin configuración propia"); }
+        poblarSelectoresCatologos() {
+            const selectBase = document.getElementById('select_moneda_base');
+            selectBase.innerHTML = '';
+            CATALOGO_MONEDAS.forEach(m => selectBase.insertAdjacentHTML('beforeend', `<option value="${m.code}">${m.name}</option>`));
+        },
 
-        try {
-            let resLocal = await supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
-            localData = resLocal.data;
-        } catch(e) { console.warn("Sin local asociado"); }
+        generarTablaModulos() {
+            const tbody = document.getElementById('lista_modulos_bloqueo');
+            tbody.innerHTML = '';
+            MODULOS_SISTEMA.forEach(mod => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr data-mod-id="${mod.id}">
+                        <td>${mod.nombre}</td>
+                        <td><input type="checkbox" class="check-rol chk-gen"></td>
+                        <td><input type="checkbox" class="check-rol chk-adm"></td>
+                        <td><input type="checkbox" class="check-rol chk-sup"></td>
+                        <td><input type="checkbox" class="check-rol chk-vend"></td>
+                    </tr>
+                `);
+            });
+        },
 
-        if (conf) {
-            CONFIG_GLOBAL = conf;
+        cargarDatosEnVista(conf, local) {
+            const nombreLocal = local?.nombre || conf?.identidad?.nombre || '';
+            document.getElementById('cfg_nombre_local').value = nombreLocal;
+            UIBase.sincronizarNombreLocal(nombreLocal);
+
+            const matriz = conf.permisos_modulos || {};
+            document.querySelectorAll('#lista_modulos_bloqueo tr').forEach(tr => {
+                const m = matriz[tr.dataset.modId];
+                if (m) {
+                    tr.querySelector('.chk-gen').checked = !!m.general;
+                    tr.querySelector('.chk-adm').checked = !!m.admin;
+                    tr.querySelector('.chk-sup').checked = !!m.sup;
+                    tr.querySelector('.chk-vend').checked = !!m.vend;
+                }
+            });
+
+            const tasas = conf.tasas || { moneda_base: 'USD', secundarias: [] };
+            document.getElementById('select_moneda_base').value = tasas.moneda_base;
+            const cont = document.getElementById('contenedor_monedas_secundarias');
+            cont.innerHTML = '';
+            if (tasas.secundarias.length > 0) tasas.secundarias.forEach(sec => this.agregarFilaMonedaSecundaria(sec));
             
-            document.getElementById('config_nombre_local').value = conf.identidad?.nombre || '';
-            document.getElementById('tasa_ves').value = conf.tasas?.ves || 1;
-            document.getElementById('tasa_cop').value = conf.tasas?.cop || 1;
-            document.getElementById('tasa_eur').value = conf.tasas?.eur || 1;
+            if (conf.telegram) {
+                ['token','inv','cierre','extras'].forEach(k => document.getElementById(`cfg_tg_${k}`).value = conf.telegram[`chat_${k}`] || conf.telegram[k] || '');
+                ['cierre','gastos','inventario'].forEach(k => document.getElementById(`cfg_notif_${k}`).checked = !!conf.telegram[`notif_${k}`]);
+            }
+        },
+
+        async guardarIdentidad() {
+            const nombre = document.getElementById('cfg_nombre_local').value.trim();
+            if(!nombre) return alert("El nombre no puede estar vacío.");
+            UIBase.mostrarCargando("Guardando", "Actualizando nombre...");
+            try { 
+                await AppMotor.actualizarIdentidad(nombre); 
+                UIBase.sincronizarNombreLocal(nombre);
+                UIBase.ocultarCargando(); 
+                alert("Nombre guardado exitosamente."); 
+            } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
+
+        async guardarPinGeneral() {
+            const pin = document.getElementById('cfg_admin_pin').value.trim();
+            if(!pin) return alert("Ingrese un PIN válido.");
+            UIBase.mostrarCargando("Guardando", "Actualizando PIN...");
+            try { await AppMotor.actualizarPinSeguridad(pin); document.getElementById('cfg_admin_pin').value = ''; UIBase.ocultarCargando(); alert("PIN actualizado."); } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
+
+        async guardarPermisosModulos() {
+            const matriz = {};
+            document.querySelectorAll('#lista_modulos_bloqueo tr').forEach(tr => {
+                matriz[tr.dataset.modId] = {
+                    general: tr.querySelector('.chk-gen').checked, admin: tr.querySelector('.chk-adm').checked,
+                    sup: tr.querySelector('.chk-sup').checked, vend: tr.querySelector('.chk-vend').checked
+                };
+            });
+            UIBase.mostrarCargando("Guardando", "Estableciendo permisos...");
+            try { await AppMotor._guardarConfigParcial('permisos_modulos', matriz); UIBase.ocultarCargando(); alert("Permisos guardados."); } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
+
+        async guardarTemaYTipografia() {
+            const tema = document.getElementById('cfg_selector_tema').value;
+            const tipografia = document.getElementById('cfg_selector_tipografia').value;
+            UIBase.mostrarCargando("Guardando", "Actualizando estilo y tipografía en Supabase...");
+            try {
+                await UIBase.aplicarTemaYTipografiaGlobal(tema, tipografia);
+                UIBase.ocultarCargando();
+                alert("Estilo y tipografía guardados y sincronizados en la base de datos.");
+            } catch (e) {
+                UIBase.ocultarCargando();
+                alert("Error al guardar estilo: " + e.message);
+            }
+        },
+
+        agregarFilaMonedaSecundaria(datos = null) {
+            const cont = document.getElementById('contenedor_monedas_secundarias');
+            const opc = CATALOGO_MONEDAS.map(m => `<option value="${m.code}" ${datos?.code===m.code?'selected':''}>${m.name}</option>`).join('');
+            cont.insertAdjacentHTML('beforeend', `
+                <div class="currency-row">
+                    <div><select class="sel-codigo">${opc}</select></div>
+                    <div><input type="number" step="0.000001" class="inp-tasa" value="${datos?.tasa||1}"></div>
+                    <div>
+                        <select class="sel-operacion" onchange="UIConfig.actualizarVistasFormulas()">
+                            <option value="multiplicar" ${datos?.operacion==='multiplicar'?'selected':''}>✖️ Multiplicar</option>
+                            <option value="dividir" ${datos?.operacion==='dividir'?'selected':''}>➗ Dividir</option>
+                        </select>
+                        <span class="formula-preview"></span>
+                    </div>
+                    <div style="text-align:center;"><button type="button" class="btn-danger" style="padding:8px; margin:0; width:36px; height:36px;" onclick="this.closest('.currency-row').remove(); UIConfig.actualizarVistasFormulas();">🗑️</button></div>
+                </div>
+            `);
+            this.actualizarVistasFormulas();
+        },
+
+        actualizarVistasFormulas() {
+            const baseCode = document.getElementById('select_moneda_base').value;
+            document.querySelectorAll('.currency-row').forEach(row => {
+                const secCode = row.querySelector('.sel-codigo').value;
+                const op = row.querySelector('.sel-operacion').value;
+                row.querySelector('.formula-preview').innerText = op === 'multiplicar' ? `1 ${baseCode} ✖️ Tasa = ${secCode}` : `1 ${baseCode} ➗ Tasa = ${secCode}`;
+            });
+        },
+
+        async guardarEstructuraMonetaria() {
+            const base = document.getElementById('select_moneda_base').value;
+            const secundarias = [];
+            let error = false;
+            document.querySelectorAll('.currency-row').forEach(row => {
+                const code = row.querySelector('.sel-codigo').value;
+                if (code === base) { alert(`Error: ${code} no puede ser moneda base y secundaria simultáneamente.`); error = true; }
+                secundarias.push({ code: code, tasa: parseFloat(row.querySelector('.inp-tasa').value)||1, operacion: row.querySelector('.sel-operacion').value });
+            });
+            if (error) return;
             
-            document.getElementById('config_tg_token').value = conf.config_tg?.token || '';
-            document.getElementById('config_tg_chat_inv').value = conf.config_tg?.inv || '';
-            document.getElementById('config_tg_chat_cierre').value = conf.config_tg?.cierre || '';
-            document.getElementById('config_tg_chat_notif').value = conf.config_tg?.notif || '';
-        }
+            UIBase.mostrarCargando("Guardando", "Actualizando base monetaria y símbolos en Supabase...");
+            try { 
+                await AppMotor.actualizarSistemaMonetario(base, secundarias); 
+                UIBase.ocultarCargando(); 
+                alert("Sistema Monetario actualizado correctamente (Valores históricos intactos, símbolo actualizado)."); 
+            } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
 
-        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Sistema';
-        let etiquetaModulo = "Configuraciones"; 
+        async guardarTelegram() {
+            const dataTg = {
+                token: document.getElementById('cfg_tg_token').value.trim(), chat_inv: document.getElementById('cfg_tg_inv').value.trim(),
+                chat_cierre: document.getElementById('cfg_tg_cierre').value.trim(), chat_extras: document.getElementById('cfg_tg_extras').value.trim(),
+                notif_cierre: document.getElementById('cfg_notif_cierre').checked, notif_gastos: document.getElementById('cfg_notif_gastos').checked, notif_inventario: document.getElementById('cfg_notif_inventario').checked
+            };
+            UIBase.mostrarCargando("Guardando", "Actualizando Telegram...");
+            try { await AppMotor._guardarConfigParcial('telegram', dataTg); UIBase.ocultarCargando(); alert("Telegram guardado."); } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
 
-        document.getElementById('main_top_title').innerHTML = `
-            🏪 ${nombreLocal} 
-            <span style="font-size:0.75rem; font-family: 'Roboto', sans-serif; font-weight:bold; background: linear-gradient(90deg, var(--active-gold), #aa8c2c); color: #000; padding: 4px 10px; border-radius: 4px; margin-left: 15px; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-transform: uppercase;">
-                📌 ${etiquetaModulo}
-            </span>
-        `;
+        toggleInputsBorrado(tipo) {
+            document.getElementById('cont_borrado_mes').style.display = tipo === 'mes' ? 'block' : 'none';
+            document.getElementById('cont_borrado_ano').style.display = tipo === 'ano' ? 'block' : 'none';
+        },
 
-        // Mostrar pantalla de PIN
-        document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
-        document.getElementById('pantalla_bloqueo_admin').style.opacity = '1';
-
-        // Desvanecer Loading Overlay
-        setTimeout(() => {
-            document.getElementById('loading_overlay').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('loading_overlay').style.display = 'none';
-                document.getElementById('pin_ingreso_body').focus();
-            }, 500);
-        }, 800);
-    }
-
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('sidebar-overlay').classList.toggle('active');
-    }
-
-    function toggleVerPin() {
-        let input = document.getElementById('pin_ingreso_body');
-        let icono = document.getElementById('icono_ojo_pin');
-        
-        if (input.type === 'password') {
-            input.type = 'text';
-            icono.innerText = '🙈';
-        } else {
-            input.type = 'password';
-            icono.innerText = '👁️';
-        }
-    }
-
-    async function verificarPinBody() {
-        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
-        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass || '151016';
-        
-        if (pinIngresado === pinReal) {
-            document.getElementById('btn_desbloquear_pin').style.display = 'none';
-            document.getElementById('btn_volver_pin').style.display = 'none';
-            document.getElementById('mensaje_carga_pin').style.display = 'block';
+        async solicitarBorradoParcial() {
+            const modulo = document.getElementById('cfg_borrado_modulo').value;
+            const moduloTexto = document.getElementById('cfg_borrado_modulo').options[document.getElementById('cfg_borrado_modulo').selectedIndex].text;
+            const rango = document.getElementById('cfg_borrado_rango').value;
             
-            setTimeout(() => {
-                document.getElementById('main_wrapper').style.display = 'block';
+            let parametro = null;
+            let msgAlerta = `¿Está seguro de eliminar ${moduloTexto} en su totalidad?`;
 
-                let pantalla = document.getElementById('pantalla_bloqueo_admin');
-                pantalla.style.opacity = '0';
-                pantalla.style.transition = 'opacity 0.4s ease';
+            if (rango === 'mes') {
+                parametro = document.getElementById('cfg_val_mes').value;
+                if(!parametro) return alert("Debe seleccionar un mes.");
+                msgAlerta = `¿Está seguro de eliminar ${moduloTexto} del mes ${parametro}?`;
+            } else if (rango === 'ano') {
+                parametro = document.getElementById('cfg_val_ano').value;
+                if(!parametro || parametro.length !== 4) return alert("Debe escribir un año válido de 4 dígitos.");
+                msgAlerta = `¿Está seguro de eliminar ${moduloTexto} del año ${parametro}?`;
+            }
+
+            if (!confirm(msgAlerta + "\n\nEsta acción purgará los datos en la nube y no se puede deshacer.")) return;
+            const pinConfirm = prompt("Por seguridad, ingrese el PIN Maestro para autorizar esta eliminación:");
+            if (!pinConfirm) return;
+
+            UIBase.mostrarCargando("Eliminando", "Purgando registros...");
+            try {
+                const autorizado = AppMotor.verificarPinAdministrador(pinConfirm);
+                if (!autorizado) throw new Error("PIN Incorrecto. Operación abortada.");
                 
-                setTimeout(() => { 
-                    pantalla.style.display = 'none'; 
-                    document.getElementById('btn_desbloquear_pin').style.display = 'block';
-                    document.getElementById('btn_volver_pin').style.display = 'block';
-                    document.getElementById('mensaje_carga_pin').style.display = 'none';
-                    document.getElementById('pin_ingreso_body').value = '';
-                    document.getElementById('pin_ingreso_body').type = 'password';
-                    document.getElementById('icono_ojo_pin').innerText = '👁️';
-                }, 400);
-            }, 800);
-        } else {
-            alert("❌ PIN Incorrecto. Acceso Restringido.");
-            document.getElementById('pin_ingreso_body').value = '';
-        }
-    }
+                await AppMotor.ejecutarPurgaHistorial(modulo, rango, parametro);
+                UIBase.ocultarCargando();
+                alert("Limpieza ejecutada exitosamente.");
+            } catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
 
-    async function guardarConfiguracionParcial(columna, objetoJson) {
-        if (!CURRENT_LOCAL_ID) return false;
-        let payload = { [columna]: objetoJson };
-        let { data, error } = await supabaseClient.from('configuraciones').update(payload).eq('local_id', CURRENT_LOCAL_ID).select();
-        if (error) { alert("Error actualizando: " + error.message); return false; }
-        
-        if (!data || data.length === 0) {
-            payload.local_id = CURRENT_LOCAL_ID;
-            let { error: errInsert } = await supabaseClient.from('configuraciones').insert([payload]);
-            if (errInsert) { alert("Error inicializando config: " + errInsert.message); return false; }
-        }
-        return true;
-    }
-
-    async function guardarIdentidad() {
-        let nuevoNombreLocal = document.getElementById('config_nombre_local').value.trim();
-        if(!nuevoNombreLocal) return alert("⚠️ El nombre del local no puede estar vacío.");
-
-        mostrarModalLocal("Guardando", "Actualizando identidad del negocio...");
-        try {
-            let { error } = await supabaseClient.from('locales').update({ nombre: nuevoNombreLocal }).eq('id', CURRENT_LOCAL_ID);
-            if(error) throw error;
-
-            let identidad = CONFIG_GLOBAL.identidad || {};
-            identidad.nombre = nuevoNombreLocal;
-            await guardarConfiguracionParcial('identidad', identidad);
+        async solicitarBorradoGlobal() {
+            if (!confirm("⚠️ ALERTA CRÍTICA ⚠️\n\nEstá a punto de eliminar ABSOLUTAMENTE TODO el sistema.\n\n¿Desea continuar?")) return;
             
-            CONFIG_GLOBAL.identidad = identidad;
-            mostrarAnimacionGuardando("¡Identidad Actualizada!");
-            
-            let textActual = document.getElementById('main_top_title').innerHTML;
-            document.getElementById('main_top_title').innerHTML = textActual.replace(/🏪 .*? </, `🏪 ${nuevoNombreLocal} <`);
-        } catch(err) {
-            cerrarModalGlobal();
-            alert("❌ Error al actualizar: " + err.message);
+            if (prompt("Escriba la palabra 'FORMATEAR' en mayúsculas:") !== "FORMATEAR") {
+                return alert("Palabra incorrecta. Cancelado.");
+            }
+
+            const pinConfirm = prompt("Último paso. Ingrese el PIN Maestro:");
+            if (!pinConfirm) return;
+
+            UIBase.mostrarCargando("Destruyendo Datos", "Ejecutando formateo global...");
+            try {
+                const autorizado = AppMotor.verificarPinAdministrador(pinConfirm);
+                if (!autorizado) throw new Error("PIN Incorrecto.");
+
+                await AppMotor.ejecutarResetFabrica();
+                UIBase.ocultarCargando();
+                alert("Sistema formateado. La aplicación se reiniciará.");
+                window.location.href = 'index.html'; 
+            } catch(e) { UIBase.ocultarCargando(); alert("Fallo en formateo: " + e.message); }
         }
-    }
+    };
 
-    async function guardarTasasEstetico() {
-        let tasas = {
-            ves: parseFloat(document.getElementById('tasa_ves').value) || 1,
-            cop: parseFloat(document.getElementById('tasa_cop').value) || 1,
-            eur: parseFloat(document.getElementById('tasa_eur').value) || 1
-        };
-        mostrarModalLocal("Guardando", "Sincronizando tasas de conversión...");
-        let exito = await guardarConfiguracionParcial('tasas', tasas);
-        if (exito) {
-            CONFIG_GLOBAL.tasas = tasas;
-            mostrarAnimacionGuardando("Tasas Consolidadas");
-        } else {
-            cerrarModalGlobal();
-        }
-    }
-
-    async function guardarConfigTelegram() {
-        let configTg = {
-            token: document.getElementById('config_tg_token').value.trim(),
-            inv: document.getElementById('config_tg_chat_inv').value.trim(),
-            cierre: document.getElementById('config_tg_chat_cierre').value.trim(),
-            notif: document.getElementById('config_tg_chat_notif').value.trim()
-        };
-        mostrarModalLocal("Guardando", "Actualizando enrutamiento de Telegram...");
-        let exito = await guardarConfiguracionParcial('config_tg', configTg);
-        if (exito) {
-            CONFIG_GLOBAL.config_tg = configTg;
-            mostrarAnimacionGuardando("Telegram Configurado");
-        } else {
-            cerrarModalGlobal();
-        }
-    }
-
-    async function guardarPinAdmin() {
-        let nuevoPin = document.getElementById('config_admin_pin').value.trim();
-        if(!nuevoPin || nuevoPin.length < 4) return alert("⚠️ El PIN debe tener al menos 4 caracteres.");
-        
-        let identidad = CONFIG_GLOBAL.identidad || {};
-        identidad.admin_pass = nuevoPin;
-        
-        mostrarModalLocal("Guardando", "Cifrando nuevo PIN de seguridad...");
-        let exito = await guardarConfiguracionParcial('identidad', identidad);
-        if (exito) {
-            CONFIG_GLOBAL.identidad = identidad;
-            mostrarAnimacionGuardando("PIN Actualizado");
-            document.getElementById('config_admin_pin').value = '';
-        } else {
-            cerrarModalGlobal();
-        }
-    }
-
-    function toggleDarkMode() {
-        document.body.classList.toggle('dark-mode');
-        let mode = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-        localStorage.setItem('theme', mode);
-    }
-
-    function abrirModalGlobal(titulo, htmlContent) {
-        document.getElementById('global_modal_title').innerText = titulo;
-        document.getElementById('global_modal_body').innerHTML = htmlContent;
-        document.getElementById('global_modal').style.display = 'flex';
-    }
-    
-    function cerrarModalGlobal() {
-        document.getElementById('global_modal').style.display = 'none';
-    }
-    
-    function mostrarModalLocal(titulo, msg) {
-        abrirModalGlobal(titulo, `<div style="text-align:center; padding:20px;"><div class="spinner-luxury" style="width: 35px; height: 35px; border-width: 3px;"></div><span style="font-size:1.1rem; color:var(--primary); font-family:'Playfair Display', serif;">${msg}</span></div>`);
-    }
-    
-    function mostrarAnimacionGuardando(msj) {
-        abrirModalGlobal("Completado", `<div style="text-align:center; font-size:1.3rem; color:var(--success); padding:20px; font-weight:bold; font-family:'Playfair Display', serif;">✅ ${msj}</div>`);
-        setTimeout(cerrarModalGlobal, 1500);
-    }
+    window.addEventListener('DOMContentLoaded', () => UIConfig.init());
 </script>
 </body>
 </html>
