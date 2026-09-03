@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reglas y Normativas Laborales</title>
+
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Lógica de Negocio y Arquitectura Base (Estándar del Sistema) -->
+    <script src="motor.js"></script>
+    <script src="plantilla_base.js"></script>
+</head>
+<body>
+
+    <!-- MENSAJE DE ERROR CRÍTICO (Oculto por defecto) -->
+    <div id="pantalla_error_auth" style="display: none; padding: 40px; text-align: center; background-color: var(--primary, #5c0614); color: white; height: 100vh; flex-direction: column; justify-content: center; align-items: center;">
+        <h1 style="color: var(--active-gold);">⚠️ ACCESO DENEGADO</h1>
+        <p>No se encontró una sesión activa con la base de datos.</p>
+        <p>Debes iniciar sesión primero en la pantalla principal antes de acceder a las normativas.</p>
+        <button type="button" class="btn-info" onclick="window.location.href='index.html'" style="width: auto; padding: 10px 25px; margin-top: 20px;">Ir al Login</button>
+    </div>
+
+    <!-- Contenedor Principal de la Aplicación -->
+    <div id="main_wrapper" class="wrapper" style="display: none;">
+        <div class="main-content">
+            
+            <button type="button" class="btn-info" id="btn_gestion_maestra" onclick="ReglasControlador.accederGestion()">
+                ⚙️ Panel de Gestión y Normativas Laborales
+            </button>
+
+            <!-- VISTA PÚBLICA -->
+            <div id="vista_publica">
+                <div id="contenedor_reglas_publicas"></div>
+            </div>
+
+            <!-- VISTA PANEL DE ADMINISTRACIÓN -->
+            <div id="vista_gestion" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="font-family: var(--title-font); color: var(--active-gold); margin: 0;">Panel de Administración de Normativas</h2>
+                    <button type="button" class="btn-info" onclick="ReglasControlador.mostrarVistaPublica()" style="width: auto; margin: 0;">
+                        ⬅️ Volver a Vista Pública
+                    </button>
+                </div>
+
+                <button type="button" class="btn-success" onclick="ReglasControlador.abrirEditorCrear()">
+                    ➕ Crear Nueva Categoría de Reglas
+                </button>
+
+                <div id="contenedor_lista_admin" style="margin-top: 20px;"></div>
+            </div>
+
+            <!-- VISTA EDITOR DE REGLAS -->
+            <div id="vista_editor" style="display: none;">
+                <h2 id="titulo_editor" style="font-family: var(--title-font); color: var(--active-gold);">Crear Categoría de Normativas</h2>
+
+                <form id="form_regla" onsubmit="ReglasControlador.guardarRegla(event)">
+                    <input type="hidden" id="editor_index" value="-1">
+
+                    <label for="regla_titulo">Título de Categoría:</label>
+                    <input type="text" id="regla_titulo" required placeholder="Ej. Normas de Vestimenta">
+
+                    <label for="regla_descripcion" style="margin-top: 15px; display: block;">Descripción General:</label>
+                    <textarea id="regla_descripcion" rows="3" required placeholder="Resumen general del reglamento..." style="width: 100%; padding: 12px; margin-top: 6px; border: 1px solid var(--active-gold); border-radius: var(--border-radius); background: var(--input-bg); color: var(--text); border-left: 4px solid var(--secondary); font-family: var(--main-font);"></textarea>
+
+                    <hr style="margin: 25px 0; border: none; border-top: 1px dashed var(--active-gold);">
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="font-family: var(--title-font); margin: 0;">Sub-reglas / Detalles Desplegables</h3>
+                        <button type="button" class="btn-warning" onclick="ReglasControlador.agregarFilaSubregla()" style="width: auto; margin: 0;">
+                            ➕ Agregar Sub-regla
+                        </button>
+                    </div>
+
+                    <div id="contenedor_subreglas_inputs" style="margin-top: 15px; display: flex; flex-direction: column; gap: 15px;"></div>
+
+                    <div class="grid-2" style="margin-top: 30px;">
+                        <button type="submit" class="btn-success">💾 Guardar Cambios</button>
+                        <button type="button" class="btn-danger" onclick="ReglasControlador.cancelarEditor()">❌ Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    const ReglasControlador = {
+        subreglasTemp: [],
+
+        inicializar: async function() {
+            UIBase.mostrarCargando("CARGANDO REGLAS", "Sincronizando normativas laborales...");
+            
+            try {
+                const estado = await AppMotor.inicializar();
+                const nombreLocal = estado.datosLocal?.nombre || estado.configuracion?.identidad?.nombre || "MI LOCAL";
+                
+                UIBase.sincronizarNombreLocal(nombreLocal);
+                
+                document.getElementById('main_wrapper').style.display = 'block';
+                this.renderizarVistaPublica();
+
+            } catch (error) {
+                console.error("Fallo crítico de inicio:", error.message);
+                
+                if (error.message === "NoAutorizado") {
+                    window.location.href = 'index.html';
+                } else {
+                    document.getElementById('main_wrapper').style.display = 'none';
+                    const pantallaError = document.getElementById('pantalla_error_auth');
+                    pantallaError.style.display = 'flex';
+                    pantallaError.innerHTML += `<p style="color: var(--active-gold); margin-top: 10px;">Detalle Técnico: ${error.message}</p>`;
+                }
+            } finally {
+                UIBase.ocultarCargando();
+            }
+        },
+
+        // Muestra el modal de acceso con el diseño exacto de la segunda imagen (Crimson Carmesí y bordes dorados)
+        accederGestion: function() {
+            let modalPin = document.getElementById('modal_pin_personalizado');
+            
+            if (!modalPin) {
+                modalPin = document.createElement('div');
+                modalPin.id = 'modal_pin_personalizado';
+                modalPin.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: radial-gradient(circle, rgba(92,6,20,0.95) 0%, rgba(30,2,8,0.98) 100%);
+                    display: flex; justify-content: center; align-items: center; z-index: 9999;
+                `;
+                modalPin.innerHTML = `
+                    <div style="background: var(--card-bg, #fff); border: 2px solid var(--active-gold, #d4af37); padding: 40px; border-radius: var(--border-radius, 8px); width: 100%; max-width: 500px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.7); position: relative;">
+                        <div style="position: absolute; top: 15px; left: 15px; width: 30px; height: 30px; border-top: 2px solid var(--active-gold); border-left: 2px solid var(--active-gold);"></div>
+                        <div style="position: absolute; bottom: 15px; right: 15px; width: 30px; height: 30px; border-bottom: 2px solid var(--active-gold); border-right: 2px solid var(--active-gold);"></div>
+                        
+                        <h2 style="font-family: var(--title-font, serif); color: var(--primary, #5c0614); letter-spacing: 2px; margin-bottom: 5px;">ACCESO AUTORIZADO</h2>
+                        <p style="font-size: 0.9rem; color: var(--text, #333); margin-bottom: 25px;">Ingrese sus credenciales de seguridad</p>
+                        
+                        <div style="position: relative; margin-bottom: 25px;">
+                            <input type="password" id="input_pin_secreto" placeholder="••••" maxlength="8" style="width: 100%; padding: 12px; text-align: center; font-size: 1.5rem; letter-spacing: 5px; border: 1px solid var(--primary, #5c0614); border-radius: 4px; background: var(--input-bg, #fff); color: var(--text, #333);">
+                        </div>
+
+                        <button type="button" id="btn_verificar_pin" style="width: 100%; padding: 12px; background: var(--primary, #5c0614); color: white; border: none; border-radius: 4px; font-weight: bold; font-family: var(--title-font, serif); letter-spacing: 1px; cursor: pointer; margin-bottom: 12px; transition: background 0.3s;">VERIFICAR ACCESO</button>
+                        <button type="button" id="btn_cancelar_pin" style="width: 100%; padding: 12px; background: transparent; color: var(--primary, #5c0614); border: 1px solid var(--primary, #5c0614); border-radius: 4px; font-weight: bold; font-family: var(--title-font, serif); letter-spacing: 1px; cursor: pointer;">VOLVER AL MENÚ</button>
+                    </div>
+                `;
+                document.body.appendChild(modalPin);
+
+                document.getElementById('btn_verificar_pin').addEventListener('click', () => {
+                    const pinIngresado = document.getElementById('input_pin_secreto').value;
+                    if (AppMotor.verificarPinAdministrador(pinIngresado)) {
+                        document.body.removeChild(modalPin);
+                        this.mostrarPanelAdmin();
+                    } else {
+                        alert("❌ PIN Incorrecto. Intente nuevamente.");
+                        document.getElementById('input_pin_secreto').value = "";
+                        document.getElementById('input_pin_secreto').focus();
+                    }
+                });
+
+                document.getElementById('btn_cancelar_pin').addEventListener('click', () => {
+                    document.body.removeChild(modalPin);
+                });
+
+                document.getElementById('input_pin_secreto').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        document.getElementById('btn_verificar_pin').click();
+                    }
+                });
+            }
+
+            document.getElementById('input_pin_secreto').value = "";
+            modalPin.style.display = 'flex';
+            setTimeout(() => document.getElementById('input_pin_secreto').focus(), 100);
+        },
+
+        mostrarVistaPublica: function() {
+            document.getElementById('vista_publica').style.display = 'block';
+            document.getElementById('vista_gestion').style.display = 'none';
+            document.getElementById('vista_editor').style.display = 'none';
+            this.renderizarVistaPublica();
+        },
+
+        mostrarPanelAdmin: function() {
+            document.getElementById('vista_publica').style.display = 'none';
+            document.getElementById('vista_gestion').style.display = 'block';
+            document.getElementById('vista_editor').style.display = 'none';
+            this.renderizarPanelAdmin();
+        },
+
+        renderizarVistaPublica: function() {
+            const contenedor = document.getElementById('contenedor_reglas_publicas');
+            const listaReglas = AppMotor.obtenerReglasLaborales ? AppMotor.obtenerReglasLaborales() : (AppMotor.estadoGlobal?.configuracion?.reglas_laborales || []);
+
+            if (!listaReglas || listaReglas.length === 0) {
+                contenedor.innerHTML = `
+                    <div style="text-align: center; padding: 40px; border: 1px dashed var(--active-gold); border-radius: var(--border-radius); margin-top: 20px; background: var(--card-bg);">
+                        <p style="font-size: 1.1rem; color: var(--text);">No hay normativas registradas actualmente.</p>
+                        <p style="font-size: 0.9rem; color: var(--active-gold);">Utilice el botón superior para ingresar al panel de administración.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            contenedor.innerHTML = listaReglas.map((regla, catIndex) => `
+                <div class="acordeon-header" onclick="ReglasControlador.toggleAcordeon('cat_${catIndex}')">
+                    <h3 class="acordeon-title">📁 ${regla.titulo}</h3>
+                    <span style="color: var(--active-gold);">▼</span>
+                </div>
+                <div id="cat_${catIndex}" class="acordeon-content">
+                    <p style="margin-bottom: 15px; font-weight: 500;">${regla.descripcion}</p>
+                    
+                    ${regla.subreglas && regla.subreglas.length > 0 ? regla.subreglas.map((sub, subIndex) => `
+                        <div style="margin-top: 10px; background: rgba(92, 6, 20, 0.15); border: 1px solid var(--active-gold); border-radius: var(--border-radius); padding: 12px; cursor: pointer;" onclick="ReglasControlador.toggleAcordeon('sub_${catIndex}_${subIndex}')">
+                            <h4 style="margin: 0; font-size: 0.95rem; color: var(--active-gold); font-family: var(--title-font);">📌 ${sub.titulo}</h4>
+                        </div>
+                        <div id="sub_${catIndex}_${subIndex}" style="display: none; padding: 12px; background: var(--input-bg); border-left: 3px solid var(--active-gold); border-radius: 0 0 var(--border-radius) var(--border-radius);">
+                            <p style="white-space: pre-line; margin: 0; font-size: 0.9rem;">${sub.detalle}</p>
+                        </div>
+                    `).join('') : '<p style="font-size: 0.85rem; font-style: italic;">Sin sub-reglas especificadas.</p>'}
+                </div>
+            `).join('');
+        },
+
+        renderizarPanelAdmin: function() {
+            const contenedor = document.getElementById('contenedor_lista_admin');
+            const listaReglas = AppMotor.obtenerReglasLaborales ? AppMotor.obtenerReglasLaborales() : (AppMotor.estadoGlobal?.configuracion?.reglas_laborales || []);
+
+            if (!listaReglas || listaReglas.length === 0) {
+                contenedor.innerHTML = '<p>No hay normativas registradas para editar.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = listaReglas.map((regla, index) => `
+                <div style="border: 1px solid var(--active-gold); background: var(--card-bg); padding: 15px; border-radius: var(--border-radius); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <strong style="color: var(--active-gold); font-family: var(--title-font); font-size: 1.05rem;">📁 ${regla.titulo}</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--text);">${regla.descripcion}</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn-warning" onclick="ReglasControlador.abrirEditorEditar(${index})" style="width: auto; margin: 0; padding: 8px 15px;">Editar</button>
+                        <button type="button" class="btn-danger" onclick="ReglasControlador.eliminarRegla(${index})" style="width: auto; margin: 0; padding: 8px 15px;">Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+        },
+
+        toggleAcordeon: function(idElemento) {
+            const contenido = document.getElementById(idElemento);
+            if (contenido) {
+                contenido.style.display = (contenido.style.display === 'block') ? 'none' : 'block';
+            }
+        },
+
+        abrirEditorCrear: function() {
+            document.getElementById('editor_index').value = "-1";
+            document.getElementById('titulo_editor').innerText = "➕ Crear Categoría de Normativas";
+            document.getElementById('regla_titulo').value = "";
+            document.getElementById('regla_descripcion').value = "";
+            
+            this.subreglasTemp = [];
+            this.renderizarInputsSubreglas();
+
+            document.getElementById('vista_gestion').style.display = 'none';
+            document.getElementById('vista_editor').style.display = 'block';
+        },
+
+        abrirEditorEditar: function(index) {
+            const listaReglas = AppMotor.obtenerReglasLaborales ? AppMotor.obtenerReglasLaborales() : (AppMotor.estadoGlobal?.configuracion?.reglas_laborales || []);
+            const regla = listaReglas[index];
+            if (!regla) return;
+
+            document.getElementById('editor_index').value = index;
+            document.getElementById('titulo_editor').innerText = "✏️ Editar Categoría";
+            document.getElementById('regla_titulo').value = regla.titulo || "";
+            document.getElementById('regla_descripcion').value = regla.descripcion || "";
+
+            this.subreglasTemp = regla.subreglas ? JSON.parse(JSON.stringify(regla.subreglas)) : [];
+            this.renderizarInputsSubreglas();
+
+            document.getElementById('vista_gestion').style.display = 'none';
+            document.getElementById('vista_editor').style.display = 'block';
+        },
+
+        agregarFilaSubregla: function() {
+            this.subreglasTemp.push({ titulo: "", detalle: "" });
+            this.renderizarInputsSubreglas();
+        },
+
+        eliminarFilaSubregla: function(subIndex) {
+            this.subreglasTemp.splice(subIndex, 1);
+            this.renderizarInputsSubreglas();
+        },
+
+        renderizarInputsSubreglas: function() {
+            const contenedor = document.getElementById('contenedor_subreglas_inputs');
+            
+            if (this.subreglasTemp.length === 0) {
+                contenedor.innerHTML = '<p style="font-size: 0.9rem; color: var(--active-gold);">Presione "+ Agregar Sub-regla" para añadir ítems detallados.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = this.subreglasTemp.map((sub, i) => `
+                <div style="border: 1px solid var(--active-gold); background: var(--card-bg); padding: 15px; border-radius: var(--border-radius);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="color: var(--active-gold); font-size: 0.9rem;">Sub-regla #${i + 1}</strong>
+                        <button type="button" class="btn-danger" onclick="ReglasControlador.eliminarFilaSubregla(${i})" style="width: auto; margin: 0; padding: 4px 10px; font-size: 0.8rem;">🗑️ Quitar</button>
+                    </div>
+                    <input type="text" id="sub_title_${i}" value="${sub.titulo || ''}" placeholder="Ej. Uso del Teléfono Celular" required style="margin-bottom: 8px;">
+                    <textarea id="sub_detail_${i}" rows="2" placeholder="Detalle explícito de la norma..." required style="width: 100%; padding: 10px; border: 1px solid var(--active-gold); border-radius: var(--border-radius); background: var(--input-bg); color: var(--text); border-left: 4px solid var(--secondary); font-family: var(--main-font);">${sub.detalle || ''}</textarea>
+                </div>
+            `).join('');
+        },
+
+        cancelarEditor: function() {
+            document.getElementById('vista_editor').style.display = 'none';
+            document.getElementById('vista_gestion').style.display = 'block';
+        },
+
+        guardarRegla: async function(event) {
+            event.preventDefault();
+
+            const index = parseInt(document.getElementById('editor_index').value);
+            const titulo = document.getElementById('regla_titulo').value.trim();
+            const descripcion = document.getElementById('regla_descripcion').value.trim();
+
+            const subreglasProcesadas = this.subreglasTemp.map((_, i) => ({
+                titulo: document.getElementById(`sub_title_${i}`).value.trim(),
+                detalle: document.getElementById(`sub_detail_${i}`).value.trim()
+            }));
+
+            let listaActual = AppMotor.obtenerReglasLaborales ? [...AppMotor.obtenerReglasLaborales()] : [...(AppMotor.estadoGlobal?.configuracion?.reglas_laborales || [])];
+            const nuevaRegla = { titulo, descripcion, subreglas: subreglasProcesadas };
+
+            if (index >= 0) {
+                listaActual[index] = nuevaRegla;
+            } else {
+                listaActual.push(nuevaRegla);
+            }
+
+            try {
+                UIBase.mostrarCargando("GUARDANDO NORMATIVAS", "Sincronizando cambios con la base de datos...");
+                if (AppMotor.actualizarReglasLaborales) {
+                    await AppMotor.actualizarReglasLaborales(listaActual);
+                } else {
+                    await AppMotor._guardarConfigParcial('reglas_laborales', listaActual);
+                }
+                alert("✅ Normativas actualizadas con éxito.");
+                this.mostrarPanelAdmin();
+            } catch (e) {
+                alert("Error al guardar: " + e.message);
+            } finally {
+                UIBase.ocultarCargando();
+            }
+        },
+
+        eliminarRegla: async function(index) {
+            if (!confirm("¿Desea eliminar esta categoría y sus sub-reglas de forma permanente?")) return;
+
+            let listaActual = AppMotor.obtenerReglasLaborales ? [...AppMotor.obtenerReglasLaborales()] : [...(AppMotor.estadoGlobal?.configuracion?.reglas_laborales || [])];
+            listaActual.splice(index, 1);
+
+            try {
+                UIBase.mostrarCargando("ELIMINANDO", "Actualizando registro global...");
+                if (AppMotor.actualizarReglasLaborales) {
+                    await AppMotor.actualizarReglasLaborales(listaActual);
+                } else {
+                    await AppMotor._guardarConfigParcial('reglas_laborales', listaActual);
+                }
+                this.renderizarPanelAdmin();
+                alert("🗑️ Categoría eliminada correctamente.");
+            } catch (e) {
+                alert("Error al eliminar: " + e.message);
+            } finally {
+                UIBase.ocultarCargando();
+            }
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            ReglasControlador.inicializar();
+        }, 50);
+    });
+</script>
+</body>
+</html>
