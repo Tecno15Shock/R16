@@ -17,8 +17,6 @@
     <script>
         (function() {
             const temaActivo = localStorage.getItem('app_theme_name') || 'premium';
-            const tipoImpreso = localStorage.getItem('app_typography_name') || 'roboto';
-            
             const THEMES = {
                 premium: { bg: '#FDFBF7', primary: '#5C0614', secondary: '#8B0000', gold: '#D4AF37', text: '#2A2A2A', card: '#FFFFFF', input: '#FFFFFF' },
                 oscuro: { bg: '#0A0103', primary: '#3A030A', secondary: '#660000', gold: '#D4AF37', text: '#FDF8F0', card: '#121212', input: '#1E1E1E' }
@@ -58,7 +56,6 @@
         .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
         .main-content { padding: 25px 20px 120px 20px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-        /* ESTILOS DE ACORDEÓN CERRADOS / RECOGIDOS POR DEFECTO */
         .card { 
             background: var(--card-bg); 
             border-radius: var(--border-radius); 
@@ -99,7 +96,6 @@
             transition: transform 0.3s ease; 
         }
 
-        /* CUERPO DEL ACORDEÓN: OCULTO POR DEFECTO (RECOGIDO) */
         .card-body { 
             max-height: 0; 
             overflow: hidden; 
@@ -109,16 +105,14 @@
             background: var(--card-bg); 
         }
 
-        /* ESTADO DESPLEGADO TRAS INTERACCIÓN */
         .card.open .card-body { 
-            max-height: 4500px; 
+            max-height: 5000px; 
             padding: 25px; 
             opacity: 1; 
             transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease; 
         }
         .card.open .accordion-icon { transform: rotate(180deg); }
 
-        /* INSIGNIAS Y COMPONENTES VISUALES */
         .badge-percent {
             background: rgba(212, 175, 55, 0.2);
             color: var(--active-gold);
@@ -138,6 +132,16 @@
             font-size: 0.8rem;
         }
 
+        .badge-origen {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .origen-cierre { background: rgba(46, 125, 50, 0.2); color: #2E7D32; border: 1px solid #2E7D32; }
+        .origen-manual { background: rgba(212, 175, 55, 0.2); color: var(--active-gold); border: 1px solid var(--active-gold); }
+
         .summary-box {
             background: var(--item-bg);
             border: 1px solid var(--border);
@@ -149,41 +153,13 @@
             margin-bottom: 20px;
         }
 
-        .summary-card {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+        .summary-card { display: flex; flex-direction: column; gap: 4px; }
+        .summary-card span.label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: bold; }
+        .summary-card span.value { font-size: 1.2rem; font-weight: bold; color: var(--primary); font-family: var(--title-font, serif); }
 
-        .summary-card span.label {
-            font-size: 0.75rem;
-            color: var(--muted);
-            text-transform: uppercase;
-            font-weight: bold;
-        }
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; border: 1px solid var(--border); border-radius: var(--border-radius); }
 
-        .summary-card span.value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--primary);
-            font-family: var(--title-font, serif);
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            margin-top: 15px;
-            border: 1px solid var(--border);
-            border-radius: var(--border-radius);
-        }
-
-        table.luxury-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-            background: var(--card-bg);
-        }
-
+        table.luxury-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: var(--card-bg); }
         table.luxury-table th {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: var(--active-gold);
@@ -195,16 +171,8 @@
             font-size: 0.8rem;
             letter-spacing: 0.5px;
         }
-
-        table.luxury-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        table.luxury-table tr:hover {
-            background: rgba(212, 175, 55, 0.08);
-        }
+        table.luxury-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+        table.luxury-table tr:hover { background: rgba(212, 175, 55, 0.08); }
 
         .currency-selector-group {
             display: flex;
@@ -217,22 +185,8 @@
             border: 1px solid var(--border);
         }
 
-        .radio-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: var(--text);
-        }
-
-        .radio-option input[type="radio"] {
-            width: auto;
-            margin: 0;
-            cursor: pointer;
-            accent-color: var(--active-gold);
-        }
+        .radio-option { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; font-weight: bold; color: var(--text); }
+        .radio-option input[type="radio"] { width: auto; margin: 0; cursor: pointer; accent-color: var(--active-gold); }
 
         .box-edicion {
             background: var(--item-bg);
@@ -244,9 +198,7 @@
 
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        @media(max-width: 768px) { 
-            .grid-2, .grid-3 { grid-template-columns: 1fr; } 
-        }
+        @media(max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
 
         label {
             font-size: 0.85rem;
@@ -272,7 +224,72 @@
             font-family: var(--main-font, sans-serif);
         }
 
-        /* OVERLAY PIN DE ADMINISTRADOR */
+        button, .btn-info, .btn-danger {
+            font-family: var(--title-font, serif);
+            border: none;
+            padding: 12px 18px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-info:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        .btn-danger { background: #8B0000; color: #FFFFFF; border: 1px solid var(--active-gold); }
+        .btn-danger:hover { background: #B30000; transform: translateY(-2px); }
+
+        /* MODALES ESTRUCTURALES */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            border: 2px solid var(--active-gold);
+            border-radius: var(--border-radius);
+            max-width: 850px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            position: relative;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: var(--primary);
+            color: var(--active-gold);
+            border: 1px solid var(--active-gold);
+            border-radius: 50%;
+            width: 35px; height: 35px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+
         #pantalla_bloqueo_admin { 
             position: fixed; 
             top: 0; left: 0; 
@@ -313,7 +330,7 @@
 </head>
 <body>
 
-<!-- 🔒 PANTALLA DE BLOQUEO ADMIN (CONDICIONAL POR CONFIGURACIÓN) -->
+<!-- 🔒 PANTALLA DE BLOQUEO ADMIN -->
 <div id="pantalla_bloqueo_admin" style="display: none;">
     <div class="pin-box">
         <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-size: 1.3rem; padding-bottom: 10px; margin-bottom: 15px; font-family: var(--title-font, serif);">🔒 ACCESO PROTEGIDO</h2>
@@ -322,10 +339,6 @@
         <div style="position: relative; margin-bottom: 20px;">
             <input type="password" id="pin_ingreso_body" class="pin-input" placeholder="••••" maxlength="8" onkeyup="if(event.key==='Enter') UIConciliacion.verificarPinAcceso()">
             <span id="icono_ojo_pin" onclick="UIBase.toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
-        </div>
-
-        <div id="mensaje_carga_pin" style="display: none; margin-bottom: 15px;">
-            <span style="color: var(--success); font-weight: bold; font-size: 0.95rem;">Verificando credencial...</span>
         </div>
 
         <button id="btn_desbloquear_pin" class="btn-info" onclick="UIConciliacion.verificarPinAcceso()" style="margin-top: 0; padding: 14px;">AUTENTICAR</button>
@@ -337,66 +350,252 @@
 
     <main class="main-content">
 
-        <!-- 1. ACORDEÓN DE CREACIÓN (RECOGIDO / CERRADO POR DEFECTO) -->
-        <div class="card" id="card_crear_conciliacion">
+        <!-- BOTÓN PRINCIPAL: MÓDULO DE GESTIÓN DE CONCILIACIONES Y PUNTOS DE PAGO -->
+        <button class="btn-info" style="padding: 16px; font-size: 1.05rem; letter-spacing: 1.5px; box-shadow: 0 6px 20px rgba(0,0,0,0.2);" onclick="UIConciliacion.abrirModalGestionConciliaciones()">
+            ➕ CREAR Y ADMINISTRAR PUNTOS DE PAGO / CONCILIACIONES
+        </button>
+
+        <!-- 1. ACORDEÓN PLEGADO: AVANCES DE EMPLEADOS -->
+        <div class="card" id="card_registro_avance">
             <div class="card-header" onclick="UIConciliacion.toggleAcordeon(this)">
-                <h2>➕ 1. Crear Nueva Conciliación / Punto de Pago</h2>
+                <h2>💸 1. Avances de Empleados</h2>
                 <span class="accordion-icon">▼</span>
             </div>
             <div class="card-body">
-                <p style="font-size:0.85rem; color:var(--muted); margin-top:0; margin-bottom:15px;">
-                    Defina las conciliaciones (Ej: <em>Punto Banesco, Biopago VTV, Pago Móvil Mercantil</em>) y su impuesto/comisión. Las transacciones se acumularán automáticamente desde la Caja Registradora.
-                </p>
-
-                <div class="grid-2">
-                    <div>
-                        <label>Nombre de la Conciliación:</label>
-                        <input type="text" id="nuevo_nombre_conciliacion" placeholder="Ej: Punto Banesco Pos">
-                    </div>
-                    <div>
-                        <label>Porcentaje de Comisión / Descuento (%):</label>
-                        <input type="number" step="0.01" min="0" max="100" id="nuevo_porcentaje_conciliacion" placeholder="Ej: 1.50">
-                    </div>
+                <!-- RESUMEN ACUMULADO POR MONEDA -->
+                <div class="summary-box" id="summary_box_avances">
+                    <!-- Generado dinámicamente -->
                 </div>
 
-                <!-- SELECCIÓN DE MONEDA FLEXIBLE -->
-                <div class="currency-selector-group">
-                    <label style="margin-top: 0;">Configuración de Moneda Aplicable:</label>
-
-                    <label class="radio-option">
-                        <input type="radio" name="radio_moneda_scope" value="BASE" checked onchange="UIConciliacion.alCambiarScopeMoneda()">
-                        Moneda Principal Base (<span id="txt_moneda_base_nombre">USD</span>)
-                    </label>
-
-                    <label class="radio-option">
-                        <input type="radio" name="radio_moneda_scope" value="ESPECIFICA" onchange="UIConciliacion.alCambiarScopeMoneda()">
-                        Moneda Específica Registrada
-                    </label>
-
-                    <select id="select_moneda_especifica" style="display: none; margin-left: 25px; width: calc(100% - 25px);">
-                        <!-- Se llena dinámicamente -->
-                    </select>
-
-                    <label class="radio-option">
-                        <input type="radio" name="radio_moneda_scope" value="TODAS" onchange="UIConciliacion.alCambiarScopeMoneda()">
-                        🌐 Aplicar a Todas las Monedas
-                    </label>
-                </div>
-
-                <button class="btn-info" onclick="UIConciliacion.crearNuevaConciliacion()" style="margin-top: 20px;">
-                    💾 REGISTRAR Y GUARDAR CONCILIACIÓN
+                <!-- BOTÓN PARA DESPLEGAR MODAL DE REGISTRO MANUAL -->
+                <button class="btn-info" onclick="UIConciliacion.abrirModalRegistroAvance()">
+                    ➕ REGISTRAR NUEVO AVANCE
                 </button>
+
+                <label style="margin-top: 25px;">HISTORIAL ACUMULADO (CIERRES DE CAJA Y REGISTROS MANUALES):</label>
+                <div class="table-responsive">
+                    <table class="luxury-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha / Hora</th>
+                                <th>Detalle / Concepto</th>
+                                <th>Empleado</th>
+                                <th>Turno</th>
+                                <th>Origen</th>
+                                <th>Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_historial_avances">
+                            <!-- Generado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. ACORDEÓN PLEGADO: GASTOS OPERATIVOS -->
+        <div class="card" id="card_registro_gastos">
+            <div class="card-header" onclick="UIConciliacion.toggleAcordeon(this)">
+                <h2>🧾 2. Gastos Operativos</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <!-- RESUMEN ACUMULADO POR MONEDA -->
+                <div class="summary-box" id="summary_box_gastos">
+                    <!-- Generado dinámicamente -->
+                </div>
+
+                <!-- BOTÓN PARA DESPLEGAR MODAL DE REGISTRO MANUAL -->
+                <button class="btn-info" onclick="UIConciliacion.abrirModalRegistroGasto()">
+                    ➕ REGISTRAR NUEVO GASTO OPERATIVO
+                </button>
+
+                <label style="margin-top: 25px;">HISTORIAL ACUMULADO (CIERRES DE CAJA Y REGISTROS MANUALES):</label>
+                <div class="table-responsive">
+                    <table class="luxury-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha / Hora</th>
+                                <th>Detalle / Concepto</th>
+                                <th>Responsable</th>
+                                <th>Turno</th>
+                                <th>Origen</th>
+                                <th>Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_historial_gastos">
+                            <!-- Generado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <hr style="border: 0; border-top: 1px dashed var(--active-gold); margin: 10px 0;">
 
-        <!-- 2. CONTENEDOR DE CONCILIACIONES CREADAS (TODAS RECOGIDAS POR DEFECTO) -->
+        <!-- 3. CONTENEDOR DE CONCILIACIONES CREADAS -->
         <div id="contenedor_conciliaciones_lista" style="display: flex; flex-direction: column; gap: 15px;">
-            <!-- Se inyectan dinámicamente en orden A-Z -->
+            <!-- Inyección dinámica de Puntos de Pago/Conciliaciones -->
         </div>
 
     </main>
+</div>
+
+<!-- ⚙️ MODAL 1: MÓDULO DE GESTIÓN Y EDICIÓN DE CONCILIACIONES -->
+<div class="modal-overlay" id="modal_gestion_conciliaciones">
+    <div class="modal-content">
+        <button class="modal-close-btn" onclick="UIConciliacion.cerrarModalGestionConciliaciones()">✕</button>
+
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-family: var(--title-font, serif); margin-top: 0; padding-bottom: 10px;">
+            ⚙️ Módulo de Gestión de Conciliaciones
+        </h2>
+
+        <div class="box-edicion" style="margin-top: 15px;">
+            <h3 style="margin-top:0; color:var(--primary); font-family: var(--title-font, serif);">➕ Crear Nueva Conciliación / Punto de Pago</h3>
+            <div class="grid-2">
+                <div>
+                    <label>Nombre de la Conciliación:</label>
+                    <input type="text" id="modal_nuevo_nombre" placeholder="Ej: Punto Banesco POS">
+                </div>
+                <div>
+                    <label>Comisión / Descuento (%):</label>
+                    <input type="number" step="0.01" min="0" max="100" id="modal_nuevo_porcentaje" placeholder="Ej: 1.50">
+                </div>
+            </div>
+
+            <div class="currency-selector-group">
+                <label style="margin-top: 0;">Configuración de Moneda Aplicable:</label>
+                <label class="radio-option">
+                    <input type="radio" name="modal_radio_moneda" value="BASE" checked onchange="UIConciliacion.alCambiarScopeMonedaModal()">
+                    Moneda Principal Base (<span id="modal_txt_moneda_base">USD</span>)
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="modal_radio_moneda" value="ESPECIFICA" onchange="UIConciliacion.alCambiarScopeMonedaModal()">
+                    Moneda Específica Registrada
+                </label>
+                <select id="modal_select_moneda_especifica" style="display: none; margin-left: 25px; width: calc(100% - 25px);"></select>
+                <label class="radio-option">
+                    <input type="radio" name="modal_radio_moneda" value="TODAS" onchange="UIConciliacion.alCambiarScopeMonedaModal()">
+                    🌐 Aplicar a Todas las Monedas
+                </label>
+            </div>
+
+            <button class="btn-info" onclick="UIConciliacion.crearNuevaConciliacionModal()">
+                💾 REGISTRAR CONCILIACIÓN
+            </button>
+        </div>
+
+        <hr style="border: 0; border-top: 1px dashed var(--active-gold); margin: 20px 0;">
+
+        <h3 style="color:var(--primary); font-family: var(--title-font, serif);">✏️ Editar o Eliminar Conciliaciones Existentes</h3>
+        <div id="modal_lista_edicion_conciliaciones" style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">
+            <!-- Inyección dinámica -->
+        </div>
+    </div>
+</div>
+
+<!-- 💸 MODAL 2: REGISTRO DE AVANCE -->
+<div class="modal-overlay" id="modal_registro_avance">
+    <div class="modal-content" style="max-width: 650px;">
+        <button class="modal-close-btn" onclick="UIConciliacion.cerrarModalRegistroAvance()">✕</button>
+
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-family: var(--title-font, serif); margin-top: 0; padding-bottom: 10px;">
+            💸 Registrar Nuevo Avance
+        </h2>
+
+        <div class="grid-2">
+            <div>
+                <label>Detalles / Justificación:</label>
+                <input type="text" id="avance_detalle" placeholder="Ej: Avance de sueldo quincenal">
+            </div>
+            <div>
+                <label>Monto:</label>
+                <input type="number" step="0.01" min="0" id="avance_monto" placeholder="0.00">
+            </div>
+        </div>
+
+        <div class="grid-3" style="margin-top: 10px;">
+            <div>
+                <label>Tipo de Moneda:</label>
+                <select id="avance_moneda"></select>
+            </div>
+            <div>
+                <label>Empleado que Recibe:</label>
+                <select id="avance_empleado">
+                    <option value="">Cargando empleados...</option>
+                </select>
+            </div>
+            <div>
+                <label>Turno:</label>
+                <select id="avance_turno">
+                    <option value="Diurno">Diurno</option>
+                    <option value="Nocturno">Nocturno</option>
+                    <option value="24 Horas">24 Horas</option>
+                </select>
+            </div>
+        </div>
+
+        <div>
+            <label>Fecha:</label>
+            <input type="date" id="avance_fecha">
+        </div>
+
+        <button class="btn-info" onclick="UIConciliacion.registrarAvance()">
+            💾 GUARDAR AVANCE
+        </button>
+    </div>
+</div>
+
+<!-- 🧾 MODAL 3: REGISTRO DE GASTO OPERATIVO -->
+<div class="modal-overlay" id="modal_registro_gasto">
+    <div class="modal-content" style="max-width: 650px;">
+        <button class="modal-close-btn" onclick="UIConciliacion.cerrarModalRegistroGasto()">✕</button>
+
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-family: var(--title-font, serif); margin-top: 0; padding-bottom: 10px;">
+            🧾 Registrar Nuevo Gasto Operativo
+        </h2>
+
+        <div class="grid-2">
+            <div>
+                <label>Detalles / Concepto del Gasto:</label>
+                <input type="text" id="gasto_detalle" placeholder="Ej: Compra de insumos o limpieza">
+            </div>
+            <div>
+                <label>Monto:</label>
+                <input type="number" step="0.01" min="0" id="gasto_monto" placeholder="0.00">
+            </div>
+        </div>
+
+        <div class="grid-3" style="margin-top: 10px;">
+            <div>
+                <label>Tipo de Moneda:</label>
+                <select id="gasto_moneda"></select>
+            </div>
+            <div>
+                <label>Empleado Responsable:</label>
+                <select id="gasto_empleado">
+                    <option value="">Cargando empleados...</option>
+                </select>
+            </div>
+            <div>
+                <label>Turno:</label>
+                <select id="gasto_turno">
+                    <option value="Diurno">Diurno</option>
+                    <option value="Nocturno">Nocturno</option>
+                    <option value="24 Horas">24 Horas</option>
+                </select>
+            </div>
+        </div>
+
+        <div>
+            <label>Fecha:</label>
+            <input type="date" id="gasto_fecha">
+        </div>
+
+        <button class="btn-info" onclick="UIConciliacion.registrarGastoOperativo()">
+            💾 GUARDAR GASTO OPERATIVO
+        </button>
+    </div>
 </div>
 
 <script>
@@ -404,11 +603,15 @@
         listaConciliaciones: [],
         monedaBase: 'USD',
         monedasSecundarias: [],
+        listaEmpleados: [],
+        historialAvances: [],
+        historialGastos: [],
+        localId: null,
 
         init: async function() {
             try {
                 if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
-                    UIBase.mostrarCargando("CARGANDO CONCILIACIONES", "Sincronizando reglas contables y puntos de pago...");
+                    UIBase.mostrarCargando("CARGANDO CONCILIACIONES", "Sincronizando reglas contables y datos...");
                 }
 
                 const estado = await AppMotor.inicializar();
@@ -417,16 +620,30 @@
                     UIBase.sincronizarNombreLocal(estado.datosLocal?.nombre);
                 }
 
+                this.localId = estado.datosLocal?.id || estado.local_id || null;
+
                 const sistemaMonetario = estado.sistemaMonetario || {};
                 this.monedaBase = sistemaMonetario.moneda_base || 'USD';
                 this.monedasSecundarias = sistemaMonetario.secundarias || [];
 
                 this.listaConciliaciones = AppMotor.obtenerConciliacionesRules();
 
-                this.poblarSelectoresMonedas();
-                this.renderizarConciliacionesOrdenadas();
+                await this.cargarListaEmpleados(estado);
+                this.poblarSelectoresFormularios();
 
-                // EVALUACIÓN DE CONTROL DE SEGURIDAD Y NIVEL DE BLOQUEO DE CONTRASEÑA
+                // Cargar registros acumulados de Avances y Gastos
+                await this.cargarHistorialAvancesYGastos();
+
+                this.renderizarAvances();
+                this.renderizarGastos();
+                this.renderizarConciliacionesInformacion();
+
+                // Fecha por defecto en los modales
+                const hoy = new Date().toISOString().split('T')[0];
+                document.getElementById('avance_fecha').value = hoy;
+                document.getElementById('gasto_fecha').value = hoy;
+
+                // EVALUACIÓN DE CONTROL DE SEGURIDAD
                 const pinAdmin = estado.configuracion?.identidad?.admin_pass;
                 if (pinAdmin && pinAdmin.trim() !== "") {
                     document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
@@ -448,6 +665,17 @@
                     window.location.href = 'index.html';
                 } else {
                     alert("Error al cargar módulo de Conciliaciones: " + err.message);
+                }
+            }
+        },
+
+        cargarListaEmpleados: async function(estado) {
+            this.listaEmpleados = estado.empleados || [];
+            if (!this.listaEmpleados || this.listaEmpleados.length === 0) {
+                const sb = window.supabaseClient || (typeof AppMotor !== 'undefined' ? AppMotor.supabase : null);
+                if (sb && this.localId) {
+                    const { data } = await sb.from('empleados').select('*').eq('local_id', this.localId);
+                    if (data) this.listaEmpleados = data;
                 }
             }
         },
@@ -474,35 +702,334 @@
             }
         },
 
-        poblarSelectoresMonedas: function() {
-            const txtMonedaBase = document.getElementById('txt_moneda_base_nombre');
-            if (txtMonedaBase) txtMonedaBase.innerText = this.monedaBase;
+        poblarSelectoresFormularios: function() {
+            const selectAvanceMon = document.getElementById('avance_moneda');
+            const selectGastoMon = document.getElementById('gasto_moneda');
+            const modalTxtMonBase = document.getElementById('modal_txt_moneda_base');
+            const modalSelectEsp = document.getElementById('modal_select_moneda_especifica');
 
-            const selectEsp = document.getElementById('select_moneda_especifica');
-            if (selectEsp) {
-                selectEsp.innerHTML = `<option value="${this.monedaBase}">${this.monedaBase} (Principal Base)</option>`;
-                this.monedasSecundarias.forEach(sec => {
-                    const opt = document.createElement('option');
-                    opt.value = sec.code;
-                    opt.text = `${sec.code} (Tasa: ${sec.tasa})`;
-                    selectEsp.appendChild(opt);
+            if (modalTxtMonBase) modalTxtMonBase.innerText = this.monedaBase;
+
+            let opcionesMonedasHtml = `<option value="${this.monedaBase}">${this.monedaBase} (Principal Base)</option>`;
+            this.monedasSecundarias.forEach(sec => {
+                opcionesMonedasHtml += `<option value="${sec.code}">${sec.code} (Tasa: ${sec.tasa})</option>`;
+            });
+
+            if (selectAvanceMon) selectAvanceMon.innerHTML = opcionesMonedasHtml;
+            if (selectGastoMon) selectGastoMon.innerHTML = opcionesMonedasHtml;
+            if (modalSelectEsp) modalSelectEsp.innerHTML = opcionesMonedasHtml;
+
+            // Poblar Empleados
+            const selectAvanceEmp = document.getElementById('avance_empleado');
+            const selectGastoEmp = document.getElementById('gasto_empleado');
+
+            let opcionesEmpleadosHtml = `<option value="">-- Seleccionar Empleado --</option>`;
+            if (this.listaEmpleados && this.listaEmpleados.length > 0) {
+                this.listaEmpleados.forEach(emp => {
+                    const nomComp = `${emp.nombre || ''} ${emp.apellido || ''}`.trim() || emp.username || 'Empleado';
+                    opcionesEmpleadosHtml += `<option value="${emp.id}">${nomComp}</option>`;
                 });
+            } else {
+                opcionesEmpleadosHtml = `<option value="">No hay empleados registrados</option>`;
+            }
+
+            if (selectAvanceEmp) selectAvanceEmp.innerHTML = opcionesEmpleadosHtml;
+            if (selectGastoEmp) selectGastoEmp.innerHTML = opcionesEmpleadosHtml;
+        },
+
+        // GESTIÓN DE MODALES
+        abrirModalGestionConciliaciones: function() {
+            this.renderizarEdicionModal();
+            document.getElementById('modal_gestion_conciliaciones').style.display = 'flex';
+        },
+        cerrarModalGestionConciliaciones: function() {
+            document.getElementById('modal_gestion_conciliaciones').style.display = 'none';
+        },
+
+        abrirModalRegistroAvance: function() {
+            document.getElementById('modal_registro_avance').style.display = 'flex';
+        },
+        cerrarModalRegistroAvance: function() {
+            document.getElementById('modal_registro_avance').style.display = 'none';
+        },
+
+        abrirModalRegistroGasto: function() {
+            document.getElementById('modal_registro_gasto').style.display = 'flex';
+        },
+        cerrarModalRegistroGasto: function() {
+            document.getElementById('modal_registro_gasto').style.display = 'none';
+        },
+
+        // CARGA DE REGISTROS DESDE SUPABASE
+        cargarHistorialAvancesYGastos: async function() {
+            const sb = window.supabaseClient || (typeof AppMotor !== 'undefined' ? AppMotor.supabase : null);
+            if (!sb || !this.localId) return;
+
+            try {
+                const [resAvances, resGastos] = await Promise.all([
+                    sb.from('avances').select('*, empleados(nombre, apellido, username)').eq('local_id', this.localId).order('created_at', { ascending: false }),
+                    sb.from('gastos_operativos').select('*, empleados(nombre, apellido, username)').eq('local_id', this.localId).order('created_at', { ascending: false })
+                ]);
+
+                this.historialAvances = resAvances.data || [];
+                this.historialGastos = resGastos.data || [];
+            } catch (err) {
+                console.error("Error cargando historial de egresos:", err);
             }
         },
 
-        alCambiarScopeMoneda: function() {
-            const selectedRadio = document.querySelector('input[name="radio_moneda_scope"]:checked')?.value;
-            const selectEsp = document.getElementById('select_moneda_especifica');
+        // RENDERIZADO AVANCES DE EMPLEADOS
+        renderizarAvances: function() {
+            const boxSum = document.getElementById('summary_box_avances');
+            const tbody = document.getElementById('tbody_historial_avances');
+
+            // Calcular acumulado por cada moneda registrada
+            const monedas = [this.monedaBase, ...this.monedasSecundarias.map(m => m.code)];
+            const totalesMoneda = {};
+            monedas.forEach(m => totalesMoneda[m] = 0);
+
+            this.historialAvances.forEach(item => {
+                const mon = item.moneda || this.monedaBase;
+                if (totalesMoneda[mon] !== undefined) {
+                    totalesMoneda[mon] += parseFloat(item.monto) || 0;
+                } else {
+                    totalesMoneda[mon] = parseFloat(item.monto) || 0;
+                }
+            });
+
+            // Tarjetas de Resumen
+            let summaryHtml = '';
+            for (const [mon, total] of Object.entries(totalesMoneda)) {
+                summaryHtml += `
+                    <div class="summary-card">
+                        <span class="label">Total Acumulado (${mon})</span>
+                        <span class="value">${total.toFixed(2)} ${mon}</span>
+                    </div>
+                `;
+            }
+            summaryHtml += `
+                <div class="summary-card">
+                    <span class="label">N° Registros</span>
+                    <span class="value">${this.historialAvances.length}</span>
+                </div>
+            `;
+            if (boxSum) boxSum.innerHTML = summaryHtml;
+
+            // Tabla
+            if (tbody) {
+                if (this.historialAvances.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); font-style:italic;">No hay registros de avances acumulados.</td></tr>`;
+                } else {
+                    tbody.innerHTML = this.historialAvances.map(item => {
+                        const empObj = item.empleados;
+                        const nomEmp = empObj ? (`${empObj.nombre || ''} ${empObj.apellido || ''}`.trim() || empObj.username) : 'Empleado General';
+                        const origenBadge = (item.origen === 'cierre_caja') 
+                            ? `<span class="badge-origen origen-cierre">Cierre Caja</span>` 
+                            : `<span class="badge-origen origen-manual">Manual</span>`;
+
+                        return `
+                            <tr>
+                                <td>${item.fecha || 'N/A'}</td>
+                                <td><strong>${item.detalle || 'SIN DETALLE'}</strong></td>
+                                <td>${nomEmp}</td>
+                                <td>${item.turno || 'N/A'}</td>
+                                <td>${origenBadge}</td>
+                                <td style="font-weight:bold; color:var(--primary);">${parseFloat(item.monto).toFixed(2)} ${item.moneda}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+        },
+
+        // RENDERIZADO GASTOS OPERATIVOS
+        renderizarGastos: function() {
+            const boxSum = document.getElementById('summary_box_gastos');
+            const tbody = document.getElementById('tbody_historial_gastos');
+
+            const monedas = [this.monedaBase, ...this.monedasSecundarias.map(m => m.code)];
+            const totalesMoneda = {};
+            monedas.forEach(m => totalesMoneda[m] = 0);
+
+            this.historialGastos.forEach(item => {
+                const mon = item.moneda || this.monedaBase;
+                if (totalesMoneda[mon] !== undefined) {
+                    totalesMoneda[mon] += parseFloat(item.monto) || 0;
+                } else {
+                    totalesMoneda[mon] = parseFloat(item.monto) || 0;
+                }
+            });
+
+            let summaryHtml = '';
+            for (const [mon, total] of Object.entries(totalesMoneda)) {
+                summaryHtml += `
+                    <div class="summary-card">
+                        <span class="label">Total Acumulado (${mon})</span>
+                        <span class="value">${total.toFixed(2)} ${mon}</span>
+                    </div>
+                `;
+            }
+            summaryHtml += `
+                <div class="summary-card">
+                    <span class="label">N° Registros</span>
+                    <span class="value">${this.historialGastos.length}</span>
+                </div>
+            `;
+            if (boxSum) boxSum.innerHTML = summaryHtml;
+
+            if (tbody) {
+                if (this.historialGastos.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); font-style:italic;">No hay registros de gastos operativos acumulados.</td></tr>`;
+                } else {
+                    tbody.innerHTML = this.historialGastos.map(item => {
+                        const empObj = item.empleados;
+                        const nomEmp = empObj ? (`${empObj.nombre || ''} ${empObj.apellido || ''}`.trim() || empObj.username) : 'Empleado General';
+                        const origenBadge = (item.origen === 'cierre_caja') 
+                            ? `<span class="badge-origen origen-cierre">Cierre Caja</span>` 
+                            : `<span class="badge-origen origen-manual">Manual</span>`;
+
+                        return `
+                            <tr>
+                                <td>${item.fecha || 'N/A'}</td>
+                                <td><strong>${item.detalle || 'SIN DETALLE'}</strong></td>
+                                <td>${nomEmp}</td>
+                                <td>${item.turno || 'N/A'}</td>
+                                <td>${origenBadge}</td>
+                                <td style="font-weight:bold; color:var(--primary);">${parseFloat(item.monto).toFixed(2)} ${item.moneda}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+        },
+
+        // REGISTRO EN SUPABASE: AVANCE
+        registrarAvance: async function() {
+            const detalle = document.getElementById('avance_detalle').value.trim();
+            const monto = parseFloat(document.getElementById('avance_monto').value) || 0;
+            const moneda = document.getElementById('avance_moneda').value;
+            const empleadoId = document.getElementById('avance_empleado').value;
+            const turno = document.getElementById('avance_turno').value;
+            const fecha = document.getElementById('avance_fecha').value;
+
+            if (!detalle) return alert("⚠️ Escriba el detalle o justificación del avance.");
+            if (monto <= 0) return alert("⚠️ Ingrese un monto mayor a 0.");
+            if (!empleadoId) return alert("⚠️ Seleccione el empleado correspondiente.");
+
+            let tasa = 1;
+            if (moneda !== this.monedaBase) {
+                const sec = this.monedasSecundarias.find(m => m.code === moneda);
+                if (sec && parseFloat(sec.tasa) > 0) tasa = parseFloat(sec.tasa);
+            }
+            const montoUSD = (moneda === 'USD') ? monto : (monto / tasa);
+
+            const sb = window.supabaseClient || (typeof AppMotor !== 'undefined' ? AppMotor.supabase : null);
+            if (!sb) return alert("❌ Error de conexión con Supabase.");
+
+            if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
+                UIBase.mostrarCargando("GUARDANDO", "Registrando avance...");
+            }
+
+            try {
+                const { error } = await sb.from('avances').insert([{
+                    local_id: this.localId,
+                    detalle: detalle,
+                    monto: monto,
+                    moneda: moneda,
+                    monto_usd: montoUSD,
+                    empleado_id: empleadoId,
+                    turno: turno,
+                    fecha: fecha,
+                    origen: 'manual'
+                }]);
+
+                if (error) throw error;
+
+                document.getElementById('avance_detalle').value = '';
+                document.getElementById('avance_monto').value = '';
+                this.cerrarModalRegistroAvance();
+
+                await this.cargarHistorialAvancesYGastos();
+                this.renderizarAvances();
+
+                alert("✅ Avance registrado exitosamente.");
+            } catch (err) {
+                alert("❌ Error al guardar avance: " + err.message);
+            } finally {
+                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
+            }
+        },
+
+        // REGISTRO EN SUPABASE: GASTO OPERATIVO
+        registrarGastoOperativo: async function() {
+            const detalle = document.getElementById('gasto_detalle').value.trim();
+            const monto = parseFloat(document.getElementById('gasto_monto').value) || 0;
+            const moneda = document.getElementById('gasto_moneda').value;
+            const empleadoId = document.getElementById('gasto_empleado').value;
+            const turno = document.getElementById('gasto_turno').value;
+            const fecha = document.getElementById('gasto_fecha').value;
+
+            if (!detalle) return alert("⚠️ Escriba el detalle o concepto del gasto.");
+            if (monto <= 0) return alert("⚠️ Ingrese un monto mayor a 0.");
+            if (!empleadoId) return alert("⚠️ Seleccione el empleado responsable.");
+
+            let tasa = 1;
+            if (moneda !== this.monedaBase) {
+                const sec = this.monedasSecundarias.find(m => m.code === moneda);
+                if (sec && parseFloat(sec.tasa) > 0) tasa = parseFloat(sec.tasa);
+            }
+            const montoUSD = (moneda === 'USD') ? monto : (monto / tasa);
+
+            const sb = window.supabaseClient || (typeof AppMotor !== 'undefined' ? AppMotor.supabase : null);
+            if (!sb) return alert("❌ Error de conexión con Supabase.");
+
+            if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
+                UIBase.mostrarCargando("GUARDANDO", "Registrando gasto...");
+            }
+
+            try {
+                const { error } = await sb.from('gastos_operativos').insert([{
+                    local_id: this.localId,
+                    detalle: detalle,
+                    monto: monto,
+                    moneda: moneda,
+                    monto_usd: montoUSD,
+                    empleado_id: empleadoId,
+                    turno: turno,
+                    fecha: fecha,
+                    origen: 'manual'
+                }]);
+
+                if (error) throw error;
+
+                document.getElementById('gasto_detalle').value = '';
+                document.getElementById('gasto_monto').value = '';
+                this.cerrarModalRegistroGasto();
+
+                await this.cargarHistorialAvancesYGastos();
+                this.renderizarGastos();
+
+                alert("✅ Gasto operativo registrado exitosamente.");
+            } catch (err) {
+                alert("❌ Error al guardar gasto operativo: " + err.message);
+            } finally {
+                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
+            }
+        },
+
+        alCambiarScopeMonedaModal: function() {
+            const selectedRadio = document.querySelector('input[name="modal_radio_moneda"]:checked')?.value;
+            const selectEsp = document.getElementById('modal_select_moneda_especifica');
             if (selectEsp) {
                 selectEsp.style.display = (selectedRadio === 'ESPECIFICA') ? 'block' : 'none';
             }
         },
 
-        crearNuevaConciliacion: async function() {
-            const nombreInput = document.getElementById('nuevo_nombre_conciliacion');
-            const porcentajeInput = document.getElementById('nuevo_porcentaje_conciliacion');
-            const scopeRadio = document.querySelector('input[name="radio_moneda_scope"]:checked')?.value || 'BASE';
-            const selectEsp = document.getElementById('select_moneda_especifica');
+        crearNuevaConciliacionModal: async function() {
+            const nombreInput = document.getElementById('modal_nuevo_nombre');
+            const porcentajeInput = document.getElementById('modal_nuevo_porcentaje');
+            const scopeRadio = document.querySelector('input[name="modal_radio_moneda"]:checked')?.value || 'BASE';
+            const selectEsp = document.getElementById('modal_select_moneda_especifica');
 
             const nombre = nombreInput.value.trim();
             const porcentaje = parseFloat(porcentajeInput.value) || 0;
@@ -528,40 +1055,135 @@
             this.listaConciliaciones.push(nuevaConciliacion);
 
             if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
-                UIBase.mostrarCargando("GUARDANDO", "Registrando nueva conciliación en la nube...");
+                UIBase.mostrarCargando("GUARDANDO", "Registrando nueva conciliación...");
             }
 
             try {
                 await AppMotor.actualizarConciliacionesRules(this.listaConciliaciones);
-                
                 nombreInput.value = '';
                 porcentajeInput.value = '';
-                const radioBase = document.querySelector('input[name="radio_moneda_scope"][value="BASE"]');
-                if (radioBase) radioBase.checked = true;
-                this.alCambiarScopeMoneda();
-
-                this.renderizarConciliacionesOrdenadas();
                 
-                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) {
-                    UIBase.ocultarCargando();
-                }
+                this.renderizarEdicionModal();
+                this.renderizarConciliacionesInformacion();
+
+                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
+                alert("✅ Conciliación registrada correctamente.");
             } catch (err) {
                 if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
                 alert("❌ Error al guardar conciliación: " + err.message);
             }
         },
 
-        renderizarConciliacionesOrdenadas: function() {
+        renderizarEdicionModal: function() {
+            const cont = document.getElementById('modal_lista_edicion_conciliaciones');
+            if (!cont) return;
+            cont.innerHTML = '';
+
+            if (this.listaConciliaciones.length === 0) {
+                cont.innerHTML = `<div style="text-align:center; color:var(--muted); font-style:italic;">No hay conciliaciones registradas para editar.</div>`;
+                return;
+            }
+
+            this.listaConciliaciones.forEach(conc => {
+                let opcionesMonedaHtml = `<option value="${this.monedaBase}" ${conc.monedaCodigo === this.monedaBase ? 'selected' : ''}>Base (${this.monedaBase})</option>`;
+                opcionesMonedaHtml += `<option value="TODAS" ${conc.monedaCodigo === 'TODAS' ? 'selected' : ''}>🌐 TODAS</option>`;
+                this.monedasSecundarias.forEach(m => {
+                    opcionesMonedaHtml += `<option value="${m.code}" ${conc.monedaCodigo === m.code ? 'selected' : ''}>${m.code}</option>`;
+                });
+
+                const box = document.createElement('div');
+                box.className = 'box-edicion';
+                box.innerHTML = `
+                    <div class="grid-3">
+                        <div>
+                            <label>Nombre:</label>
+                            <input type="text" id="modal_edit_nombre_${conc.id}" value="${conc.nombre}">
+                        </div>
+                        <div>
+                            <label>Comisión (%):</label>
+                            <input type="number" step="0.01" id="modal_edit_porcentaje_${conc.id}" value="${conc.porcentaje}">
+                        </div>
+                        <div>
+                            <label>Moneda:</label>
+                            <select id="modal_edit_moneda_${conc.id}">${opcionesMonedaHtml}</select>
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-top: 12px;">
+                        <button class="btn-info" style="margin-top:0;" onclick="UIConciliacion.guardarEdicionModal('${conc.id}')">
+                            💾 GUARDAR CAMBIOS
+                        </button>
+                        <button class="btn-danger" style="margin-top:0;" onclick="UIConciliacion.eliminarConciliacionModal('${conc.id}')">
+                            🗑️ ELIMINAR CONCILIACIÓN
+                        </button>
+                    </div>
+                `;
+                cont.appendChild(box);
+            });
+        },
+
+        guardarEdicionModal: async function(concId) {
+            const conc = this.listaConciliaciones.find(c => c.id === concId);
+            if (!conc) return;
+
+            const nuevoNombre = document.getElementById(`modal_edit_nombre_${concId}`).value.trim();
+            const nuevoPorcentaje = parseFloat(document.getElementById(`modal_edit_porcentaje_${concId}`).value) || 0;
+            const nuevaMoneda = document.getElementById(`modal_edit_moneda_${concId}`).value;
+
+            if (!nuevoNombre) return alert("⚠️ El nombre no puede estar vacío.");
+
+            conc.nombre = nuevoNombre;
+            conc.porcentaje = nuevoPorcentaje;
+            conc.monedaCodigo = nuevaMoneda;
+
+            if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
+                UIBase.mostrarCargando("ACTUALIZANDO", "Guardando cambios...");
+            }
+
+            try {
+                await AppMotor.actualizarConciliacionesRules(this.listaConciliaciones);
+                this.renderizarEdicionModal();
+                this.renderizarConciliacionesInformacion();
+                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
+                alert("✅ Conciliación actualizada.");
+            } catch (err) {
+                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
+                alert("❌ Error: " + err.message);
+            }
+        },
+
+        eliminarConciliacionModal: async function(concId) {
+            const conc = this.listaConciliaciones.find(c => c.id === concId);
+            if (!conc) return;
+
+            if (!confirm(`⚠️ ¿Desea eliminar completamente "${conc.nombre}"?`)) return;
+
+            this.listaConciliaciones = this.listaConciliaciones.filter(c => c.id !== concId);
+
+            if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
+                UIBase.mostrarCargando("ELIMINANDO", "Eliminando conciliación...");
+            }
+
+            try {
+                await AppMotor.actualizarConciliacionesRules(this.listaConciliaciones);
+                this.renderizarEdicionModal();
+                this.renderizarConciliacionesInformacion();
+                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
+            } catch (err) {
+                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
+                alert("❌ Error: " + err.message);
+            }
+        },
+
+        renderizarConciliacionesInformacion: function() {
             const cont = document.getElementById('contenedor_conciliaciones_lista');
             if (!cont) return;
             cont.innerHTML = '';
 
             if (this.listaConciliaciones.length === 0) {
-                cont.innerHTML = `<div class="card" style="padding: 25px; text-align: center; color: var(--muted); font-style: italic;">No hay conciliaciones registradas.</div>`;
+                cont.innerHTML = `<div class="card" style="padding: 25px; text-align: center; color: var(--muted); font-style: italic;">No hay conciliaciones creadas. Haz clic en "Crear y Administrar Puntos de Pago" para agregar una.</div>`;
                 return;
             }
 
-            // Ordenamiento Alfabético A-Z
             const listaOrdenada = [...this.listaConciliaciones].sort((a, b) => 
                 a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
             );
@@ -572,14 +1194,8 @@
                 const totalNeto = totalMonto - totalComision;
 
                 const cardHtml = document.createElement('div');
-                cardHtml.className = 'card'; // RECOGIDO / CERRADO POR DEFECTO (SIN CLASE 'open')
+                cardHtml.className = 'card';
                 cardHtml.id = `card_${conc.id}`;
-
-                let opcionesMonedaHtml = `<option value="${this.monedaBase}" ${conc.monedaCodigo === this.monedaBase ? 'selected' : ''}>Base (${this.monedaBase})</option>`;
-                opcionesMonedaHtml += `<option value="TODAS" ${conc.monedaCodigo === 'TODAS' ? 'selected' : ''}>🌐 TODAS</option>`;
-                this.monedasSecundarias.forEach(m => {
-                    opcionesMonedaHtml += `<option value="${m.code}" ${conc.monedaCodigo === m.code ? 'selected' : ''}>${m.code}</option>`;
-                });
 
                 cardHtml.innerHTML = `
                     <div class="card-header" onclick="UIConciliacion.toggleAcordeon(this)">
@@ -592,7 +1208,6 @@
                     </div>
                     <div class="card-body">
                         
-                        <!-- RESUMEN ACUMULADO DESDE CAJA -->
                         <div class="summary-box">
                             <div class="summary-card">
                                 <span class="label">Total Acumulado en Caja</span>
@@ -612,30 +1227,7 @@
                             </div>
                         </div>
 
-                        <!-- EDICIÓN DE REGLAS DE LA CONCILIACIÓN -->
-                        <div class="box-edicion">
-                            <label style="margin-top:0;">✏️ Editar Parámetros de la Conciliación:</label>
-                            <div class="grid-3" style="margin-top: 10px;">
-                                <div>
-                                    <label>Nombre:</label>
-                                    <input type="text" id="edit_nombre_${conc.id}" value="${conc.nombre}">
-                                </div>
-                                <div>
-                                    <label>Comisión (%):</label>
-                                    <input type="number" step="0.01" id="edit_porcentaje_${conc.id}" value="${conc.porcentaje}">
-                                </div>
-                                <div>
-                                    <label>Moneda:</label>
-                                    <select id="edit_moneda_${conc.id}">${opcionesMonedaHtml}</select>
-                                </div>
-                            </div>
-                            <button class="btn-info" style="margin-top: 12px;" onclick="UIConciliacion.guardarEdicion('${conc.id}')">
-                                💾 GUARDAR REGLAS DE CONCILIACIÓN
-                            </button>
-                        </div>
-
-                        <!-- TABLA DE AUDITORÍA HISTÓRICA DE CAJA -->
-                        <label>Historial Acumulado (Ventas y Cierres de Caja):</label>
+                        <label>HISTORIAL ACUMULADO (VENTAS Y CIERRES DE CAJA):</label>
                         <div class="table-responsive">
                             <table class="luxury-table">
                                 <thead>
@@ -645,22 +1237,12 @@
                                         <th>Monto Bruto</th>
                                         <th>Comisión (${conc.porcentaje}%)</th>
                                         <th>Monto Neto</th>
-                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${this.generarFilasTabla(conc)}
                                 </tbody>
                             </table>
-                        </div>
-
-                        <div class="grid-2" style="margin-top: 25px;">
-                            <button class="btn-info" onclick="UIConciliacion.vaciarHistorial('${conc.id}')">
-                                🧹 Vaciar Registros Acumulados
-                            </button>
-                            <button class="btn-danger" onclick="UIConciliacion.eliminarConciliacion('${conc.id}')">
-                                🗑️ ELIMINAR CONCILIACIÓN COMPLETA
-                            </button>
                         </div>
 
                     </div>
@@ -672,10 +1254,10 @@
 
         generarFilasTabla: function(conciliacion) {
             if (!conciliacion.registros || conciliacion.registros.length === 0) {
-                return `<tr><td colspan="6" style="text-align:center; color:var(--muted); font-style:italic;">No hay transacciones acumuladas desde caja.</td></tr>`;
+                return `<tr><td colspan="5" style="text-align:center; color:var(--muted); font-style:italic;">No hay transacciones acumuladas desde caja.</td></tr>`;
             }
 
-            return conciliacion.registros.map((reg, index) => {
+            return conciliacion.registros.map((reg) => {
                 const monto = parseFloat(reg.monto) || 0;
                 const comision = monto * (conciliacion.porcentaje / 100);
                 const neto = monto - comision;
@@ -687,106 +1269,9 @@
                         <td>${monto.toFixed(2)} ${conciliacion.monedaCodigo}</td>
                         <td style="color:var(--secondary);">- ${comision.toFixed(2)}</td>
                         <td style="color:#2E7D32; font-weight:bold;">${neto.toFixed(2)}</td>
-                        <td>
-                            <button class="btn-danger" style="padding:4px 8px; margin:0; font-size:0.75rem; width:auto;" onclick="UIConciliacion.eliminarRegistroIndividual('${conciliacion.id}', ${index})">
-                                ✕
-                            </button>
-                        </td>
                     </tr>
                 `;
             }).join('');
-        },
-
-        guardarEdicion: async function(concId) {
-            const conc = this.listaConciliaciones.find(c => c.id === concId);
-            if (!conc) return;
-
-            const nuevoNombre = document.getElementById(`edit_nombre_${concId}`).value.trim();
-            const nuevoPorcentaje = parseFloat(document.getElementById(`edit_porcentaje_${concId}`).value) || 0;
-            const nuevaMoneda = document.getElementById(`edit_moneda_${concId}`).value;
-
-            if (!nuevoNombre) return alert("⚠️ El nombre no puede estar vacío.");
-
-            conc.nombre = nuevoNombre;
-            conc.porcentaje = nuevoPorcentaje;
-            conc.monedaCodigo = nuevaMoneda;
-
-            if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
-                UIBase.mostrarCargando("ACTUALIZANDO", "Guardando cambios...");
-            }
-
-            try {
-                await AppMotor.actualizarConciliacionesRules(this.listaConciliaciones);
-                this.renderizarConciliacionesOrdenadas();
-                document.getElementById(`card_${concId}`)?.classList.add('open');
-                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
-            } catch (err) {
-                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
-                alert("❌ Error: " + err.message);
-            }
-        },
-
-        eliminarRegistroIndividual: async function(concId, index) {
-            const conc = this.listaConciliaciones.find(c => c.id === concId);
-            if (!conc) return;
-
-            conc.registros.splice(index, 1);
-            if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
-                UIBase.mostrarCargando("ELIMINANDO", "Actualizando registro...");
-            }
-
-            try {
-                await AppMotor.actualizarConciliacionesRules(this.listaConciliaciones);
-                this.renderizarConciliacionesOrdenadas();
-                document.getElementById(`card_${concId}`)?.classList.add('open');
-                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
-            } catch (err) {
-                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
-                alert("❌ Error: " + err.message);
-            }
-        },
-
-        vaciarHistorial: async function(concId) {
-            const conc = this.listaConciliaciones.find(c => c.id === concId);
-            if (!conc) return;
-
-            if (!confirm(`¿Vaciar todo el historial acumulado de "${conc.nombre}"?`)) return;
-
-            conc.registros = [];
-            if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
-                UIBase.mostrarCargando("LIMPIANDO", "Vaciando historial acumulado...");
-            }
-
-            try {
-                await AppMotor.actualizarConciliacionesRules(this.listaConciliaciones);
-                this.renderizarConciliacionesOrdenadas();
-                document.getElementById(`card_${concId}`)?.classList.add('open');
-                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
-            } catch (err) {
-                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
-                alert("❌ Error: " + err.message);
-            }
-        },
-
-        eliminarConciliacion: async function(concId) {
-            const conc = this.listaConciliaciones.find(c => c.id === concId);
-            if (!conc) return;
-
-            if (!confirm(`⚠️ ¿Desea eliminar completamente "${conc.nombre}"?`)) return;
-
-            this.listaConciliaciones = this.listaConciliaciones.filter(c => c.id !== concId);
-            if (typeof UIBase !== 'undefined' && UIBase.mostrarCargando) {
-                UIBase.mostrarCargando("ELIMINANDO", "Eliminando conciliación...");
-            }
-
-            try {
-                await AppMotor.actualizarConciliacionesRules(this.listaConciliaciones);
-                this.renderizarConciliacionesOrdenadas();
-                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
-            } catch (err) {
-                if (typeof UIBase !== 'undefined' && UIBase.ocultarCargando) UIBase.ocultarCargando();
-                alert("❌ Error: " + err.message);
-            }
         }
     };
 
