@@ -836,7 +836,6 @@
         let div = document.createElement('div');
         div.className = 'flex-row-justificado';
         div.innerHTML = `
-            <input type="text" placeholder="Detalle / Motivo" class="ef-motivo">
             <input type="number" step="any" placeholder="Monto" class="ef-monto" oninput="calcularFaltaPorCobrar()">
             <select class="ef-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles()}</select>
             <button type="button" class="btn-danger" style="padding:8px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
@@ -850,7 +849,6 @@
         let div = document.createElement('div');
         div.className = 'flex-row-justificado';
         div.innerHTML = `
-            <input type="text" placeholder="Detalle / Vuelto Extra" class="vu-motivo" value="Vuelto Entregado Extra">
             <input type="number" step="any" placeholder="Monto Vuelto" class="vu-monto" value="${montoSugerido}" oninput="calcularFaltaPorCobrar()">
             <select class="vu-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles(monedaSugerida)}</select>
             <button type="button" class="btn-danger" style="padding:8px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
