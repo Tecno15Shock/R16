@@ -2,17 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Configuración para renderizado responsivo en dispositivos móviles y escritorio -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Caja Registradora | Panel Ultra-Premium</title>
     
-    <!-- SDK de Supabase JS para interacción con base de datos en tiempo real -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Fuentes tipográficas elegantes Playfair Display y Roboto -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* Variables Globales con paleta Carmesí/Dorado Ultra-Premium */
         :root {
             --topbar-bg: #0d0608; 
             --sidebar-bg: #0b0507; 
@@ -26,7 +22,7 @@
             --warning: #f39c12; 
             --info: #aa8c2c; 
             --text: #f5f5f5; 
-            --border-gold: #d4af37; /* Borde dorado obligatorio de 1px */
+            --border-gold: #d4af37;
             --card-bg: #1a0d12; 
             --item-bg: #26131a; 
             --muted: #a09095;
@@ -35,21 +31,14 @@
             --stock-red: #e74c3c;
         }
 
-        /* Ocultar monedas según preferencia del sistema */
-        body.hide-bs .moneda-bs { display: none !important; }
-        body.hide-cop .moneda-cop { display: none !important; }
-        body.hide-eur .moneda-eur { display: none !important; }
-
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; }
         .wrapper { display: block; min-height: 100vh; position: relative; }
 
-        /* BARRA SUPERIOR ANCLADA (Requisitos 6 y 8) */
         .top-bar { background: var(--topbar-bg); color: white; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 999; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border-bottom: 1px solid var(--border-gold); }
         .menu-toggle-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border-gold); color: var(--active-gold); font-size: 1.2rem; cursor: pointer; width: 38px; height: 38px; padding: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
         .top-bar-title { font-size: 1.15rem; font-weight: bold; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; font-family: 'Playfair Display', serif; }
 
-        /* MENÚ LATERAL DESPLEGABLE ANCLADO (Requisito 7) */
         .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--sidebar-bg); color: white; padding: 20px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 1002; transition: left 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.8); overflow-y: auto; border-right: 1px solid var(--border-gold); }
         .sidebar.open { left: 0; }
         .sidebar-brand { font-size: 1.4rem; font-family: 'Playfair Display', serif; font-weight: bold; text-align: center; padding-bottom: 15px; border-bottom: 1px solid var(--border-gold); margin-bottom: 10px; color: var(--active-gold); text-transform: uppercase; }
@@ -58,7 +47,6 @@
         .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 1001; display: none; backdrop-filter: blur(3px); }
         .sidebar-overlay.active { display: block; }
 
-        /* EFECTO ESPEJO / SWEEP SHINE EN BOTONES (Requisito 9) */
         button, .btn-mirror {
             position: relative;
             overflow: hidden;
@@ -83,15 +71,9 @@
             transition: all 0.75s ease;
             pointer-events: none;
         }
-        button:hover::after, .btn-mirror:hover::after {
-            left: 125%;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(212, 175, 55, 0.3);
-        }
+        button:hover::after, .btn-mirror:hover::after { left: 125%; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(212, 175, 55, 0.3); }
 
-        /* DISEÑO DE TARJETAS Y CONTENEDORES (Requisito 8) */
         .main-content { max-width: 950px; margin: 0 auto; padding: 20px; padding-bottom: 180px; }
         .card { 
             background: var(--card-bg); padding: 25px; border-radius: 4px; margin-bottom: 25px; 
@@ -111,14 +93,12 @@
         }
         input:focus, select:focus { outline: none; border-color: var(--active-gold); box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); background: #321922; }
 
-        /* ESTILOS ESPECÍFICOS DE BOTONES */
         button { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #ffffff; padding: 14px 18px; margin-top: 12px; width: 100%; }
         button.btn-danger { background: linear-gradient(135deg, #7a0000, var(--danger)); color: #fff; width: auto; padding: 10px 14px; margin-top: 0; }
         button.btn-success { background: linear-gradient(135deg, #1e8449, #27ae60); color: #fff; }
         button.btn-add { background: var(--item-bg); color: var(--active-gold); width: auto; padding: 10px 15px; margin-top: 10px; display: inline-block; }
         button.btn-info { background: linear-gradient(135deg, #8a7122, var(--active-gold)); color: #000; }
 
-        /* AUTOCOMPLETADO Y TABLAS CON BORDE DORADO */
         #resultados_clientes { position: absolute; background: var(--card-bg); border: 1px solid var(--border-gold); z-index: 100; max-height: 200px; overflow-y: auto; display: none; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
         .cliente-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #331923; font-size: 0.9em; color: var(--text); }
         .cliente-item:hover { background: var(--item-bg); color: var(--active-gold); font-weight: bold; }
@@ -128,17 +108,15 @@
         th { background: var(--primary); color: var(--active-gold); text-transform: uppercase; font-family: 'Playfair Display', serif; }
         td { background: var(--card-bg); color: var(--text); }
 
-        /* BADGES DE UMBRAL DE STOCK (Requisito 4) */
         .stock-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #000; font-size: 0.85rem; display: inline-block; }
         .stock-verde { background-color: var(--stock-green); }
         .stock-amarillo { background-color: var(--stock-yellow); }
         .stock-rojo { background-color: var(--stock-red); color: #fff; }
 
-        /* TOTALES Y BARRA INFERIOR DE PAGO CONVERSIÓN MULTIMONEDA */
         .total-box-multi { display: flex; flex-direction: column; align-items: flex-end; margin-top: 15px; font-size: 1.1rem; padding: 15px; background: var(--item-bg); border: 1px solid var(--border-gold); }
         .txt-success { color: var(--active-gold); font-size: 1.6rem; font-weight: bold; font-family: 'Playfair Display', serif; }
+        .txt-negative { color: var(--stock-red) !important; font-size: 1.6rem; font-weight: bold; font-family: 'Playfair Display', serif; }
 
-        /* MODAL DE CARGA Y BLOQUEO DE PLANTILLA BASE (Requisitos 1 y 2) */
         #loading_overlay, #lock_overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: radial-gradient(circle at center, rgba(124, 17, 38, 0.95), rgba(11, 5, 7, 0.98));
@@ -158,27 +136,38 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* MODALES CREADOS CON MARCO Y BOTÓN X FLOTANTE */
         .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 100000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .custom-modal-box { 
-            background: var(--card-bg); padding: 30px; border-radius: 4px; min-width: 320px; max-width: 95%; width: 700px;
+            background: var(--card-bg); padding: 30px; border-radius: 4px; min-width: 320px; max-width: 95%; width: 750px;
             position: relative; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--border-gold); box-shadow: 0 20px 50px rgba(0,0,0,0.8);
         }
         .modal-close-btn { 
             position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold);
             border: 1px solid var(--border-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold;
-            font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0;
+            font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; z-index: 30;
         }
 
-        /* ANCLAJE INFERIOR DE BOTÓN ACEPTAR SELECCIÓN CON TOTAL (Requisito 4) */
         .modal-footer-anchored { position: sticky; bottom: -30px; background: var(--card-bg); padding: 15px 0 0 0; border-top: 1px solid var(--border-gold); margin-top: 15px; }
-        .flex-row-justificado { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: center; margin-top: 10px; background: var(--item-bg); padding: 10px; border: 1px solid var(--border-gold); border-radius: 4px; }
+        .flex-row-justificado { display: grid; grid-template-columns: 2fr 1fr 1.2fr auto; gap: 10px; align-items: center; margin-top: 10px; background: var(--item-bg); padding: 10px; border: 1px solid var(--border-gold); border-radius: 4px; }
+
+        /* ESTILO PARA EL ANCLAJE DEL FALTA POR COBRAR AL FINAL DEL MODAL */
+        .sticky-falta-cobrar {
+            position: sticky;
+            bottom: 0;
+            background: var(--primary);
+            border: 1px solid var(--border-gold);
+            padding: 8px 12px;
+            margin-top: 10px;
+            text-align: center;
+            z-index: 20;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.7);
+            border-radius: 4px;
+        }
         .d-none { display: none !important; }
     </style>
 </head>
 <body>
 
-<!-- 1 - MODULO DE CARGA (Requisito 1: Proviene de plantilla_base.js) -->
 <div id="loading_overlay">
     <div class="loading-box">
         <div class="spinner-luxury"></div>
@@ -187,7 +176,6 @@
     </div>
 </div>
 
-<!-- 2 - MODULO DE BLOQUEO (Requisito 2: Proviene de plantilla_base.js) -->
 <div id="lock_overlay">
     <div class="loading-box">
         <div style="font-size:3rem; margin-bottom:10px;">🔒</div>
@@ -198,7 +186,6 @@
     </div>
 </div>
 
-<!-- MODAL GLOBAL DEL SISTEMA -->
 <div id="global_modal" class="custom-modal-overlay">
     <div class="custom-modal-box">
         <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
@@ -207,13 +194,11 @@
     </div>
 </div>
 
-<!-- MODAL DE SELECCIÓN DE PRODUCTOS (Requisito 4: Búsqueda, orden y umbrales) -->
 <div id="modal_selector_productos" class="custom-modal-overlay">
     <div class="custom-modal-box" style="width: 850px;">
         <button class="modal-close-btn" onclick="cerrarSelectorProductos()">✕</button>
         <h2 style="text-align: center; margin-top: 0;">🛒 Selector de Productos</h2>
         
-        <!-- Buscador y Filtros de Orden (Requisito 4) -->
         <div class="grid-2" style="margin-bottom: 10px;">
             <input type="text" id="buscador_prod_modal" placeholder="🔍 Buscar por nombre o código..." oninput="filtrarYRenderizarCatalogoSelector()">
             <select id="orden_prod_modal" onchange="filtrarYRenderizarCatalogoSelector()">
@@ -223,7 +208,6 @@
             </select>
         </div>
 
-        <!-- Tabla con Orden Requerido: PRODUCTO, CATEGORÍA, PRECIOS, STOCK, CANTIDAD (Requisito 4) -->
         <div style="overflow-y: auto; flex-grow: 1; max-height: 50vh;">
             <table>
                 <thead>
@@ -239,7 +223,6 @@
             </table>
         </div>
 
-        <!-- Botón Inferior Anclado que muestra el Total y Acepta Selección (Requisito 4) -->
         <div class="modal-footer-anchored">
             <button class="btn-success" onclick="confirmarSeleccionProductosModal()" style="font-size:1.1rem; padding:15px;">
                 ✅ ACEPTAR SELECCIÓN - TOTAL: <span id="total_modal_selector_txt">$0.00</span>
@@ -248,73 +231,65 @@
     </div>
 </div>
 
-<!-- MODAL DETALLADO DE MÉTODOS DE PAGO Y CONCILIACIONES (Requisito 4) -->
+<!-- MODAL MÉTODOS DE PAGO CON ANCLAJE Y MONEDAS DINÁMICAS -->
 <div id="modal_metodos_pago" class="custom-modal-overlay">
-    <div class="custom-modal-box" style="width: 850px; padding-bottom: 20px;">
+    <div class="custom-modal-box" style="width: 850px; padding-bottom: 0;">
         <button class="modal-close-btn" onclick="cerrarModalMetodosPago()">✕</button>
         <h2 style="text-align: center; margin-top: 0;">💳 Métodos de Pago y Desglose Financiero</h2>
         
         <div style="overflow-y: auto; flex-grow: 1; padding-right: 5px; max-height: 60vh;">
             
-            <!-- AVANCE -->
+            <!-- AVANCES -->
             <div style="border: 1px solid var(--border-gold); padding: 12px; margin-bottom: 12px; background: var(--item-bg);">
                 <label style="margin-top:0;">💸 Avance Retirado:</label>
                 <div id="lista_avances_contenedor"></div>
-                <button class="btn-add" onclick="agregarLineaAvance()">+ Añadir Avance</button>
+                <button type="button" class="btn-add" onclick="agregarLineaAvance()">+ Añadir Avance</button>
             </div>
 
-            <!-- GASTOS OPERATIVOS -->
+            <!-- GASTOS -->
             <div style="border: 1px solid var(--border-gold); padding: 12px; margin-bottom: 12px; background: var(--item-bg);">
                 <label style="margin-top:0;">🧾 Gastos Operativos:</label>
                 <div id="lista_gastos_contenedor"></div>
-                <button class="btn-add" onclick="agregarLineaGasto()">+ Añadir Gasto Operativo</button>
+                <button type="button" class="btn-add" onclick="agregarLineaGasto()">+ Añadir Gasto Operativo</button>
             </div>
 
-            <!-- CONCILIACIONES DINÁMICAS DESDE SUPABASE (Requisito 4) -->
-            <div style="border: 1px solid var(--border-gold); padding: 12px; margin-bottom: 12px; background: var(--item-bg);">
-                <label style="margin-top:0;">🏦 Conciliaciones Configuradas:</label>
-                <div id="lista_conciliaciones_configuradas"></div>
-            </div>
+            <!-- CONCILIACIONES Y PUNTOS DE PAGO -->
+            <div id="contenedor_conciliaciones_main"></div>
 
             <!-- EFECTIVO CAJA FONDO -->
             <div style="border: 1px solid var(--border-gold); padding: 12px; margin-bottom: 12px; background: var(--item-bg);">
                 <label style="margin-top:0;">💵 Efectivo en Caja Fondo:</label>
                 <div id="lista_efectivo_contenedor"></div>
-                <button class="btn-add" onclick="agregarLineaEfectivo()">+ Añadir Efectivo</button>
+                <button type="button" class="btn-add" onclick="agregarLineaEfectivo()">+ Añadir Efectivo</button>
             </div>
 
             <!-- VUELTOS ENTREGADOS EXTRA -->
             <div style="border: 1px solid var(--border-gold); padding: 12px; margin-bottom: 12px; background: var(--item-bg);">
-                <label style="margin-top:0; color: var(--stock-red);">↩️ Vueltos Entregados Extra (Tomados de Caja Fondo):</label>
-                <div id="lista_vueltos_contenedor"></div>
-                <button class="btn-danger" style="margin-top:8px;" onclick="agregarLineaVuelto()">+ Añadir Vuelto Extra</button>
-            </div>
-
-            <!-- FALTA POR COBRAR MONITOREADO EN TIEMPO REAL (Requisito 4) -->
-            <div style="background: var(--primary); border: 1px solid var(--border-gold); padding: 15px; margin-top: 15px; text-align: center;">
-                <div style="font-size: 0.9rem; color: var(--gold-light); font-weight: bold;">FALTA POR COBRAR (RESTANTE EN TIEMPO REAL)</div>
-                <div id="falta_por_cobrar_multimoneda" style="display: flex; justify-content: space-around; margin-top: 8px; font-weight: bold; font-size: 1.1rem; color: var(--active-gold);">
-                    <div>USD: <span id="falta_usd">$0.00</span></div>
-                    <div class="moneda-bs">BS: <span id="falta_bs">0.00 BS</span></div>
-                    <div class="moneda-cop">COP: <span id="falta_cop">0 COP</span></div>
-                    <div class="moneda-eur">EUR: <span id="falta_eur">0.00 EUR</span></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <label style="margin-top:0; color: var(--stock-red);">↩️ Vueltos Entregados Extra (Tomados de Caja Fondo):</label>
+                    <button type="button" class="btn-info" style="width:auto; padding:4px 10px; font-size:0.75rem; margin:0;" onclick="autoCompensarConVueltoExtra()">⚡ Auto-Compensar Excedente</button>
                 </div>
+                <div id="lista_vueltos_contenedor" style="margin-top: 6px;"></div>
+                <button type="button" class="btn-danger" style="margin-top:8px;" onclick="agregarLineaVuelto()">+ Añadir Vuelto Extra</button>
             </div>
         </div>
 
-        <button class="btn-success" style="margin-top: 15px; padding: 14px;" onclick="cerrarModalMetodosPago()">✅ Confirmar y Guardar Desglose</button>
+        <!-- RESTANTE EN TIEMPO REAL COMPACTO -->
+        <div class="sticky-falta-cobrar">
+            <div id="falta_por_cobrar_multimoneda" style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; font-weight: bold; font-size: 1rem; color: var(--active-gold);"></div>
+        </div>
+
+        <button class="btn-success" style="margin-top: 10px; margin-bottom: 15px; padding: 12px;" onclick="cerrarModalMetodosPago()">✅ Confirmar y Guardar Desglose</button>
     </div>
 </div>
 
 <div class="wrapper">
-    <!-- 6 - BARRA SUPERIOR ANCLADA (Requisito 6) -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
         <div class="top-bar-title" id="main_top_title">Terminal Ultra-Premium</div>
         <button class="btn-danger" style="width:auto; padding:6px 12px; font-size:0.85rem;" onclick="bloquearSistema()">🔒 Bloquear</button>
     </div>
 
-    <!-- 7 - MENÚ LATERAL DESPLEGABLE (Requisito 7) -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar">
         <div class="sidebar-brand">Refresquería Flor</div>
@@ -325,10 +300,7 @@
         <a href="configuracion.html" class="tab-btn">⚙️ Configuración</a>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
-        
-        <!-- 3 - PRIMER MÓDULO: SELECCIÓN DE MODULO DE OPERACIÓN (Requisito 3) -->
         <div id="selector_mundo_card" class="card" style="text-align: center; padding: 40px 25px;">
             <h2>🌐 MÓDULO DE OPERACIÓN</h2>
             <p style="color: var(--muted); margin-bottom: 25px;">Seleccione la modalidad de trabajo a ejecutar:</p>
@@ -342,20 +314,16 @@
             </div>
         </div>
 
-        <!-- 4 - MÓDULO 1: CAJA REGISTRADORA (Requisito 4) -->
         <div id="modulo_caja_registradora" class="d-none">
             <button class="btn-danger" style="margin-bottom: 15px;" onclick="volverAlSelectorOperacion()">⬅ Cambiar Módulo de Operación</button>
             
             <div class="card">
                 <h2>OPERACIÓN DE CAJA REGISTRADORA</h2>
                 <div class="grid-2">
-                    <!-- QUIEN ATIENDE / VENDEDOR con opción por defecto forzada (Requisito 4) -->
                     <div>
                         <label>QUIEN ATIENDE / VENDEDOR:</label>
                         <select id="select_vendedor_caja"><option value="" selected>-- SELECCIONAR VENDEDOR --</option></select>
                     </div>
-                    
-                    <!-- CLIENTE (CEDULA O NOMBRE) con opción de añadir nuevo (Requisito 4) -->
                     <div style="position: relative;">
                         <label>CLIENTE (CÉDULA O NOMBRE):</label>
                         <input type="text" id="buscar_cliente_input" placeholder="Escriba nombre o cédula..." oninput="filtrarClientesBusqueda(this.value)" autocomplete="off">
@@ -364,21 +332,18 @@
                     </div>
                 </div>
 
-                <!-- BOTONES DE ACCIÓN PRINCIPALES -->
                 <div class="grid-2" style="margin-top:20px;">
                     <button class="btn-info" onclick="abrirVentasDelDia()">📋 Ver las ventas del día</button>
                     <button class="btn-success" onclick="desplegarModuloCierreCaja()">🟢 Realizar El Cierre De La Caja</button>
                 </div>
             </div>
 
-            <!-- DECLARACIÓN DE MERCANCÍA Y CARRITO (Requisito 4) -->
             <div class="card">
                 <h2>DECLARACIÓN DE MERCANCÍA Y CARRITO</h2>
                 <button class="btn-add" style="width:100%; padding:15px; font-size:1.05rem; margin-bottom:15px;" onclick="abrirSelectorProductosModal()">
                     🛒 Abrir selector de productos
                 </button>
 
-                <!-- TABLA DE DETALLE DE CARRITO: PROD, CANT, SUB $, ACCIÓN (Requisito 4) -->
                 <table>
                     <thead>
                         <tr>
@@ -391,16 +356,11 @@
                     <tbody id="tbody_carrito_caja"></tbody>
                 </table>
 
-                <!-- TOTAL DE VENTA EN TODAS LAS MONEDAS (Requisito 4) -->
                 <div class="total-box-multi">
                     <div style="color:var(--muted); font-size:0.85rem; text-transform:uppercase;">TOTAL DE VENTA:</div>
-                    <div id="total_usd_caja" class="txt-success">$0.00</div>
-                    <div class="moneda-bs" style="font-size:0.95rem;">BS: <span id="total_bs_caja">0.00 BS</span></div>
-                    <div class="moneda-cop" style="font-size:0.95rem;">COP: <span id="total_cop_caja">0 COP</span></div>
-                    <div class="moneda-eur" style="font-size:0.95rem;">EUR: <span id="total_eur_caja">0.00 EUR</span></div>
+                    <div id="total_multimoneda_caja" style="text-align: right;"></div>
                 </div>
 
-                <!-- BÓTONES DE MÉTODOS DE PAGO Y CERRAR VENTA (Requisito 4) -->
                 <div class="grid-2" style="margin-top:20px;">
                     <button class="btn-info" onclick="abrirModalMetodosPago()">💳 Métodos de Pagos</button>
                     <button class="btn-success" onclick="ejecutarCerrarVenta()">🚀 Cerrar venta</button>
@@ -408,26 +368,22 @@
             </div>
         </div>
 
-        <!-- 5 - MÓDULO 2: CIERRE DE GUARDIA / TURNO COMPLETO (Requisito 5) -->
         <div id="modulo_cierre_guardia" class="d-none">
             <button class="btn-danger" style="margin-bottom: 15px;" onclick="volverAlSelectorOperacion()">⬅ Cambiar Módulo de Operación</button>
 
             <div class="card">
                 <h2>CIERRE DE GUARDIA / TURNO COMPLETO</h2>
                 <div class="grid-2">
-                    <!-- QUIÉN CIERRA con selección obligatoria (Requisito 5) -->
                     <div>
                         <label>QUIÉN CIERRA:</label>
                         <select id="select_quien_cierra"><option value="" selected>-- SELECCIONAR --</option></select>
                     </div>
-                    <!-- QUIÉN RECIBE con selección obligatoria (Requisito 5) -->
                     <div>
                         <label>QUIÉN RECIBE:</label>
                         <select id="select_quien_recibe"><option value="" selected>-- SELECCIONAR --</option></select>
                     </div>
                 </div>
 
-                <!-- TURNO CUMPLIDO (Requisito 5) -->
                 <div style="margin-top:10px;">
                     <label>TURNO CUMPLIDO:</label>
                     <select id="select_turno_cumplido">
@@ -439,7 +395,6 @@
                 </div>
             </div>
 
-            <!-- DECLARACIÓN DE MERCANCÍA Y CARRITO PARA GUARDIA (Requisito 5) -->
             <div class="card">
                 <h2>DECLARACIÓN DE MERCANCÍA Y CARRITO (GUARDIA)</h2>
                 <button class="btn-add" style="width:100%; padding:15px; font-size:1.05rem; margin-bottom:15px;" onclick="abrirSelectorProductosModal()">
@@ -460,10 +415,7 @@
 
                 <div class="total-box-multi">
                     <div style="color:var(--muted); font-size:0.85rem; text-transform:uppercase;">TOTAL DE VENTA GUARDIA:</div>
-                    <div id="total_usd_guardia" class="txt-success">$0.00</div>
-                    <div class="moneda-bs" style="font-size:0.95rem;">BS: <span id="total_bs_guardia">0.00 BS</span></div>
-                    <div class="moneda-cop" style="font-size:0.95rem;">COP: <span id="total_cop_guardia">0 COP</span></div>
-                    <div class="moneda-eur" style="font-size:0.95rem;">EUR: <span id="total_eur_guardia">0.00 EUR</span></div>
+                    <div id="total_multimoneda_guardia" style="text-align: right;"></div>
                 </div>
 
                 <div class="grid-2" style="margin-top:20px;">
@@ -477,12 +429,10 @@
 </div>
 
 <script>
-    /* 10 - CONFIGURACIÓN Y CREDENCIALES SUPABASE (Requisito 10) */
     window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
     window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
     window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
 
-    /* VARIABLES DE ESTADO Y DATOS EN MEMORIA */
     let CURRENT_LOCAL_ID = null;
     let CONFIG_GLOBAL = {};
     let CATALOGO = [];
@@ -492,16 +442,6 @@
     let carritoActual = [];
     let moduloOperacionActivo = null;
 
-    /* REGISTRO DE DESGLOSE DE PAGO */
-    let desglosesPago = {
-        avances: [],
-        gastos: [],
-        conciliaciones: [],
-        efectivo: [],
-        vueltos: []
-    };
-
-    /* INICIALIZACIÓN AL CARGAR EL DOM */
     window.addEventListener('DOMContentLoaded', async () => {
         const { data } = await window.supabaseClient.auth.getSession();
         if (data && data.session) {
@@ -510,7 +450,6 @@
             window.location.href = 'index.html';
         }
 
-        // Ocultar suavemente la pantalla de carga (Requisito 1)
         setTimeout(() => {
             let loader = document.getElementById('loading_overlay');
             loader.style.opacity = '0';
@@ -518,10 +457,8 @@
         }, 1200);
     });
 
-    /* CARGA INTEGRAL DE SUPABASE (Requisito 10) */
     async function cargarDatosGlobalesSupabase(session) {
         try {
-            // Obtener perfil y local asignado
             let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id').eq('id', session.user.id).single();
             if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
             else {
@@ -529,14 +466,15 @@
                 if (locales.length > 0) CURRENT_LOCAL_ID = locales[0].id;
             }
 
-            // Descargar configuraciones globales, tasas y conciliaciones
             let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
             if (conf) {
                 CONFIG_GLOBAL = conf;
-                CONCILIACIONES_CFG = conf.conciliaciones || [];
+                // REEMPLAZAR ESTA ASIGNACIÓN:
+                CONCILIACIONES_CFG = Array.isArray(conf.conciliaciones) 
+                    ? conf.conciliaciones 
+                    : (conf.conciliaciones?.lista || []);
             }
 
-            // Descargar catálogo, empleados y clientes (Requisito 10)
             const [reqCat, reqEmp, reqCli] = await Promise.all([
                 window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID),
                 window.supabaseClient.from('empleados').select('*').eq('local_id', CURRENT_LOCAL_ID),
@@ -549,12 +487,12 @@
 
             poblarSelectoresEmpleados();
             renderizarConciliacionesConfiguradas();
+            renderizarTablaCarrito();
         } catch(e) {
             console.error("Error al cargar datos iniciales:", e);
         }
     }
 
-    /* Llenar selectores de vendedores y personal con opción por defecto (Requisitos 4 y 5) */
     function poblarSelectoresEmpleados() {
         let optsVend = '<option value="" selected>-- SELECCIONAR VENDEDOR --</option>' + 
             EMPLEADOS.map(e => `<option value="${e.id}">${e.nombre} ${e.apellido}</option>`).join('');
@@ -566,7 +504,40 @@
         document.getElementById('select_quien_recibe').innerHTML = optsGen;
     }
 
-    /* CONTROL DE MÓDULOS Y NAVEGACIÓN (Requisito 3) */
+    /* GENERADOR DINÁMICO DE OPCIONES DE MONEDAS QUE DESPLIEGA "-- Monedas --" POR DEFECTO */
+    function obtenerOpcionesMonedasDisponibles(monedaSeleccionada = '') {
+        const tasas = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasas.moneda_base || 'USD';
+        const secundarias = tasas.secundarias || [];
+        
+        let listaMonedas = [monedaBase];
+        secundarias.forEach(s => {
+            if (s.code && !listaMonedas.includes(s.code)) {
+                listaMonedas.push(s.code);
+            }
+        });
+
+        let html = `<option value="" disabled ${!monedaSeleccionada ? 'selected' : ''}>-- Monedas --</option>`;
+        listaMonedas.forEach(m => {
+            html += `<option value="${m}" ${monedaSeleccionada === m ? 'selected' : ''}>${m}</option>`;
+        });
+        return html;
+    }
+
+    /* MATEMÁTICA Y CONVERSIÓN DE DIVISAS A BASE DÓLAR DE MANERA PRECISA */
+    function calcularEquivalenteUSD(monto, monedaCodigo) {
+        if (!monto || isNaN(monto) || !monedaCodigo) return 0;
+        const tasas = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasas.moneda_base || 'USD';
+        if (monedaCodigo === monedaBase) return monto;
+
+        const sec = (tasas.secundarias || []).find(s => s.code === monedaCodigo);
+        if (!sec || !sec.tasa || parseFloat(sec.tasa) === 0) return monto;
+
+        const tasa = parseFloat(sec.tasa);
+        return (sec.operacion === 'dividir') ? (monto * tasa) : (monto / tasa);
+    }
+
     function seleccionarModuloOperacion(tipo) {
         moduloOperacionActivo = tipo;
         document.getElementById('selector_mundo_card').classList.add('d-none');
@@ -577,6 +548,7 @@
             document.getElementById('modulo_caja_registradora').classList.add('d-none');
             document.getElementById('modulo_cierre_guardia').classList.remove('d-none');
         }
+        renderizarTablaCarrito();
     }
 
     function volverAlSelectorOperacion() {
@@ -585,7 +557,6 @@
         document.getElementById('modulo_cierre_guardia').classList.add('d-none');
     }
 
-    /* BÚSQUEDA Y CREACIÓN DE CLIENTES (Requisito 4) */
     function filtrarClientesBusqueda(val) {
         let resDiv = document.getElementById('resultados_clientes');
         if (!val.trim()) { resDiv.style.display = 'none'; return; }
@@ -642,7 +613,6 @@
         alert("✅ Cliente registrado exitosamente.");
     }
 
-    /* SELECTOR DE PRODUCTOS, BÚSQUEDA, ORDEN Y UMBRALES (Requisito 4) */
     function abrirSelectorProductosModal() {
         filtrarYRenderizarCatalogoSelector();
         document.getElementById('modal_selector_productos').style.display = 'flex';
@@ -666,7 +636,6 @@
         tbody.innerHTML = '';
 
         lista.forEach(prod => {
-            // Cálculo de umbral de stock (Requisito 4)
             let umbralClass = 'stock-verde';
             if (prod.stock <= (prod.umbral_rojo || 2)) umbralClass = 'stock-rojo';
             else if (prod.stock <= (prod.umbral_amarillo || 5)) umbralClass = 'stock-amarillo';
@@ -728,10 +697,10 @@
         renderizarTablaCarrito();
     }
 
-    /* RENDERIZADO DEL CARRITO DE COMPRAS (Requisitos 4 y 5) */
     function renderizarTablaCarrito() {
-        let tbodyId = moduloOperacionActivo === 'caja' ? 'tbody_carrito_caja' : 'tbody_carrito_guardia';
+        let tbodyId = (moduloOperacionActivo === 'guardia') ? 'tbody_carrito_guardia' : 'tbody_carrito_caja';
         let tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         let totalUsd = 0;
@@ -750,16 +719,11 @@
             tbody.appendChild(tr);
         });
 
-        // Actualización Multimoneda
-        let tasaBs = CONFIG_GLOBAL.tasas?.secundarias?.find(s => s.code === 'VES')?.tasa || 1;
-        let tasaCop = CONFIG_GLOBAL.tasas?.secundarias?.find(s => s.code === 'COP')?.tasa || 1;
-        let tasaEur = CONFIG_GLOBAL.tasas?.secundarias?.find(s => s.code === 'EUR')?.tasa || 1;
-
-        let pref = moduloOperacionActivo === 'caja' ? 'caja' : 'guardia';
-        document.getElementById(`total_usd_${pref}`).innerText = `$${totalUsd.toFixed(2)}`;
-        document.getElementById(`total_bs_${pref}`).innerText = `${(totalUsd * tasaBs).toFixed(2)} BS`;
-        document.getElementById(`total_cop_${pref}`).innerText = `${(totalUsd * tasaCop).toFixed(0)} COP`;
-        document.getElementById(`total_eur_${pref}`).innerText = `${(totalUsd * tasaEur).toFixed(2)} EUR`;
+        let pref = (moduloOperacionActivo === 'guardia') ? 'guardia' : 'caja';
+        let container = document.getElementById(`total_multimoneda_${pref}`);
+        if (container) {
+            container.innerHTML = generarHTMLTotalesMultimoneda(totalUsd);
+        }
 
         calcularFaltaPorCobrar();
     }
@@ -777,7 +741,6 @@
         renderizarTablaCarrito();
     }
 
-    /* MÉTODOS DE PAGO Y DESGLOSE FINANCIERO (Requisito 4) */
     function abrirModalMetodosPago() {
         document.getElementById('modal_metodos_pago').style.display = 'flex';
         calcularFaltaPorCobrar();
@@ -787,14 +750,14 @@
         document.getElementById('modal_metodos_pago').style.display = 'none';
     }
 
-    /* Lógica de Añadir Líneas de Desglose */
+    /* MÉTODOS DE AÑADIR LÍNEAS CON SELECTOR DE MONEDAS AUTOMÁTICO */
     function agregarLineaAvance() {
         let div = document.createElement('div');
         div.className = 'flex-row-justificado';
         div.innerHTML = `
             <input type="text" placeholder="Motivo" class="av-motivo">
             <input type="number" placeholder="Monto" class="av-monto" oninput="calcularFaltaPorCobrar()">
-            <select class="av-moneda"><option value="USD">USD</option><option value="VES">VES</option></select>
+            <select class="av-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles()}</select>
             <button class="btn-danger" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
         `;
         document.getElementById('lista_avances_contenedor').appendChild(div);
@@ -806,91 +769,140 @@
         div.innerHTML = `
             <input type="text" placeholder="Motivo" class="ga-motivo">
             <input type="number" placeholder="Monto" class="ga-monto" oninput="calcularFaltaPorCobrar()">
-            <select class="ga-moneda"><option value="USD">USD</option><option value="VES">VES</option></select>
+            <select class="ga-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles()}</select>
             <button class="btn-danger" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
         `;
         document.getElementById('lista_gastos_contenedor').appendChild(div);
     }
 
-    function renderizarConciliacionesConfiguradas() {
-        let cont = document.getElementById('lista_conciliaciones_configuradas');
-        cont.innerHTML = '';
-        
-        CONCILIACIONES_CFG.forEach(c => {
-            let div = document.createElement('div');
-            div.style.cssText = 'margin-bottom:8px; border-bottom:1px solid #3b0918; padding-bottom:5px;';
-            div.innerHTML = `
-                <div style="font-weight:bold; color:var(--active-gold);">${c.nombre} (${c.porcentaje}%)</div>
-                <div class="flex-row-justificado">
-                    <input type="number" placeholder="Monto Original" oninput="calcularMontoConciliacion(this, ${c.porcentaje})">
-                    <input type="number" placeholder="Ref Descuento" readonly class="con-ref-monto">
-                    <input type="text" placeholder="Referencia" class="con-ref-codigo">
-                    <select class="con-moneda"><option value="${c.monedaCodigo || 'VES'}">${c.monedaCodigo || 'VES'}</option></select>
-                </div>
-            `;
-            cont.appendChild(div);
-        });
-    }
 
-    function calcularMontoConciliacion(input, porc) {
-        let monto = parseFloat(input.value) || 0;
-        let res = monto - (monto * (porc / 100));
-        let row = input.parentElement;
-        row.querySelector('.con-ref-monto').value = res.toFixed(2);
+
+
+    // 1. CÁLCULO DE MONTO ESPERADO EN CONCILIACIONES
+    function calcularMontoConciliacion(inputElement, porcentaje) {
+        let row = inputElement.closest('.conciliacion-item-row');
+        if (!row) return;
+
+        let montoIngresado = parseFloat(inputElement.value) || 0;
+        let porc = parseFloat(porcentaje) || 0;
+        let montoEsperado = montoIngresado - (montoIngresado * (porc / 100));
+
+        let inputRef = row.querySelector('.con-ref-monto');
+        if (inputRef) {
+            inputRef.value = montoIngresado > 0 ? montoEsperado.toFixed(2) : '';
+        }
         calcularFaltaPorCobrar();
     }
 
+    // 2. RENDERIZAR CONCILIACIONES (SIN LA PALABRA 'CONCILIACIÓN:')
+    function renderizarConciliacionesConfiguradas() {
+        let container = document.getElementById('contenedor_conciliaciones_main');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (!CONCILIACIONES_CFG || CONCILIACIONES_CFG.length === 0) {
+            container.innerHTML = `
+                <div style="border: 1px solid var(--border-gold); padding: 12px; margin-bottom: 12px; background: var(--item-bg);">
+                    <label style="margin-top:0;">🏦 PUNTOS DE PAGO / CONCILIACIONES:</label>
+                    <span style="color:var(--muted); font-size:0.85rem;">No hay conciliaciones configuradas.</span>
+                </div>
+            `;
+            return;
+        }
+
+        CONCILIACIONES_CFG.forEach(c => {
+            let porc = parseFloat(c.porcentaje) || 0;
+            let cId = c.id || c.nombre.replace(/\s+/g, '_');
+
+            let div = document.createElement('div');
+            div.style.cssText = 'border: 1px solid var(--border-gold); padding: 12px; margin-bottom: 12px; background: var(--item-bg);';
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <label style="margin:0; text-transform:uppercase;">🏦 <strong>${c.nombre}</strong> <span style="color:var(--muted); font-size:0.85rem; font-weight:normal;">(Comisión Bancaria ${porc}%)</span></label>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn-info" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="autoConciliarMetodo('${cId}', ${porc})">⚡ Auto-Conciliación</button>
+                        <button type="button" class="btn-add" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="agregarLineaConciliacion('${cId}')">+ Añadir</button>
+                    </div>
+                </div>
+                <div id="contenedor_lineas_conciliacion_${cId}" style="margin-top:6px;"></div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // 3. ACTIVACIÓN DE EFECTIVO EN CAJA FONDO
     function agregarLineaEfectivo() {
         let div = document.createElement('div');
         div.className = 'flex-row-justificado';
         div.innerHTML = `
-            <span>Efectivo:</span>
-            <input type="number" placeholder="Monto" class="ef-monto" oninput="calcularFaltaPorCobrar()">
-            <select class="ef-moneda"><option value="USD">USD</option><option value="VES">VES</option><option value="COP">COP</option></select>
-            <button class="btn-danger" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
+            <input type="text" placeholder="Detalle / Motivo" class="ef-motivo">
+            <input type="number" step="any" placeholder="Monto" class="ef-monto" oninput="calcularFaltaPorCobrar()">
+            <select class="ef-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles()}</select>
+            <button type="button" class="btn-danger" style="padding:8px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
         `;
         document.getElementById('lista_efectivo_contenedor').appendChild(div);
+        calcularFaltaPorCobrar();
     }
 
-    function agregarLineaVuelto() {
+    // 4. ACTIVACIÓN DE VUELTOS ENTREGADOS EXTRA
+    function agregarLineaVuelto(montoSugerido = '', monedaSugerida = '') {
         let div = document.createElement('div');
         div.className = 'flex-row-justificado';
         div.innerHTML = `
-            <span>Vuelto Extra:</span>
-            <input type="number" placeholder="Monto Vuelto" class="vu-monto" oninput="calcularFaltaPorCobrar()">
-            <select class="vu-moneda"><option value="USD">USD</option><option value="VES">VES</option></select>
-            <button class="btn-danger" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
+            <input type="text" placeholder="Detalle / Vuelto Extra" class="vu-motivo" value="Vuelto Entregado Extra">
+            <input type="number" step="any" placeholder="Monto Vuelto" class="vu-monto" value="${montoSugerido}" oninput="calcularFaltaPorCobrar()">
+            <select class="vu-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles(monedaSugerida)}</select>
+            <button type="button" class="btn-danger" style="padding:8px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
         `;
         document.getElementById('lista_vueltos_contenedor').appendChild(div);
+        calcularFaltaPorCobrar();
     }
 
-    /* FALTA POR COBRAR MONITOREADO EN TIEMPO REAL EN TODAS LAS MONEDAS (Requisito 4) */
-    function calcularFaltaPorCobrar() {
+    // 5. AUTO-COMPENSACIÓN CUANDO QUEDA EXCEDENTE NEGATIVO
+    function autoCompensarConVueltoExtra() {
         let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
-
         let pagadoUSD = 0;
 
-        // Sumar avances, gastos, conciliaciones y efectivos
-        document.querySelectorAll('.av-monto').forEach(i => pagadoUSD += parseFloat(i.value) || 0);
-        document.querySelectorAll('.ga-monto').forEach(i => pagadoUSD += parseFloat(i.value) || 0);
-        document.querySelectorAll('.con-ref-monto').forEach(i => pagadoUSD += parseFloat(i.value) || 0);
-        document.querySelectorAll('.ef-monto').forEach(i => pagadoUSD += parseFloat(i.value) || 0);
-        document.querySelectorAll('.vu-monto').forEach(i => pagadoUSD -= parseFloat(i.value) || 0);
+        document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.av-monto').value) || 0;
+            let mon = div.querySelector('.av-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
 
-        let restaUSD = totalUSD - pagadoUSD;
-        if (restaUSD < 0) restaUSD = 0;
+        document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.ga-monto').value) || 0;
+            let mon = div.querySelector('.ga-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
 
-        let tasaBs = CONFIG_GLOBAL.tasas?.secundarias?.find(s => s.code === 'VES')?.tasa || 1;
-        let tasaCop = CONFIG_GLOBAL.tasas?.secundarias?.find(s => s.code === 'COP')?.tasa || 1;
-        let tasaEur = CONFIG_GLOBAL.tasas?.secundarias?.find(s => s.code === 'EUR')?.tasa || 1;
+        document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
+            let m = parseFloat(div.querySelector('.con-ref-monto').value) || parseFloat(div.querySelector('.con-monto-ingresado').value) || 0;
+            let mon = div.querySelector('.con-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
 
-        document.getElementById('falta_usd').innerText = `$${restaUSD.toFixed(2)}`;
-        document.getElementById('falta_bs').innerText = `${(restaUSD * tasaBs).toFixed(2)} BS`;
-        document.getElementById('falta_cop').innerText = `${(restaUSD * tasaCop).toFixed(0)} COP`;
-        document.getElementById('falta_eur').innerText = `${(restaUSD * tasaEur).toFixed(2)} EUR`;
+        document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.ef-monto').value) || 0;
+            let mon = div.querySelector('.ef-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
+
+        let vueltosPreviosUSD = 0;
+        document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.vu-monto').value) || 0;
+            let mon = div.querySelector('.vu-moneda').value;
+            vueltosPreviosUSD += calcularEquivalenteUSD(m, mon);
+        });
+
+        let excedenteUSD = (pagadoUSD - vueltosPreviosUSD) - totalUSD;
+        if (excedenteUSD > 0) {
+            let monedaBase = CONFIG_GLOBAL.tasas?.moneda_base || 'USD';
+            agregarLineaVuelto(excedenteUSD.toFixed(2), monedaBase);
+        }
     }
 
-    /* EJECUCIÓN Y REGISTRO EN SUPABASE (Requisitos 4 y 10) */
+    // 6. CORRECCIÓN DEL SELECTOR AL GUARDAR CONCILIACIONES AL CERRAR VENTA
     async function ejecutarCerrarVenta() {
         let vendId = document.getElementById('select_vendedor_caja').value;
         let cliId = document.getElementById('cliente_id_seleccionado').value;
@@ -900,7 +912,6 @@
 
         let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
 
-        // Guardar la venta en ventas_temporales
         let { data: venta, error } = await window.supabaseClient.from('ventas_temporales').insert([{
             local_id: CURRENT_LOCAL_ID, vendedor_id: vendId, cliente_id: cliId || null,
             carrito: carritoActual, total_venta_usd: totalUSD
@@ -908,24 +919,50 @@
 
         if (error) return alert("Error al registrar la venta: " + error.message);
 
-        // Enviar Avances_retirados a Supabase (Requisito 4)
+        // Guardar conciliaciones con el selector correcto del DOM
+        let filasConc = document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row');
+        for (let div of filasConc) {
+            let concNombre = div.getAttribute('data-conc-nombre');
+            let montoIngresado = parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
+            let montoEsperado = parseFloat(div.querySelector('.con-ref-monto')?.value) || 0;
+            let refCodigo = div.querySelector('.con-ref-codigo')?.value || '';
+            let mon = div.querySelector('.con-moneda')?.value || '';
+
+            if (montoIngresado > 0) {
+                await window.supabaseClient.from('conciliaciones').insert([{
+                    local_id: CURRENT_LOCAL_ID,
+                    lote_id: null,
+                    metodo: concNombre,
+                    fecha: new Date().toISOString(),
+                    monto_esperado: montoEsperado,
+                    monto_ingresado: montoIngresado,
+                    empleado: vendId,
+                    estado: 'Pendiente',
+                    referencia: refCodigo,
+                    nota: `Moneda procesada: ${mon}`,
+                    creado_en: new Date().toISOString()
+                }]);
+            }
+        }
+
+        // Guardar avances
         document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(async div => {
             let conc = div.querySelector('.av-motivo').value;
             let monto = parseFloat(div.querySelector('.av-monto').value) || 0;
             let mon = div.querySelector('.av-moneda').value;
-            if (monto > 0) {
+            if (monto > 0 && mon) {
                 await window.supabaseClient.from('Avances_retirados').insert([{
                     local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
                 }]);
             }
         });
 
-        // Enviar gastos_operativos a Supabase (Requisito 4)
+        // Guardar gastos
         document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(async div => {
             let conc = div.querySelector('.ga-motivo').value;
             let monto = parseFloat(div.querySelector('.ga-monto').value) || 0;
             let mon = div.querySelector('.ga-moneda').value;
-            if (monto > 0) {
+            if (monto > 0 && mon) {
                 await window.supabaseClient.from('gastos_operativos').insert([{
                     local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
                 }]);
@@ -937,7 +974,270 @@
         renderizarTablaCarrito();
     }
 
-    /* MODAL DE DESPLIEGUE DEL CIERRE DE CAJA (Requisito 4) */
+    /* AÑADE UNA FILA CON LOS CAMPOS AL HACER CLIC EN + AÑADIR */
+    function agregarLineaConciliacion(cId) {
+        let c = (CONCILIACIONES_CFG || []).find(item => (item.id || item.nombre.replace(/\s+/g, '_')) === cId);
+        if (!c) return;
+
+        let targetDiv = document.getElementById(`contenedor_lineas_conciliacion_${cId}`);
+        if (!targetDiv) return;
+
+        let porc = parseFloat(c.porcentaje) || 0;
+        let monedaPreseleccionada = (c.monedaScope === 'BASE') 
+            ? (CONFIG_GLOBAL.tasas?.moneda_base || 'USD') 
+            : (c.monedaCodigo || '');
+
+        let div = document.createElement('div');
+        div.className = 'flex-row-justificado conciliacion-item-row';
+        div.setAttribute('data-conc-id', c.id || '');
+        div.setAttribute('data-conc-nombre', c.nombre || '');
+        div.setAttribute('data-conc-porcentaje', porc);
+
+        div.innerHTML = `
+            <input type="number" step="any" placeholder="Monto Ingresado" class="con-monto-ingresado" oninput="calcularMontoConciliacion(this, ${porc})">
+            <input type="number" step="any" placeholder="Monto Esperado (-${porc}%)" readonly class="con-ref-monto">
+            <input type="text" placeholder="Referencia / Nro Lote" class="con-ref-codigo">
+            <select class="con-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles(monedaPreseleccionada)}</select>
+            <button type="button" class="btn-danger" style="padding:8px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
+        `;
+
+        targetDiv.appendChild(div);
+        calcularFaltaPorCobrar();
+        return div;
+    }
+
+    /* LÓGICA DE AUTO-CONCILIACIÓN POR MÉTODO */
+    function autoConciliarMetodo(cId, porcentaje) {
+        let targetDiv = document.getElementById(`contenedor_lineas_conciliacion_${cId}`);
+        if (!targetDiv) return;
+
+        let row = targetDiv.querySelector('.conciliacion-item-row');
+        if (!row) {
+            row = agregarLineaConciliacion(cId);
+        }
+        if (!row) return;
+
+        let inputMonto = row.querySelector('.con-monto-ingresado');
+        let inputRefMonto = row.querySelector('.con-ref-monto');
+        let selectMoneda = row.querySelector('.con-moneda');
+        let monedaCodigo = selectMoneda ? selectMoneda.value : (CONFIG_GLOBAL.tasas?.moneda_base || 'USD');
+
+        if (!monedaCodigo) {
+            alert("⚠️ Seleccione una moneda antes de auto-conciliar.");
+            return;
+        }
+
+        inputMonto.value = '';
+        inputRefMonto.value = '';
+
+        let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
+        let pagadoUSD = 0;
+
+        document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.av-monto').value) || 0;
+            let mon = div.querySelector('.av-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
+
+        document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.ga-monto').value) || 0;
+            let mon = div.querySelector('.ga-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
+
+        document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
+            if (div !== row) {
+                let m = parseFloat(div.querySelector('.con-ref-monto').value) || 0;
+                let mon = div.querySelector('.con-moneda').value;
+                pagadoUSD += calcularEquivalenteUSD(m, mon);
+            }
+        });
+
+        document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.ef-monto').value) || 0;
+            let mon = div.querySelector('.ef-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
+
+        document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.vu-monto').value) || 0;
+            let mon = div.querySelector('.vu-moneda').value;
+            pagadoUSD -= calcularEquivalenteUSD(m, mon);
+        });
+
+        let restanteUSD = totalUSD - pagadoUSD;
+        if (restanteUSD <= 0) {
+            inputMonto.value = 0;
+            calcularMontoConciliacion(inputMonto, porcentaje);
+            return;
+        }
+
+        const tasas = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasas.moneda_base || 'USD';
+        let montoEsperadoEnMoneda = restanteUSD;
+
+        if (monedaCodigo !== monedaBase) {
+            const sec = (tasas.secundarias || []).find(s => s.code === monedaCodigo);
+            if (sec && sec.tasa && parseFloat(sec.tasa) > 0) {
+                let tasa = parseFloat(sec.tasa);
+                montoEsperadoEnMoneda = (sec.operacion === 'dividir') ? (restanteUSD / tasa) : (restanteUSD * tasa);
+            }
+        }
+
+        let factorDescuento = 1 - ((parseFloat(porcentaje) || 0) / 100);
+        let montoIngresadoRequerido = factorDescuento > 0 ? (montoEsperadoEnMoneda / factorDescuento) : montoEsperadoEnMoneda;
+
+        inputMonto.value = montoIngresadoRequerido.toFixed(2);
+        calcularMontoConciliacion(inputMonto, porcentaje);
+    }
+
+    /* RECALCULA EL RESTANTE PERMITIENDO NÚMEROS NEGATIVOS (VUELTO O CAMBIO) */
+    function calcularFaltaPorCobrar() {
+        let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
+        let pagadoUSD = 0;
+
+        document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.av-monto').value) || 0;
+            let mon = div.querySelector('.av-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
+
+        document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.ga-monto').value) || 0;
+            let mon = div.querySelector('.ga-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
+
+        document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
+            let m = parseFloat(div.querySelector('.con-ref-monto').value) || 0;
+            let mon = div.querySelector('.con-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
+
+        document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.ef-monto').value) || 0;
+            let mon = div.querySelector('.ef-moneda').value;
+            pagadoUSD += calcularEquivalenteUSD(m, mon);
+        });
+
+        document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
+            let m = parseFloat(div.querySelector('.vu-monto').value) || 0;
+            let mon = div.querySelector('.vu-moneda').value;
+            pagadoUSD -= calcularEquivalenteUSD(m, mon);
+        });
+
+        let restaUSD = totalUSD - pagadoUSD;
+
+        let contFalta = document.getElementById('falta_por_cobrar_multimoneda');
+        if (contFalta) {
+            contFalta.innerHTML = generarHTMLTotalesMultimoneda(restaUSD);
+        }
+    }
+
+    /* IMPRESIÓN MULTIMONEDA QUE ANCLA LAS MONEDAS ASÍ ESTÉN EN 0 Y REFLEJA VALORES NEGATIVOS */
+    function generarHTMLTotalesMultimoneda(montoBaseUSD) {
+        const tasasConfig = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasasConfig.moneda_base || 'USD';
+        const secundarias = tasasConfig.secundarias || [];
+
+        let cssClassBase = montoBaseUSD < 0 ? 'txt-negative' : 'txt-success';
+        let html = `<div class="${cssClassBase}">${monedaBase}: $${montoBaseUSD.toFixed(2)}</div>`;
+
+        secundarias.forEach(sec => {
+            const tasa = parseFloat(sec.tasa);
+            if (sec.code) {
+                let totalConvertido = 0;
+                if (!isNaN(tasa) && tasa > 0) {
+                    totalConvertido = (sec.operacion === 'dividir') 
+                        ? (montoBaseUSD / tasa) 
+                        : (montoBaseUSD * tasa);
+                }
+
+                let decimales = (sec.code === 'COP') ? 0 : 2;
+                let simbolo = sec.code === 'VES' ? 'Bs.' : sec.code;
+                let colorEstilo = totalConvertido < 0 ? 'color: var(--stock-red);' : 'color: var(--text);';
+
+                html += `<div style="font-size:0.95rem; ${colorEstilo} font-weight: bold; margin-top:3px;">
+                    ${simbolo}: ${totalConvertido.toFixed(decimales)} ${sec.code}
+                </div>`;
+            }
+        });
+
+        return html;
+    }
+
+    async function ejecutarCerrarVenta() {
+        let vendId = document.getElementById('select_vendedor_caja').value;
+        let cliId = document.getElementById('cliente_id_seleccionado').value;
+
+        if (!vendId) return alert("❌ Seleccione obligatoriamente el Vendedor.");
+        if (carritoActual.length === 0) return alert("❌ El carrito está vacío.");
+
+        let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
+
+        let { data: venta, error } = await window.supabaseClient.from('ventas_temporales').insert([{
+            local_id: CURRENT_LOCAL_ID, vendedor_id: vendId, cliente_id: cliId || null,
+            carrito: carritoActual, total_venta_usd: totalUSD
+        }]).select().single();
+
+        if (error) return alert("Error al registrar la venta: " + error.message);
+		
+		let filasConc = document.querySelectorAll('#lista_conciliaciones_activas .conciliacion-item-row');
+        for (let div of filasConc) {
+            let concNombre = div.getAttribute('data-conc-nombre');
+            let montoIngresado = parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
+            let montoEsperado = parseFloat(div.querySelector('.con-ref-monto')?.value) || 0;
+            let refCodigo = div.querySelector('.con-ref-codigo')?.value || '';
+            let mon = div.querySelector('.con-moneda')?.value || '';
+
+            if (montoIngresado > 0) {
+                let { error: errConc } = await window.supabaseClient.from('conciliaciones').insert([{
+                    local_id: CURRENT_LOCAL_ID,
+                    lote_id: null,
+                    metodo: concNombre,
+                    fecha: new Date().toISOString(),
+                    monto_esperado: montoEsperado,
+                    monto_ingresado: montoIngresado,
+                    empleado: vendId,
+                    estado: 'Pendiente',
+                    referencia: refCodigo,
+                    nota: `Moneda procesada: ${mon}`,
+                    creado_en: new Date().toISOString()
+                }]);
+
+                if (errConc) {
+                    console.error("Error al registrar conciliación:", errConc.message);
+                }
+            }
+        }
+
+        document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(async div => {
+            let conc = div.querySelector('.av-motivo').value;
+            let monto = parseFloat(div.querySelector('.av-monto').value) || 0;
+            let mon = div.querySelector('.av-moneda').value;
+            if (monto > 0 && mon) {
+                await window.supabaseClient.from('Avances_retirados').insert([{
+                    local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
+                }]);
+            }
+        });
+
+        document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(async div => {
+            let conc = div.querySelector('.ga-motivo').value;
+            let monto = parseFloat(div.querySelector('.ga-monto').value) || 0;
+            let mon = div.querySelector('.ga-moneda').value;
+            if (monto > 0 && mon) {
+                await window.supabaseClient.from('gastos_operativos').insert([{
+                    local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
+                }]);
+            }
+        });
+
+        alert("🚀 Venta cerrada exitosamente y añadida a las ventas del día.");
+        carritoActual = [];
+        renderizarTablaCarrito();
+    }
+
     function desplegarModuloCierreCaja() {
         let html = `
             <div>
@@ -963,16 +1263,13 @@
         if (!vendId) return alert("❌ Seleccione al vendedor.");
 
         if (esTotal) {
-            // Actualiza Balance, Control de Inventario, Empleados y Clientes
             alert("✅ Cierre Total procesado: Balance, Inventario, Empleados y Clientes actualizados.");
         } else {
-            // Solo envía datos a Cliente y Empleados (Requisito 4)
             alert("✅ Cierre Parcial procesado: Datos enviados únicamente a Clientes y Empleados.");
         }
         cerrarModalGlobal();
     }
 
-    /* CIERRE DE GUARDIA FINAL (Requisito 5) */
     async function ejecutarCierreGuardiaFinal() {
         let quienCierra = document.getElementById('select_quien_cierra').value;
         let quienRecibe = document.getElementById('select_quien_recibe').value;
@@ -982,11 +1279,9 @@
             return alert("❌ Debe seleccionar Quién Cierra, Quién Recibe y el Turno Cumplido.");
         }
 
-        // Cierre de Guardia actualiza balance, inventario, empleados y clientes (Requisito 5)
         alert("🟢 Cierre de Guardia Registrado. Balance, Control de Inventario, Empleados y Clientes actualizados.");
     }
 
-    /* VER LAS VENTAS DEL DÍA CON PIN DE VALIDACIÓN (Requisito 4) */
     async function abrirVentasDelDia() {
         let { data, error } = await window.supabaseClient.from('ventas_temporales')
             .select('*').eq('local_id', CURRENT_LOCAL_ID);
@@ -1036,7 +1331,6 @@
         }
     }
 
-    /* MÓDULO DE BLOQUEO Y UTILIDADES (Requisito 2) */
     function bloquearSistema() {
         document.getElementById('lock_overlay').style.display = 'flex';
     }
