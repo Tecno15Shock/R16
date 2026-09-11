@@ -7,7 +7,6 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    
     <style>
         :root {
             --topbar-bg: #0d0608; 
@@ -910,66 +909,79 @@
 
         let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
 
-        let { data: venta, error } = await window.supabaseClient.from('ventas_temporales').insert([{
-            local_id: CURRENT_LOCAL_ID, vendedor_id: vendId, cliente_id: cliId || null,
-            carrito: carritoActual, total_venta_usd: totalUSD
-        }]).select().single();
+        try {
+            // Registrar venta principal
+            let { data: venta, error } = await window.supabaseClient.from('ventas_temporales').insert([{
+                local_id: CURRENT_LOCAL_ID, 
+                vendedor_id: vendId, 
+                cliente_id: cliId || null,
+                carrito: carritoActual, 
+                total_venta_usd: totalUSD
+            }]).select().single();
 
-        if (error) return alert("Error al registrar la venta: " + error.message);
+            if (error) throw new Error("Error al registrar la venta: " + error.message);
 
-        // Guardar conciliaciones con el selector correcto del DOM
-        let filasConc = document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row');
-        for (let div of filasConc) {
-            let concNombre = div.getAttribute('data-conc-nombre');
-            let montoIngresado = parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
-            let montoEsperado = parseFloat(div.querySelector('.con-ref-monto')?.value) || 0;
-            let refCodigo = div.querySelector('.con-ref-codigo')?.value || '';
-            let mon = div.querySelector('.con-moneda')?.value || '';
+            // Guardar conciliaciones usando el selector correcto
+            let filasConc = document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row');
+            for (let div of filasConc) {
+                let concNombre = div.getAttribute('data-conc-nombre');
+                let montoIngresado = parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
+                let montoEsperado = parseFloat(div.querySelector('.con-ref-monto')?.value) || 0;
+                let refCodigo = div.querySelector('.con-ref-codigo')?.value || '';
+                let mon = div.querySelector('.con-moneda')?.value || '';
 
-            if (montoIngresado > 0) {
-                await window.supabaseClient.from('conciliaciones').insert([{
-                    local_id: CURRENT_LOCAL_ID,
-                    lote_id: null,
-                    metodo: concNombre,
-                    fecha: new Date().toISOString(),
-                    monto_esperado: montoEsperado,
-                    monto_ingresado: montoIngresado,
-                    empleado: vendId,
-                    estado: 'Pendiente',
-                    referencia: refCodigo,
-                    nota: `Moneda procesada: ${mon}`,
-                    creado_en: new Date().toISOString()
-                }]);
+                if (montoIngresado > 0) {
+                    let { error: errConc } = await window.supabaseClient.from('conciliaciones').insert([{
+                        local_id: CURRENT_LOCAL_ID,
+                        lote_id: null,
+                        metodo: concNombre,
+                        fecha: new Date().toISOString(),
+                        monto_esperado: montoEsperado,
+                        monto_ingresado: montoIngresado,
+                        empleado: vendId,
+                        estado: 'Pendiente',
+                        referencia: refCodigo,
+                        nota: `Moneda procesada: ${mon}`,
+                        creado_en: new Date().toISOString()
+                    }]);
+                    if (errConc) console.error("Error guardando conciliación:", errConc.message);
+                }
             }
+
+            // Guardar avances asegurando resolución síncrona
+            let filasAvances = document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado');
+            for (let div of filasAvances) {
+                let conc = div.querySelector('.av-motivo')?.value || '';
+                let monto = parseFloat(div.querySelector('.av-monto')?.value) || 0;
+                let mon = div.querySelector('.av-moneda')?.value || '';
+                if (monto > 0 && mon) {
+                    await window.supabaseClient.from('Avances_retirados').insert([{
+                        local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
+                    }]);
+                }
+            }
+
+            // Guardar gastos asegurando resolución síncrona
+            let filasGastos = document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado');
+            for (let div of filasGastos) {
+                let conc = div.querySelector('.ga-motivo')?.value || '';
+                let monto = parseFloat(div.querySelector('.ga-monto')?.value) || 0;
+                let mon = div.querySelector('.ga-moneda')?.value || '';
+                if (monto > 0 && mon) {
+                    await window.supabaseClient.from('gastos_operativos').insert([{
+                        local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
+                    }]);
+                }
+            }
+
+            alert("🚀 Venta cerrada exitosamente y añadida a las ventas del día.");
+            carritoActual = [];
+            renderizarTablaCarrito();
+            cerrarModalMetodosPago();
+
+        } catch (e) {
+            alert("❌ Fallo en el procesamiento de la venta: " + e.message);
         }
-
-        // Guardar avances
-        document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(async div => {
-            let conc = div.querySelector('.av-motivo').value;
-            let monto = parseFloat(div.querySelector('.av-monto').value) || 0;
-            let mon = div.querySelector('.av-moneda').value;
-            if (monto > 0 && mon) {
-                await window.supabaseClient.from('Avances_retirados').insert([{
-                    local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
-                }]);
-            }
-        });
-
-        // Guardar gastos
-        document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(async div => {
-            let conc = div.querySelector('.ga-motivo').value;
-            let monto = parseFloat(div.querySelector('.ga-monto').value) || 0;
-            let mon = div.querySelector('.ga-moneda').value;
-            if (monto > 0 && mon) {
-                await window.supabaseClient.from('gastos_operativos').insert([{
-                    local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
-                }]);
-            }
-        });
-
-        alert("🚀 Venta cerrada exitosamente y añadida a las ventas del día.");
-        carritoActual = [];
-        renderizarTablaCarrito();
     }
 
     /* AÑADE UNA FILA CON LOS CAMPOS AL HACER CLIC EN + AÑADIR */
@@ -1173,67 +1185,79 @@
 
         let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
 
-        let { data: venta, error } = await window.supabaseClient.from('ventas_temporales').insert([{
-            local_id: CURRENT_LOCAL_ID, vendedor_id: vendId, cliente_id: cliId || null,
-            carrito: carritoActual, total_venta_usd: totalUSD
-        }]).select().single();
+        try {
+            // 1. Registrar venta temporal
+            let { data: venta, error } = await window.supabaseClient.from('ventas_temporales').insert([{
+                local_id: CURRENT_LOCAL_ID, 
+                vendedor_id: vendId, 
+                cliente_id: cliId || null,
+                carrito: carritoActual, 
+                total_venta_usd: totalUSD
+            }]).select().single();
 
-        if (error) return alert("Error al registrar la venta: " + error.message);
-		
-		let filasConc = document.querySelectorAll('#lista_conciliaciones_activas .conciliacion-item-row');
-        for (let div of filasConc) {
-            let concNombre = div.getAttribute('data-conc-nombre');
-            let montoIngresado = parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
-            let montoEsperado = parseFloat(div.querySelector('.con-ref-monto')?.value) || 0;
-            let refCodigo = div.querySelector('.con-ref-codigo')?.value || '';
-            let mon = div.querySelector('.con-moneda')?.value || '';
+            if (error) throw new Error("Error al registrar la venta: " + error.message);
 
-            if (montoIngresado > 0) {
-                let { error: errConc } = await window.supabaseClient.from('conciliaciones').insert([{
-                    local_id: CURRENT_LOCAL_ID,
-                    lote_id: null,
-                    metodo: concNombre,
-                    fecha: new Date().toISOString(),
-                    monto_esperado: montoEsperado,
-                    monto_ingresado: montoIngresado,
-                    empleado: vendId,
-                    estado: 'Pendiente',
-                    referencia: refCodigo,
-                    nota: `Moneda procesada: ${mon}`,
-                    creado_en: new Date().toISOString()
-                }]);
+            // 2. Registrar conciliaciones bancarias
+            let filasConc = document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row');
+            for (let div of filasConc) {
+                let concNombre = div.getAttribute('data-conc-nombre');
+                let montoIngresado = parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
+                let montoEsperado = parseFloat(div.querySelector('.con-ref-monto')?.value) || 0;
+                let refCodigo = div.querySelector('.con-ref-codigo')?.value || '';
+                let mon = div.querySelector('.con-moneda')?.value || '';
 
-                if (errConc) {
-                    console.error("Error al registrar conciliación:", errConc.message);
+                if (montoIngresado > 0) {
+                    let { error: errConc } = await window.supabaseClient.from('conciliaciones').insert([{
+                        local_id: CURRENT_LOCAL_ID,
+                        lote_id: null,
+                        metodo: concNombre,
+                        fecha: new Date().toISOString(),
+                        monto_esperado: montoEsperado,
+                        monto_ingresado: montoIngresado,
+                        empleado: vendId,
+                        estado: 'Pendiente',
+                        referencia: refCodigo,
+                        nota: `Moneda procesada: ${mon}`,
+                        creado_en: new Date().toISOString()
+                    }]);
+                    if (errConc) console.error("Error guardando conciliación:", errConc.message);
                 }
             }
+
+            // 3. Registrar avances retirados
+            let filasAvances = document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado');
+            for (let div of filasAvances) {
+                let conc = div.querySelector('.av-motivo')?.value || '';
+                let monto = parseFloat(div.querySelector('.av-monto')?.value) || 0;
+                let mon = div.querySelector('.av-moneda')?.value || '';
+                if (monto > 0 && mon) {
+                    await window.supabaseClient.from('Avances_retirados').insert([{
+                        local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
+                    }]);
+                }
+            }
+
+            // 4. Registrar gastos operativos
+            let filasGastos = document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado');
+            for (let div of filasGastos) {
+                let conc = div.querySelector('.ga-motivo')?.value || '';
+                let monto = parseFloat(div.querySelector('.ga-monto')?.value) || 0;
+                let mon = div.querySelector('.ga-moneda')?.value || '';
+                if (monto > 0 && mon) {
+                    await window.supabaseClient.from('gastos_operativos').insert([{
+                        local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
+                    }]);
+                }
+            }
+
+            alert("🚀 Venta cerrada exitosamente y añadida a las ventas del día.");
+            carritoActual = [];
+            renderizarTablaCarrito();
+            cerrarModalMetodosPago();
+
+        } catch (e) {
+            alert("❌ Fallo en el procesamiento de la venta: " + e.message);
         }
-
-        document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(async div => {
-            let conc = div.querySelector('.av-motivo').value;
-            let monto = parseFloat(div.querySelector('.av-monto').value) || 0;
-            let mon = div.querySelector('.av-moneda').value;
-            if (monto > 0 && mon) {
-                await window.supabaseClient.from('Avances_retirados').insert([{
-                    local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
-                }]);
-            }
-        });
-
-        document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(async div => {
-            let conc = div.querySelector('.ga-motivo').value;
-            let monto = parseFloat(div.querySelector('.ga-monto').value) || 0;
-            let mon = div.querySelector('.ga-moneda').value;
-            if (monto > 0 && mon) {
-                await window.supabaseClient.from('gastos_operativos').insert([{
-                    local_id: CURRENT_LOCAL_ID, concepto: conc, monto: monto, moneda: mon, vendedor_id: vendId, fecha: new Date()
-                }]);
-            }
-        });
-
-        alert("🚀 Venta cerrada exitosamente y añadida a las ventas del día.");
-        carritoActual = [];
-        renderizarTablaCarrito();
     }
 
     function desplegarModuloCierreCaja() {
@@ -1277,7 +1301,169 @@
             return alert("❌ Debe seleccionar Quién Cierra, Quién Recibe y el Turno Cumplido.");
         }
 
-        alert("🟢 Cierre de Guardia Registrado. Balance, Control de Inventario, Empleados y Clientes actualizados.");
+        if (carritoActual.length === 0) {
+            return alert("❌ Debe ingresar al menos un producto en la declaración de mercancía de la guardia.");
+        }
+
+        try {
+            // Mostrar overlay de carga mientras se procesan las tablas
+            let loader = document.getElementById('loading_overlay');
+            if (loader) loader.style.display = 'flex';
+
+            // 1. CÁLCULO FINANCIERO Y DETERMINACIÓN DE CUADRE
+            let totalVentaUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
+            let pagadoUSD = 0;
+
+            // Sumar Avances
+            document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
+                let m = parseFloat(div.querySelector('.av-monto')?.value) || 0;
+                let mon = div.querySelector('.av-moneda')?.value;
+                pagadoUSD += calcularEquivalenteUSD(m, mon);
+            });
+
+            // Sumar Gastos
+            document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
+                let m = parseFloat(div.querySelector('.ga-monto')?.value) || 0;
+                let mon = div.querySelector('.ga-moneda')?.value;
+                pagadoUSD += calcularEquivalenteUSD(m, mon);
+            });
+
+            // Sumar Conciliaciones
+            document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
+                let m = parseFloat(div.querySelector('.con-ref-monto')?.value) || parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
+                let mon = div.querySelector('.con-moneda')?.value;
+                pagadoUSD += calcularEquivalenteUSD(m, mon);
+            });
+
+            // Sumar Efectivo
+            document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
+                let m = parseFloat(div.querySelector('.ef-monto')?.value) || 0;
+                let mon = div.querySelector('.ef-moneda')?.value;
+                pagadoUSD += calcularEquivalenteUSD(m, mon);
+            });
+
+            // Restar Vueltos Extra
+            document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
+                let m = parseFloat(div.querySelector('.vu-monto')?.value) || 0;
+                let mon = div.querySelector('.vu-moneda')?.value;
+                pagadoUSD -= calcularEquivalenteUSD(m, mon);
+            });
+
+            // Diferencia: Negativo = Faltante (Deuda); Positivo = Excedente
+            let diferenciaUSD = pagadoUSD - totalVentaUSD;
+
+            // 2. DESCUENTO DE MERCANCÍA EN CONTROL_INVENTARIO.HTML (Tabla 'catalogo')
+            for (let item of carritoActual) {
+                let prodActual = CATALOGO.find(p => p.id === item.id);
+                if (prodActual) {
+                    let nuevoStock = Math.max(0, prodActual.stock - item.cant);
+                    let { error: errInv } = await window.supabaseClient
+                        .from('catalogo')
+                        .update({ stock: nuevoStock })
+                        .eq('id', item.id);
+
+                    if (errInv) {
+                        console.error(`Error descontando stock de ${item.nom}:`, errInv.message);
+                    } else {
+                        prodActual.stock = nuevoStock; // Sincroniza estado local
+                    }
+                }
+            }
+
+            // 3. ACTUALIZACIÓN DE CONCILIACION.HTML (Tabla 'conciliaciones')
+            let filasConc = document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row');
+            for (let div of filasConc) {
+                let concNombre = div.getAttribute('data-conc-nombre');
+                let montoIngresado = parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
+                let montoEsperado = parseFloat(div.querySelector('.con-ref-monto')?.value) || 0;
+                let refCodigo = div.querySelector('.con-ref-codigo')?.value || '';
+                let mon = div.querySelector('.con-moneda')?.value || '';
+
+                if (montoIngresado > 0) {
+                    await window.supabaseClient.from('conciliaciones').insert([{
+                        local_id: CURRENT_LOCAL_ID,
+                        metodo: concNombre,
+                        fecha: new Date().toISOString(),
+                        monto_esperado: montoEsperado,
+                        monto_ingresado: montoIngresado,
+                        empleado: quienCierra,
+                        estado: 'Pendiente',
+                        referencia: refCodigo,
+                        nota: `Cierre Guardia (${turno}) - Moneda: ${mon}`,
+                        creado_en: new Date().toISOString()
+                    }]);
+                }
+            }
+
+            // 4. ACTUALIZACIÓN DE BALANCE.HTML (Tabla 'cierres_guardia')
+            let { error: errCierre } = await window.supabaseClient
+                .from('cierres_guardia')
+                .insert([{
+                    local_id: CURRENT_LOCAL_ID,
+                    quien_cierra: quienCierra,
+                    quien_recibe: quienRecibe,
+                    turno: turno,
+                    total_venta_usd: totalVentaUSD,
+                    total_recaudado_usd: pagadoUSD,
+                    diferencia_usd: diferenciaUSD,
+                    fecha: new Date().toISOString()
+                }]);
+
+            if (errCierre) console.error("Error al registrar balance de guardia:", errCierre.message);
+
+            // 5. ACTUALIZACIÓN DE EMPLEADOS.HTML (Si hay faltante / Deuda)
+            if (diferenciaUSD < 0) {
+                let faltanteUSD = Math.abs(diferenciaUSD);
+                let empObj = EMPLEADOS.find(e => e.id === quienCierra);
+                let deudaActual = parseFloat(empObj?.deuda || 0);
+                let nuevaDeuda = deudaActual + faltanteUSD;
+
+                // Actualizar deuda directa en el perfil del empleado
+                let { error: errEmp } = await window.supabaseClient
+                    .from('empleados')
+                    .update({ deuda: nuevaDeuda })
+                    .eq('id', quienCierra);
+
+                if (errEmp) {
+                    console.error("Error al cargar la deuda al empleado:", errEmp.message);
+                } else if (empObj) {
+                    empObj.deuda = nuevaDeuda;
+                }
+
+                // Registrar el movimiento en el historial de deudas
+                await window.supabaseClient.from('deudas_empleados').insert([{
+                    local_id: CURRENT_LOCAL_ID,
+                    empleado_id: quienCierra,
+                    monto_usd: faltanteUSD,
+                    concepto: `Faltante en Cierre de Guardia (${turno}) - Venta: $${totalVentaUSD.toFixed(2)}, Recaudado: $${pagadoUSD.toFixed(2)}`,
+                    fecha: new Date().toISOString()
+                }]);
+            }
+
+            // RESETEAR ESTADO Y CERRAR
+            carritoActual = [];
+            renderizarTablaCarrito();
+            if (loader) loader.style.display = 'none';
+
+            let msjFin = `✅ Cierre de Guardia registrado correctamente.\n\n` +
+                `• Inventario descontado.\n` +
+                `• Balance y Conciliaciones guardadas.\n`;
+
+            if (diferenciaUSD < 0) {
+                msjFin += `⚠️ FALTANTE DETECTADO: $${Math.abs(diferenciaUSD).toFixed(2)} cargados a la deuda del empleado.`;
+            } else if (diferenciaUSD > 0) {
+                msjFin += `ℹ️ EXCEDENTE REGISTRADO: $${diferenciaUSD.toFixed(2)} en caja.`;
+            } else {
+                msjFin += `🎯 Cuadre exacto (sin diferencias).`;
+            }
+
+            alert(msjFin);
+
+        } catch (e) {
+            let loader = document.getElementById('loading_overlay');
+            if (loader) loader.style.display = 'none';
+            alert("❌ Error crítico durante el Cierre de Guardia: " + e.message);
+        }
     }
 
     async function abrirVentasDelDia() {
