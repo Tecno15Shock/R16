@@ -633,6 +633,10 @@
 
                 // Cargar registros acumulados de Avances y Gastos
                 await this.cargarHistorialAvancesYGastos();
+                
+                // 👇 AÑADE ESTA LÍNEA AQUÍ 👇
+                await this.cargarRegistrosConciliacionSupabase();
+                // 👆 ---------------------- 👆
 
                 this.renderizarAvances();
                 this.renderizarGastos();
@@ -775,6 +779,37 @@
                 this.historialGastos = resGastos.data || [];
             } catch (err) {
                 console.error("Error cargando historial de egresos:", err);
+            }
+        },
+
+        // 👇 COPIA E INTEGRA ESTA NUEVA FUNCIÓN AQUÍ 👇
+        cargarRegistrosConciliacionSupabase: async function() {
+            const sb = window.supabaseClient || (typeof AppMotor !== 'undefined' ? AppMotor.supabase : null);
+            if (!sb || !this.localId) return;
+
+            try {
+                const { data: rowsConc, error: errConc } = await sb
+                    .from('conciliacion')
+                    .select('*')
+                    .eq('local_id', this.localId);
+
+                if (!errConc && rowsConc) {
+                    this.listaConciliaciones.forEach(conc => {
+                        const matches = rowsConc.filter(r => 
+                            r.metodo && r.metodo.trim().toLowerCase() === conc.nombre.trim().toLowerCase()
+                        );
+                        conc.registros = matches.map(r => ({
+                            id: r.id,
+                            fecha: r.fecha || r.creado_en || 'N/A',
+                            referencia: r.referencia || r.nota || 'SIN REF',
+                            monto: parseFloat(r.monto_ingresado) || 0,
+                            monto_esperado: parseFloat(r.monto_esperado) || 0,
+                            estado: r.estado || 'Pendiente'
+                        }));
+                    });
+                }
+            } catch (e) {
+                console.error("Error cargando registros de conciliacion desde Supabase:", e);
             }
         },
 
