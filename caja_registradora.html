@@ -1285,11 +1285,12 @@
         if (!vendId) return alert("❌ Seleccione al vendedor.");
 
         if (esTotal) {
-            alert("✅ Cierre Total procesado: Balance, Inventario, Empleados y Clientes actualizados.");
+            // Reutiliza la misma lógica robusta de cierre total
+            await ejecutarCierreGuardiaFinalCustom(vendId, vendId, 'Caja Diaria (Cierre Total)');
         } else {
             alert("✅ Cierre Parcial procesado: Datos enviados únicamente a Clientes y Empleados.");
+            cerrarModalGlobal();
         }
-        cerrarModalGlobal();
     }
 
     async function ejecutarCierreGuardiaFinal() {
@@ -1302,167 +1303,186 @@
         }
 
         if (carritoActual.length === 0) {
-            return alert("❌ Debe ingresar al menos un producto en la declaración de mercancía de la guardia.");
+            return alert("❌ Debe ingresar al menos un producto en la declaración de mercancía.");
         }
 
+        await ejecutarCierreGuardiaFinalCustom(quienCierra, quienRecibe, turno);
+    }
+
+    async function ejecutarCierreGuardiaFinalCustom(empleadoCierra, empleadoRecibe, turnoLabel) {
         try {
-            // Mostrar overlay de carga mientras se procesan las tablas
             let loader = document.getElementById('loading_overlay');
             if (loader) loader.style.display = 'flex';
 
-            // 1. CÁLCULO FINANCIERO Y DETERMINACIÓN DE CUADRE
-            let totalVentaUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
-            let pagadoUSD = 0;
+            let fechaHoy = new Date().toISOString().slice(0,10);
+            let tasaBs = parseFloat(CONFIG_GLOBAL.tasas?.ves) || 1;
 
-            // Sumar Avances
-            document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
-                let m = parseFloat(div.querySelector('.av-monto')?.value) || 0;
-                let mon = div.querySelector('.av-moneda')?.value;
-                pagadoUSD += calcularEquivalenteUSD(m, mon);
+            let totalVentaUSD = 0, totalCapital = 0;
+            let detallesAgrupados = {};
+
+            // 1. Cálculo de totales y costos (Capital vs Venta)
+            carritoActual.forEach(p => {
+                let precioCobrado = p.base;
+                let capUni = parseFloat(p.fuente || p.costo_fuente) || 0;
+                if(!detallesAgrupados[p.id]) {
+                    detallesAgrupados[p.id] = { uuid: p.id, nom: p.nom, cant: 0, subtotal: 0 };
+                }
+                detallesAgrupados[p.id].cant += p.cant;
+                detallesAgrupados[p.id].subtotal += (precioCobrado * p.cant);
+                totalVentaUSD += (precioCobrado * p.cant);
+                totalCapital += (capUni * p.cant);
             });
 
-            // Sumar Gastos
-            document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
-                let m = parseFloat(div.querySelector('.ga-monto')?.value) || 0;
-                let mon = div.querySelector('.ga-moneda')?.value;
-                pagadoUSD += calcularEquivalenteUSD(m, mon);
+            let gananciaNeta = totalVentaUSD - totalCapital;
+
+            // 2. Insertar en Lotes Diarios (Alimenta BALANCE)
+            let { data: loteRes, error: errLote } = await window.supabaseClient.from('lotes_diarios').insert([{
+                local_id: CURRENT_LOCAL_ID, 
+                vendedor_id: empleadoCierra, 
+                fecha: fechaHoy, 
+                turno: turnoLabel, 
+                total_vendido_usd: totalVentaUSD, 
+                capital_invertido: totalCapital, 
+                ganancia_neta: gananciaNeta, 
+                tasa_bs: tasaBs
+            }]).select().single();
+            
+            if(errLote) throw new Error("Error en lotes_diarios: " + errLote.message);
+
+            // 3. Insertar Detalle de Ventas por Producto
+            let arrDetalles = Object.values(detallesAgrupados).map(d => ({
+                lote_id: loteRes.id, 
+                producto_id: d.uuid, 
+                cantidad: d.cant, 
+                subtotal_usd: d.subtotal
+            }));
+            
+            if(arrDetalles.length > 0) {
+                let { error: errDet } = await window.supabaseClient.from('detalle_ventas').insert(arrDetalles);
+                if(errDet) throw new Error("Error en detalle_ventas: " + errDet.message);
+            }
+
+            // 4. Obtener stock anterior para cálculo exacto de inventario (E, S, VP, PI, VT)
+            const { data: ultCierreArr } = await window.supabaseClient
+                .from('control_inventario_cierres')
+                .select('detalles_json')
+                .eq('local_id', CURRENT_LOCAL_ID)
+                .order('id', { ascending: false })
+                .limit(1);
+
+            let stockAnteriorMap = {};
+            if (ultCierreArr && ultCierreArr.length > 0 && ultCierreArr[0].detalles_json) {
+                ultCierreArr[0].detalles_json.forEach(item => {
+                    let pId = item.uuid || item.producto_id;
+                    stockAnteriorMap[pId] = parseFloat(item.S) || 0;
+                });
+            }
+
+            // 5. Generar Snapshot de Inventario (Alimenta CONTROL DE INVENTARIO)
+            let snapshotInventario = CATALOGO.map(prod => {
+                let item = detallesAgrupados[prod.id];
+                let VP_valor = item ? item.cant : 0;
+                let E_valor = stockAnteriorMap[prod.id] !== undefined ? stockAnteriorMap[prod.id] : (prod.stock + VP_valor);
+                let S_valor = E_valor - VP_valor;
+                if(S_valor < 0) S_valor = 0;
+                let VT_valor = item ? item.subtotal : (VP_valor * (prod.precio_base || 0));
+
+                return { 
+                    uuid: prod.id, 
+                    nombre: prod.nombre, 
+                    E: E_valor, 
+                    S: S_valor, 
+                    VP: VP_valor, 
+                    PI: prod.precio_base || 0, 
+                    VT: VT_valor 
+                };
             });
 
-            // Sumar Conciliaciones
-            document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
-                let m = parseFloat(div.querySelector('.con-ref-monto')?.value) || parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
-                let mon = div.querySelector('.con-moneda')?.value;
-                pagadoUSD += calcularEquivalenteUSD(m, mon);
-            });
+            let { error: errInvCierre } = await window.supabaseClient.from('control_inventario_cierres').insert([{
+                local_id: CURRENT_LOCAL_ID, 
+                lote_id: loteRes.id, 
+                empleado_cierra: empleadoCierra, 
+                empleado_recibe: empleadoRecibe,
+                tasa_usd_bs: tasaBs, 
+                total_usd: totalVentaUSD, 
+                detalles_json: snapshotInventario
+            }]);
+            
+            if(errInvCierre) throw new Error("Error en control_inventario_cierres: " + errInvCierre.message);
 
-            // Sumar Efectivo
-            document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
-                let m = parseFloat(div.querySelector('.ef-monto')?.value) || 0;
-                let mon = div.querySelector('.ef-moneda')?.value;
-                pagadoUSD += calcularEquivalenteUSD(m, mon);
-            });
-
-            // Restar Vueltos Extra
-            document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
-                let m = parseFloat(div.querySelector('.vu-monto')?.value) || 0;
-                let mon = div.querySelector('.vu-moneda')?.value;
-                pagadoUSD -= calcularEquivalenteUSD(m, mon);
-            });
-
-            // Diferencia: Negativo = Faltante (Deuda); Positivo = Excedente
-            let diferenciaUSD = pagadoUSD - totalVentaUSD;
-
-            // 2. DESCUENTO DE MERCANCÍA EN CONTROL_INVENTARIO.HTML (Tabla 'catalogo')
+            // 6. Descontar stock real en la tabla `catalogo`
             for (let item of carritoActual) {
                 let prodActual = CATALOGO.find(p => p.id === item.id);
                 if (prodActual) {
                     let nuevoStock = Math.max(0, prodActual.stock - item.cant);
-                    let { error: errInv } = await window.supabaseClient
-                        .from('catalogo')
-                        .update({ stock: nuevoStock })
-                        .eq('id', item.id);
-
-                    if (errInv) {
-                        console.error(`Error descontando stock de ${item.nom}:`, errInv.message);
-                    } else {
-                        prodActual.stock = nuevoStock; // Sincroniza estado local
-                    }
+                    await window.supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', item.id);
+                    prodActual.stock = nuevoStock;
                 }
             }
 
-            // 3. ACTUALIZACIÓN DE CONCILIACION.HTML (Tabla 'conciliaciones')
-            let filasConc = document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row');
-            for (let div of filasConc) {
-                let concNombre = div.getAttribute('data-conc-nombre');
-                let montoIngresado = parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
-                let montoEsperado = parseFloat(div.querySelector('.con-ref-monto')?.value) || 0;
-                let refCodigo = div.querySelector('.con-ref-codigo')?.value || '';
-                let mon = div.querySelector('.con-moneda')?.value || '';
+            // 7. Calcular pagos recaudados y diferencias
+            let pagadoUSD = 0;
+            document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
+                pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.av-monto')?.value) || 0, div.querySelector('.av-moneda')?.value);
+            });
+            document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
+                pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.ga-monto')?.value) || 0, div.querySelector('.ga-moneda')?.value);
+            });
+            document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
+                let m = parseFloat(div.querySelector('.con-ref-monto')?.value) || parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
+                pagadoUSD += calcularEquivalenteUSD(m, div.querySelector('.con-moneda')?.value);
+            });
+            document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
+                pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.ef-monto')?.value) || 0, div.querySelector('.ef-moneda')?.value);
+            });
+            document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
+                pagadoUSD -= calcularEquivalenteUSD(parseFloat(div.querySelector('.vu-monto')?.value) || 0, div.querySelector('.vu-moneda')?.value);
+            });
 
-                if (montoIngresado > 0) {
-                    await window.supabaseClient.from('conciliaciones').insert([{
-                        local_id: CURRENT_LOCAL_ID,
-                        metodo: concNombre,
-                        fecha: new Date().toISOString(),
-                        monto_esperado: montoEsperado,
-                        monto_ingresado: montoIngresado,
-                        empleado: quienCierra,
-                        estado: 'Pendiente',
-                        referencia: refCodigo,
-                        nota: `Cierre Guardia (${turno}) - Moneda: ${mon}`,
-                        creado_en: new Date().toISOString()
-                    }]);
-                }
-            }
+            let diferenciaUSD = pagadoUSD - totalVentaUSD;
 
-            // 4. ACTUALIZACIÓN DE BALANCE.HTML (Tabla 'cierres_guardia')
-            let { error: errCierre } = await window.supabaseClient
-                .from('cierres_guardia')
-                .insert([{
-                    local_id: CURRENT_LOCAL_ID,
-                    quien_cierra: quienCierra,
-                    quien_recibe: quienRecibe,
-                    turno: turno,
-                    total_venta_usd: totalVentaUSD,
-                    total_recaudado_usd: pagadoUSD,
-                    diferencia_usd: diferenciaUSD,
-                    fecha: new Date().toISOString()
-                }]);
+            // Registrar cierre de guardia general
+            await window.supabaseClient.from('cierres_guardia').insert([{
+                local_id: CURRENT_LOCAL_ID, 
+                quien_cierra: empleadoCierra, 
+                quien_recibe: empleadoRecibe,
+                turno: turnoLabel, 
+                total_venta_usd: totalVentaUSD, 
+                total_recaudado_usd: pagadoUSD,
+                diferencia_usd: diferenciaUSD, 
+                fecha: new Date().toISOString()
+            }]);
 
-            if (errCierre) console.error("Error al registrar balance de guardia:", errCierre.message);
-
-            // 5. ACTUALIZACIÓN DE EMPLEADOS.HTML (Si hay faltante / Deuda)
+            // 8. Manejo de faltantes (deudas a empleados)
             if (diferenciaUSD < 0) {
                 let faltanteUSD = Math.abs(diferenciaUSD);
-                let empObj = EMPLEADOS.find(e => e.id === quienCierra);
-                let deudaActual = parseFloat(empObj?.deuda || 0);
-                let nuevaDeuda = deudaActual + faltanteUSD;
-
-                // Actualizar deuda directa en el perfil del empleado
-                let { error: errEmp } = await window.supabaseClient
-                    .from('empleados')
-                    .update({ deuda: nuevaDeuda })
-                    .eq('id', quienCierra);
-
-                if (errEmp) {
-                    console.error("Error al cargar la deuda al empleado:", errEmp.message);
-                } else if (empObj) {
-                    empObj.deuda = nuevaDeuda;
-                }
-
-                // Registrar el movimiento en el historial de deudas
+                let empObj = EMPLEADOS.find(e => e.id === empleadoCierra);
+                let nuevaDeuda = (parseFloat(empObj?.deuda || 0)) + faltanteUSD;
+                
+                await window.supabaseClient.from('empleados').update({ deuda: nuevaDeuda }).eq('id', empleadoCierra);
+                if(empObj) empObj.deuda = nuevaDeuda;
+                
                 await window.supabaseClient.from('deudas_empleados').insert([{
-                    local_id: CURRENT_LOCAL_ID,
-                    empleado_id: quienCierra,
+                    local_id: CURRENT_LOCAL_ID, 
+                    empleado_id: empleadoCierra, 
                     monto_usd: faltanteUSD,
-                    concepto: `Faltante en Cierre de Guardia (${turno}) - Venta: $${totalVentaUSD.toFixed(2)}, Recaudado: $${pagadoUSD.toFixed(2)}`,
+                    concepto: `Faltante en Cierre (${turnoLabel})`, 
                     fecha: new Date().toISOString()
                 }]);
             }
 
-            // RESETEAR ESTADO Y CERRAR
             carritoActual = [];
             renderizarTablaCarrito();
             if (loader) loader.style.display = 'none';
+            cerrarModalGlobal();
 
-            let msjFin = `✅ Cierre de Guardia registrado correctamente.\n\n` +
-                `• Inventario descontado.\n` +
-                `• Balance y Conciliaciones guardadas.\n`;
-
-            if (diferenciaUSD < 0) {
-                msjFin += `⚠️ FALTANTE DETECTADO: $${Math.abs(diferenciaUSD).toFixed(2)} cargados a la deuda del empleado.`;
-            } else if (diferenciaUSD > 0) {
-                msjFin += `ℹ️ EXCEDENTE REGISTRADO: $${diferenciaUSD.toFixed(2)} en caja.`;
-            } else {
-                msjFin += `🎯 Cuadre exacto (sin diferencias).`;
-            }
-
-            alert(msjFin);
+            alert(`✅ Cierre completado con éxito.\n\n• Lote registrado en Balance.\n• Snapshot guardado en Control de Inventario.\n• Stock actualizado.`);
 
         } catch (e) {
             let loader = document.getElementById('loading_overlay');
             if (loader) loader.style.display = 'none';
-            alert("❌ Error crítico durante el Cierre de Guardia: " + e.message);
+            alert("❌ Error crítico en el proceso de cierre: " + e.message);
+            console.error(e);
         }
     }
 
