@@ -19,11 +19,11 @@
             
             /* Paleta Carmesí Institucional */
             --crimson: #7A171D;
-            --crimson-dark: #4A0E12; /* Aún más profundo para contrastes */
+            --crimson-dark: #4A0E12;
             --crimson-light: #9B222A;
 
             /* Base y texto */
-            --bg: #FDFBF7; /* Tono marfil de alta gama */
+            --bg: #FDFBF7; 
             --text: #2A2A2A; 
             --text-light: #555555;
             --border: #E8E0D5; 
@@ -36,6 +36,7 @@
             --danger: #8B0000;
         }
 
+        /* CLASES DINÁMICAS PARA OCULTAR MONEDAS DESACTIVADAS (Tasa = 0) */
         body.hide-bs .moneda-bs { display: none !important; }
         body.hide-cop .moneda-cop { display: none !important; }
         body.hide-eur .moneda-eur { display: none !important; }
@@ -89,7 +90,7 @@
         .loading-text { color: #888; font-size: 0.85rem; line-height: 1.6; max-width: 90%; margin: 0 auto; }
 
         /* ========================================================= */
-        /* BARRA SUPERIOR: Ajuste Estricto en Línea                  */
+        /* BARRA SUPERIOR                                            */
         /* ========================================================= */
         .top-bar { 
             background: var(--topbar-bg); color: white; height: 65px; padding: 0 15px; 
@@ -105,7 +106,6 @@
         }
         .menu-toggle-btn:hover { background: rgba(212, 175, 55, 0.15); box-shadow: inset 0 0 8px rgba(212,175,55,0.3); }
         
-        /* Contenedor flexible que evita el salto de línea */
         .top-bar-title { 
             display: flex; align-items: center; gap: 10px; flex-grow: 1; 
             overflow: hidden; white-space: nowrap; 
@@ -116,7 +116,6 @@
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px;
         }
 
-        /* Etiqueta Premium que se adapta o se corta, nunca salta */
         .badge-elegant {
             font-size: 0.75rem; font-family: 'Segoe UI', sans-serif; font-weight: bold; 
             background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); 
@@ -166,7 +165,7 @@
         ::-webkit-scrollbar-thumb:hover { background: var(--active-gold); }
 
         /* ========================================================= */
-        /* CONTENEDORES, TARJETAS Y BOTONES PREMIUM                  */
+        /* CONTENEDORES, TARJETAS Y BOTONES                          */
         /* ========================================================= */
         .main-content { max-width: 950px; margin: 0 auto; padding: 30px 20px; padding-bottom: 130px; }
         .card { 
@@ -181,7 +180,6 @@
             letter-spacing: 1px;
         }
 
-        /* Botón Desplegable Ultra-Premium */
         .toggle-section-btn {
             background: linear-gradient(135deg, var(--crimson-dark) 0%, var(--crimson) 100%); 
             color: var(--active-gold); border: 1px solid var(--active-gold); 
@@ -198,9 +196,6 @@
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ========================================================= */
-        /* FORMULARIOS                                               */
-        /* ========================================================= */
         label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 15px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
         input, select { 
             width: 100%; padding: 14px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.95rem; 
@@ -215,8 +210,13 @@
         }
 
         .grid-vertical { display: flex; flex-direction: column; gap: 15px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        @media (max-width: 768px) { .grid-4 { grid-template-columns: 1fr; } }
+        
+        /* Contenedor dinámico de fondos de caja en grilla flexible */
+        .grid-fondos-caja { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 15px; 
+        }
 
         button.btn-action { 
             background: linear-gradient(135deg, var(--crimson), var(--crimson-dark)); 
@@ -227,9 +227,6 @@
         }
         button.btn-action:hover { box-shadow: 0 8px 20px rgba(122, 23, 29, 0.4); transform: translateY(-2px); filter: brightness(1.1); }
 
-        /* ========================================================= */
-        /* LISTADO DE INVENTARIO: FONDOS SUTILES Y BORDES DORADOS    */
-        /* ========================================================= */
         .cat-header { 
             background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); 
             color: var(--active-gold); padding: 14px 18px; margin-top: 20px; margin-bottom: 0; 
@@ -247,7 +244,6 @@
             transition: all 0.2s;
         }
         
-        /* Tintes Transparentes según estado del stock */
         .row-success { background-color: rgba(46, 125, 50, 0.08) !important; }
         .row-warning { background-color: rgba(184, 134, 11, 0.12) !important; }
         .row-danger { background-color: rgba(139, 0, 0, 0.10) !important; }
@@ -255,7 +251,6 @@
         .item-name { font-weight: bold; color: var(--text); display: block; margin-bottom: 4px; font-size: 1.05rem;}
         .item-cat { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;}
         
-        /* Badges de Cantidad (Colores Sólidos) */
         .badge-stock {
             padding: 8px 16px; border-radius: 4px; font-family: 'Courier New', Courier, monospace;
             font-size: 1.1rem; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.25);
@@ -279,11 +274,9 @@
 
 <div class="wrapper">
     
-    <!-- BARRA SUPERIOR ESTRUCTURADA EN LÍNEA -->
     <div class="top-bar">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
         <div class="top-bar-title" id="main_top_title">
-            <!-- Se inyecta dinámicamente desde JS -->
             Cargando...
         </div>
     </div>
@@ -315,7 +308,7 @@
 
     <div class="main-content">
         
-        <!-- SECCIÓN DE EXPORTACIÓN PDF COLLAPSIBLE -->
+        <!-- SECCIÓN DE EXPORTACIÓN PDF -->
         <div class="card" style="padding: 0; border: none; background: transparent; box-shadow: none;">
             <button class="toggle-section-btn" onclick="toggleSeccion('sec_pdf', 'arrow_pdf')">
                 <span>📄 Exportación de Reportes PDF</span>
@@ -362,7 +355,7 @@
             </div>
         </div>
 
-        <!-- SECCIÓN CAJA MONETARIA COLLAPSIBLE -->
+        <!-- SECCIÓN CAJA MONETARIA DINÁMICA -->
         <div class="card" style="padding: 0; border: none; background: transparent; box-shadow: none;">
             <button class="toggle-section-btn" onclick="toggleSeccion('sec_caja', 'arrow_caja')">
                 <span>💵 Caja Monetaria</span>
@@ -370,11 +363,8 @@
             </button>
             <div id="sec_caja" class="collapsible-content card" style="border-top: none; margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0;">
                 <label style="margin-top: 0; margin-bottom: 10px;">Fondos Registrados en Caja Registradora</label>
-                <div class="grid-4" style="background:var(--item-bg); padding:15px; border-radius:4px; border: 1px solid var(--border);">
-                    <div><label style="margin-top:0;">🇺🇸 Dólares (USD)</label><input type="text" id="inv_fondo_usd" readonly></div>
-                    <div class="moneda-bs"><label style="margin-top:0;">🇻🇪 Bolívares (BS)</label><input type="text" id="inv_fondo_bs" readonly></div>
-                    <div class="moneda-cop"><label style="margin-top:0;">🇨🇴 Pesos (COP)</label><input type="text" id="inv_fondo_cop" readonly></div>
-                    <div class="moneda-eur"><label style="margin-top:0;">🇪🇺 Euros (EUR)</label><input type="text" id="inv_fondo_eur" readonly></div>
+                <div id="contenedor_fondos_caja_dinamico" class="grid-fondos-caja" style="background:var(--item-bg); padding:15px; border-radius:4px; border: 1px solid var(--border);">
+                    <!-- Se inyecta dinámicamente según las monedas activas configuradas -->
                 </div>
             </div>
         </div>
@@ -469,13 +459,12 @@
             CONFIG_GLOBAL = conf;
             actualizarVisibilidadMonedas();
             actualizarSelectoresMonedaExportacion();
-            cargarFondos();
+            cargarFondosDinamicos();
         }
 
         let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Administrativo';
         let etiquetaModulo = "Inventario Físico"; 
 
-        // Inyección ajustada: Todo encapsulado dentro del flex para evitar desbordes
         document.getElementById('main_top_title').innerHTML = `
             <span class="local-name">🏪 ${nombreLocal}</span>
             <span class="badge-elegant">📌 ${etiquetaModulo}</span>
@@ -492,7 +481,7 @@
                 CONFIG_GLOBAL = conf;
                 actualizarVisibilidadMonedas();
                 actualizarSelectoresMonedaExportacion();
-                cargarFondos();
+                cargarFondosDinamicos();
             }
 
             let { data: reqCat } = await window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID);
@@ -513,12 +502,41 @@
         document.getElementById('sidebar-overlay').classList.toggle('active'); 
     }
 
-    function cargarFondos() {
-        let f = CONFIG_GLOBAL.fondos_caja || { usd:0, bs:0, cop:0, eur:0 };
-        document.getElementById('inv_fondo_usd').value = `$${formatearNumero(f.usd)}`;
-        document.getElementById('inv_fondo_bs').value = `Bs. ${formatearNumero(f.bs)}`;
-        document.getElementById('inv_fondo_cop').value = `$${formatearNumero(f.cop, 0)}`;
-        document.getElementById('inv_fondo_eur').value = `€${formatearNumero(f.eur)}`;
+    /* RENDERIZADO DINÁMICO DE FONDOS DE CAJA BASADO EN MONEDAS ACTIVAS */
+    function cargarFondosDinamicos() {
+        let container = document.getElementById('contenedor_fondos_caja_dinamico');
+        if (!container) return;
+
+        let fondos = CONFIG_GLOBAL.fondos_caja || {};
+        let tasasConfig = CONFIG_GLOBAL.tasas || {};
+        let monedaBase = tasasConfig.moneda_base || 'USD';
+        let secundarias = tasasConfig.secundarias || [];
+
+        let listaMonedas = [{ code: monedaBase, valor: fondos[monedaBase.toLowerCase()] || fondos.usd || 0 }];
+        secundarias.forEach(s => {
+            if (s.code) {
+                let valFondo = fondos[s.code.toLowerCase()] || 0;
+                listaMonedas.push({ code: s.code, valor: valFondo, tasa: parseFloat(s.tasa) || 0 });
+            }
+        });
+
+        let html = '';
+        listaMonedas.forEach(m => {
+            let codeLower = m.code.toLowerCase();
+            let claseOcultar = (m.code !== monedaBase && m.tasa === 0) ? `hide-${codeLower}` : `moneda-${codeLower}`;
+            let valorFormateado = (m.code === 'COP') ? formatearNumero(m.valor, 0) : formatearNumero(m.valor, 2);
+            let simbolo = m.code === 'VES' ? 'Bs.' : (m.code === 'EUR' ? '€' : (m.code === 'USD' ? '$' : m.code));
+
+            html += `
+                <div class="${claseOcultar}">
+                    <label style="margin-top:0;">${m.code}</label>
+                    <input type="text" value="${simbolo}${valorFormateado}" readonly>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        actualizarVisibilidadMonedas();
     }
 
     function renderInventarioFisico() {
@@ -540,7 +558,6 @@
             } 
 
             let stockVal = p.stock;
-            
             let badgeClass = 'badge-stock-success'; 
             let rowClass = 'row-success'; 
 
@@ -562,7 +579,6 @@
                 </div>`; 
         });
         
-        // Bordear la base de la última fila para que la línea dorada se cierre perfectamente
         if (html !== "") {
             html += `<div style="border-bottom: 3px solid var(--active-gold); border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; height: 3px; background: transparent; width: 100%;"></div>`;
         }
@@ -570,15 +586,26 @@
         document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--text-light); text-align:center; padding: 20px; font-style:italic; border: 1px solid var(--border);">No se encontraron registros con los filtros actuales.</p>';
     }
 
+    /* SELECTOR DE MONEDAS DINÁMICO PARA EXPORTACIÓN PDF */
     function actualizarSelectoresMonedaExportacion() {
         let sel = document.getElementById('sel_pdf_moneda');
-        if(sel) sel.innerHTML = `
-            <option value="" disabled selected>Seleccione una opción...</option>
-            <option value="ALL">Todas las Monedas</option>
-            <option value="USD">Solo Dólares (USD)</option>
-            <option value="BS">Solo Bolívares (BS)</option>
-            <option value="COP">Solo Pesos (COP)</option>
-            <option value="EUR">Solo Euros (EUR)</option>`;
+        if (!sel) return;
+
+        let tasasConfig = CONFIG_GLOBAL.tasas || {};
+        let monedaBase = tasasConfig.moneda_base || 'USD';
+        let secundarias = tasasConfig.secundarias || [];
+
+        let html = `<option value="" disabled selected>Seleccione una opción...</option>`;
+        html += `<option value="ALL">Todas las Monedas</option>`;
+        html += `<option value="${monedaBase}">Solo ${monedaBase} (${monedaBase})</option>`;
+
+        secundarias.forEach(s => {
+            if (s.code && parseFloat(s.tasa) > 0) {
+                html += `<option value="${s.code}">Solo ${s.code} (${s.code})</option>`;
+            }
+        });
+
+        sel.innerHTML = html;
     }
 
     function ejecutarAccionPDF(accion) {
@@ -601,11 +628,6 @@
         const doc = new jsPDF();
 
         let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Panel Empresarial';
-        let tasasObj = CONFIG_GLOBAL.tasas || {};
-        let tasaBs = parseFloat(tasasObj.ves) || 1; 
-        let tasaCop = parseFloat(tasasObj.cop) || 1; 
-        let tasaEur = parseFloat(tasasObj.eur) || 1;
-
         let showCaja = ["inv_caja", "caja"].includes(valDoc);
 
         let arr = [...CATALOGO];
@@ -642,7 +664,8 @@
                 lC = p.cat;
             }
 
-            let arrayCaja = showCaja ? obtenerLineasMonedas(convertirA_USD(p.base, p.mBase), modMoneda, tasaBs, tasaCop, tasaEur) : [];
+            let usdValor = convertirA_USD(p.base, p.mBase);
+            let arrayCaja = showCaja ? obtenerLineasMonedasDinamicas(usdValor, modMoneda) : [];
             let maxLineas = Math.max(arrayCaja.length, 1);
             let alturaCelda = Math.max(12, 6 + (maxLineas * 4.5));
 
@@ -686,19 +709,67 @@
         doc.save(`Reporte_Inventario_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`);
     }
 
-    function obtenerLineasMonedas(usd, modMoneda, tv, tc, te) {
+    /* OBTENER LÍNEAS DE MONEDAS DINÁMICAS PARA EL PDF */
+    function obtenerLineasMonedasDinamicas(usd, modMoneda) {
         let lineas = [];
-        if(["ALL", "USD"].includes(modMoneda)) lineas.push(`$${formatearNumero(usd)} USD`);
-        if(["ALL", "BS"].includes(modMoneda) && tv > 0) lineas.push(`Bs. ${formatearNumero(usd*tv)}`);
-        if(["ALL", "COP"].includes(modMoneda) && tc > 0) lineas.push(`$${formatearNumero(usd*tc, 0)} COP`);
-        if(["ALL", "EUR"].includes(modMoneda) && te > 0) lineas.push(`€${formatearNumero(usd*te)} EUR`);
+        let tasasConfig = CONFIG_GLOBAL.tasas || {};
+        let monedaBase = tasasConfig.moneda_base || 'USD';
+        let secundarias = tasasConfig.secundarias || [];
+
+        let calcularMontoEnMoneda = (code, tasa, operacion) => {
+            if (code === monedaBase) return usd;
+            if (!tasa || tasa === 0) return 0;
+            return (operacion === 'dividir') ? (usd / tasa) : (usd * tasa);
+        };
+
+        if (modMoneda === 'ALL' || modMoneda === monedaBase) {
+            lineas.push(`$${formatearNumero(usd)} ${monedaBase}`);
+        }
+
+        secundarias.forEach(sec => {
+            if (sec.code && (modMoneda === 'ALL' || modMoneda === sec.code)) {
+                let tasaVal = parseFloat(sec.tasa) || 0;
+                if (tasaVal > 0) {
+                    let montoConv = calcularMontoEnMoneda(sec.code, tasaVal, sec.operacion);
+                    let dec = (sec.code === 'COP') ? 0 : 2;
+                    let simbolo = sec.code === 'VES' ? 'Bs.' : sec.code;
+                    lineas.push(`${simbolo} ${formatearNumero(montoConv, dec)}`);
+                }
+            }
+        });
+
         return lineas;
     }
 
     function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
     function formatearNumero(v, d = 2) { if (isNaN(v) || v == null) return "0"; let num = parseFloat(v); if (d === 0) num = Math.round(num); let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; }
-    function convertirA_USD(m, mon) { let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 }; return parseFloat(mon === 'BS' ? m / t.ves : mon === 'COP' ? m / t.cop : mon === 'EUR' ? m / t.eur : m); }
-    function actualizarVisibilidadMonedas() { let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 }; parseFloat(t.ves) === 0 ? document.body.classList.add('hide-bs') : document.body.classList.remove('hide-bs'); parseFloat(t.cop) === 0 ? document.body.classList.add('hide-cop') : document.body.classList.remove('hide-cop'); parseFloat(t.eur) === 0 ? document.body.classList.add('hide-eur') : document.body.classList.remove('hide-eur'); }
+    
+    function convertirA_USD(m, mon) {
+        let tasasConfig = CONFIG_GLOBAL.tasas || {};
+        let monedaBase = tasasConfig.moneda_base || 'USD';
+        if (mon === monedaBase) return parseFloat(m);
+
+        let sec = (tasasConfig.secundarias || []).find(s => s.code === mon);
+        if (!sec || !sec.tasa || parseFloat(sec.tasa) === 0) return parseFloat(m);
+
+        let tasa = parseFloat(sec.tasa);
+        return (sec.operacion === 'dividir') ? (parseFloat(m) * tasa) : (parseFloat(m) / tasa);
+    }
+
+    function actualizarVisibilidadMonedas() {
+        let secundarias = CONFIG_GLOBAL.tasas?.secundarias || [];
+        secundarias.forEach(s => {
+            if (s.code) {
+                let codeLower = s.code.toLowerCase();
+                let tasa = parseFloat(s.tasa) || 0;
+                if (tasa === 0) {
+                    document.body.classList.add(`hide-${codeLower}`);
+                } else {
+                    document.body.classList.remove(`hide-${codeLower}`);
+                }
+            }
+        });
+    }
 </script>
 </body>
 </html>
