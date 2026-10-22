@@ -329,7 +329,6 @@ const UIBase = {
             const topBarHTML = `
                 <header class="top-bar">
                     <button class="menu-toggle-btn" onclick="UIBase.toggleSidebar()">☰</button>
-                    <div class="top-bar-title" id="main_top_title">CARGANDO...</div>
                 </header>
             `;
             const wrapper = document.getElementById('main_wrapper') || document.body;
@@ -344,11 +343,8 @@ const UIBase = {
                     <a href="principal.html" class="tab-btn ${pagActual === 'principal.html' ? 'active' : ''}">🏠 Menú Principal</a>
                     <a href="reglas_laborales.html" class="tab-btn ${pagActual === 'reglas_laborales.html' ? 'active' : ''}">⚖️ Reglas Laborales</a>
 					<a href="precios.html" class="tab-btn ${pagActual === 'precios.html' ? 'active' : ''}">💰 Precios</a>
-                    <a href="inventario.html" class="tab-btn ${pagActual === 'inventario.html' ? 'active' : ''}">📦 Inventario Físico</a>
-                    <a href="trabajos_servicios.html" class="tab-btn ${pagActual === 'trabajos_servicios.html' ? 'active' : ''}">📱 Trabajos y Servicios</a>
-                    <a href="avances.html" class="tab-btn ${pagActual === 'avances.html' ? 'active' : ''}">💸 Avances / Retiros</a>
+                    <a href="inventario.html" class="tab-btn ${pagActual === 'inventario.html' ? 'active' : ''}">📦 Inventario Físico</a>´
                     <a href="conversor.html" class="tab-btn ${pagActual === 'conversor.html' ? 'active' : ''}">🧮 Conversor Monetario</a>
-                    <a href="facturar.html" class="tab-btn ${pagActual === 'facturar.html' ? 'active' : ''}">🛒 Facturar Venta</a>
                     <a href="caja_registradora.html" class="tab-btn ${pagActual === 'caja_registradora.html' ? 'active' : ''}">🧾 Caja Registradora</a>
                     <a href="control_inventario.html" class="tab-btn ${pagActual === 'control_inventario.html' ? 'active' : ''}">📋 Control Inventario</a>
                     <a href="balance.html" class="tab-btn ${pagActual === 'balance.html' ? 'active' : ''}">📊 Balance y Lotes</a>
