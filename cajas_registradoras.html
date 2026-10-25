@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja Registradora | Panel Ultra-Premium</title>
+    
+    <!-- Supabase SDK & Fuentes Ultra-Premium -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #FDFBF7;                 
+            --card-bg: #FFFFFF;            
+            --item-bg: #FFFDF9;            
+            --text: #111111;               
+            --text-dark: #000000;
+            --muted: #555555;              
+            --border-gold: #C5A028;        
+            --gold-light: #5A4008;         
+            --primary: #4A0510;            
+            --secondary: #7A0000;          
+            --danger: #990000;             
+            --success: #1E8449;            
+            --warning: #B8860B;
+            --stock-green: #27ae60;
+            --stock-yellow: #d4ac0d;
+            --stock-red: #c0392b;
+        }
+
+        body.hide-bs .moneda-bs { display: none !important; }
+        body.hide-cop .moneda-cop { display: none !important; }
+        body.hide-eur .moneda-eur { display: none !important; }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.6; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        /* BOTÓN X FLOTANTE */
+        .close-corner-btn {
+            position: fixed; top: 20px; right: 25px; z-index: 10000;
+            background: rgba(74, 5, 16, 0.95); backdrop-filter: blur(8px);
+            border: 2px solid var(--border-gold); color: #ffffff;
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem; font-weight: bold; cursor: pointer; text-decoration: none;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
+
+        .main-content { max-width: 1000px; margin: 0 auto; padding: 30px 20px 140px 20px; }
+        
+        .card { 
+            background: var(--card-bg); padding: 30px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 12px 30px rgba(0,0,0,0.06); border: 2px solid var(--border-gold);
+            position: relative; overflow: hidden;
+        }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, #C5A028, var(--secondary)); }
+        
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-gold); padding-bottom: 12px; margin-bottom: 15px; }
+        h1, h2 { color: var(--primary); margin: 0; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        h1 { font-size: 1.8rem; text-align: center; }
+        h2 { font-size: 1.35rem; border: none; padding: 0; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .main-content { padding: 15px; } }
+
+        label { font-size: 0.9rem; font-weight: 700; display: block; margin-top: 14px; color: var(--gold-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { 
+            width: 100%; padding: 13px; margin-top: 6px; background: #FFFFFF; color: var(--text-dark);
+            border: 2px solid var(--border-gold); border-radius: 6px; font-size: 1.05rem; font-weight: 700; transition: 0.3s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px rgba(197, 160, 40, 0.6); background: #FFFFFF; }
+
+        button { 
+            position: relative; overflow: hidden; font-family: 'Playfair Display', serif;
+            border: 2px solid var(--border-gold) !important; border-radius: 6px; cursor: pointer;
+            font-weight: bold; text-transform: uppercase; transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12); background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: #ffffff; padding: 14px 20px; margin-top: 12px; width: 100%; letter-spacing: 1px;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(197, 160, 40, 0.35); }
+
+        button.btn-danger { background: linear-gradient(135deg, #7a0000, var(--danger)); color: #fff; width: auto; padding: 10px 14px; margin-top: 0; font-family: 'Roboto', sans-serif; font-size: 0.9rem; }
+        button.btn-success { background: linear-gradient(135deg, #196f3d, var(--success)); color: #fff; }
+        button.btn-add { background: #FFFFFF; color: var(--primary); width: auto; padding: 11px 16px; margin-top: 10px; display: inline-block; font-family: 'Roboto', sans-serif; font-weight: 700; border: 2px solid var(--border-gold); }
+        button.btn-info { background: linear-gradient(135deg, #8a7122, #C5A028); color: #000; font-weight: 800; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.95rem; border: 2px solid var(--border-gold); border-radius: 6px; overflow: hidden; }
+        th, td { border: 1px solid var(--border-gold); padding: 12px 14px; text-align: left; }
+        th { background: var(--primary); color: #FFFFFF; text-transform: uppercase; font-family: 'Playfair Display', serif; letter-spacing: 0.5px; font-weight: 700; }
+        td { background: var(--card-bg); color: var(--text-dark); font-weight: 700; }
+
+        .stock-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #fff; font-size: 0.85rem; display: inline-block; }
+        .stock-verde { background-color: var(--stock-green); }
+        .stock-amarillo { background-color: var(--stock-yellow); color: #000; }
+        .stock-rojo { background-color: var(--stock-red); }
+
+        .total-box-multi { 
+            display: flex; flex-direction: column; align-items: flex-end; margin-top: 18px; 
+            font-size: 1.1rem; padding: 20px; background: #2A030A; border: 2px solid var(--border-gold); border-radius: 6px; 
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+        }
+        .txt-success { color: #FFD700 !important; font-size: 1.8rem; font-weight: 800; font-family: 'Playfair Display', serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+
+        /* BÚSQUEDA AUTOCOMPLETADO CLIENTES */
+        #resultados_clientes { position: absolute; background: var(--card-bg); border: 2px solid var(--border-gold); z-index: 100; max-height: 200px; overflow-y: auto; display: none; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border-radius: 0 0 6px 6px; }
+        .cliente-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 0.95rem; color: var(--text-dark); font-weight: bold; transition: 0.2s; }
+        .cliente-item:hover { background: #FFF8EE; color: var(--primary); }
+        .btn-nuevo-cliente { width: 100%; padding: 12px; background: #FFF3DD; color: var(--primary); border: none; cursor: pointer; text-align: left; font-family: 'Roboto', sans-serif; font-weight: bold; }
+
+        /* BARRA INFERIOR DE COBRO / DIFERENCIA */
+        .sticky-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #1E0207; color: #fff; padding: 15px; box-shadow: 0 -4px 20px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 8px; font-size: 1rem; z-index: 1000; text-align: center; border-top: 3px solid var(--border-gold); }
+        .monedas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; max-width: 1000px; margin: 0 auto; width: 100%; }
+        .moneda-box { padding: 10px; border-radius: 4px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-gold); font-size: 0.95rem; color: #fff; font-weight: bold; }
+        .resta-positiva { color: #FF6B6B !important; font-weight: bold; } 
+        .resta-cero { color: #FFD700 !important; font-weight: bold; } 
+
+        /* MODALES */
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 100000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .custom-modal-box { 
+            background: var(--card-bg); padding: 35px; border-radius: 8px; min-width: 320px; max-width: 95%; width: 850px;
+            position: relative; max-height: 90vh; display: flex; flex-direction: column; border: 2px solid var(--border-gold); box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+        .modal-close-btn { 
+            position: absolute; top: 18px; right: 18px; background: var(--primary); color: #FFF;
+            border: 2px solid var(--border-gold); border-radius: 50%; width: 36px; height: 36px; font-weight: bold;
+            font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; z-index: 30;
+            transition: all 0.3s ease;
+        }
+        .modal-close-btn:hover { background: var(--secondary); transform: scale(1.1); }
+
+        .flex-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+        .flex-row-justificado { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: center; margin-top: 10px; background: #FFF8EE; padding: 10px; border: 2px solid var(--border-gold); border-radius: 6px; }
+
+        /* OVERLAY CARGA */
+        #loading_overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(26, 9, 12, 0.95); z-index: 200000; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(6px);
+        }
+        .loading-box {
+            background: var(--card-bg); padding: 40px; border-radius: 8px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); border: 2px solid var(--border-gold); max-width: 420px; width: 90%;
+        }
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 4px solid rgba(197, 160, 40, 0.3);
+            border-left-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media print {
+            body * { visibility: hidden; }
+            #ticket_para_imprimir, #ticket_para_imprimir * { visibility: visible; }
+            #ticket_para_imprimir { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- BOTÓN X FLOTANTE -->
+<a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+<!-- OVERLAY DE CARGA -->
+<div id="loading_overlay">
+    <div class="loading-box">
+        <div class="spinner-luxury"></div>
+        <div style="font-family:'Playfair Display'; color:var(--primary); font-size:1.4rem; font-weight:700;">Iniciando Caja Registradora</div>
+        <div style="color:var(--text); font-size:1rem; font-weight:bold; margin-top:8px;" id="msj_cargando_txt">Conectando con Supabase y actualizando catálogo...</div>
+    </div>
+</div>
+
+<!-- MODAL GENÉRICO -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" style="font-size: 1.35rem; color: var(--primary); margin-bottom: 15px; font-family: 'Playfair Display', serif; border-bottom: 2px solid var(--border-gold); padding-bottom: 10px; text-align: center; font-weight:700;">Título</div>
+        <div id="global_modal_body" style="overflow-y:auto; flex-grow:1;"></div>
+    </div>
+</div>
+
+<!-- MODAL SELECTOR DE PRODUCTOS -->
+<div id="modal_selector_productos" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarSelectorProductos()">✕</button>
+        <div class="card-header-flex" style="margin-right: 45px;">
+            <h2>🛒 Selector de Productos</h2>
+            <button class="btn-info" style="width:auto; padding:6px 12px; font-size:0.85rem; margin:0;" onclick="recargarDatosCatalogo(true)">🔄 Refrescar</button>
+        </div>
+        
+        <div class="grid-2" style="margin-bottom: 12px;">
+            <input type="text" id="buscador_prod_modal" placeholder="🔍 Buscar por nombre..." oninput="filtrarYRenderizarCatalogoSelector()">
+            <select id="orden_prod_modal" onchange="filtrarYRenderizarCatalogoSelector()">
+                <option value="AZ" selected>Orden A-Z</option>
+                <option value="ZA">Orden Z-A</option>
+                <option value="CAT">Por Categoría</option>
+            </select>
+        </div>
+
+        <div style="overflow-y: auto; flex-grow: 1; max-height: 50vh;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>PRODUCTO</th>
+                        <th>PRECIO</th>
+                        <th>STOCK</th>
+                        <th>CANTIDAD</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody_selector_catalogo"></tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:15px; border-top:2px solid var(--border-gold); padding-top:15px;">
+            <button class="btn-success" onclick="cerrarSelectorProductos()" style="font-size:1.1rem; padding:15px;">
+                ✅ ACEPTAR SELECCIÓN - TOTAL: <span id="total_modal_selector_txt">$0.00</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL MÉTODOS DE PAGO -->
+<div id="modal_pagos" class="custom-modal-overlay">
+    <div class="custom-modal-box" style="padding-bottom: 100px;">
+        <button class="modal-close-btn" onclick="cerrarModalPagos()">✕</button>
+        <h2 style="text-align: center; margin-top: 0; margin-bottom: 15px;">💳 Métodos de Pago y Soportes</h2>
+        
+        <div style="overflow-y: auto; flex-grow: 1; padding-right: 5px;">
+            
+            <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                <label style="margin-top:0;">📱 Pago Móvil (BS):</label>
+                <div id="lista_pagomovil"></div>
+                <button type="button" class="btn-add" onclick="agregarCampoTransaccion('lista_pagomovil', 'pm_val')">+ Añadir Pago Móvil</button>
+            </div>
+
+            <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                <label style="margin-top:0;">💳 Punto De Venta (BS):</label>
+                <div id="lista_punto"></div>
+                <button type="button" class="btn-add" onclick="agregarCampoTransaccion('lista_punto', 'punto_val')">+ Añadir Punto BS</button>
+            </div>
+
+            <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                <label style="margin-top:0;">🖐️ BioPago (BS):</label>
+                <div id="lista_biopago"></div>
+                <button type="button" class="btn-add" onclick="agregarCampoTransaccion('lista_biopago', 'biopago_val')">+ Añadir BioPago</button>
+            </div>
+
+            <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                <label style="margin-top:0;">💵 Efectivo Recibido:</label>
+                <div class="grid-2">
+                    <div class="moneda-bs"><label>Bolívares (BS):</label><input type="number" step="0.01" id="val_bs" oninput="calcularRestaReal()"></div>
+                    <div><label>Dólares ($):</label><input type="number" step="0.01" id="val_usd" oninput="calcularRestaReal()"></div>
+                    <div class="moneda-cop"><label>Pesos (COP):</label><input type="number" id="val_cop" oninput="calcularRestaReal()"></div>
+                    <div class="moneda-eur"><label>Euros (EUR):</label><input type="number" step="0.01" id="val_eur" oninput="calcularRestaReal()"></div>
+                </div>
+            </div>
+
+            <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                <label style="margin-top:0; color:var(--danger);">↩️ Vueltos Entregados Extra:</label>
+                <div id="contenedor-vueltos-ticket"></div>
+                <button type="button" class="btn-danger" style="margin-top:10px;" onclick="agregarVuelto()">+ Añadir Vuelto</button>
+            </div>
+
+        </div>
+
+        <button class="btn-success" style="margin-top: 15px; padding: 15px; font-size:1.1rem;" onclick="cerrarModalPagos()">✅ Confirmar y Retornar</button>
+
+        <div class="sticky-bottom">
+            <div style="font-size: 0.95rem; color: #FFD700; font-weight:bold;" id="sticky_modo_txt">DIFERENCIA / FALTA POR COBRAR</div>
+            <div class="monedas-grid">
+                <div class="moneda-box">USD: <span id="resta_usd_txt" class="resta-positiva">$0.00</span></div>
+                <div class="moneda-box moneda-bs">BS: <span id="resta_bs_txt" class="resta-positiva">0.00 BS</span></div>
+                <div class="moneda-box moneda-cop">COP: <span id="resta_cop_txt" class="resta-positiva">0 COP</span></div>
+                <div class="moneda-box moneda-eur">EUR: <span id="resta_eur_txt" class="resta-positiva">0 EUR</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <div class="main-content">
+        
+        <!-- ENCABEZADO -->
+        <div class="card" style="text-align: center;">
+            <h1>📠 TERMINAL DE CAJA REGISTRADORA</h1>
+            <p style="color: var(--muted); margin-top: 8px; font-weight: 500;">Gestión directa de ventas en cola, selección de catálogo y cobranza multimoneda.</p>
+        </div>
+
+        <!-- DATOS DE LA VENTA -->
+        <div class="card">
+            <h2>👤 Vendedor y Cliente</h2>
+            <div class="grid-2">
+                <div>
+                    <label>QUIÉN ATIENDE / VENDEDOR:</label>
+                    <select id="cierre_quien_cerro"><option value="">-- SELECCIONAR --</option></select>
+                </div>
+                
+                <div style="position: relative;">
+                    <label>CLIENTE:</label>
+                    <input type="text" id="buscar_cliente" placeholder="Buscar por nombre o cédula..." oninput="filtrarClientes(this.value)" autocomplete="off">
+                    <input type="hidden" id="cliente_id_seleccionado">
+                    <div id="resultados_clientes"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTONES DE ACCIÓN RÁPIDA DE COLA -->
+        <div class="grid-2" style="margin-bottom: 25px;">
+            <button class="btn-info" style="padding: 16px; margin: 0; font-size: 1.05rem;" onclick="abrirModalCola()">📋 Ver Ventas en Cola</button>
+            <button class="btn-success" style="padding: 16px; margin: 0; font-size: 1.05rem;" onclick="abrirModalCierreTurnoCola()">🟢 Realizar Cierre de Caja</button>
+        </div>
+
+        <!-- DECLARACIÓN Y CARRITO DE MERCANCÍA -->
+        <div class="card">
+            <div class="card-header-flex">
+                <h2>🛒 DECLARACIÓN DE MERCANCÍA</h2>
+            </div>
+
+            <button class="btn-add" style="width:100%; padding:16px; font-size:1.1rem; margin-bottom:18px;" onclick="abrirSelectorProductosModal()">
+                🛒 Abrir Selector de Productos
+            </button>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>CANT</th>
+                        <th>PRODUCTO</th>
+                        <th>SUBTOTAL $</th>
+                        <th style="text-align:center;">ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody_carrito"></tbody>
+            </table>
+
+            <button class="btn-info" style="width:100%; margin-top:18px;" onclick="solicitarPinDescuento()">🏷️ Aplicar Descuentos o Editar Precios</button>
+
+            <div class="total-box-multi">
+                <div style="color:#FFD700; font-size:0.9rem; font-weight:bold; text-transform:uppercase; margin-bottom:4px;">TOTAL VENTA REGISTRADORA:</div>
+                <div id="tot_usd_tick" class="txt-success">$0.00</div>
+                <div class="moneda-bs" style="color:#FFF; margin-top:4px; font-weight:bold;">BS: <span id="tot_bs_tick">0.00 BS</span></div>
+                <div class="moneda-cop" style="color:#FFF; font-weight:bold;">COP: <span id="tot_cop_tick">0 COP</span></div>
+                <div class="moneda-eur" style="color:#FFF; font-weight:bold;">EUR: <span id="tot_eur_tick">0 EUR</span></div>
+            </div>
+        </div>
+
+        <!-- PROCESAMIENTO Y PAGO -->
+        <div class="card" style="text-align: center;">
+            <div class="grid-2">
+                <button class="btn-info" style="font-size: 1.15rem; padding: 18px;" onclick="abrirModalPagos()">💳 Métodos De Pago</button>
+                <button class="btn-success" style="font-size: 1.25rem; padding: 18px;" onclick="solicitarPinVendedorCola()">🚀 Guardar Venta en Cola</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+    let EMPLEADOS = [];
+    let CLIENTES = [];
+    let productosTicket = [];
+    let codigosTicketsLiquidados = [];
+    let datosLiquidacionTurno = {};
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data } = await window.supabaseClient.auth.getSession();
+        if (data && data.session) {
+            await cargarDatosGlobalesSupabase(data.session);
+        } else {
+            window.location.href = 'index.html';
+        }
+    });
+
+    async function cargarDatosGlobalesSupabase(session) {
+        try {
+            let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id').eq('id', session.user.id).single();
+            if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
+            else {
+                let { data: locales } = await window.supabaseClient.from('locales').select('id').limit(1);
+                if (locales.length > 0) CURRENT_LOCAL_ID = locales[0].id;
+            }
+
+            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) CONFIG_GLOBAL = conf;
+
+            actualizarVisibilidadMonedas();
+            await recargarDatosCatalogo(false);
+
+            document.getElementById('loading_overlay').style.display = 'none';
+        } catch(e) {
+            console.error("Error cargando sesión:", e);
+            document.getElementById('loading_overlay').style.display = 'none';
+        }
+    }
+
+    async function recargarDatosCatalogo(mostrarAlerta = true) {
+        try {
+            const [reqCat, reqEmp, reqCli] = await Promise.all([
+                window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID),
+                window.supabaseClient.from('empleados').select('*').eq('local_id', CURRENT_LOCAL_ID),
+                window.supabaseClient.from('clientes').select('*').eq('local_id', CURRENT_LOCAL_ID)
+            ]);
+
+            if (reqCat.data) {
+                CATALOGO = reqCat.data.map(p => ({
+                    ...p,
+                    uuid: p.id,
+                    nom: p.nombre,
+                    base: parseFloat(p.precio_base || 0),
+                    fuente: parseFloat(p.costo_fuente || p.fuente || 0),
+                    stock: parseFloat(p.stock || 0)
+                }));
+            }
+            if (reqEmp.data) EMPLEADOS = reqEmp.data;
+            if (reqCli.data) CLIENTES = reqCli.data;
+
+            poblarSelectoresEmpleados();
+            actualizarTablaVentas();
+
+            if (mostrarAlerta) alert("🔄 Catálogo y empleados sincronizados correctamente.");
+        } catch (e) {
+            console.error(e);
+            if (mostrarAlerta) alert("❌ Error al refrescar datos.");
+        }
+    }
+
+    function poblarSelectoresEmpleados() {
+        let select = document.getElementById('cierre_quien_cerro');
+        if(!select) return;
+        select.innerHTML = '<option value="">-- SELECCIONAR VENDEDOR --</option>' + 
+            EMPLEADOS.map(e => `<option value="${e.id}">${e.nombre} ${e.apellido}</option>`).join('');
+    }
+
+    function actualizarVisibilidadMonedas() {
+        let t = CONFIG_GLOBAL.tasas || {};
+        if (!t.ves || parseFloat(t.ves) === 0) document.body.classList.add('hide-bs');
+        if (!t.cop || parseFloat(t.cop) === 0) document.body.classList.add('hide-cop');
+        if (!t.eur || parseFloat(t.eur) === 0) document.body.classList.add('hide-eur');
+    }
+
+    /* SELECTOR DE PRODUCTOS */
+    function abrirSelectorProductosModal() {
+        filtrarYRenderizarCatalogoSelector();
+        document.getElementById('modal_selector_productos').style.display = 'flex';
+    }
+
+    function cerrarSelectorProductos() {
+        document.getElementById('modal_selector_productos').style.display = 'none';
+        actualizarTablaVentas();
+    }
+
+    function filtrarYRenderizarCatalogoSelector() {
+        let busq = document.getElementById('buscador_prod_modal').value.toLowerCase();
+        let orden = document.getElementById('orden_prod_modal').value;
+
+        let lista = CATALOGO.filter(p => p.nom.toLowerCase().includes(busq));
+
+        if (orden === 'AZ') lista.sort((a, b) => a.nom.localeCompare(b.nom));
+        else if (orden === 'ZA') lista.sort((a, b) => b.nom.localeCompare(a.nom));
+        else if (orden === 'CAT') lista.sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
+
+        let tbody = document.getElementById('tbody_selector_catalogo');
+        tbody.innerHTML = '';
+
+        lista.forEach(prod => {
+            let umbralClass = 'stock-verde';
+            if (prod.stock <= (prod.umbral_rojo || 2)) umbralClass = 'stock-rojo';
+            else if (prod.stock <= (prod.umbral_amarillo || 5)) umbralClass = 'stock-amarillo';
+
+            let itemEnCarrito = productosTicket.find(c => c.uuid === prod.uuid);
+            let cantActual = itemEnCarrito ? itemEnCarrito.cant : 0;
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${prod.nom}</strong></td>
+                <td>$${prod.base.toFixed(2)}</td>
+                <td><span class="stock-badge ${umbralClass}">${prod.stock}</span></td>
+                <td style="white-space:nowrap;">
+                    <button class="btn-danger" style="padding:4px 8px; width:auto;" onclick="modificarCantTempSelector('${prod.uuid}', -1)">-</button>
+                    <span id="cant_selector_${prod.uuid}" style="margin:0 8px; font-weight:bold;">${cantActual}</span>
+                    <button class="btn-success" style="padding:4px 8px; width:auto;" onclick="modificarCantTempSelector('${prod.uuid}', 1)">+</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        calcularTotalModalSelector();
+    }
+
+    function modificarCantTempSelector(prodId, delta) {
+        let prod = CATALOGO.find(p => p.uuid === prodId);
+        if (!prod) return;
+
+        let item = productosTicket.find(c => c.uuid === prodId);
+        if (!item && delta > 0) {
+            item = { uuid: prod.uuid, nom: prod.nom, base: prod.base, fuente: prod.fuente, cant: 0 };
+            productosTicket.push(item);
+        }
+
+        if (item) {
+            item.cant += delta;
+            if (item.cant <= 0) {
+                productosTicket = productosTicket.filter(c => c.uuid !== prodId);
+            } else if (item.cant > prod.stock) {
+                item.cant = prod.stock;
+                alert("⚠️ Cantidad ajustada al stock máximo disponible.");
+            }
+        }
+
+        let span = document.getElementById(`cant_selector_${prodId}`);
+        if (span) span.innerText = item ? item.cant : 0;
+
+        calcularTotalModalSelector();
+    }
+
+    function calcularTotalModalSelector() {
+        let total = productosTicket.reduce((acc, p) => acc + ((p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base) * p.cant), 0);
+        document.getElementById('total_modal_selector_txt').innerText = `$${total.toFixed(2)}`;
+    }
+
+    function actualizarTablaVentas() {
+        let tbody = document.getElementById('tbody_carrito');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        let totalUsd = 0;
+
+        productosTicket.forEach((p, idx) => {
+            let precioReal = p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base;
+            let subtotal = precioReal * p.cant;
+            totalUsd += subtotal;
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="number" value="${p.cant}" min="1" style="width:65px; padding:6px; font-weight:bold;" onchange="actualizarCantidadDirecta('${p.uuid}', this.value)"></td>
+                <td><strong>${p.nom}</strong></td>
+                <td>$${subtotal.toFixed(2)}</td>
+                <td style="text-align:center;"><button class="btn-danger" style="padding:4px 8px;" onclick="eliminarProductoCarrito('${p.uuid}')">✕</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        let tasaBs = parseFloat(CONFIG_GLOBAL.tasas?.ves) || 1;
+        let tasaCop = parseFloat(CONFIG_GLOBAL.tasas?.cop) || 1;
+        let tasaEur = parseFloat(CONFIG_GLOBAL.tasas?.eur) || 1;
+
+        document.getElementById('tot_usd_tick').innerText = `$${totalUsd.toFixed(2)}`;
+        document.getElementById('tot_bs_tick').innerText = `${(totalUsd * tasaBs).toFixed(2)} BS`;
+        document.getElementById('tot_cop_tick').innerText = `${Math.round(totalUsd * tasaCop)} COP`;
+        document.getElementById('tot_eur_tick').innerText = `${(totalUsd * tasaEur).toFixed(2)} EUR`;
+
+        calcularRestaReal();
+    }
+
+    function actualizarCantidadDirecta(id, cant) {
+        let item = productosTicket.find(c => c.uuid === id);
+        if (item) {
+            item.cant = parseInt(cant) || 1;
+            actualizarTablaVentas();
+        }
+    }
+
+    function eliminarProductoCarrito(id) {
+        productosTicket = productosTicket.filter(c => c.uuid !== id);
+        actualizarTablaVentas();
+    }
+
+    /* MÉTODOS DE PAGO Y VUELTOS */
+    function abrirModalPagos() { document.getElementById('modal_pagos').style.display = 'flex'; }
+    function cerrarModalPagos() { document.getElementById('modal_pagos').style.display = 'none'; }
+
+    function agregarCampoTransaccion(containerId, inputClass) {
+        let cont = document.getElementById(containerId); if(!cont) return; let rowId = 'row_' + Date.now();
+        cont.insertAdjacentHTML('beforeend', `<div class="flex-row trans-row" id="${rowId}" style="margin-bottom:8px;"><input type="number" step="0.01" placeholder="Monto BS" class="${inputClass} trans_monto" oninput="calcularRestaReal()" style="flex:2;"><input type="text" placeholder="Ref" class="ref_val" style="flex:1;"><input type="number" step="0.1" placeholder="Comisión %" class="trans_pct" oninput="calcularRestaReal()" style="width: 100px;"><button type="button" class="btn-danger" style="padding:8px; margin:0;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">✕</button></div>`);
+    }
+
+    function agregarVuelto() {
+        let cont = document.getElementById('contenedor-vueltos-ticket'); if(!cont) return; let rowId = 'v_' + Date.now();
+        cont.insertAdjacentHTML('beforeend', `<div class="flex-row" id="${rowId}" style="margin-bottom:8px;"><input type="number" step="0.01" placeholder="Monto Vuelto" class="vuelto_val" oninput="calcularRestaReal()" style="flex:2;"><select class="vuelto_moneda" onchange="calcularRestaReal()" style="flex:1;"><option value="USD">USD</option><option value="BS">BS</option><option value="COP">COP</option><option value="EUR">EUR</option></select><button type="button" class="btn-danger" style="padding:8px; margin:0;" onclick="document.getElementById('${rowId}').remove(); calcularRestaReal();">✕</button></div>`);
+    }
+
+    function calcularRestaReal() {
+        let totalExigido = productosTicket.reduce((acc, p) => acc + ((p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base) * p.cant), 0);
+        
+        let bs = parseFloat(document.getElementById('val_bs')?.value) || 0;
+        let usd = parseFloat(document.getElementById('val_usd')?.value) || 0;
+        let cop = parseFloat(document.getElementById('val_cop')?.value) || 0;
+        let eur = parseFloat(document.getElementById('val_eur')?.value) || 0;
+        
+        let totalIngresadoUsd = usd + convertirA_USD(bs, 'BS') + convertirA_USD(cop, 'COP') + convertirA_USD(eur, 'EUR');
+       
+        document.querySelectorAll('#lista_pagomovil .trans-row, #lista_punto .trans-row, #lista_biopago .trans-row').forEach(row => {
+            let monto = parseFloat(row.querySelector('.trans_monto')?.value) || 0;
+            let pct = parseFloat(row.querySelector('.trans_pct')?.value) || 0;
+            let valEfectivoTrans = monto * (1 - (pct / 100));
+            totalIngresadoUsd += convertirA_USD(valEfectivoTrans, 'BS');
+        });
+
+        document.querySelectorAll('#contenedor-vueltos-ticket .flex-row').forEach(row => {
+            let montoVuelto = parseFloat(row.querySelector('.vuelto_val')?.value) || 0;
+            let monedaVuelto = row.querySelector('.vuelto_moneda')?.value;
+            if (montoVuelto > 0 && monedaVuelto) {
+                totalIngresadoUsd -= convertirA_USD(montoVuelto, monedaVuelto);
+            }
+        });
+       
+        let diferencia = totalIngresadoUsd - totalExigido; 
+        let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 };
+        let absDif = Math.abs(diferencia);
+        let colorCls = diferencia >= -0.01 ? "resta-cero" : "resta-positiva";
+       
+        document.getElementById('sticky_modo_txt').innerText = diferencia >= -0.01 ? "VUELTO / EXCEDENTE:" : "FALTA POR COBRAR:";
+        
+        let elUsd = document.getElementById('resta_usd_txt'); if(elUsd) { elUsd.className = colorCls; elUsd.innerText = `$${absDif.toFixed(2)}`; }
+        let elBs = document.getElementById('resta_bs_txt'); if(elBs) { elBs.className = colorCls; elBs.innerText = `${(absDif * t.ves).toFixed(2)} BS`; }
+        let elCop = document.getElementById('resta_cop_txt'); if(elCop) { elCop.className = colorCls; elCop.innerText = `${Math.round(absDif * t.cop)} COP`; }
+        let elEur = document.getElementById('resta_eur_txt'); if(elEur) { elEur.className = colorCls; elEur.innerText = `${(absDif * t.eur).toFixed(2)} EUR`; }
+    }
+
+    function convertirA_USD(monto, moneda) {
+        let t = CONFIG_GLOBAL.tasas || { ves:1, cop:1, eur:1 };
+        if (moneda === 'BS') return monto / (t.ves || 1);
+        if (moneda === 'COP') return monto / (t.cop || 1);
+        if (moneda === 'EUR') return monto / (t.eur || 1);
+        return monto;
+    }
+
+    /* BÚSQUEDA DE CLIENTES */
+    function filtrarClientes(texto) {
+        let box = document.getElementById('resultados_clientes');
+        box.innerHTML = '';
+        let query = texto.toLowerCase().trim();
+        if (query.length < 2) { box.style.display = 'none'; return; }
+
+        let filtrados = CLIENTES.filter(c => c.nombre.toLowerCase().includes(query) || (c.cedula && c.cedula.includes(query)));
+        if (filtrados.length > 0) {
+            filtrados.forEach(c => {
+                let div = document.createElement('div');
+                div.className = 'cliente-item';
+                div.innerText = `${c.nombre} (V-${c.cedula || 'N/A'})`;
+                div.onclick = () => {
+                    document.getElementById('cliente_id_seleccionado').value = c.id;
+                    document.getElementById('buscar_cliente').value = c.nombre;
+                    box.style.display = 'none';
+                };
+                box.appendChild(div);
+            });
+        } else {
+            let btn = document.createElement('button');
+            btn.className = 'btn-nuevo-cliente';
+            btn.innerText = `+ Crear Cliente Rapido: "${texto}"`;
+            btn.onclick = () => crearClienteRapido(texto);
+            box.appendChild(btn);
+        }
+        box.style.display = 'block';
+    }
+
+    async function crearClienteRapido(nombre) {
+        let box = document.getElementById('resultados_clientes');
+        box.style.display = 'none';
+
+        try {
+            let { data, error } = await window.supabaseClient.from('clientes').insert([{
+                local_id: CURRENT_LOCAL_ID,
+                nombre: nombre,
+                deuda_usd: 0
+            }]).select().single();
+
+            if (error) throw error;
+
+            CLIENTES.push(data);
+            document.getElementById('cliente_id_seleccionado').value = data.id;
+            document.getElementById('buscar_cliente').value = data.nombre;
+            alert("✅ Cliente registrado exitosamente.");
+        } catch (e) {
+            alert("Error al registrar cliente: " + e.message);
+        }
+    }
+
+    /* SEGURIDAD Y DESCUENTOS */
+    function solicitarPinDescuento() {
+        let html = `
+            <div style="text-align:center; padding:15px;">
+                <p style="color:var(--primary); font-weight:bold; margin-bottom:15px;">Ingrese PIN de Seguridad de Administrador</p>
+                <input type="password" id="input_pin_admin" placeholder="XXXX" style="text-align:center; font-size:1.8rem; letter-spacing:8px; padding:10px;">
+                <button class="btn-success" style="margin-top:15px;" onclick="validarPinDescuento()">🔓 Verificar Acceso</button>
+            </div>
+        `;
+        abrirModalGlobal("🔒 Autorización Requerida", html);
+    }
+
+    function validarPinDescuento() {
+        let pin = document.getElementById('input_pin_admin').value.trim();
+        let adminPass = CONFIG_GLOBAL.identidad?.admin_pass || '151016';
+
+        if (pin === adminPass) {
+            cerrarModalGlobal();
+            abrirModalEdicionDescuentos();
+        } else {
+            alert("❌ PIN Incorrecto.");
+        }
+    }
+
+    function abrirModalEdicionDescuentos() {
+        if (productosTicket.length === 0) return alert("❌ Carrito vacío.");
+
+        let html = `
+            <h3>Edición Manual de Precios y Descuentos</h3>
+            <div style="max-height: 40vh; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Original</th>
+                            <th>Nuevo Precio ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${productosTicket.map((p, idx) => `
+                            <tr>
+                                <td>${p.nom}</td>
+                                <td>$${p.base.toFixed(2)}</td>
+                                <td><input type="number" step="0.01" value="${(p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base).toFixed(2)}" onchange="productosTicket[${idx}].precioUnitarioFinal = parseFloat(this.value) || 0; actualizarTablaVentas();"></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <button class="btn-success" style="margin-top:15px;" onclick="cerrarModalGlobal(); actualizarTablaVentas();">✅ Aplicar Precios</button>
+        `;
+        abrirModalGlobal("🏷️ Modificar Precios", html);
+    }
+
+    /* GUARDAR VENTA EN COLA Y CIERRES */
+    function solicitarPinVendedorCola() {
+        let vendedorId = document.getElementById('cierre_quien_cerro').value;
+        if (!vendedorId) return alert("❌ Seleccione un vendedor.");
+        if (productosTicket.length === 0) return alert("❌ Debe añadir productos al carrito.");
+
+        let emp = EMPLEADOS.find(e => e.id === vendedorId);
+        let html = `
+            <div style="text-align:center; padding:15px;">
+                <p style="color:var(--primary); font-weight:bold;">PIN del Vendedor (${emp ? emp.nombre : 'Vendedor'})</p>
+                <input type="password" id="pin_vend_cola" placeholder="XXXX" style="text-align:center; font-size:1.8rem; letter-spacing:8px; padding:10px;">
+                <button class="btn-success" style="margin-top:15px;" onclick="validarPinVendedorCola('${emp ? emp.pin_acceso || '0000' : '0000'}')">🚀 Confirmar Venta</button>
+            </div>
+        `;
+        abrirModalGlobal("🔐 Autenticación de Venta", html);
+    }
+
+    function validarPinVendedorCola(pinCorrecto) {
+        let pin = document.getElementById('pin_vend_cola').value.trim();
+        let adminPass = CONFIG_GLOBAL.identidad?.admin_pass || '151016';
+
+        if (pin === pinCorrecto || pin === adminPass) {
+            cerrarModalGlobal();
+            procesarVentaCola();
+        } else {
+            alert("❌ PIN Incorrecto.");
+        }
+    }
+
+    async function procesarVentaCola() {
+        let vendedorId = document.getElementById('cierre_quien_cerro').value;
+        let clienteId = document.getElementById('cliente_id_seleccionado').value;
+        let numVenta = 'V-' + Math.floor(1000 + Math.random() * 9000);
+
+        try {
+            let totalBase = 0, totalVenta = 0;
+            productosTicket.forEach(p => {
+                let pr = p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base;
+                totalBase += p.base * p.cant;
+                totalVenta += pr * p.cant;
+            });
+
+            let { error } = await window.supabaseClient.from('ventas_temporales').insert([{
+                local_id: CURRENT_LOCAL_ID,
+                vendedor_id: vendedorId,
+                cliente_id: clienteId || null,
+                carrito: productosTicket,
+                total_base_usd: totalBase,
+                total_venta_usd: totalVenta,
+                numero_venta: numVenta
+            }]);
+
+            if (error) throw error;
+
+            // Descontar Stock
+            for (let item of productosTicket) {
+                let prod = CATALOGO.find(p => p.uuid === item.uuid);
+                if (prod) {
+                    let nuevoStock = Math.max(0, prod.stock - item.cant);
+                    await window.supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', item.uuid);
+                }
+            }
+
+            alert(`✅ Venta ${numVenta} enviada a la cola correctamente.`);
+            productosTicket = [];
+            document.getElementById('cliente_id_seleccionado').value = '';
+            document.getElementById('buscar_cliente').value = '';
+            recargarDatosCatalogo(false);
+        } catch (e) {
+            alert("❌ Error procesando venta: " + e.message);
+        }
+    }
+
+    async function abrirModalCola() {
+        let vendedorId = document.getElementById('cierre_quien_cerro').value;
+        if (!vendedorId) return alert("❌ Seleccione un vendedor para ver su cola.");
+
+        try {
+            let { data, error } = await window.supabaseClient.from('ventas_temporales')
+                .select('*').eq('vendedor_id', vendedorId).eq('local_id', CURRENT_LOCAL_ID);
+
+            if (error) throw error;
+
+            let html = `
+                <h3>Ventas Pendientes en Cola (${data ? data.length : 0})</h3>
+                <div style="max-height: 50vh; overflow-y: auto;">
+                    ${data && data.length > 0 ? data.map(v => `
+                        <div style="border: 1px solid var(--border-gold); padding: 10px; margin-bottom: 8px; border-radius: 4px; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <strong>Ticket: ${v.numero_venta || 'S/N'}</strong><br>
+                                <small>Total: $${parseFloat(v.total_venta_usd || 0).toFixed(2)}</small>
+                            </div>
+                            <button class="btn-danger" style="width:auto; padding:6px 10px;" onclick="anularVentaCola('${v.id}')">Anular Ticket</button>
+                        </div>
+                    `).join('') : '<p>No hay ventas registradas en la cola.</p>'}
+                </div>
+            `;
+            abrirModalGlobal("📋 Cola de Ventas", html);
+        } catch(e) {
+            alert("Error al obtener cola: " + e.message);
+        }
+    }
+
+    async function anularVentaCola(idVenta) {
+        try {
+            let { data: vTemp } = await window.supabaseClient.from('ventas_temporales').select('carrito').eq('id', idVenta).single();
+            if (vTemp && vTemp.carrito) {
+                for (let item of vTemp.carrito) {
+                    let prod = CATALOGO.find(p => p.uuid === item.uuid);
+                    if (prod) {
+                        await window.supabaseClient.from('catalogo').update({ stock: prod.stock + item.cant }).eq('id', item.uuid);
+                    }
+                }
+            }
+
+            await window.supabaseClient.from('ventas_temporales').delete().eq('id', idVenta);
+            cerrarModalGlobal();
+            alert("✅ Venta anulada y stock devuelto.");
+            recargarDatosCatalogo(false);
+        } catch(e) {
+            alert("Error al anular: " + e.message);
+        }
+    }
+
+    function abrirModalCierreTurnoCola() {
+        let vendedorId = document.getElementById('cierre_quien_cerro').value;
+        if (!vendedorId) return alert("❌ Seleccione el Vendedor que cerrará la caja.");
+
+        let html = `
+            <h3>Liquidación y Cierre de Caja</h3>
+            <div class="grid-2">
+                <div>
+                    <label>Turno Laboral:</label>
+                    <select id="liq_turno">
+                        <option value="Diurno">Diurno</option>
+                        <option value="Nocturno">Nocturno</option>
+                        <option value="24 Horas">24 Horas</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Última Caja del Día:</label>
+                    <select id="liq_ultima_caja">
+                        <option value="no">No</option>
+                        <option value="si">Sí (Cierre General)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2" style="margin-top:10px;">
+                <div><label>Efectivo Caja ($):</label><input type="number" id="liq_ef_usd" step="0.01" value="0.00"></div>
+                <div><label>Efectivo Caja (BS):</label><input type="number" id="liq_ef_bs" step="0.01" value="0.00"></div>
+            </div>
+
+            <button class="btn-success" style="margin-top:20px; padding:15px;" onclick="ejecutarLiquidarCola()">🟢 Procesar Cierre de Caja</button>
+        `;
+        abrirModalGlobal("🔒 Cierre de Caja", html);
+    }
+
+    async function ejecutarLiquidarCola() {
+        let vendedorId = document.getElementById('cierre_quien_cerro').value;
+        let turno = document.getElementById('liq_turno').value;
+        let esUltima = document.getElementById('liq_ultima_caja').value === 'si';
+        let efUsd = parseFloat(document.getElementById('liq_ef_usd').value) || 0;
+        let efBs = parseFloat(document.getElementById('liq_ef_bs').value) || 0;
+
+        try {
+            let { data: cola } = await window.supabaseClient.from('ventas_temporales')
+                .select('*').eq('vendedor_id', vendedorId).eq('local_id', CURRENT_LOCAL_ID);
+
+            if (!cola || cola.length === 0) {
+                cerrarModalGlobal();
+                return alert("⚠️ No hay ventas pendientes en cola para liquidar.");
+            }
+
+            let totalVenta = 0, totalCapital = 0;
+            let detallesAgrupados = {};
+
+            cola.forEach(v => {
+                if (v.carrito) {
+                    v.carrito.forEach(p => {
+                        let pr = p.precioUnitarioFinal !== undefined ? p.precioUnitarioFinal : p.base;
+                        let cap = parseFloat(p.fuente) || 0;
+
+                        if (!detallesAgrupados[p.uuid]) details = detallesAgrupados[p.uuid] = { uuid: p.uuid, nom: p.nom, cant: 0, subtotal: 0 };
+                        detallesAgrupados[p.uuid].cant += p.cant;
+                        detallesAgrupados[p.uuid].subtotal += pr * p.cant;
+
+                        totalVenta += pr * p.cant;
+                        totalCapital += cap * p.cant;
+                    });
+                }
+            });
+
+            let fechaHoy = new Date().toISOString().slice(0,10);
+            let tasaBs = parseFloat(CONFIG_GLOBAL.tasas?.ves) || 1;
+
+            let { data: loteRes, error: errLote } = await window.supabaseClient.from('lotes_diarios').insert([{
+                local_id: CURRENT_LOCAL_ID,
+                vendedor_id: vendedorId,
+                fecha: fechaHoy,
+                turno: turno,
+                total_vendido_usd: totalVenta,
+                capital_invertido: totalCapital,
+                ganancia_neta: totalVenta - totalCapital,
+                tasa_bs: tasaBs
+            }]).select().single();
+
+            if (errLote) throw errLote;
+
+            let arrDetalles = Object.values(detallesAgrupados).map(d => ({
+                lote_id: loteRes.id,
+                producto_id: d.uuid,
+                cantidad: d.cant,
+                subtotal_usd: d.subtotal
+            }));
+            if (arrDetalles.length > 0) await window.supabaseClient.from('detalle_ventas').insert(arrDetalles);
+
+            if (efUsd > 0 || efBs > 0) {
+                await window.supabaseClient.from('caja_fuerte').insert([{
+                    local_id: CURRENT_LOCAL_ID,
+                    lote_id: loteRes.id,
+                    efectivo: efUsd,
+                    moneda: 'USD',
+                    total_dia: totalVenta,
+                    turno: turno,
+                    vendedor_id: vendedorId,
+                    fecha: new Date().toISOString()
+                }]);
+            }
+
+            await window.supabaseClient.from('ventas_temporales').delete().eq('vendedor_id', vendedorId).eq('local_id', CURRENT_LOCAL_ID);
+
+            cerrarModalGlobal();
+            alert(`✅ Cierre de Caja completado. Se liquidaron $${totalVenta.toFixed(2)} correctamente.`);
+            recargarDatosCatalogo(false);
+        } catch (e) {
+            alert("❌ Error durante la liquidación: " + e.message);
+        }
+    }
+
+    function abrirModalGlobal(titulo, html) {
+        document.getElementById('global_modal_title').innerText = titulo;
+        document.getElementById('global_modal_body').innerHTML = html;
+        document.getElementById('global_modal').style.display = 'flex';
+    }
+
+    function cerrarModalGlobal() {
+        document.getElementById('global_modal').style.display = 'none';
+    }
+</script>
+</body>
+</html>

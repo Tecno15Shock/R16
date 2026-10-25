@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - Sistema Administrativo</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="motor.js"></script>
+
+    <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
+        /* ========================================================= */
+        :root {
+            --bg: #FDFBF7;
+            --text: #2A2A2A;
+            --primary: #5C0614;
+            --secondary: #8B0000;
+            --active-gold: #D4AF37;
+            --card-bg: #FFFFFF;
+            --input-bg: #FFFFFF;
+            --border-radius: 6px;
+            --danger: #8B0000;
+            --success: #2E7D32;
+            --warning: #B8860B;
+            --main-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --title-font: 'Georgia', 'Times New Roman', serif;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: var(--main-font); 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 0; 
+            line-height: 1.5;
+        }
+
+        .wrapper { 
+            display: block; 
+            min-height: 100vh; 
+            position: relative; 
+            padding: 40px 20px 100px 20px; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+        }
+
+        /* ========================================================= */
+        /* BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA              */
+        /* ========================================================= */
+        .close-corner-btn {
+            position: fixed; top: 20px; right: 25px; z-index: 10000;
+            background: rgba(122, 23, 29, 0.95); backdrop-filter: blur(8px);
+            border: 2px solid var(--active-gold); color: #ffffff;
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem; font-weight: bold; cursor: pointer; text-decoration: none;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
+
+        /* ========================================================= */
+        /* COMPONENTES Y TARJETAS                                    */
+        /* ========================================================= */
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-top: 4px solid var(--primary);
+            margin-bottom: 25px;
+        }
+
+        input, select, textarea { 
+            width: 100%; padding: 12px; margin-top: 6px; 
+            border: 1px solid var(--active-gold); border-radius: var(--border-radius); 
+            font-size: 0.95rem; background: var(--input-bg); color: var(--text); 
+            border-left: 4px solid var(--secondary); outline: none; 
+            font-family: var(--main-font); 
+        }
+        input:focus, select:focus, textarea:focus { 
+            border-color: var(--active-gold); 
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.3); 
+        }
+
+        button { 
+            position: relative; overflow: hidden; 
+            font-family: var(--title-font); 
+            border: none; padding: 12px 18px; border-radius: var(--border-radius); 
+            cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; 
+            font-size: 0.95rem; text-transform: uppercase; display: inline-flex; 
+            align-items: center; justify-content: center; gap: 8px; 
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
+        
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--danger); color: #ffffff; }
+
+        /* ACORDES */
+        .acordeon-header {
+            background: #8B0000; 
+            border: 2px solid var(--active-gold); 
+            border-radius: var(--border-radius);
+            padding: 15px 20px;
+            margin-top: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+        }
+        .acordeon-header:hover {
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); 
+            transform: translateY(-2px);
+        }
+        .acordeon-title {
+            margin: 0;
+            font-family: var(--title-font);
+            font-size: 1.2rem;
+            color: var(--active-gold); 
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .acordeon-content {
+            display: none; 
+            padding: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--active-gold);
+            border-top: none; 
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            margin-bottom: 15px;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media(max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .tabla-permisos { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        .tabla-permisos th { background: var(--primary); color: var(--active-gold); padding: 10px; text-align: center; font-family: var(--title-font); text-transform: uppercase; }
+        .tabla-permisos td { padding: 10px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); text-align: center; color: var(--text); }
+        .tabla-permisos td:first-child { text-align: left; font-weight: bold; color: var(--primary); }
+        .check-rol { width: 18px; height: 18px; cursor: pointer; accent-color: var(--active-gold); }
+
+        .currency-row { display: grid; grid-template-columns: 2fr 1fr 2fr auto; gap: 10px; align-items: center; background: var(--input-bg); padding: 10px; border-radius: var(--border-radius); border-left: 3px solid var(--active-gold); margin-bottom: 10px; }
+        .formula-preview { display: block; font-size: 0.8rem; color: var(--success); margin-top: 5px; font-weight: bold; }
+        .switch-label { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--input-bg); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: var(--border-radius); margin-bottom: 8px; cursor: pointer; color: var(--text); font-weight: bold; }
+
+        .danger-zone { margin-top: 25px; border: 2px dashed var(--danger); padding: 20px; border-radius: var(--border-radius); background: rgba(139,0,0,0.03); }
+        .danger-title { color: var(--danger); font-family: var(--title-font); font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+
+        /* PANTALLA DE CARGA Y BLOQUEO */
+        @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .overlay-luxury { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: radial-gradient(circle at center, #5C0614 0%, #2A050B 100%); 
+            z-index: 999999; display: flex; justify-content: center; align-items: center; flex-direction: column; 
+        }
+        .card-luxury-menu { 
+            background: #FFFFFF; padding: 50px 40px; text-align: center; width: 90%; max-width: 480px; 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8); position: relative; border-radius: 6px;
+            animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .pantalla-bloqueo-card {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 2px solid var(--active-gold);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(212, 175, 55, 0.1);
+        }
+        .pin-wrapper { position: relative; width: 100%; margin-top: 15px; }
+        .pin-wrapper input { text-align: center; font-size: 1.5rem; letter-spacing: 8px; padding-right: 50px; font-weight: bold; color: var(--primary); }
+        .pin-toggle-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: transparent; border: none; font-size: 1.5rem; width: 40px; height: 40px; margin: 0; padding: 0; color: var(--active-gold); cursor: pointer; }
+        .pin-toggle-btn:hover { transform: translateY(-50%) scale(1.1); }
+        .msg-red { color: var(--danger); font-weight: bold; margin-top: 10px; animation: fadeIn 0.3s; }
+        .msg-green { color: var(--success); font-weight: bold; margin-top: 10px; font-size: 1.1rem; animation: fadeIn 0.3s; }
+
+        @keyframes spinGold { 100% { transform: rotate(360deg); } }
+        #loading_overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, #5C0614 0%, #2A050B 100%);
+            z-index: 999999; display: flex; justify-content: center; align-items: center; flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA -->
+    <a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+    <!-- MENSAJE DE ERROR CRÍTICO (Oculto por defecto) -->
+    <div id="pantalla_error_auth" style="display: none; padding: 40px; text-align: center; background-color: var(--primary); color: white; height: 100vh; flex-direction: column; justify-content: center; align-items: center;">
+        <h1 style="color: var(--active-gold);">⚠️ ACCESO DENEGADO</h1>
+        <p>No se encontró una sesión activa con la base de datos.</p>
+        <p>Debes iniciar sesión primero en la pantalla principal antes de acceder a la configuración.</p>
+        <button type="button" class="btn-info" onclick="window.location.href='index.html'" style="width: auto; padding: 10px 25px; margin-top: 20px;">Ir al Login</button>
+    </div>
+
+    <!-- PANTALLA DE BLOQUEO GLOBAL POR PIN -->
+    <div id="pantalla_bloqueo_global" class="overlay-luxury" style="display:none;">
+        <div class="card-luxury-menu pantalla-bloqueo-card">
+            <div style="font-family: var(--title-font); font-size: 1.4rem; color: var(--primary); letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">ACCESO AUTORIZADO</div>
+            <div style="font-size: 0.95rem; color: var(--text); border-bottom: 1px solid var(--active-gold); padding-bottom: 10px; margin-bottom: 15px;">Módulo Protegido. Ingrese su contraseña general:</div>
+            <div class="pin-wrapper">
+                <input type="password" id="pin_ingreso_global" placeholder="****" maxlength="8" autocomplete="new-password">
+                <button type="button" class="pin-toggle-btn" id="btn_ojo_pin" onclick="UIBase.toggleVerPin()">🙈</button>
+            </div>
+            <div id="controles_bloqueo">
+                <button class="btn-info" id="btn_desbloquear_pin" style="margin-top: 25px;">Verificar Acceso</button>
+                <button class="btn-danger" onclick="window.location.href='principal.html'" style="background: transparent; border: 1px solid var(--danger); color: var(--danger); margin-top: 10px;">Volver al Menú</button>
+            </div>
+            <div id="msj_respuesta_pin"></div>
+        </div>
+    </div>
+
+<div class="wrapper" id="main_wrapper" style="display: none;">
+    <main class="main-content">
+        <h1 style="color: var(--primary); font-family: var(--title-font); text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px;">Ajustes del Sistema</h1>
+
+        <!-- 1. IDENTIDAD -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-identidad', 'icon-identidad', this)">
+                <h2 class="acordeon-title">🏪 1. Identidad</h2>
+                <span id="icon-identidad" style="color: var(--active-gold);">▼</span>
+            </div>
+            <div id="sec-identidad" class="acordeon-content">
+                <label>Nombre del Establecimiento:</label>
+                <input type="text" id="cfg_nombre_local" placeholder="Ej: Refresquería Flor">
+                <button class="btn-info" onclick="UIConfig.guardarIdentidad()">💾 Guardar Nombre</button>
+            </div>
+        </div>
+
+        <!-- 2. SEGURIDAD Y BLOQUEO DE MÓDULOS -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-seguridad', 'icon-seguridad', this)">
+                <h2 class="acordeon-title">🔒 2. Seguridad y Permisos</h2>
+                <span id="icon-seguridad" style="color: var(--active-gold);">▼</span>
+            </div>
+            <div id="sec-seguridad" class="acordeon-content">
+                <div class="grid-2" style="margin-bottom: 20px; border-bottom: 1px solid var(--active-gold); padding-bottom: 20px;">
+                    <div>
+                        <label>Contraseña General (PIN Maestro):</label>
+                        <input type="password" id="cfg_admin_pin" placeholder="Dejar en blanco para no cambiar">
+                    </div>
+                    <div>
+                        <button class="btn-info" onclick="UIConfig.guardarPinGeneral()" style="margin-top: 28px;">💾 Guardar Contraseña</button>
+                    </div>
+                </div>
+                <h3 style="color: var(--primary); font-family: var(--title-font);">Control de Acceso por Módulos</h3>
+                <div style="overflow-x: auto;">
+                    <table class="tabla-permisos">
+                        <thead><tr><th>Módulo</th><th>🔒 General</th><th>👑 Admin</th><th>👁️ Sup</th><th>🛒 Vend</th></tr></thead>
+                        <tbody id="lista_modulos_bloqueo"></tbody>
+                    </table>
+                </div>
+                <button class="btn-info" onclick="UIConfig.guardarPermisosModulos()">💾 Guardar Matriz de Permisos</button>
+            </div>
+        </div>
+
+        <!-- 3. SISTEMA MONETARIO (AMÉRICA Y EURO) -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-monedas', 'icon-monedas', this)">
+                <h2 class="acordeon-title">💵 3. Sistema Monetario</h2>
+                <span id="icon-monedas" style="color: var(--active-gold);">▼</span>
+            </div>
+            <div id="sec-monedas" class="acordeon-content">
+                <div class="grid-2">
+                    <div>
+                        <label>Moneda Base del Sistema:</label>
+                        <select id="select_moneda_base" onchange="UIConfig.actualizarVistasFormulas()"></select>
+                    </div>
+                    <div>
+                        <button class="btn-success" onclick="UIConfig.agregarFilaMonedaSecundaria()" style="margin-top: 28px;">➕ Añadir Moneda</button>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <label>Monedas Secundarias (América y Euro):</label>
+                    <div id="contenedor_monedas_secundarias"></div>
+                </div>
+                <button class="btn-info" onclick="UIConfig.guardarEstructuraMonetaria()" style="margin-top: 20px;">💾 Guardar Moneda Base y Tasas</button>
+            </div>
+        </div>
+
+        <!-- 4. TELEGRAM Y NOTIFICACIONES -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-telegram', 'icon-telegram', this)">
+                <h2 class="acordeon-title">🤖 4. Telegram</h2>
+                <span id="icon-telegram" style="color: var(--active-gold);">▼</span>
+            </div>
+            <div id="sec-telegram" class="acordeon-content">
+                <label>Token del Bot de Telegram:</label>
+                <input type="text" id="cfg_tg_token">
+                <div class="grid-2" style="margin-top: 15px;">
+                    <div><label>Chat Inventarios (ID):</label><input type="text" id="cfg_tg_inv"></div>
+                    <div><label>Chat Cierres (ID):</label><input type="text" id="cfg_tg_cierre"></div>
+                </div>
+                <label style="margin-top: 15px;">Chat Gastos (ID):</label>
+                <input type="text" id="cfg_tg_extras">
+                <h3 style="color: var(--primary); font-family: var(--title-font); margin-top: 25px;">Reglas</h3>
+                <label class="switch-label"><span>Enviar Resumen Cierre</span><input type="checkbox" id="cfg_notif_cierre" class="check-rol"></label>
+                <label class="switch-label"><span>Notificar Gastos</span><input type="checkbox" id="cfg_notif_gastos" class="check-rol"></label>
+                <label class="switch-label"><span>Alerta Inventario</span><input type="checkbox" id="cfg_notif_inventario" class="check-rol"></label>
+                <button class="btn-info" onclick="UIConfig.guardarTelegram()" style="margin-top: 20px;">💾 Guardar Telegram</button>
+            </div>
+        </div>
+
+        <!-- 5. MANTENIMIENTO Y BORRADO DE DATOS (ACTUALIZADO) -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-borrado', 'icon-borrado', this)">
+                <h2 class="acordeon-title">🗑️ 5. Mantenimiento de Datos</h2>
+                <span id="icon-borrado" style="color: var(--active-gold);">▼</span>
+            </div>
+            <div id="sec-borrado" class="acordeon-content">
+                <h3 style="color: var(--primary); font-family: var(--title-font);">Borrado Detallado por Módulo</h3>
+                <p style="font-size: 0.85rem; color: var(--text); margin-bottom: 15px;">Seleccione área y rango de tiempo en la base de datos. Acción irreversible.</p>
+                
+                <div class="grid-2" style="align-items: end; gap: 15px;">
+                    <div>
+                        <label>Módulo / Tabla a Limpiar:</label>
+                        <select id="cfg_borrado_modulo">
+                            <option value="lotes_diarios">📋 Lotes Diarios y Cierres Maestros</option>
+                            <option value="detalle_ventas">🛒 Historial de Facturación / Ventas</option>
+                            <option value="control_inventario_cierres">🧾 Historial de Cierres de Caja</option>
+                            <option value="gastos_operativos">🧾 Gastos Operativos</option>
+                            <option value="avances_retirados">💸 Gastos y Avances Retirados</option>
+                            <option value="caja_fuerte">🏦 Historial Caja Fuerte / Lotes</option>
+                            <option value="conciliacion">💳 Historial de Conciliaciones</option>
+                            <option value="catalogo">📦 Catálogo de Productos y Stock</option>
+                            <option value="clientes">👥 Registro de Clientes y Fiados</option>
+                            <option value="empleados">🧑‍💼 Registro de Vendedores / Empleados</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Rango de Tiempo:</label>
+                        <select id="cfg_borrado_rango" onchange="UIConfig.toggleInputsBorrado(this.value)">
+                            <option value="todo">⚠️ Todo el Historial</option>
+                            <option value="mes">📅 Por Mes</option>
+                            <option value="ano">📆 Por Año</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="cont_borrado_mes" style="display: none; margin-top: 15px;">
+                    <label>Seleccione el Mes:</label>
+                    <input type="month" id="cfg_val_mes">
+                </div>
+                <div id="cont_borrado_ano" style="display: none; margin-top: 15px;">
+                    <label>Escriba el Año (Ej: 2026):</label>
+                    <input type="number" id="cfg_val_ano" min="2020" max="2100">
+                </div>
+
+                <button class="btn-warning" style="margin-top: 20px;" onclick="UIConfig.solicitarBorradoParcial()">🧹 Ejecutar Limpieza Selectiva</button>
+
+                <div class="danger-zone">
+                    <div class="danger-title">⚠️ ZONA DE RIESGO: Borrado Global</div>
+                    <p style="font-size: 0.85rem; color: var(--text); font-weight: bold;">Restablecerá el sistema a fábrica. Elimina TODOS los datos de todas las tablas. <strong>NO se puede deshacer.</strong></p>
+                    <button class="btn-danger" style="margin-top: 10px; width: 100%;" onclick="UIConfig.solicitarBorradoGlobal()">💥 FORMATEAR SISTEMA (BORRADO GLOBAL)</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    /* ========================================================= */
+    /* OBJETO UI BASE AUTÓNOMO CON SISTEMA DE BLOQUEO POR PIN    */
+    /* ========================================================= */
+    const UIBase = {
+        mostrarCargando: function(titulo, subtitulo) {
+            let overlay = document.getElementById('loading_overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'loading_overlay';
+                overlay.innerHTML = `
+                    <div style="background: #FFFFFF; padding: 50px 40px; text-align: center; width: 90%; max-width: 480px; box-shadow: 0 25px 60px rgba(0,0,0,0.8); position: relative; border-radius: 6px;">
+                        <div style="width: 50px; height: 50px; margin: 0 auto 30px auto; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: #D4AF37; border-radius: 50%; animation: spinGold 1s linear infinite;"></div>
+                        <div id="loading_title_txt" style="color: #111111; font-family: Georgia, serif; font-size: 1.4rem; letter-spacing: 2px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;">${titulo || 'CARGANDO'}</div>
+                        <div style="color: #555555; font-size: 0.95rem; margin-bottom: 25px; font-family: Georgia, serif;">"El éxito está en los detalles."</div>
+                        <div id="loading_subtitle_txt" style="color: #777777; font-size: 0.85rem; line-height: 1.6;">${subtitulo || ''}</div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            } else {
+                document.getElementById('loading_title_txt').innerText = titulo || 'CARGANDO';
+                document.getElementById('loading_subtitle_txt').innerHTML = subtitulo || '';
+                overlay.style.display = 'flex';
+                overlay.style.opacity = '1';
+            }
+        },
+        ocultarCargando: function() {
+            const overlay = document.getElementById('loading_overlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.display = 'none'; }, 500);
+            }
+        },
+        
+        toggleVerPin: function() {
+            const input = document.getElementById('pin_ingreso_global');
+            const btn = document.getElementById('btn_ojo_pin');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerText = '👁️';
+            } else {
+                input.type = 'password';
+                btn.innerText = '🙈';
+            }
+        },
+
+        bloquearPantallaPIN: function(callbackVerificarPIN) {
+            const bloqueo = document.getElementById('pantalla_bloqueo_global');
+            const main = document.getElementById('main_wrapper');
+            const input = document.getElementById('pin_ingreso_global');
+            const btnVerificar = document.getElementById('btn_desbloquear_pin');
+            const controles = document.getElementById('controles_bloqueo');
+            const msj = document.getElementById('msj_respuesta_pin');
+
+            if (bloqueo && main) {
+                bloqueo.style.display = 'flex';
+                main.style.display = 'none';
+                input.value = '';
+                msj.innerHTML = '';
+                controles.style.display = 'block';
+
+                btnVerificar.onclick = () => {
+                    const pinIngresado = input.value.trim();
+                    controles.style.display = 'none';
+                    msj.innerHTML = '<div class="msg-green">Verificando Credenciales...</div>';
+                    
+                    setTimeout(() => {
+                        if (callbackVerificarPIN(pinIngresado)) {
+                            msj.innerHTML = '<div class="msg-green">¡Acceso Autorizado!</div>';
+                            setTimeout(() => {
+                                bloqueo.style.display = 'none';
+                                main.style.display = 'block';
+                                input.value = '';
+                                msj.innerHTML = '';
+                                controles.style.display = 'block';
+                            }, 500); 
+                        } else {
+                            msj.innerHTML = '<div class="msg-red">❌ Contraseña Incorrecta</div>';
+                            input.value = '';
+                            setTimeout(() => { msj.innerHTML = ''; controles.style.display = 'block'; }, 1500);
+                        }
+                    }, 800);
+                };
+            }
+        }
+    };
+
+    const CATALOGO_MONEDAS = [
+        { code: 'USD', name: '🇺🇸 Dólar estadounidense ($)' },
+        { code: 'CAD', name: '🇨🇦 Dólar canadiense (CA$)' },
+        { code: 'MXN', name: '🇲🇽 Peso mexicano ($)' },
+        { code: 'BZD', name: '🇧🇿 Dólar beliceño (BZ$)' },
+        { code: 'CRC', name: '🇨🇷 Colón costarricense (₡)' },
+        { code: 'GTQ', name: '🇬🇹 Quetzal guatemalteco (Q)' },
+        { code: 'HNL', name: '🇭🇳 Lempira hondureño (L)' },
+        { code: 'NIO', name: '🇳🇮 Córdoba nicaragüense (C$)' },
+        { code: 'PAB', name: '🇵🇦 Balboa panameño (B/.)' },
+        { code: 'DOP', name: '🇩🇴 Peso dominicano (RD$)' },
+        { code: 'CUP', name: '🇨🇺 Peso cubano ($)' },
+        { code: 'ARS', name: '🇦🇷 Peso argentino ($)' },
+        { code: 'BOB', name: '🇧🇴 Boliviano (Bs.)' },
+        { code: 'BRL', name: '🇧🇷 Real brasileño (R$)' },
+        { code: 'CLP', name: '🇨🇱 Peso chileno ($)' },
+        { code: 'COP', name: '🇨🇴 Peso colombiano ($)' },
+        { code: 'GYD', name: '🇬🇾 Dólar guyanés (G$)' },
+        { code: 'PYG', name: '🇵🇾 Guaraní paraguayo (₲)' },
+        { code: 'PEN', name: '🇵🇪 Sol peruano (S/)' },
+        { code: 'SRD', name: '🇸🇷 Dólar surinamés ($)' },
+        { code: 'UYU', name: '🇺🇾 Peso uruguayo ($U)' },
+        { code: 'VES', name: '🇻🇪 Bolívar venezolano (Bs.)' },
+        { code: 'EUR', name: '🇪🇺 Euro (€)' }
+    ];
+
+    const MODULOS_SISTEMA = [
+        { id: 'principal', nombre: '🏠 Menú Principal' },
+        { id: 'reglas_laborales', nombre: '⚖️ Reglas Laborales' },
+        { id: 'precios', nombre: '💰 Precios' },
+        { id: 'inventario', nombre: '📦 Inventario Físico' },
+        { id: 'conversor', nombre: '🧮 Conversor Monetario' },
+        { id: 'caja_registradora', nombre: '🧾 Caja Registradora' },
+        { id: 'control_inventario', nombre: '📋 Control Inventario' },
+        { id: 'balance', nombre: '📊 Balance y Lotes' },
+        { id: 'capital', nombre: '📈 Capital e Inventario' },
+        { id: 'proveedores', nombre: '🚚 Proveedores' },
+        { id: 'pagos_servicios', nombre: '🧾 Pagos y Servicios' },
+        { id: 'conciliacion', nombre: '💳 Conciliación' },
+        { id: 'empleados', nombre: '🧑‍💼 Vendedores' },
+        { id: 'clientes', nombre: '👥 Clientes y Fiados' },
+        { id: 'gestion_catalogo', nombre: '📁 Gestión de Catálogo' },
+        { id: 'configuracion', nombre: '⚙️ Configuración' }
+    ];
+
+    const UIConfig = {
+        async init() {
+            UIBase.mostrarCargando("Verificando", "Validando credenciales...");
+            this.poblarSelectoresCatologos();
+            this.generarTablaModulos();
+
+            try {
+                const estado = await AppMotor.inicializar();
+                const conf = estado.configuracion || {};
+
+                this.cargarDatosIniciales(conf, estado.datosLocal);
+
+                const permisos = conf.permisos_modulos || {};
+                const moduloBloqueado = permisos.configuracion && permisos.configuracion.general;
+                const tienePin = !!conf.identidad?.admin_pass;
+
+                if (tienePin && moduloBloqueado) {
+                    UIBase.ocultarCargando();
+                    UIBase.bloquearPantallaPIN((pin) => {
+                        return AppMotor.verificarPinAdministrador(pin);
+                    });
+                } else {
+                    UIBase.ocultarCargando();
+                    document.getElementById('main_wrapper').style.display = 'block';
+                }
+            } catch (err) {
+                UIBase.ocultarCargando();
+                if (err.message === "NoAutorizado") {
+                    window.location.href = 'index.html';
+                } else {
+                    document.getElementById('main_wrapper').style.display = 'none';
+                    const pantallaError = document.getElementById('pantalla_error_auth');
+                    pantallaError.style.display = 'flex';
+                    pantallaError.innerHTML += `<p style="color: var(--active-gold); margin-top: 10px;">Detalle Técnico: ${err.message}</p>`;
+                }
+            }
+        },
+
+        toggleSeccion(id, iconId, elementHeader) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(iconId);
+            if (el.style.display === 'block') {
+                el.style.display = 'none';
+                icon.innerText = '▼';
+                elementHeader.classList.remove('abierto');
+            } else {
+                el.style.display = 'block';
+                icon.innerText = '▲';
+                elementHeader.classList.add('abierto');
+            }
+        },
+
+        poblarSelectoresCatologos() {
+            const selectBase = document.getElementById('select_moneda_base');
+            selectBase.innerHTML = '';
+            CATALOGO_MONEDAS.forEach(m => selectBase.insertAdjacentHTML('beforeend', `<option value="${m.code}">${m.name}</option>`));
+        },
+
+        generarTablaModulos() {
+            const tbody = document.getElementById('lista_modulos_bloqueo');
+            tbody.innerHTML = '';
+            
+            MODULOS_SISTEMA.forEach(mod => {
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-mod-id', mod.id);
+                tr.innerHTML = `
+                    <td>${mod.nombre}</td>
+                    <td><input type="checkbox" class="check-rol chk-gen"></td>
+                    <td><input type="checkbox" class="check-rol chk-adm"></td>
+                    <td><input type="checkbox" class="check-rol chk-sup"></td>
+                    <td><input type="checkbox" class="check-rol chk-vend"></td>
+                `;
+                tbody.appendChild(tr);
+
+                const chkGen = tr.querySelector('.chk-gen');
+                const chkAdm = tr.querySelector('.chk-adm');
+                const chkSup = tr.querySelector('.chk-sup');
+                const chkVend = tr.querySelector('.chk-vend');
+
+                [chkAdm, chkSup, chkVend].forEach(chk => {
+                    chk.addEventListener('change', () => {
+                        if (chk.checked) {
+                            chkGen.checked = true;
+                        }
+                    });
+                });
+
+                chkGen.addEventListener('change', () => {
+                    if (!chkGen.checked) {
+                        chkAdm.checked = false;
+                        chkSup.checked = false;
+                        chkVend.checked = false;
+                    }
+                });
+            });
+        },
+
+        cargarDatosIniciales(conf, local) {
+            const nombreLocal = local?.nombre || conf?.identidad?.nombre || '';
+            document.getElementById('cfg_nombre_local').value = nombreLocal;
+
+            const matriz = conf.permisos_modulos || {};
+            document.querySelectorAll('#lista_modulos_bloqueo tr').forEach(tr => {
+                const m = matriz[tr.dataset.modId];
+                if (m) {
+                    tr.querySelector('.chk-gen').checked = !!m.general;
+                    tr.querySelector('.chk-adm').checked = !!m.admin;
+                    tr.querySelector('.chk-sup').checked = !!m.sup;
+                    tr.querySelector('.chk-vend').checked = !!m.vend;
+                }
+            });
+
+            const tasas = conf.tasas || { moneda_base: 'USD', secundarias: [] };
+            document.getElementById('select_moneda_base').value = tasas.moneda_base;
+            const cont = document.getElementById('contenedor_monedas_secundarias');
+            cont.innerHTML = '';
+            if (tasas.secundarias.length > 0) tasas.secundarias.forEach(sec => this.agregarFilaMonedaSecundaria(sec));
+            
+            if (conf.telegram) {
+                ['token','inv','cierre','extras'].forEach(k => document.getElementById(`cfg_tg_${k}`).value = conf.telegram[`chat_${k}`] || conf.telegram[k] || '');
+                ['cierre','gastos','inventario'].forEach(k => document.getElementById(`cfg_notif_${k}`).checked = !!conf.telegram[`notif_${k}`]);
+            }
+        },
+
+        async guardarIdentidad() {
+            const nombre = document.getElementById('cfg_nombre_local').value.trim();
+            if(!nombre) return alert("El nombre no puede estar vacío.");
+            UIBase.mostrarCargando("Guardando", "Actualizando nombre...");
+            try { 
+                await AppMotor.actualizarIdentidad(nombre); 
+                UIBase.ocultarCargando(); 
+                alert("Nombre guardado exitosamente."); 
+            } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
+
+        async guardarPinGeneral() {
+            const pin = document.getElementById('cfg_admin_pin').value.trim();
+            if(!pin) return alert("Ingrese un PIN válido.");
+            UIBase.mostrarCargando("Guardando", "Actualizando PIN...");
+            try { await AppMotor.actualizarPinSeguridad(pin); document.getElementById('cfg_admin_pin').value = ''; UIBase.ocultarCargando(); alert("PIN actualizado."); } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
+
+        async guardarPermisosModulos() {
+            const matriz = {};
+            document.querySelectorAll('#lista_modulos_bloqueo tr').forEach(tr => {
+                matriz[tr.dataset.modId] = {
+                    general: tr.querySelector('.chk-gen').checked, admin: tr.querySelector('.chk-adm').checked,
+                    sup: tr.querySelector('.chk-sup').checked, vend: tr.querySelector('.chk-vend').checked
+                };
+            });
+            UIBase.mostrarCargando("Guardando", "Estableciendo permisos de módulos...");
+            try { await AppMotor._guardarConfigParcial('permisos_modulos', matriz); UIBase.ocultarCargando(); alert("Permisos y bloqueo de módulos guardados con éxito."); } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
+
+        agregarFilaMonedaSecundaria(datos = null) {
+            const cont = document.getElementById('contenedor_monedas_secundarias');
+            const opc = CATALOGO_MONEDAS.map(m => `<option value="${m.code}" ${datos?.code===m.code?'selected':''}>${m.name}</option>`).join('');
+            cont.insertAdjacentHTML('beforeend', `
+                <div class="currency-row">
+                    <div><select class="sel-codigo">${opc}</select></div>
+                    <div><input type="number" step="0.000001" class="inp-tasa" value="${datos?.tasa||1}"></div>
+                    <div>
+                        <select class="sel-operacion" onchange="UIConfig.actualizarVistasFormulas()">
+                            <option value="multiplicar" ${datos?.operacion==='multiplicar'?'selected':''}>✖️ Multiplicar</option>
+                            <option value="dividir" ${datos?.operacion==='dividir'?'selected':''}>➗ Dividir</option>
+                        </select>
+                        <span class="formula-preview"></span>
+                    </div>
+                    <div style="text-align:center;"><button type="button" class="btn-danger" style="padding:8px; margin:0; width:36px; height:36px;" onclick="this.closest('.currency-row').remove(); UIConfig.actualizarVistasFormulas();">🗑️</button></div>
+                </div>
+            `);
+            this.actualizarVistasFormulas();
+        },
+
+        actualizarVistasFormulas() {
+            const baseCode = document.getElementById('select_moneda_base').value;
+            document.querySelectorAll('.currency-row').forEach(row => {
+                const secCode = row.querySelector('.sel-codigo').value;
+                const op = row.querySelector('.sel-operacion').value;
+                row.querySelector('.formula-preview').innerText = op === 'multiplicar' ? `1 ${baseCode} ✖️ Tasa = ${secCode}` : `1 ${baseCode} ➗ Tasa = ${secCode}`;
+            });
+        },
+
+        async guardarEstructuraMonetaria() {
+            const base = document.getElementById('select_moneda_base').value;
+            const secundarias = [];
+            let error = false;
+            document.querySelectorAll('.currency-row').forEach(row => {
+                const code = row.querySelector('.sel-codigo').value;
+                if (code === base) { alert(`Error: ${code} no puede ser moneda base y secundaria simultáneamente.`); error = true; }
+                secundarias.push({ code: code, tasa: parseFloat(row.querySelector('.inp-tasa').value)||1, operacion: row.querySelector('.sel-operacion').value });
+            });
+            if (error) return;
+            
+            UIBase.mostrarCargando("Guardando", "Actualizando base monetaria y tasas...");
+            try { 
+                await AppMotor.actualizarSistemaMonetario(base, secundarias); 
+                UIBase.ocultarCargando(); 
+                alert("Sistema Monetario actualizado correctamente."); 
+            } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
+
+        async guardarTelegram() {
+            const dataTg = {
+                token: document.getElementById('cfg_tg_token').value.trim(), chat_inv: document.getElementById('cfg_tg_inv').value.trim(),
+                chat_cierre: document.getElementById('cfg_tg_cierre').value.trim(), chat_extras: document.getElementById('cfg_tg_extras').value.trim(),
+                notif_cierre: document.getElementById('cfg_notif_cierre').checked, notif_gastos: document.getElementById('cfg_notif_gastos').checked, notif_inventario: document.getElementById('cfg_notif_inventario').checked
+            };
+            UIBase.mostrarCargando("Guardando", "Actualizando Telegram...");
+            try { await AppMotor._guardarConfigParcial('telegram', dataTg); UIBase.ocultarCargando(); alert("Telegram guardado."); } 
+            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
+
+        toggleInputsBorrado(tipo) {
+            document.getElementById('cont_borrado_mes').style.display = tipo === 'mes' ? 'block' : 'none';
+            document.getElementById('cont_borrado_ano').style.display = tipo === 'ano' ? 'block' : 'none';
+        },
+
+        async solicitarBorradoParcial() {
+            const modulo = document.getElementById('cfg_borrado_modulo').value;
+            const moduloTexto = document.getElementById('cfg_borrado_modulo').options[document.getElementById('cfg_borrado_modulo').selectedIndex].text;
+            const rango = document.getElementById('cfg_borrado_rango').value;
+            
+            let parametro = null;
+            let msgAlerta = `¿Está seguro de eliminar los registros de [ ${moduloTexto} ] en su totalidad?`;
+
+            if (rango === 'mes') {
+                parametro = document.getElementById('cfg_val_mes').value;
+                if(!parametro) return alert("Debe seleccionar un mes.");
+                msgAlerta = `¿Está seguro de eliminar [ ${moduloTexto} ] del mes ${parametro}?`;
+            } else if (rango === 'ano') {
+                parametro = document.getElementById('cfg_val_ano').value;
+                if(!parametro || parametro.length !== 4) return alert("Debe escribir un año válido de 4 dígitos.");
+                msgAlerta = `¿Está seguro de eliminar [ ${moduloTexto} ] del año ${parametro}?`;
+            }
+
+            if (!confirm(msgAlerta + "\n\nEsta acción purgará los registros en la base de datos y no se puede deshacer.")) return;
+            const pinConfirm = prompt("Por seguridad, ingrese el PIN Maestro para autorizar esta eliminación:");
+            if (!pinConfirm) return;
+
+            UIBase.mostrarCargando("Eliminando", "Purgando registros en la base de datos...");
+            try {
+                const autorizado = AppMotor.verificarPinAdministrador(pinConfirm);
+                if (!autorizado) throw new Error("PIN Incorrecto. Operación abortada.");
+                
+                await AppMotor.ejecutarPurgaHistorial(modulo, rango, parametro);
+                UIBase.ocultarCargando();
+                alert("Limpieza ejecutada exitosamente.");
+            } catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+        },
+
+        async solicitarBorradoGlobal() {
+            if (!confirm("⚠️ ALERTA CRÍTICA ⚠️\n\nEstá a punto de eliminar ABSOLUTAMENTE TODO el sistema de la base de datos.\n\n¿Desea continuar?")) return;
+            
+            if (prompt("Escriba la palabra 'FORMATEAR' en mayúsculas:") !== "FORMATEAR") {
+                return alert("Palabra incorrecta. Cancelado.");
+            }
+
+            const pinConfirm = prompt("Último paso. Ingrese el PIN Maestro:");
+            if (!pinConfirm) return;
+
+            UIBase.mostrarCargando("Destruyendo Datos", "Ejecutando formateo global...");
+            try {
+                const autorizado = AppMotor.verificarPinAdministrador(pinConfirm);
+                if (!autorizado) throw new Error("PIN Incorrecto.");
+
+                await AppMotor.ejecutarResetFabrica();
+                UIBase.ocultarCargando();
+                alert("Sistema formateado. La aplicación se reiniciará.");
+                window.location.href = 'index.html'; 
+            } catch(e) { UIBase.ocultarCargando(); alert("Fallo en formateo: " + e.message); }
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => UIConfig.init());
+</script>
+</body>
+</html>

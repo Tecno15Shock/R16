@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Precios | Panel Empresarial</title>
+
+    <!-- Dependencias Centrales del Sistema -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="motor.js"></script>
+    <script src="plantilla_base.js"></script>
+
+    <style>
+        /* ========================================================= */
+        /* OCULTAR MENÚ LATERAL Y BARRA SUPERIOR DE PLANTILLA_BASE   */
+        /* ========================================================= */
+        .top-bar, .sidebar, .sidebar-overlay {
+            display: none !important;
+        }
+
+        /* ========================================================= */
+        /* BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA              */
+        /* ========================================================= */
+        .close-corner-btn {
+            position: fixed; top: 20px; right: 25px; z-index: 10000;
+            background: rgba(122, 23, 29, 0.95); backdrop-filter: blur(8px);
+            border: 2px solid var(--active-gold, #D4AF37); color: #ffffff;
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem; font-weight: bold; cursor: pointer; text-decoration: none;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: var(--danger, #8B0000); transform: scale(1.1) rotate(90deg); }
+
+        /* Estilos específicos de la lista de catálogo adaptados a plantilla_base */
+        .card-busqueda {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-top: 4px solid var(--primary);
+        }
+
+        .cat-header { 
+            background: linear-gradient(90deg, var(--primary), var(--secondary)); 
+            color: var(--active-gold); 
+            padding: 12px 18px; 
+            margin-top: 20px; 
+            border: 1px solid var(--active-gold); 
+            font-weight: bold; 
+            font-family: var(--title-font);
+            letter-spacing: 1.5px; 
+            font-size: 1.05rem; 
+            border-top-left-radius: var(--border-radius); 
+            border-top-right-radius: var(--border-radius);
+            text-transform: uppercase;
+        }
+
+        /* Listado estilo cebra */
+        .zebra-list {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .zebra-list .consulta-item { 
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2); 
+            padding: 16px 18px; 
+            font-size: 0.95rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            gap: 15px; 
+            background-color: var(--card-bg);
+            transition: background 0.2s ease;
+        }
+
+        .zebra-list .consulta-item:nth-child(even) { 
+            background-color: rgba(212, 175, 55, 0.04); 
+        }
+
+        .zebra-list .consulta-item:hover { 
+            background-color: rgba(212, 175, 55, 0.12); 
+        }
+
+        .item-info { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+        }
+
+        .item-name { 
+            font-weight: bold; 
+            color: var(--text); 
+            font-size: 1.05rem; 
+            font-family: var(--main-font);
+        }
+
+        .item-cat { 
+            font-size: 0.8rem; 
+            color: var(--text); 
+            opacity: 0.7;
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
+
+        /* Indicador comercial de stock */
+        .stock-indicator {
+            font-size: 0.82rem; 
+            font-style: italic; 
+            font-weight: 600;
+            display: inline-block; 
+            padding-bottom: 2px; 
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+        .stock-success { color: var(--success); border-bottom: 2px solid var(--success); }
+        .stock-warning { color: var(--warning); border-bottom: 2px solid var(--warning); }
+        .stock-danger { color: var(--danger); border-bottom: 2px solid var(--danger); }
+
+        /* Pila de Precios Multi-moneda */
+        .precio-stack { 
+            text-align: right; 
+            line-height: 1.4; 
+            background: var(--input-bg); 
+            padding: 10px 15px; 
+            border-radius: var(--border-radius); 
+            border: 1px solid rgba(212, 175, 55, 0.4); 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            min-width: 140px;
+        }
+
+        .precio-stack .label-precio {
+            font-size: 0.7rem; 
+            color: var(--text); 
+            opacity: 0.8;
+            font-weight: bold; 
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .precio-stack .monto-base { 
+            color: var(--primary); 
+            font-size: 1.25rem; 
+            font-family: var(--title-font); 
+            font-weight: bold;
+            display: block; 
+            margin-bottom: 4px; 
+        }
+
+        .precio-stack .monto-secundario { 
+            font-size: 0.88rem; 
+            font-weight: bold; 
+            display: block;
+            font-family: var(--main-font);
+        }
+
+        .monto-secundario.c-ves { color: #27ae60; }
+        .monto-secundario.c-cop { color: #d35400; }
+        .monto-secundario.c-eur { color: #8e44ad; }
+        .monto-secundario.c-gen { color: var(--text); opacity: 0.9; }
+
+        @media (max-width: 600px) {
+            .zebra-list .consulta-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .precio-stack {
+                width: 100%;
+                text-align: left;
+                margin-top: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA -->
+<a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+<div class="wrapper" id="main_wrapper" style="display: none; padding-top: 20px;">
+    <main class="main-content">
+        
+        <h1 style="color: var(--primary); font-family: var(--title-font); text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; margin-top: 0;">
+            💰 Consulta General de Precios
+        </h1>
+
+        <div class="card-busqueda">
+            <div class="grid-2" style="grid-template-columns: 2fr 1fr 1fr; gap: 12px;">
+                <div>
+                    <label style="font-weight: bold; font-size: 0.85rem;">Buscar Producto:</label>
+                    <input type="text" id="buscar_caja" placeholder="🔍 Escriba un nombre..." oninput="UIPrecios.renderConsulta()">
+                </div>
+                <div>
+                    <label style="font-weight: bold; font-size: 0.85rem;">Ordenamiento:</label>
+                    <select id="orden_inicial" onchange="UIPrecios.renderConsulta()">
+                        <option value="az" selected>Alfabéticamente (A-Z)</option>
+                        <option value="cat">Por Categoría</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight: bold; font-size: 0.85rem;">Filtro de Inventario:</label>
+                    <select id="filtro_stock_caja" onchange="UIPrecios.renderConsulta()">
+                        <option value="con_stock" selected>Solo Disponibles</option>
+                        <option value="todos">Todo el Catálogo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="lista_inicial_contenido" class="zebra-list">
+            <p style="text-align:center; color: var(--text); padding: 30px; font-style: italic;">Preparando el catálogo de productos...</p>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    const UIPrecios = {
+        catalogo: [],
+        configuracion: {},
+
+        async init() {
+            UIBase.mostrarCargando("Sincronizando Catálogo", "Cargando precios y tasas del sistema...");
+            try {
+                const estado = await AppMotor.inicializar();
+                this.configuracion = estado.configuracion || {};
+                this.catalogo = estado.catalogo || [];
+
+                const nombreLocal = estado.datosLocal?.nombre || this.configuracion?.identidad?.nombre || 'Sistema';
+                UIBase.sincronizarNombreLocal(nombreLocal);
+
+                // Verificación de bloqueo configurado desde la matriz de permisos
+                const permisos = this.configuracion.permisos_modulos || {};
+                const moduloBloqueado = permisos.precios && permisos.precios.general;
+                const tienePin = !!this.configuracion.identidad?.admin_pass;
+
+                if (tienePin && moduloBloqueado) {
+                    UIBase.ocultarCargando();
+                    UIBase.bloquearPantallaPIN((pin) => {
+                        const esValido = AppMotor.verificarPinAdministrador(pin);
+                        if (esValido) {
+                            document.getElementById('main_wrapper').style.display = 'block';
+                            UIPrecios.renderConsulta();
+                        }
+                        return esValido;
+                    });
+                } else {
+                    UIBase.ocultarCargando();
+                    document.getElementById('main_wrapper').style.display = 'block';
+                    this.renderConsulta();
+                }
+            } catch (err) {
+                UIBase.ocultarCargando();
+                if (err.message === "NoAutorizado") {
+                    window.location.href = 'index.html';
+                } else {
+                    alert("Error al cargar la consulta de precios: " + err.message);
+                }
+            }
+        },
+
+        /*
+         * Detecta la moneda y calcula con precisión según las reglas de multiplicación o división
+         */
+        convertirYCalcularMonedas(precioOriginal, monedaProducto) {
+            const tasasConfig = this.configuracion.tasas || { moneda_base: 'USD', secundarias: [] };
+            const mBaseSistema = tasasConfig.moneda_base || 'USD';
+            const secundarias = tasasConfig.secundarias || [];
+
+            let precioMBase = parseFloat(precioOriginal) || 0;
+
+            // 1. Si el producto viene en una moneda distinta a la base, convertir a la moneda base del sistema
+            if (monedaProducto && monedaProducto !== mBaseSistema) {
+                const configMonedaProd = secundarias.find(s => s.code === monedaProducto);
+                if (configMonedaProd && parseFloat(configMonedaProd.tasa) > 0) {
+                    const tasa = parseFloat(configMonedaProd.tasa);
+                    if (configMonedaProd.operacion === 'dividir') {
+                        precioMBase = precioMBase * tasa;
+                    } else {
+                        precioMBase = precioMBase / tasa;
+                    }
+                }
+            }
+
+            // 2. Calcular montos para la moneda base y solo las monedas secundarias activas/configuradas
+            const conversiones = [];
+
+            // Moneda Base
+            conversiones.push({
+                code: mBaseSistema,
+                monto: precioMBase,
+                esBase: true
+            });
+
+            // Monedas secundarias disponibles
+            secundarias.forEach(sec => {
+                const tasa = parseFloat(sec.tasa) || 0;
+                if (tasa > 0) {
+                    let montoCalculado = 0;
+                    if (sec.operacion === 'dividir') {
+                        montoCalculado = precioMBase / tasa;
+                    } else { // 'multiplicar'
+                        montoCalculado = precioMBase * tasa;
+                    }
+
+                    conversiones.push({
+                        code: sec.code,
+                        monto: montoCalculado,
+                        esBase: false
+                    });
+                }
+            });
+
+            return conversiones;
+        },
+
+        renderConsulta() {
+            const query = (document.getElementById('buscar_caja').value || "").toLowerCase().trim();
+            const orden = document.getElementById('orden_inicial').value;
+            const filtroStock = document.getElementById('filtro_stock_caja').value;
+
+            // Filtrado por búsqueda de texto
+            let items = this.catalogo.filter(p => (p.nombre || "").toLowerCase().includes(query));
+
+            // Filtro por stock
+            if (filtroStock === 'con_stock') {
+                items = items.filter(p => parseFloat(p.stock || 0) > 0);
+            }
+
+            // Ordenamiento
+            items.sort((a, b) => {
+                const nomA = this.limpiarNombre(a.nombre);
+                const nomB = this.limpiarNombre(b.nombre);
+                if (orden === 'cat') {
+                    const catA = (a.categoria || "General").toLowerCase();
+                    const catB = (b.categoria || "General").toLowerCase();
+                    return catA.localeCompare(catB) || nomA.localeCompare(nomB);
+                }
+                return nomA.localeCompare(nomB);
+            });
+
+            const contenedor = document.getElementById('lista_inicial_contenido');
+            if (items.length === 0) {
+                contenedor.innerHTML = '<div style="color: var(--text); text-align:center; padding: 25px; font-style: italic; background: var(--card-bg);">No se encontraron productos que coincidan con la búsqueda.</div>';
+                return;
+            }
+
+            let html = "";
+            let categoriaActual = "";
+
+            items.forEach(p => {
+                const catProducto = p.categoria || "General";
+
+                // Encabezados de categoría en caso de elegir ordenamiento por categoría
+                if (orden === 'cat' && catProducto !== categoriaActual) {
+                    categoriaActual = catProducto;
+                    html += `<div class="cat-header">${categoriaActual}</div>`;
+                }
+
+                // Cálculo de precios e indicadores
+                const preciosCalculados = this.convertirYCalcularMonedas(p.precio_base || 0, p.moneda_base || 'USD');
+                const stockVal = parseFloat(p.stock) || 0;
+                const uAmarillo = parseFloat(p.umbral_amarillo) || 5;
+                const uRojo = parseFloat(p.umbral_rojo) || 0;
+
+                let msgText = "Disponible en Stock";
+                let msgClass = "stock-success";
+
+                if (stockVal <= uRojo) {
+                    msgText = "Mercancía Agotada";
+                    msgClass = "stock-danger";
+                } else if (stockVal <= uAmarillo) {
+                    msgText = "Últimas Unidades";
+                    msgClass = "stock-warning";
+                }
+
+                // Renderizado de lista de precios
+                let stackHtml = '<div class="precio-stack"><div class="label-precio">💰 Precio</div>';
+                
+                preciosCalculados.forEach(c => {
+                    const montoFormateado = this.formatearNumero(c.monto, c.code === 'COP' ? 0 : 2);
+                    if (c.esBase) {
+                        stackHtml += `<strong class="monto-base">${c.code} ${montoFormateado}</strong>`;
+                    } else {
+                        const claseColor = c.code === 'VES' ? 'c-ves' : c.code === 'COP' ? 'c-cop' : c.code === 'EUR' ? 'c-eur' : 'c-gen';
+                        stackHtml += `<span class="monto-secundario ${claseColor}">${c.code} ${montoFormateado}</span>`;
+                    }
+                });
+                stackHtml += '</div>';
+
+                html += `
+                    <div class="consulta-item">
+                        <div class="item-info">
+                            <span class="item-name">${this.limpiarNombre(p.nombre)}</span>
+                            ${orden !== 'cat' ? `<span class="item-cat">Categoría: ${catProducto}</span>` : ''}
+                            <div><span class="stock-indicator ${msgClass}">${msgText}</span></div>
+                        </div>
+                        ${stackHtml}
+                    </div>
+                `;
+            });
+
+            contenedor.innerHTML = html;
+        },
+
+        limpiarNombre(n) { 
+            return (n || "").replace(/box_-/g, "").trim(); 
+        },
+
+        formatearNumero(valor, decimales = 2) {
+            if (isNaN(valor) || valor == null) return "0";
+            let num = parseFloat(valor);
+            if (decimales === 0) num = Math.round(num);
+            let partes = num.toFixed(decimales).split('.');
+            partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            if (decimales > 0 && partes[1] === "00") return partes[0];
+            return partes.length > 1 ? partes[0] + "," + partes[1] : partes[0];
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        UIPrecios.init();
+    });
+</script>
+</body>
+</html>

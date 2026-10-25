@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conciliación Unificada y Caja Fuerte | Sistema Administrativo</title>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="motor.js"></script>
+
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Prevención de Parpadeo de Estilo (FOUC) -->
+    <script>
+        (function() {
+            const temaActivo = localStorage.getItem('app_theme_name') || 'premium';
+            const THEMES = {
+                premium: { bg: '#FDFBF7', primary: '#5C0614', secondary: '#8B0000', gold: '#D4AF37', text: '#2A2A2A', card: '#FFFFFF', input: '#FFFFFF' },
+                oscuro: { bg: '#0A0103', primary: '#3A030A', secondary: '#660000', gold: '#D4AF37', text: '#FDF8F0', card: '#121212', input: '#1E1E1E' }
+            };
+            
+            const cfg = THEMES[temaActivo] || THEMES.premium;
+            const root = document.documentElement;
+            root.style.setProperty('--bg', cfg.bg);
+            root.style.setProperty('--text', cfg.text);
+            root.style.setProperty('--primary', cfg.primary);
+            root.style.setProperty('--secondary', cfg.secondary);
+            root.style.setProperty('--active-gold', cfg.gold);
+            root.style.setProperty('--card-bg', cfg.card);
+            root.style.setProperty('--input-bg', cfg.input);
+        })();
+    </script>
+
+    <style>
+        :root {
+            --border: rgba(212, 175, 55, 0.4);
+            --item-bg: rgba(212, 175, 55, 0.05);
+            --muted: #888888;
+            --border-radius: 6px;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* BOTÓN DE CIERRE (X) EN LA ESQUINA SUPERIOR DERECHA */
+        .close-corner-btn {
+            position: fixed;
+            top: 25px;
+            right: 30px;
+            z-index: 10000;
+            background: rgba(92, 6, 20, 0.95);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--active-gold);
+            color: #ffffff;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: #8B0000; transform: scale(1.1) rotate(90deg); }
+
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
+        .main-content { padding: 40px 20px 120px 20px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+        .card { 
+            background: var(--card-bg); 
+            border-radius: var(--border-radius); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12); 
+            border: 1px solid var(--active-gold); 
+            overflow: hidden; 
+            transition: background 0.3s; 
+        }
+
+        .card-header { 
+            padding: 18px 25px; 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            transition: filter 0.3s ease; 
+            user-select: none; 
+            border-bottom: 2px solid var(--active-gold); 
+        }
+        .card-header:hover { filter: brightness(1.15); }
+        .card-header h2 { 
+            color: var(--active-gold); 
+            margin: 0; 
+            font-size: 1.15rem; 
+            font-family: 'Playfair Display', serif; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        .accordion-icon { 
+            font-size: 1.1rem; 
+            color: var(--active-gold); 
+            font-weight: bold; 
+            transition: transform 0.3s ease; 
+        }
+
+        .card-body { 
+            max-height: 0; 
+            overflow: hidden; 
+            padding: 0 25px; 
+            opacity: 0; 
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease; 
+            background: var(--card-bg); 
+        }
+
+        .card.open .card-body { 
+            max-height: 5000px; 
+            padding: 25px; 
+            opacity: 1; 
+            transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease; 
+        }
+        .card.open .accordion-icon { transform: rotate(180deg); }
+
+        .badge-percent {
+            background: rgba(212, 175, 55, 0.2);
+            color: var(--active-gold);
+            border: 1px solid var(--active-gold);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .summary-box {
+            background: var(--item-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card { display: flex; flex-direction: column; gap: 4px; }
+        .summary-card span.label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: bold; }
+        .summary-card span.value { font-size: 1.2rem; font-weight: bold; color: var(--primary); font-family: 'Playfair Display', serif; }
+
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; border: 1px solid var(--border); border-radius: var(--border-radius); }
+
+        table.luxury-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: var(--card-bg); }
+        table.luxury-table th {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--active-gold);
+            padding: 12px;
+            text-align: left;
+            font-family: 'Playfair Display', serif;
+            border-bottom: 2px solid var(--active-gold);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+        table.luxury-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+        table.luxury-table tr:hover { background: rgba(212, 175, 55, 0.08); }
+
+        .box-edicion {
+            background: var(--item-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        @media(max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            color: var(--active-gold);
+            text-transform: uppercase;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            border: 1px solid var(--active-gold);
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            background: var(--input-bg);
+            color: var(--text);
+            border-left: 4px solid var(--secondary);
+            outline: none;
+            transition: all 0.3s;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        button, .btn-info, .btn-danger, .btn-warning {
+            font-family: 'Playfair Display', serif;
+            border: none;
+            padding: 12px 18px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-info:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        .btn-warning { background: linear-gradient(135deg, #B8860B, #8B6508); color: #FFFFFF; border: 1px solid var(--active-gold); }
+        .btn-warning:hover { filter: brightness(1.15); transform: translateY(-2px); }
+        .btn-danger { background: #8B0000; color: #FFFFFF; border: 1px solid var(--active-gold); }
+        .btn-danger:hover { background: #B30000; transform: translateY(-2px); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            border: 2px solid var(--active-gold);
+            border-radius: var(--border-radius);
+            max-width: 850px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            position: relative;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: var(--primary);
+            color: var(--active-gold);
+            border: 1px solid var(--active-gold);
+            border-radius: 50%;
+            width: 35px; height: 35px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA -->
+<a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+<div class="wrapper" id="main_wrapper">
+    <main class="main-content">
+
+        <!-- BOTÓN PRINCIPAL: GESTIÓN DE CONCILIACIONES -->
+        <button class="btn-info" style="padding: 16px; font-size: 1.05rem; letter-spacing: 1.5px; box-shadow: 0 6px 20px rgba(0,0,0,0.2);" onclick="UIConciliacion.abrirModalGestionConciliaciones()">
+            ➕ CREAR Y ADMINISTRAR PUNTOS DE PAGO / CONCILIACIONES
+        </button>
+
+        <!-- 0. ACORDEÓN: CAJA FUERTE (RECOGIDO POR DEFECTO) -->
+        <div class="card" id="card_caja_fuerte">
+            <div class="card-header" onclick="UIConciliacion.toggleAcordeon(this)">
+                <h2>💰 Caja Fuerte y Fondo (Control de Efectivo)</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-2" style="margin-bottom: 15px;">
+                    <div>
+                        <label>Ver Movimientos por Período:</label>
+                        <select id="caja_filtro_periodo" onchange="UIConciliacion.renderizarCajaFuerte()">
+                            <option value="todos">Todos (Histórico Completo)</option>
+                            <option value="dia" selected>Por Día Actual / Específico</option>
+                            <option value="semana">Por Semana</option>
+                            <option value="mes">Por Mes</option>
+                            <option value="anio">Por Año</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Fecha de Referencia:</label>
+                        <input type="date" id="caja_fecha_referencia" onchange="UIConciliacion.renderizarCajaFuerte()">
+                    </div>
+                </div>
+
+                <!-- RESUMEN MULTIMONEDA -->
+                <div class="summary-box" id="summary_box_caja_fuerte"></div>
+
+                <button class="btn-info" onclick="UIConciliacion.abrirModalRegistroCajaFuerte()">
+                    ➕ REGISTRAR INGRESO EN CAJA FUERTE
+                </button>
+
+                <label style="margin-top: 25px;">HISTORIAL DE MOVIMIENTOS (DE HOY A MÁS ANTIGUO):</label>
+                <div class="table-responsive">
+                    <table class="luxury-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha / Hora</th>
+                                <th>Detalle / Concepto</th>
+                                <th>Empleado (Ingresó)</th>
+                                <th>Turno</th>
+                                <th>Monto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_historial_caja_fuerte"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. ACORDEÓN: AVANCES DE EMPLEADOS -->
+        <div class="card" id="card_registro_avance">
+            <div class="card-header" onclick="UIConciliacion.toggleAcordeon(this)">
+                <h2>💸 1. Avances de Empleados</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-2" style="margin-bottom: 15px;">
+                    <div>
+                        <label>Ver Avances por Período:</label>
+                        <select id="avance_filtro_periodo" onchange="UIConciliacion.renderizarAvances()">
+                            <option value="todos" selected>Todos (Histórico Completo)</option>
+                            <option value="dia">Por Día</option>
+                            <option value="semana">Por Semana</option>
+                            <option value="mes">Por Mes</option>
+                            <option value="anio">Por Año</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Fecha de Referencia:</label>
+                        <input type="date" id="avance_fecha_referencia" onchange="UIConciliacion.renderizarAvances()">
+                    </div>
+                </div>
+
+                <div class="summary-box" id="summary_box_avances"></div>
+
+                <button class="btn-info" onclick="UIConciliacion.abrirModalRegistroAvance()">
+                    ➕ REGISTRAR NUEVO AVANCE
+                </button>
+
+                <label style="margin-top: 25px;">HISTORIAL DE AVANCES (DE HOY A MÁS ANTIGUO):</label>
+                <div class="table-responsive">
+                    <table class="luxury-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha / Hora</th>
+                                <th>Detalle / Concepto</th>
+                                <th>Empleado</th>
+                                <th>Turno</th>
+                                <th>Monto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_historial_avances"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. ACORDEÓN: GASTOS OPERATIVOS -->
+        <div class="card" id="card_registro_gastos">
+            <div class="card-header" onclick="UIConciliacion.toggleAcordeon(this)">
+                <h2>🧾 2. Gastos Operativos</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-2" style="margin-bottom: 15px;">
+                    <div>
+                        <label>Ver Gastos por Período:</label>
+                        <select id="gasto_filtro_periodo" onchange="UIConciliacion.renderizarGastos()">
+                            <option value="todos" selected>Todos (Histórico Completo)</option>
+                            <option value="dia">Por Día</option>
+                            <option value="semana">Por Semana</option>
+                            <option value="mes">Por Mes</option>
+                            <option value="anio">Por Año</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Fecha de Referencia:</label>
+                        <input type="date" id="gasto_fecha_referencia" onchange="UIConciliacion.renderizarGastos()">
+                    </div>
+                </div>
+
+                <div class="summary-box" id="summary_box_gastos"></div>
+
+                <button class="btn-info" onclick="UIConciliacion.abrirModalRegistroGasto()">
+                    ➕ REGISTRAR NUEVO GASTO OPERATIVO
+                </button>
+
+                <label style="margin-top: 25px;">HISTORIAL DE GASTOS (DE HOY A MÁS ANTIGUO):</label>
+                <div class="table-responsive">
+                    <table class="luxury-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha / Hora</th>
+                                <th>Detalle / Concepto</th>
+                                <th>Responsable</th>
+                                <th>Turno</th>
+                                <th>Monto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_historial_gastos"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px dashed var(--active-gold); margin: 10px 0;">
+
+        <!-- 3. CONCILIACIONES CREADAS -->
+        <div id="contenedor_conciliaciones_lista" style="display: flex; flex-direction: column; gap: 15px;"></div>
+
+    </main>
+</div>
+
+<!-- MODAL: GESTIÓN DE CONCILIACIONES -->
+<div class="modal-overlay" id="modal_gestion_conciliaciones">
+    <div class="modal-content">
+        <button class="modal-close-btn" onclick="UIConciliacion.cerrarModalGestionConciliaciones()">✕</button>
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-family: 'Playfair Display', serif; margin-top: 0; padding-bottom: 10px;">
+            ⚙️ Módulo de Gestión de Conciliaciones
+        </h2>
+        <div class="box-edicion" style="margin-top: 15px;">
+            <h3 style="margin-top:0; color:var(--primary); font-family: 'Playfair Display', serif;">➕ Crear Nueva Conciliación / Punto de Pago</h3>
+            <div class="grid-2">
+                <div>
+                    <label>Nombre:</label>
+                    <input type="text" id="modal_nuevo_nombre" placeholder="Ej: Punto Banesco POS">
+                </div>
+                <div>
+                    <label>Comisión (%):</label>
+                    <input type="number" step="0.01" min="0" max="100" id="modal_nuevo_porcentaje" placeholder="Ej: 1.50">
+                </div>
+            </div>
+            <button class="btn-info" onclick="UIConciliacion.crearNuevaConciliacionModal()">💾 REGISTRAR</button>
+        </div>
+        <div id="modal_lista_edicion_conciliaciones" style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;"></div>
+    </div>
+</div>
+
+<!-- MODAL: CAJA FUERTE -->
+<div class="modal-overlay" id="modal_registro_caja_fuerte">
+    <div class="modal-content" style="max-width: 650px;">
+        <button class="modal-close-btn" onclick="UIConciliacion.cerrarModalRegistroCajaFuerte()">✕</button>
+        <h2 id="titulo_modal_caja_fuerte" style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-family: 'Playfair Display', serif; margin-top: 0; padding-bottom: 10px;">
+            💰 Registrar Ingreso en Caja Fuerte
+        </h2>
+        <input type="hidden" id="caja_edit_id" value="">
+        <div class="grid-2">
+            <div>
+                <label>Detalle / Concepto:</label>
+                <input type="text" id="caja_detalle" placeholder="Ej: Recaudación inicial">
+            </div>
+            <div>
+                <label>Monto:</label>
+                <input type="number" step="0.01" min="0" id="caja_monto" placeholder="0.00">
+            </div>
+        </div>
+        <div class="grid-3" style="margin-top: 10px;">
+            <div>
+                <label>Moneda:</label>
+                <select id="caja_moneda"></select>
+            </div>
+            <div>
+                <label>Empleado:</label>
+                <select id="caja_empleado"><option value="">-- Seleccionar --</option></select>
+            </div>
+            <div>
+                <label>Turno:</label>
+                <select id="caja_turno">
+                    <option value="Diurno">Diurno</option>
+                    <option value="Nocturno">Nocturno</option>
+                    <option value="24 Horas">24 Horas</option>
+                </select>
+            </div>
+        </div>
+        <div>
+            <label>Fecha:</label>
+            <input type="date" id="caja_fecha">
+        </div>
+        <button class="btn-info" onclick="UIConciliacion.guardarCajaFuerte()">💾 GUARDAR</button>
+    </div>
+</div>
+
+<!-- MODAL: AVANCE -->
+<div class="modal-overlay" id="modal_registro_avance">
+    <div class="modal-content" style="max-width: 650px;">
+        <button class="modal-close-btn" onclick="UIConciliacion.cerrarModalRegistroAvance()">✕</button>
+        <h2 id="titulo_modal_avance" style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-family: 'Playfair Display', serif; margin-top: 0; padding-bottom: 10px;">
+            💸 Registrar Avance
+        </h2>
+        <input type="hidden" id="avance_edit_id" value="">
+        <div class="grid-2">
+            <div>
+                <label>Detalle / Concepto:</label>
+                <input type="text" id="avance_detalle" placeholder="Ej: Avance de sueldo">
+            </div>
+            <div>
+                <label>Monto:</label>
+                <input type="number" step="0.01" min="0" id="avance_monto" placeholder="0.00">
+            </div>
+        </div>
+        <div class="grid-3" style="margin-top: 10px;">
+            <div>
+                <label>Moneda:</label>
+                <select id="avance_moneda"></select>
+            </div>
+            <div>
+                <label>Empleado:</label>
+                <select id="avance_empleado"><option value="">-- Seleccionar --</option></select>
+            </div>
+            <div>
+                <label>Turno:</label>
+                <select id="avance_turno">
+                    <option value="Diurno">Diurno</option>
+                    <option value="Nocturno">Nocturno</option>
+                    <option value="24 Horas">24 Horas</option>
+                </select>
+            </div>
+        </div>
+        <div>
+            <label>Fecha:</label>
+            <input type="date" id="avance_fecha">
+        </div>
+        <button class="btn-info" onclick="UIConciliacion.guardarAvance()">💾 GUARDAR</button>
+    </div>
+</div>
+
+<!-- MODAL: GASTO -->
+<div class="modal-overlay" id="modal_registro_gasto">
+    <div class="modal-content" style="max-width: 650px;">
+        <button class="modal-close-btn" onclick="UIConciliacion.cerrarModalRegistroGasto()">✕</button>
+        <h2 id="titulo_modal_gasto" style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-family: 'Playfair Display', serif; margin-top: 0; padding-bottom: 10px;">
+            🧾 Registrar Gasto Operativo
+        </h2>
+        <input type="hidden" id="gasto_edit_id" value="">
+        <div class="grid-2">
+            <div>
+                <label>Detalle / Concepto:</label>
+                <input type="text" id="gasto_detalle" placeholder="Ej: Compra de insumos">
+            </div>
+            <div>
+                <label>Monto:</label>
+                <input type="number" step="0.01" min="0" id="gasto_monto" placeholder="0.00">
+            </div>
+        </div>
+        <div class="grid-3" style="margin-top: 10px;">
+            <div>
+                <label>Moneda:</label>
+                <select id="gasto_moneda"></select>
+            </div>
+            <div>
+                <label>Empleado:</label>
+                <select id="gasto_empleado"><option value="">-- Seleccionar --</option></select>
+            </div>
+            <div>
+                <label>Turno:</label>
+                <select id="gasto_turno">
+                    <option value="Diurno">Diurno</option>
+                    <option value="Nocturno">Nocturno</option>
+                    <option value="24 Horas">24 Horas</option>
+                </select>
+            </div>
+        </div>
+        <div>
+            <label>Fecha:</label>
+            <input type="date" id="gasto_fecha">
+        </div>
+        <button class="btn-info" onclick="UIConciliacion.guardarGastoOperativo()">💾 GUARDAR</button>
+    </div>
+</div>
+
+<!-- MODAL: EDITAR / REGISTRAR TRANSACCIÓN DENTRO DE CONCILIACIÓN -->
+<div class="modal-overlay" id="modal_editar_conciliacion_item">
+    <div class="modal-content" style="max-width: 550px;">
+        <button class="modal-close-btn" onclick="UIConciliacion.cerrarModalEditarConciliacionItem()">✕</button>
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-family: 'Playfair Display', serif; margin-top: 0; padding-bottom: 10px;">
+            ✏️ Editar Transacción de Conciliación
+        </h2>
+        <input type="hidden" id="conc_item_id" value="">
+        <input type="hidden" id="conc_item_metodo" value="">
+        <div>
+            <label>Referencia / Ticket:</label>
+            <input type="text" id="conc_item_referencia" placeholder="Ej: REF-12345">
+        </div>
+        <div>
+            <label>Jornada Laboral / Nota:</label>
+            <input type="text" id="conc_item_nota" placeholder="Ej: Turno Diurno">
+        </div>
+        <div class="grid-2">
+            <div>
+                <label>Monto Bruto:</label>
+                <input type="number" step="0.01" min="0" id="conc_item_monto" placeholder="0.00">
+            </div>
+            <div>
+                <label>Fecha:</label>
+                <input type="date" id="conc_item_fecha">
+            </div>
+        </div>
+        <button class="btn-info" onclick="UIConciliacion.guardarEdicionConciliacionItem()">💾 GUARDAR CAMBIOS</button>
+    </div>
+</div>
+
+<script>
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    const UIConciliacion = {
+        listaConciliaciones: [],
+        monedaBase: 'USD',
+        monedasSecundarias: [],
+        listaEmpleados: [],
+        historialCajaFuerte: [],
+        historialAvances: [],
+        historialGastos: [],
+        localId: null,
+
+        init: async function() {
+            try {
+                const { data: sessionData } = await window.supabaseClient.auth.getSession();
+                if (!sessionData || !sessionData.session) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id').eq('id', sessionData.session.user.id).single();
+                if (perfil && perfil.local_id) this.localId = perfil.local_id;
+                else {
+                    let { data: locales } = await window.supabaseClient.from('locales').select('id').limit(1);
+                    if (locales.length > 0) this.localId = locales[0].id;
+                }
+
+                let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', this.localId).single();
+                if (conf) {
+                    const tasas = conf.tasas || {};
+                    this.monedaBase = tasas.moneda_base || 'USD';
+                    this.monedasSecundarias = tasas.secundarias || [];
+                    this.listaConciliaciones = Array.isArray(conf.conciliaciones) ? conf.conciliaciones : (conf.conciliaciones?.lista || []);
+                }
+
+                await this.cargarEmpleados();
+                this.poblarSelectoresFormularios();
+                await this.cargarDatosSupabase();
+
+                const hoy = new Date().toISOString().split('T')[0];
+                document.getElementById('caja_fecha_referencia').value = hoy;
+                document.getElementById('avance_fecha_referencia').value = hoy;
+                document.getElementById('gasto_fecha_referencia').value = hoy;
+
+                document.getElementById('caja_fecha').value = hoy;
+                document.getElementById('avance_fecha').value = hoy;
+                document.getElementById('gasto_fecha').value = hoy;
+
+                this.renderizarCajaFuerte();
+                this.renderizarAvances();
+                this.renderizarGastos();
+                this.renderizarConciliacionesInformacion();
+
+            } catch (err) {
+                console.error("Error al inicializar:", err);
+                alert("Error al cargar módulo: " + err.message);
+            }
+        },
+
+        cargarEmpleados: async function() {
+            const { data } = await window.supabaseClient.from('empleados').select('*').eq('local_id', this.localId);
+            this.listaEmpleados = data || [];
+        },
+
+        toggleAcordeon: function(headerElement) {
+            const card = headerElement.closest('.card');
+            if (card) card.classList.toggle('open');
+        },
+
+        poblarSelectoresFormularios: function() {
+            let opcionesMonedasHtml = `<option value="${this.monedaBase}">${this.monedaBase} (Principal Base)</option>`;
+            this.monedasSecundarias.forEach(sec => {
+                opcionesMonedasHtml += `<option value="${sec.code}">${sec.code}</option>`;
+            });
+
+            ['caja_moneda', 'avance_moneda', 'gasto_moneda'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = opcionesMonedasHtml;
+            });
+
+            let opcionesEmpleadosHtml = `<option value="">-- Seleccionar Empleado --</option>`;
+            this.listaEmpleados.forEach(emp => {
+                let nomComp = `${emp.nombre || ''} ${emp.apellido || ''}`.trim() || emp.username || 'Empleado';
+                opcionesEmpleadosHtml += `<option value="${emp.id}">${nomComp}</option>`;
+            });
+
+            ['caja_empleado', 'avance_empleado', 'gasto_empleado'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = opcionesEmpleadosHtml;
+            });
+        },
+
+        cargarDatosSupabase: async function() {
+            if (!this.localId) return;
+
+            try {
+                const [resCaja, resAvances, resGastos, resConc] = await Promise.all([
+                    window.supabaseClient.from('caja_fuerte').select('*').eq('local_id', this.localId),
+                    window.supabaseClient.from('avances_retirados').select('*').eq('local_id', this.localId),
+                    window.supabaseClient.from('gastos_operativos').select('*').eq('local_id', this.localId),
+                    window.supabaseClient.from('conciliacion').select('*').eq('local_id', this.localId)
+                ]);
+
+                const empMap = {};
+                this.listaEmpleados.forEach(e => empMap[e.id] = e);
+
+                this.historialCajaFuerte = (resCaja.data || []).map(r => {
+                    let empId = r.vendedor_id || r.empleado_id;
+                    return {
+                        id: r.id,
+                        detalle: r.concepto || r.detalle || 'Ingreso Efectivo',
+                        monto: parseFloat(r.efectivo || r.monto || 0),
+                        moneda: r.moneda || this.monedaBase,
+                        empleado_id: empId,
+                        empleados: empMap[empId] || null,
+                        turno: r.turno || 'Diurno',
+                        fecha: r.fecha || r.created_at || 'N/A'
+                    };
+                });
+
+                this.historialAvances = (resAvances.data || []).map(r => {
+                    let empId = r.vendedor_id || r.empleado_id;
+                    return {
+                        id: r.id,
+                        detalle: r.concepto || r.detalle || 'Avance Retirado',
+                        monto: parseFloat(r.monto || 0),
+                        moneda: r.moneda || this.monedaBase,
+                        empleado_id: empId,
+                        empleados: empMap[empId] || null,
+                        turno: r.turno || 'Diurno',
+                        fecha: r.fecha || r.created_at || 'N/A'
+                    };
+                });
+
+                this.historialGastos = (resGastos.data || []).map(r => {
+                    let empId = r.vendedor_id || r.empleado_id;
+                    return {
+                        id: r.id,
+                        detalle: r.concepto || r.detalle || 'Gasto Operativo',
+                        monto: parseFloat(r.monto || 0),
+                        moneda: r.moneda || this.monedaBase,
+                        empleado_id: empId,
+                        empleados: empMap[empId] || null,
+                        turno: r.turno || 'Diurno',
+                        fecha: r.fecha || r.created_at || 'N/A'
+                    };
+                });
+
+                if (resConc.data) {
+                    this.listaConciliaciones.forEach(conc => {
+                        const matches = resConc.data.filter(r => 
+                            r.metodo && r.metodo.trim().toLowerCase() === conc.nombre.trim().toLowerCase()
+                        );
+                        conc.registros = matches.map(r => {
+                            let empObj = empMap[r.empleado] || null;
+                            let nomEmp = empObj ? (`${empObj.nombre || ''} ${empObj.apellido || ''}`.trim() || empObj.username) : (r.empleado || 'General');
+                            return {
+                                id: r.id,
+                                fecha: r.fecha || r.creado_en || 'N/A',
+                                referencia: r.referencia || 'SIN REF',
+                                nota: r.nota || 'Jornada laboral',
+                                empleado_nombre: nomEmp,
+                                monto: parseFloat(r.monto_ingresado) || 0,
+                                monto_esperado: parseFloat(r.monto_esperado) || 0,
+                                estado: r.estado || 'Pendiente'
+                            };
+                        });
+                    });
+                }
+            } catch (err) {
+                console.error("Error sincronizando datos con Supabase:", err);
+            }
+        },
+
+        filtrarYOrdenarListas: function(lista, filtroPeriodo, inputFechaRefId) {
+            if (!lista || lista.length === 0) return [];
+            const fechaRefVal = document.getElementById(inputFechaRefId)?.value;
+            const refDate = fechaRefVal ? new Date(fechaRefVal + 'T00:00:00') : new Date();
+
+            const filtrada = lista.filter(item => {
+                if (filtroPeriodo === 'todos') return true;
+                if (!item.fecha) return true;
+                const itemDate = new Date(item.fecha.substring(0, 10) + 'T00:00:00');
+                if (isNaN(itemDate.getTime())) return true;
+
+                if (filtroPeriodo === 'dia') {
+                    return item.fecha.substring(0, 10) === refDate.toISOString().substring(0, 10);
+                } else if (filtroPeriodo === 'semana') {
+                    const d = new Date(refDate);
+                    const day = d.getDay();
+                    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                    const monday = new Date(d.setDate(diff));
+                    monday.setHours(0,0,0,0);
+                    const sunday = new Date(monday);
+                    sunday.setDate(sunday.getDate() + 6);
+                    sunday.setHours(23,59,59,999);
+                    return itemDate >= monday && itemDate <= sunday;
+                } else if (filtroPeriodo === 'mes') {
+                    return itemDate.getFullYear() === refDate.getFullYear() && itemDate.getMonth() === refDate.getMonth();
+                } else if (filtroPeriodo === 'anio') {
+                    return itemDate.getFullYear() === refDate.getFullYear();
+                }
+                return true;
+            });
+
+            // Orden descendente estricto: de la fecha de hoy / más reciente arriba a la más antigua abajo
+            return filtrada.sort((a, b) => {
+                const timeA = new Date(a.fecha || 0).getTime();
+                const timeB = new Date(b.fecha || 0).getTime();
+                return timeB - timeA;
+            });
+        },
+
+        renderizarCajaFuerte: function() {
+            const filtro = document.getElementById('caja_filtro_periodo').value;
+            const listaFiltrada = this.filtrarYOrdenarListas(this.historialCajaFuerte, filtro, 'caja_fecha_referencia');
+
+            const boxSum = document.getElementById('summary_box_caja_fuerte');
+            const tbody = document.getElementById('tbody_historial_caja_fuerte');
+
+            // Calcular totales por cada moneda disponible (Base y Secundarias)
+            const totalesPorMoneda = {};
+            totalesPorMoneda[this.monedaBase] = 0;
+            this.monedasSecundarias.forEach(s => totalesPorMoneda[s.code] = 0);
+
+            this.historialCajaFuerte.forEach(item => {
+                let mon = item.moneda || this.monedaBase;
+                if (totalesPorMoneda[mon] === undefined) totalesPorMoneda[mon] = 0;
+                totalesPorMoneda[mon] += parseFloat(item.monto) || 0;
+            });
+
+            let summaryHtml = '';
+            for (const [mon, total] of Object.entries(totalesPorMoneda)) {
+                summaryHtml += `
+                    <div class="summary-card">
+                        <span class="label">Total Caja (${mon})</span>
+                        <span class="value">${total.toFixed(2)} ${mon}</span>
+                    </div>
+                `;
+            }
+            if (boxSum) boxSum.innerHTML = summaryHtml;
+
+            if (tbody) {
+                if (listaFiltrada.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); font-style:italic;">No hay movimientos de caja fuerte registrados.</td></tr>`;
+                } else {
+                    tbody.innerHTML = listaFiltrada.map(item => {
+                        const empObj = item.empleados;
+                        const nomEmp = empObj ? (`${empObj.nombre || ''} ${empObj.apellido || ''}`.trim() || empObj.username) : 'Empleado General';
+
+                        return `
+                            <tr>
+                                <td>${item.fecha ? item.fecha.substring(0, 10) : 'N/A'}</td>
+                                <td><strong>${item.detalle}</strong></td>
+                                <td>${nomEmp}</td>
+                                <td>${item.turno}</td>
+                                <td style="font-weight:bold; color:#2E7D32;">+${parseFloat(item.monto).toFixed(2)} ${item.moneda}</td>
+                                <td style="display: flex; gap: 6px;">
+                                    <button class="btn-warning" style="padding: 6px 10px; margin:0; font-size:0.75rem;" onclick="UIConciliacion.abrirModalRegistroCajaFuerte('${item.id}')">✏️</button>
+                                    <button class="btn-danger" style="padding: 6px 10px; margin:0; font-size:0.75rem;" onclick="UIConciliacion.eliminarCajaFuerte('${item.id}')">🗑️</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+        },
+
+        renderizarAvances: function() {
+            const filtro = document.getElementById('avance_filtro_periodo').value;
+            const listaFiltrada = this.filtrarYOrdenarListas(this.historialAvances, filtro, 'avance_fecha_referencia');
+
+            const boxSum = document.getElementById('summary_box_avances');
+            const tbody = document.getElementById('tbody_historial_avances');
+
+            const totalesPorMoneda = {};
+            totalesPorMoneda[this.monedaBase] = 0;
+            this.monedasSecundarias.forEach(s => totalesPorMoneda[s.code] = 0);
+
+            this.historialAvances.forEach(item => {
+                let mon = item.moneda || this.monedaBase;
+                if (totalesPorMoneda[mon] === undefined) totalesPorMoneda[mon] = 0;
+                totalesPorMoneda[mon] += parseFloat(item.monto) || 0;
+            });
+
+            let summaryHtml = '';
+            for (const [mon, total] of Object.entries(totalesPorMoneda)) {
+                summaryHtml += `
+                    <div class="summary-card">
+                        <span class="label">Total Avances (${mon})</span>
+                        <span class="value">${total.toFixed(2)} ${mon}</span>
+                    </div>
+                `;
+            }
+            if (boxSum) boxSum.innerHTML = summaryHtml;
+
+            if (tbody) {
+                if (listaFiltrada.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); font-style:italic;">No hay avances registrados.</td></tr>`;
+                } else {
+                    tbody.innerHTML = listaFiltrada.map(item => {
+                        const empObj = item.empleados;
+                        const nomEmp = empObj ? (`${empObj.nombre || ''} ${empObj.apellido || ''}`.trim() || empObj.username) : 'Empleado General';
+                        return `
+                            <tr>
+                                <td>${item.fecha ? item.fecha.substring(0, 10) : 'N/A'}</td>
+                                <td><strong>${item.detalle}</strong></td>
+                                <td>${nomEmp}</td>
+                                <td>${item.turno}</td>
+                                <td style="font-weight:bold; color:var(--primary);">${parseFloat(item.monto).toFixed(2)} ${item.moneda}</td>
+                                <td style="display: flex; gap: 6px;">
+                                    <button class="btn-warning" style="padding: 6px 10px; margin:0; font-size:0.75rem;" onclick="UIConciliacion.abrirModalRegistroAvance('${item.id}')">✏️</button>
+                                    <button class="btn-danger" style="padding: 6px 10px; margin:0; font-size:0.75rem;" onclick="UIConciliacion.eliminarAvance('${item.id}')">🗑️</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+        },
+
+        renderizarGastos: function() {
+            const filtro = document.getElementById('gasto_filtro_periodo').value;
+            const listaFiltrada = this.filtrarYOrdenarListas(this.historialGastos, filtro, 'gasto_fecha_referencia');
+
+            const boxSum = document.getElementById('summary_box_gastos');
+            const tbody = document.getElementById('tbody_historial_gastos');
+
+            const totalesPorMoneda = {};
+            totalesPorMoneda[this.monedaBase] = 0;
+            this.monedasSecundarias.forEach(s => totalesPorMoneda[s.code] = 0);
+
+            this.historialGastos.forEach(item => {
+                let mon = item.moneda || this.monedaBase;
+                if (totalesPorMoneda[mon] === undefined) totalesPorMoneda[mon] = 0;
+                totalesPorMoneda[mon] += parseFloat(item.monto) || 0;
+            });
+
+            let summaryHtml = '';
+            for (const [mon, total] of Object.entries(totalesPorMoneda)) {
+                summaryHtml += `
+                    <div class="summary-card">
+                        <span class="label">Total Gastos (${mon})</span>
+                        <span class="value">${total.toFixed(2)} ${mon}</span>
+                    </div>
+                `;
+            }
+            if (boxSum) boxSum.innerHTML = summaryHtml;
+
+            if (tbody) {
+                if (listaFiltrada.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); font-style:italic;">No hay gastos registrados.</td></tr>`;
+                } else {
+                    tbody.innerHTML = listaFiltrada.map(item => {
+                        const empObj = item.empleados;
+                        const nomEmp = empObj ? (`${empObj.nombre || ''} ${empObj.apellido || ''}`.trim() || empObj.username) : 'Empleado General';
+                        return `
+                            <tr>
+                                <td>${item.fecha ? item.fecha.substring(0, 10) : 'N/A'}</td>
+                                <td><strong>${item.detalle}</strong></td>
+                                <td>${nomEmp}</td>
+                                <td>${item.turno}</td>
+                                <td style="font-weight:bold; color:var(--primary);">${parseFloat(item.monto).toFixed(2)} ${item.moneda}</td>
+                                <td style="display: flex; gap: 6px;">
+                                    <button class="btn-warning" style="padding: 6px 10px; margin:0; font-size:0.75rem;" onclick="UIConciliacion.abrirModalRegistroGasto('${item.id}')">✏️</button>
+                                    <button class="btn-danger" style="padding: 6px 10px; margin:0; font-size:0.75rem;" onclick="UIConciliacion.eliminarGasto('${item.id}')">🗑️</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+        },
+
+        abrirModalGestionConciliaciones: function() {
+            this.renderizarEdicionModal();
+            document.getElementById('modal_gestion_conciliaciones').style.display = 'flex';
+        },
+        cerrarModalGestionConciliaciones: function() {
+            document.getElementById('modal_gestion_conciliaciones').style.display = 'none';
+        },
+
+        abrirModalRegistroCajaFuerte: function(id = null) {
+            document.getElementById('caja_edit_id').value = '';
+            document.getElementById('caja_detalle').value = '';
+            document.getElementById('caja_monto').value = '';
+            document.getElementById('caja_fecha').value = new Date().toISOString().split('T')[0];
+            if (id) {
+                let reg = this.historialCajaFuerte.find(r => r.id === id);
+                if (reg) {
+                    document.getElementById('caja_edit_id').value = reg.id;
+                    document.getElementById('caja_detalle').value = reg.detalle;
+                    document.getElementById('caja_monto').value = reg.monto;
+                    document.getElementById('caja_moneda').value = reg.moneda;
+                    document.getElementById('caja_empleado').value = reg.empleado_id;
+                    document.getElementById('caja_turno').value = reg.turno;
+                    document.getElementById('caja_fecha').value = reg.fecha.substring(0, 10);
+                }
+            }
+            document.getElementById('modal_registro_caja_fuerte').style.display = 'flex';
+        },
+        cerrarModalRegistroCajaFuerte: function() {
+            document.getElementById('modal_registro_caja_fuerte').style.display = 'none';
+        },
+
+        abrirModalRegistroAvance: function(id = null) {
+            document.getElementById('avance_edit_id').value = '';
+            document.getElementById('avance_detalle').value = '';
+            document.getElementById('avance_monto').value = '';
+            document.getElementById('avance_fecha').value = new Date().toISOString().split('T')[0];
+            if (id) {
+                let reg = this.historialAvances.find(r => r.id === id);
+                if (reg) {
+                    document.getElementById('avance_edit_id').value = reg.id;
+                    document.getElementById('avance_detalle').value = reg.detalle;
+                    document.getElementById('avance_monto').value = reg.monto;
+                    document.getElementById('avance_moneda').value = reg.moneda;
+                    document.getElementById('avance_empleado').value = reg.empleado_id;
+                    document.getElementById('avance_turno').value = reg.turno;
+                    document.getElementById('avance_fecha').value = reg.fecha.substring(0, 10);
+                }
+            }
+            document.getElementById('modal_registro_avance').style.display = 'flex';
+        },
+        cerrarModalRegistroAvance: function() {
+            document.getElementById('modal_registro_avance').style.display = 'none';
+        },
+
+        abrirModalRegistroGasto: function(id = null) {
+            document.getElementById('gasto_edit_id').value = '';
+            document.getElementById('gasto_detalle').value = '';
+            document.getElementById('gasto_monto').value = '';
+            document.getElementById('gasto_fecha').value = new Date().toISOString().split('T')[0];
+            if (id) {
+                let reg = this.historialGastos.find(r => r.id === id);
+                if (reg) {
+                    document.getElementById('gasto_edit_id').value = reg.id;
+                    document.getElementById('gasto_detalle').value = reg.detalle;
+                    document.getElementById('gasto_monto').value = reg.monto;
+                    document.getElementById('gasto_moneda').value = reg.moneda;
+                    document.getElementById('gasto_empleado').value = reg.empleado_id;
+                    document.getElementById('gasto_turno').value = reg.turno;
+                    document.getElementById('gasto_fecha').value = reg.fecha.substring(0, 10);
+                }
+            }
+            document.getElementById('modal_registro_gasto').style.display = 'flex';
+        },
+        cerrarModalRegistroGasto: function() {
+            document.getElementById('modal_registro_gasto').style.display = 'none';
+        },
+
+        guardarCajaFuerte: async function() {
+            const editId = document.getElementById('caja_edit_id').value;
+            const concepto = document.getElementById('caja_detalle').value.trim();
+            const efectivo = parseFloat(document.getElementById('caja_monto').value) || 0;
+            const moneda = document.getElementById('caja_moneda').value;
+            const vendedor_id = document.getElementById('caja_empleado').value;
+            const turno = document.getElementById('caja_turno').value;
+            const fecha = document.getElementById('caja_fecha').value;
+
+            if (!concepto || efectivo <= 0 || !vendedor_id) return alert("⚠️ Complete los campos requeridos.");
+
+            try {
+                if (editId) {
+                    await window.supabaseClient.from('caja_fuerte').update({ concepto, efectivo, moneda, vendedor_id, turno, fecha }).eq('id', editId);
+                } else {
+                    await window.supabaseClient.from('caja_fuerte').insert([{ local_id: this.localId, concepto, efectivo, moneda, vendedor_id, turno, fecha }]);
+                }
+                this.cerrarModalRegistroCajaFuerte();
+                await this.cargarDatosSupabase();
+                this.renderizarCajaFuerte();
+                alert("✅ Guardado exitoso en Caja Fuerte.");
+            } catch (err) {
+                alert("❌ Error: " + err.message);
+            }
+        },
+
+        eliminarCajaFuerte: async function(id) {
+            if (!confirm("¿Desea eliminar este registro de caja?")) return;
+            await window.supabaseClient.from('caja_fuerte').delete().eq('id', id);
+            await this.cargarDatosSupabase();
+            this.renderizarCajaFuerte();
+        },
+
+        guardarAvance: async function() {
+            const editId = document.getElementById('avance_edit_id').value;
+            const concepto = document.getElementById('avance_detalle').value.trim();
+            const monto = parseFloat(document.getElementById('avance_monto').value) || 0;
+            const moneda = document.getElementById('avance_moneda').value;
+            const vendedor_id = document.getElementById('avance_empleado').value;
+            const turno = document.getElementById('avance_turno').value;
+            const fecha = document.getElementById('avance_fecha').value;
+
+            if (!concepto || monto <= 0 || !vendedor_id) return alert("⚠️ Complete los campos requeridos.");
+
+            try {
+                if (editId) {
+                    await window.supabaseClient.from('avances_retirados').update({ concepto, monto, moneda, vendedor_id, turno, fecha }).eq('id', editId);
+                } else {
+                    await window.supabaseClient.from('avances_retirados').insert([{ local_id: this.localId, concepto, monto, moneda, vendedor_id, turno, fecha }]);
+                }
+                this.cerrarModalRegistroAvance();
+                await this.cargarDatosSupabase();
+                this.renderizarAvances();
+                alert("✅ Avance guardado con éxito.");
+            } catch (err) {
+                alert("❌ Error: " + err.message);
+            }
+        },
+
+        eliminarAvance: async function(id) {
+            if (!confirm("¿Desea eliminar este avance?")) return;
+            await window.supabaseClient.from('avances_retirados').delete().eq('id', id);
+            await this.cargarDatosSupabase();
+            this.renderizarAvances();
+        },
+
+        guardarGastoOperativo: async function() {
+            const editId = document.getElementById('gasto_edit_id').value;
+            const concepto = document.getElementById('gasto_detalle').value.trim();
+            const monto = parseFloat(document.getElementById('gasto_monto').value) || 0;
+            const moneda = document.getElementById('gasto_moneda').value;
+            const vendedor_id = document.getElementById('gasto_empleado').value;
+            const turno = document.getElementById('gasto_turno').value;
+            const fecha = document.getElementById('gasto_fecha').value;
+
+            if (!concepto || monto <= 0 || !vendedor_id) return alert("⚠️ Complete los campos requeridos.");
+
+            try {
+                if (editId) {
+                    await window.supabaseClient.from('gastos_operativos').update({ concepto, monto, moneda, vendedor_id, turno, fecha }).eq('id', editId);
+                } else {
+                    await window.supabaseClient.from('gastos_operativos').insert([{ local_id: this.localId, concepto, monto, moneda, vendedor_id, turno, fecha }]);
+                }
+                this.cerrarModalRegistroGasto();
+                await this.cargarDatosSupabase();
+                this.renderizarGastos();
+                alert("✅ Gasto guardado con éxito.");
+            } catch (err) {
+                alert("❌ Error: " + err.message);
+            }
+        },
+
+        eliminarGasto: async function(id) {
+            if (!confirm("¿Desea eliminar este gasto?")) return;
+            await window.supabaseClient.from('gastos_operativos').delete().eq('id', id);
+            await this.cargarDatosSupabase();
+            this.renderizarGastos();
+        },
+
+        crearNuevaConciliacionModal: async function() {
+            const nombre = document.getElementById('modal_nuevo_nombre').value.trim();
+            const porcentaje = parseFloat(document.getElementById('modal_nuevo_porcentaje').value) || 0;
+            if (!nombre) return alert("⚠️ Ingrese un nombre.");
+
+            this.listaConciliaciones.push({ id: 'conc_' + Date.now(), nombre, porcentaje, registros: [] });
+            await this.guardarConfiguracionConciliaciones();
+            document.getElementById('modal_nuevo_nombre').value = '';
+            document.getElementById('modal_nuevo_porcentaje').value = '';
+            this.renderizarEdicionModal();
+            this.renderizarConciliacionesInformacion();
+        },
+
+        renderizarEdicionModal: function() {
+            const cont = document.getElementById('modal_lista_edicion_conciliaciones');
+            if (!cont) return;
+            cont.innerHTML = '';
+            this.listaConciliaciones.forEach(conc => {
+                const box = document.createElement('div');
+                box.className = 'box-edicion';
+                box.innerHTML = `
+                    <div class="grid-2">
+                        <div><label>Nombre:</label><input type="text" id="edit_nom_${conc.id}" value="${conc.nombre}"></div>
+                        <div><label>Comisión %:</label><input type="number" step="0.01" id="edit_porc_${conc.id}" value="${conc.porcentaje}"></div>
+                    </div>
+                    <button class="btn-info" style="margin-top:10px;" onclick="UIConciliacion.actualizarConciliacion('${conc.id}')">💾 Guardar Cambios</button>
+                    <button class="btn-danger" style="margin-top:6px;" onclick="UIConciliacion.eliminarConciliacionCompleta('${conc.id}', '${conc.nombre}')">🗑️ Eliminar Conciliación Completa</button>
+                `;
+                cont.appendChild(box);
+            });
+        },
+
+        actualizarConciliacion: async function(id) {
+            const conc = this.listaConciliaciones.find(c => c.id === id);
+            if (!conc) return;
+            conc.nombre = document.getElementById(`edit_nom_${id}`).value.trim();
+            conc.porcentaje = parseFloat(document.getElementById(`edit_porc_${id}`).value) || 0;
+            await this.guardarConfiguracionConciliaciones();
+            this.renderizarEdicionModal();
+            this.renderizarConciliacionesInformacion();
+            alert("✅ Actualizado.");
+        },
+
+        eliminarConciliacionCompleta: async function(id, nombreMetodo) {
+            if (!confirm(`⚠️ ADVERTENCIA: ¿Está seguro de eliminar completamente la conciliación "${nombreMetodo}"?\n\nTodos los datos, transacciones y registros relacionados en la base de datos se eliminarán permanentemente de forma irreversible.`)) return;
+
+            try {
+                // Eliminar registros asociados en la tabla 'conciliacion' de Supabase
+                await window.supabaseClient.from('conciliacion').delete().eq('local_id', this.localId).eq('metodo', nombreMetodo);
+
+                // Eliminar de la lista de reglas
+                this.listaConciliaciones = this.listaConciliaciones.filter(c => c.id !== id);
+                await this.guardarConfiguracionConciliaciones();
+
+                this.renderizarEdicionModal();
+                this.renderizarConciliacionesInformacion();
+                alert("🗑️ Conciliación y todos sus registros relacionados eliminados permanentemente.");
+            } catch (err) {
+                alert("❌ Error al eliminar: " + err.message);
+            }
+        },
+
+        guardarConfiguracionConciliaciones: async function() {
+            await window.supabaseClient.from('configuraciones').update({ conciliaciones: this.listaConciliaciones }).eq('local_id', this.localId);
+        },
+
+        // EDITAR / ELIMINAR TRANSACCIÓN DENTRO DE UNA CONCILIACIÓN
+        abrirModalEditarConciliacionItem: function(itemId, metodoNombre) {
+            const conc = this.listaConciliaciones.find(c => c.nombre.toLowerCase() === metodoNombre.toLowerCase());
+            if (!conc) return;
+            const reg = (conc.registros || []).find(r => r.id === itemId);
+            if (!reg) return;
+
+            document.getElementById('conc_item_id').value = reg.id;
+            document.getElementById('conc_item_metodo').value = metodoNombre;
+            document.getElementById('conc_item_referencia').value = reg.referencia || '';
+            document.getElementById('conc_item_nota').value = reg.nota || '';
+            document.getElementById('conc_item_monto').value = reg.monto || 0;
+            document.getElementById('conc_item_fecha').value = reg.fecha ? reg.fecha.substring(0, 10) : new Date().toISOString().split('T')[0];
+
+            document.getElementById('modal_editar_conciliacion_item').style.display = 'flex';
+        },
+        cerrarModalEditarConciliacionItem: function() {
+            document.getElementById('modal_editar_conciliacion_item').style.display = 'none';
+        },
+
+        guardarEdicionConciliacionItem: async function() {
+            const id = document.getElementById('conc_item_id').value;
+            const referencia = document.getElementById('conc_item_referencia').value.trim();
+            const nota = document.getElementById('conc_item_nota').value.trim();
+            const monto = parseFloat(document.getElementById('conc_item_monto').value) || 0;
+            const fecha = document.getElementById('conc_item_fecha').value;
+
+            if (!id) return;
+
+            try {
+                const { error } = await window.supabaseClient.from('conciliacion').update({
+                    referencia: referencia,
+                    nota: nota,
+                    monto_ingresado: monto,
+                    fecha: fecha
+                }).eq('id', id);
+
+                if (error) throw error;
+
+                this.cerrarModalEditarConciliacionItem();
+                await this.cargarDatosSupabase();
+                this.renderizarConciliacionesInformacion();
+                alert("✅ Transacción de conciliación actualizada con éxito.");
+            } catch (err) {
+                alert("❌ Error al actualizar: " + err.message);
+            }
+        },
+
+        eliminarConciliacionItem: async function(itemId) {
+            if (!confirm("⚠️ ¿Desea eliminar esta transacción de conciliación?")) return;
+            try {
+                const { error } = await window.supabaseClient.from('conciliacion').delete().eq('id', itemId);
+                if (error) throw error;
+                await this.cargarDatosSupabase();
+                this.renderizarConciliacionesInformacion();
+                alert("🗑️ Transacción eliminada correctamente.");
+            } catch (err) {
+                alert("❌ Error al eliminar: " + err.message);
+            }
+        },
+
+        renderizarConciliacionesInformacion: function() {
+            const cont = document.getElementById('contenedor_conciliaciones_lista');
+            if (!cont) return;
+            cont.innerHTML = '';
+
+            this.listaConciliaciones.forEach(conc => {
+                const totalMonto = (conc.registros || []).reduce((acc, r) => acc + (parseFloat(r.monto) || 0), 0);
+                const totalComision = totalMonto * (conc.porcentaje / 100);
+                const totalNeto = totalMonto - totalComision;
+
+                // Orden cronológico inverso (de hoy a más antiguo)
+                const regsOrdenados = [...(conc.registros || [])].sort((a, b) => {
+                    const timeA = new Date(a.fecha || 0).getTime();
+                    const timeB = new Date(b.fecha || 0).getTime();
+                    return timeB - timeA;
+                });
+
+                const cardHtml = document.createElement('div');
+                cardHtml.className = 'card';
+                cardHtml.innerHTML = `
+                    <div class="card-header" onclick="UIConciliacion.toggleAcordeon(this)">
+                        <h2>💳 ${conc.nombre} <span class="badge-percent">% ${conc.porcentaje.toFixed(2)}</span></h2>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="summary-box">
+                            <div class="summary-card"><span class="label">Total Caja</span><span class="value">${totalMonto.toFixed(2)}</span></div>
+                            <div class="summary-card"><span class="label">Comisión</span><span class="value" style="color:var(--secondary);">- ${totalComision.toFixed(2)}</span></div>
+                            <div class="summary-card"><span class="label">Neto Real</span><span class="value" style="color:#2E7D32;">${totalNeto.toFixed(2)}</span></div>
+                            <div class="summary-card"><span class="label">Transacciones</span><span class="value">${regsOrdenados.length}</span></div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="luxury-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Empleado</th>
+                                        <th>Referencia</th>
+                                        <th>Jornada Laboral</th>
+                                        <th>Bruto</th>
+                                        <th>Comisión</th>
+                                        <th>Neto</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${regsOrdenados.length === 0 ? `<tr><td colspan="8" style="text-align:center; color:var(--muted)">Sin registros.</td></tr>` : 
+                                      regsOrdenados.map(r => {
+                                          let m = parseFloat(r.monto) || 0;
+                                          let com = m * (conc.porcentaje / 100);
+                                          return `
+                                              <tr>
+                                                  <td>${r.fecha ? r.fecha.substring(0,10) : 'N/A'}</td>
+                                                  <td>${r.empleado_nombre}</td>
+                                                  <td><strong>${r.referencia}</strong></td>
+                                                  <td>${r.nota}</td>
+                                                  <td>${m.toFixed(2)}</td>
+                                                  <td style="color:var(--secondary)">- ${com.toFixed(2)}</td>
+                                                  <td style="color:#2E7D32; font-weight:bold;">${(m - com).toFixed(2)}</td>
+                                                  <td style="display: flex; gap: 6px;">
+                                                      <button class="btn-warning" style="padding: 6px 10px; margin:0; font-size:0.75rem;" onclick="UIConciliacion.abrirModalEditarConciliacionItem('${r.id}', '${conc.nombre}')">✏️</button>
+                                                      <button class="btn-danger" style="padding: 6px 10px; margin:0; font-size:0.75rem;" onclick="UIConciliacion.eliminarConciliacionItem('${r.id}')">🗑️</button>
+                                                  </td>
+                                              </tr>
+                                          `;
+                                      }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                cont.appendChild(cardHtml);
+            });
+        }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => UIConciliacion.init());
+</script>
+</body>
+</html>

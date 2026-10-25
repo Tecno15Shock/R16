@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrativo</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Lógica Core (Asegúrate de incluir motor.js si estandarizas la conexión) -->
+    <script src="plantilla_base.js"></script>
+
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .dash-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--active-gold);
+            color: var(--text);
+            padding: 25px 15px;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            font-family: var(--title-font);
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .dash-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--active-gold);
+        }
+        .dash-icon {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<!-- CONTENEDOR PRINCIPAL: La plantilla inyectará el Sidebar y el Topbar fuera de este main -->
+<div class="wrapper" id="main_wrapper" style="display: none;">
+    <main class="main-content">
+        
+        <div style="text-align: center; background: var(--card-bg); padding: 30px 20px; border-radius: 8px; border: 1px solid var(--active-gold); box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h1 style="color: var(--primary); font-family: var(--title-font); text-transform: uppercase; margin-top: 0; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px;">Panel Operativo Central</h1>
+            <p style="color: var(--text); opacity: 0.8; font-size: 0.95rem; margin-bottom: 10px;">Seleccione un módulo para gestionar la información de su establecimiento.</p>
+            
+            <!-- CONTENEDOR DINÁMICO DE BOTONES -->
+            <div class="dashboard-grid" id="dashboard_buttons_container">
+                <!-- Se inyectan mediante JS leyendo plantilla_base.js -->
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 35px;">
+            <button onclick="UIBase.cerrarSesionGlobal()" class="btn-danger" style="max-width: 300px; font-size: 1.05rem; padding: 15px;">🚪 CERRAR SESIÓN SEGURA</button>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        // Se ejecuta un ligero retraso para garantizar que plantilla_base.js ya inyectó el sidebar en el DOM
+        setTimeout(() => {
+            generarBotonesDashboard();
+            
+            // Simulación de carga (Si usas AppMotor.js para la sesión, reemplaza esto con AppMotor.inicializar())
+            const wrapper = document.getElementById('main_wrapper');
+            if (wrapper) wrapper.style.display = 'block';
+            
+            if (typeof UIBase !== 'undefined') {
+                UIBase.sincronizarNombreLocal();
+                UIBase.ocultarCargando();
+            }
+        }, 150);
+    });
+
+    function generarBotonesDashboard() {
+        const contenedor = document.getElementById('dashboard_buttons_container');
+        if (!contenedor) return;
+        
+        let html = "";
+        // Extraemos los botones directamente del sidebar centralizado
+        const enlacesSidebar = document.querySelectorAll('#sidebar .tab-btn');
+        
+        enlacesSidebar.forEach(enlace => {
+            const href = enlace.getAttribute('href');
+            
+            // Filtramos la página actual y botones de utilidad
+            if (href && href !== 'principal.html' && !enlace.classList.contains('btn-logout')) {
+                const textoOriginal = enlace.innerText.trim();
+                const textoLimpio = textoOriginal.replace(/^[^\w\s]+/, '').trim();
+                
+                // Extraer el emoji o asignar un pin por defecto
+                const emojiMatch = textoOriginal.match(/^[^\w\s]+/);
+                const emoji = emojiMatch ? emojiMatch[0].trim() : '📌';
+                
+                html += `
+                <a href="${href}" class="dash-btn">
+                    <span class="dash-icon">${emoji}</span>
+                    <span>${textoLimpio}</span>
+                </a>`;
+            }
+        });
+        
+        contenedor.innerHTML = html;
+    }
+</script>
+</body>
+</html>

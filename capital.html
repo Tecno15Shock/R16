@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📈 Capital e Inventario | Panel Premium</title>
+    <!-- Librería Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Fondo Claro)*/
+        /* ========================================================= */
+        :root {
+            --active-gold: #D4AF37; 
+            
+            /* Paleta Carmesí Institucional */
+            --crimson: #7A171D;
+            --crimson-dark: #4A0E12; 
+            --crimson-light: #9B222A;
+
+            /* Base y texto */
+            --bg: #FDFBF7; 
+            --text: #2A2A2A; 
+            --text-light: #555555;
+            --border: #E8E0D5; 
+            --card-bg: #FFFFFF; 
+            --item-bg: #FCFBFA; 
+            
+            /* Estados Sólidos */
+            --success: #2E7D32; 
+            --warning: #B8860B; 
+            --danger: #8B0000;
+            --info: #2c3e50;
+        }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; }
+
+        /* ========================================================= */
+        /* BOTÓN X FLOTANTE (SUPERIOR DERECHA)                      */
+        /* ========================================================= */
+        .close-corner-btn {
+            position: fixed; top: 20px; right: 25px; z-index: 10000;
+            background: rgba(74, 5, 16, 0.95); backdrop-filter: blur(8px);
+            border: 2px solid var(--active-gold); color: #ffffff;
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem; font-weight: bold; cursor: pointer; text-decoration: none;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
+
+        /* ========================================================= */
+        /* CONTENEDORES PRINCIPALES Y TARJETAS */
+        /* ========================================================= */
+        .main-content { max-width: 1100px; margin: 0 auto; padding: 40px 20px 120px 20px; }
+        .card { 
+            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
+            border-top: 4px solid var(--crimson); position: relative; overflow: hidden;
+        }
+        
+        h2 { color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        @media (max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } }
+
+        /* ========================================================= */
+        /* MÉTRICAS FINANCIERAS LUXURY */
+        /* ========================================================= */
+        .metric-box { 
+            padding: 25px 20px; border-radius: 8px; text-align: center; color: white; 
+            display: flex; flex-direction: column; justify-content: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid transparent;
+            position: relative; overflow: hidden; transition: transform 0.3s;
+        }
+        .metric-box:hover { transform: translateY(-3px); }
+        .metric-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; margin-bottom: 8px; font-family: 'Roboto', sans-serif; font-weight: bold; }
+        .metric-value { font-size: 2.2rem; font-family: 'Playfair Display', serif; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        
+        .box-capital { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border-color: var(--active-gold); }
+        .box-proyeccion { background: linear-gradient(135deg, #0e1e38, #1a365d); color: #fff; border-color: #3b5998; } 
+        .box-ganancia { background: linear-gradient(135deg, #9D7B24, #C5A059); color: #000; border-color: #FFF; text-shadow: none; }
+
+        input, select { 
+            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; 
+            font-size: 1rem; background: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD; font-family: 'Roboto', sans-serif;
+        }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
+        
+        .search-input { margin-bottom: 20px; font-size: 1.05rem; }
+
+        button { font-family: 'Roboto', sans-serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+        button:active { transform: scale(0.98); }
+        
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-info { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; background: var(--card-bg); }
+        th, td { border: 1px solid var(--border); padding: 12px; text-align: left; }
+        th { background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); font-family: 'Playfair Display', serif; letter-spacing: 1px; border-color: var(--active-gold); }
+
+        /* PANTALLA DE CARGA Y BLOQUEO INTELIGENTE */
+        #pantalla_bloqueo_admin, #loading_overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, rgba(74, 14, 18, 0.95), rgba(5, 5, 5, 0.98)); backdrop-filter: blur(8px); z-index: 99999; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.4s ease-in-out; }
+        
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 3px solid rgba(212, 175, 55, 0.2);
+            border-top-color: var(--active-gold); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 25px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .badge-nivel {
+            display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 12px;
+            background: rgba(212, 175, 55, 0.15); color: var(--active-gold); border: 1px solid var(--active-gold);
+        }
+    </style>
+</head>
+<body>
+
+<!-- BOTÓN X FLOTANTE -->
+<a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+<!-- 🔄 LOADING OVERLAY -->
+<div id="loading_overlay">
+    <div class="card" style="width: 380px; text-align: center; border-top: 4px solid var(--active-gold); box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: #FFFFFF;">
+        <div class="spinner-luxury"></div>
+        <h2 style="color: var(--crimson-dark); border: none; font-size: 1.2rem;">Construyendo Panel</h2>
+        <p style="font-size: 0.9rem; color: var(--text-light); font-family: 'Playfair Display', serif; font-style: italic;">Calculando métricas financieras globales...</p>
+    </div>
+</div>
+
+<!-- 🔒 PANTALLA DE BLOQUEO INTELIGENTE POR NIVELES -->
+<div id="pantalla_bloqueo_admin" style="display: none;">
+    <div class="card" style="width: 380px; text-align: center; border-top: 4px solid var(--active-gold); margin: 0; box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: #FFFFFF;">
+        <h2 style="color: var(--crimson-dark); border-bottom-color: var(--active-gold);">🔒 Módulo Protegido</h2>
+        <div id="info_nivel_bloqueo" class="badge-nivel">Verificando nivel de acceso...</div>
+        <p style="font-size: 0.95rem; color: var(--text-light); margin-bottom: 20px;" id="texto_instruccion_bloqueo">Introduce la credencial o PIN correspondiente:</p>
+        
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; margin-top: 0; font-family: 'Courier New', Courier, monospace;" onkeyup="if(event.key==='Enter') verificarPinInteligente()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
+        </div>
+
+        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinInteligente()" style="margin-top: 0; padding: 14px; font-size: 1rem; letter-spacing: 1.5px;">Desbloquear Pantalla</button>
+        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; padding: 12px; font-size: 0.95rem;">Volver al Inicio</button>
+    </div>
+</div>
+
+<div class="wrapper">
+    
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        
+        <div class="card" style="border-top: 4px solid var(--active-gold);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="font-family: 'Playfair Display', serif; color: var(--crimson-dark); margin: 0; font-size: 1.8rem; text-transform: uppercase;">📈 Capital e Inventario</h1>
+                <p id="subtitulo_local" style="color: var(--text-light); font-size: 0.95rem; margin-top: 5px; font-weight: 500;"></p>
+            </div>
+            
+            <div class="grid-3">
+                <div class="metric-box box-capital">
+                    <span class="metric-title">Capital Invertido (Costo)</span>
+                    <span class="metric-value" id="val_capital_total">$0.00</span>
+                </div>
+                <div class="metric-box box-proyeccion">
+                    <span class="metric-title">Venta Proyectada (Ingresos)</span>
+                    <span class="metric-value" id="val_proyeccion_total">$0.00</span>
+                </div>
+                <div class="metric-box box-ganancia">
+                    <span class="metric-title">Ganancia Neta Esperada</span>
+                    <span class="metric-value" id="val_ganancia_total">$0.00</span>
+                </div>
+            </div>
+            <p style="font-size:0.85rem; color:var(--text-light); margin-top:15px; text-align:center; font-style: italic;">
+                * Valores expresados en USD. El cálculo excluye recetas compuestas para evitar duplicidad de capital, basándose rigurosamente en insumos físicos.
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>Desglose de Capital por Producto</h2>
+            <input type="text" id="busqueda_capital" class="search-input" placeholder="🔍 Filtrar producto por nombre o categoría..." oninput="renderTablaCapital()">
+            
+            <div style="overflow-x:auto;">
+                <table id="tabla_capital">
+                    <thead>
+                        <tr>
+                            <th>Producto (Categoría)</th>
+                            <th style="text-align: center;">Stock Físico</th>
+                            <th style="text-align: right;">Costo Unit.</th>
+                            <th style="text-align: right;">Precio Unit.</th>
+                            <th style="text-align: right;">Capital (Costo)</th>
+                            <th style="text-align: right;">Proyección</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody_capital"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Inicialización de Supabase
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL_MODULOS = {};
+    let ADMIN_PASS_DB = '151016'; 
+    let TASAS_CAMBIO = { bs: 1, cop: 1, eur: 1 };
+    let CATALOGO_DATOS = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) {
+                alert("No hay una sesión activa.");
+                window.location.href = 'index.html';
+                return;
+            }
+            await inicializarDatos(data.session.user.id);
+        } catch (err) { 
+            console.error(err);
+            alert("Error conectando con el servidor.");
+        }
+    });
+
+    async function inicializarDatos(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        } else {
+            return alert("Error: Perfil no vinculado a un local.");
+        }
+
+        let conf = null, localData = null;
+        try {
+            let resConf = await supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+            conf = resConf.data;
+        } catch(e) { console.warn("Sin configuración propia"); }
+
+        try {
+            let resLocal = await supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle();
+            localData = resLocal.data;
+        } catch(e) { console.warn("Sin local asociado"); }
+        
+        if (conf) {
+            if(conf.identidad && conf.identidad.admin_pass) ADMIN_PASS_DB = conf.identidad.admin_pass;
+            if(conf.tasas_cambio) TASAS_CAMBIO = conf.tasas_cambio;
+            if(conf.permisos_modulos) CONFIG_GLOBAL_MODULOS = conf.permisos_modulos;
+        }
+
+        let nombreLocal = localData?.nombre || conf?.identidad?.nombre || 'Panel Empresarial';
+        document.getElementById('subtitulo_local').innerText = `🏪 ${nombreLocal}`;
+
+        // Cargar Catálogo (Solo productos activos)
+        let { data: reqCat } = await supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID).eq('activo', true);
+        if(reqCat) {
+            CATALOGO_DATOS = reqCat;
+        }
+
+        calcularCapital();
+
+        // Ocultar pantalla de carga e invocar bloqueo inteligente por niveles
+        setTimeout(() => {
+            document.getElementById('loading_overlay').style.display = 'none';
+            evaluarSistemaBloqueoInteligente();
+        }, 800);
+    }
+
+    // ==========================================
+    // SISTEMA DE BLOQUEO INTELIGENTE POR NIVELES
+    // ==========================================
+    function evaluarSistemaBloqueoInteligente() {
+        // Módulo actual: 'capital'
+        const permisosMod = CONFIG_GLOBAL_MODULOS['capital'] || { general: true, admin: true, sup: false, vend: false };
+        
+        let estaBloqueado = false;
+        let nivelRequeridoTexto = "Acceso Libre / General";
+
+        if (permisosMod.general) {
+            estaBloqueado = true;
+            if (permisosMod.admin) nivelRequeridoTexto = "👑 Nivel Administrador Requerido";
+            else if (permisosMod.sup) nivelRequeridoTexto = "👁️ Nivel Supervisor Requerido";
+            else if (permisosMod.vend) nivelRequeridoTexto = "🛒 Nivel Vendedor Requerido";
+            else nivelRequeridoTexto = "🔒 Módulo Bloqueado General";
+        }
+
+        if (estaBloqueado) {
+            document.getElementById('info_nivel_bloqueo').innerText = nivelRequeridoTexto;
+            document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
+            document.getElementById('pin_ingreso_body').focus();
+        } else {
+            document.getElementById('pantalla_bloqueo_admin').style.display = 'none';
+        }
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        let icono = document.getElementById('icono_ojo_pin');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icono.innerText = '🙈';
+        } else {
+            input.type = 'password';
+            icono.innerText = '👁️';
+        }
+    }
+
+    async function verificarPinInteligente() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let btn = document.getElementById('btn_desbloquear_pin');
+
+        btn.innerHTML = "⏳ Verificando acceso...";
+        btn.disabled = true;
+
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        // Validación con PIN maestro de administrador
+        if (pinIngresado === ADMIN_PASS_DB) {
+            let pantalla = document.getElementById('pantalla_bloqueo_admin');
+            pantalla.style.animation = 'fadeIn 0.3s reverse';
+            setTimeout(() => {
+                pantalla.style.display = 'none';
+                btn.innerHTML = "Desbloquear Pantalla";
+                btn.disabled = false;
+            }, 250);
+        } else {
+            alert("❌ PIN Incorrecto. Autorización denegada para este nivel.");
+            document.getElementById('pin_ingreso_body').value = '';
+            btn.innerHTML = "Desbloquear Pantalla";
+            btn.disabled = false;
+        }
+    }
+
+    // ==========================================
+    // LÓGICA FINANCIERA
+    // ==========================================
+    function convertirAUSD(monto, moneda) {
+        if (!monto || isNaN(monto)) return 0;
+        if (moneda === 'USD' || !moneda) return monto;
+        if (moneda === 'BS') return TASAS_CAMBIO.bs > 0 ? monto / TASAS_CAMBIO.bs : 0;
+        if (moneda === 'COP') return TASAS_CAMBIO.cop > 0 ? monto / TASAS_CAMBIO.cop : 0;
+        if (moneda === 'EUR') return TASAS_CAMBIO.eur > 0 ? monto / TASAS_CAMBIO.eur : 0;
+        return monto;
+    }
+
+    function calcularCapital() {
+        let totalCapital = 0;
+        let totalProyeccion = 0;
+
+        CATALOGO_DATOS.forEach(prod => {
+            // Excluir recetas para no duplicar capital
+            if(prod.tipo !== 'simple') {
+                prod._capitalUSD = 0;
+                prod._proyeccionUSD = 0;
+                return;
+            }
+
+            let costoUSD = convertirAUSD(prod.costo_fuente, prod.moneda_base || 'USD');
+            let ventaUSD = convertirAUSD(prod.precio_base, prod.moneda_base || 'USD');
+            let stock = prod.stock || 0;
+
+            if (stock > 0) {
+                prod._capitalUSD = costoUSD * stock;
+                prod._proyeccionUSD = ventaUSD * stock;
+                totalCapital += prod._capitalUSD;
+                totalProyeccion += prod._proyeccionUSD;
+            } else {
+                prod._capitalUSD = 0;
+                prod._proyeccionUSD = 0;
+            }
+            prod._costoRefUSD = costoUSD;
+            prod._ventaRefUSD = ventaUSD;
+        });
+
+        document.getElementById('val_capital_total').innerText = `$${totalCapital.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('val_proyeccion_total').innerText = `$${totalProyeccion.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('val_ganancia_total').innerText = `$${(totalProyeccion - totalCapital).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+        renderTablaCapital();
+    }
+
+    function renderTablaCapital() {
+        let filtro = document.getElementById('busqueda_capital').value.toLowerCase();
+        let tbody = document.getElementById('tbody_capital');
+        let html = '';
+
+        let dataFiltrada = CATALOGO_DATOS.filter(p => p.tipo === 'simple' && (p.nombre.toLowerCase().includes(filtro) || (p.categoria && p.categoria.toLowerCase().includes(filtro))));
+
+        dataFiltrada.sort((a, b) => b._capitalUSD - a._capitalUSD);
+
+        dataFiltrada.forEach((prod, index) => {
+            if (prod._capitalUSD === 0 && filtro === '') return; 
+            
+            let bg = index % 2 === 0 ? "var(--card-bg)" : "var(--item-bg)";
+
+            html += `
+                <tr style="background: ${bg}; border-bottom: 1px solid var(--border);">
+                    <td style="font-family: 'Playfair Display', serif;"><strong>${prod.nombre}</strong><br><small style="color:var(--text-light); font-family: 'Roboto', sans-serif;">${prod.categoria || 'General'}</small></td>
+                    <td style="text-align: center;">${prod.stock} <small style="color:var(--text-light)">${prod.unidad || 'U'}</small></td>
+                    <td style="text-align: right;">$${(prod._costoRefUSD || 0).toFixed(2)}</td>
+                    <td style="text-align: right;">$${(prod._ventaRefUSD || 0).toFixed(2)}</td>
+                    <td style="text-align: right; font-weight:bold; color:var(--crimson-dark);">$${(prod._capitalUSD || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td style="text-align: right; font-weight:bold; color:var(--success);">$${(prod._proyeccionUSD || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>
+            `;
+        });
+
+        if (html === '') {
+            html = `<tr><td colspan="6" style="text-align:center; padding:25px; color:var(--text-light); font-style: italic;">No se encontraron registros de capital validos.</td></tr>`;
+        }
+
+        tbody.innerHTML = html;
+    }
+</script>
+</body>
+</html>

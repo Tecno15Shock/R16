@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Facturas | Banca y Tesorería Corporativa</title>
+    
+    <!-- Supabase SDK, Fuentes & Estilos -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #FDFBF7;                 
+            --card-bg: #FFFFFF;            
+            --item-bg: #FFFFFF;            
+            --text: #111111;               
+            --text-dark: #000000;
+            --muted: #442228;              
+            --border-gold: #C5A028;        
+            --gold-light: #5A4008;         
+            --primary: #4A0510;            
+            --secondary: #7A0000;          
+            --danger: #990000;             
+            --success: #1E8449;            
+            --stock-green: #27ae60;
+            --stock-yellow: #d4ac0d;
+            --stock-red: #c0392b;
+        }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.6; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        /* BOTÓN X FLOTANTE */
+        .close-corner-btn {
+            position: fixed; top: 15px; right: 20px; z-index: 10000;
+            background: rgba(74, 5, 16, 0.95); backdrop-filter: blur(8px);
+            border: 2px solid var(--border-gold); color: #ffffff;
+            width: 42px; height: 42px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; font-weight: bold; cursor: pointer; text-decoration: none;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
+
+        .main-content { max-width: 950px; margin: 0 auto; padding: 30px 20px; padding-bottom: 120px; }
+        .card { 
+            background: var(--card-bg); padding: 30px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08); border: 2px solid var(--border-gold);
+            position: relative; overflow: hidden;
+        }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, #C5A028, var(--secondary)); }
+        
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-gold); padding-bottom: 12px; margin-bottom: 15px; }
+        h2 { color: var(--primary); margin: 0; font-size: 1.4rem; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; border: none; padding: 0; }
+        h3 { color: var(--primary); margin-top: 25px; font-size: 1.15rem; font-family: 'Playfair Display', serif; border-bottom: 2px dashed var(--border-gold); padding-bottom: 8px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .main-content { padding: 15px; } }
+
+        label { font-size: 0.9rem; font-weight: 700; display: block; margin-top: 14px; color: var(--gold-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { 
+            width: 100%; padding: 13px; margin-top: 6px; background: #FFFFFF; color: var(--text-dark);
+            border: 2px solid var(--border-gold); border-radius: 6px; font-size: 1.05rem; font-weight: 700; transition: 0.3s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px rgba(197, 160, 40, 0.6); background: #FFFFFF; }
+
+        button { 
+            position: relative; overflow: hidden; font-family: 'Playfair Display', serif;
+            border: 2px solid var(--border-gold) !important; border-radius: 6px; cursor: pointer;
+            font-weight: bold; text-transform: uppercase; transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12); background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: #ffffff; padding: 14px 20px; margin-top: 12px; width: 100%; letter-spacing: 1px;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(197, 160, 40, 0.35); }
+
+        button.btn-danger { background: linear-gradient(135deg, #7a0000, var(--danger)); color: #fff; width: auto; padding: 10px 14px; margin-top: 0; font-family: 'Roboto', sans-serif; font-size: 0.9rem; }
+        button.btn-success { background: linear-gradient(135deg, #196f3d, var(--success)); color: #fff; }
+        button.btn-add { background: #FFFFFF; color: var(--primary); width: auto; padding: 11px 16px; margin-top: 10px; display: inline-block; font-family: 'Roboto', sans-serif; font-weight: 700; border: 2px solid var(--border-gold); }
+        button.btn-info { background: linear-gradient(135deg, #8a7122, #C5A028); color: #000; font-weight: 800; }
+        button.btn-refresh { background: var(--item-bg); color: var(--primary); border: 2px solid var(--border-gold); width: auto; padding: 6px 12px; font-size: 0.9rem; margin: 0; font-family: 'Roboto', sans-serif; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.95rem; border: 2px solid var(--border-gold); border-radius: 6px; overflow: hidden; }
+        th, td { border: 1px solid var(--border-gold); padding: 12px 14px; text-align: left; }
+        th { background: var(--primary); color: #FFFFFF; text-transform: uppercase; font-family: 'Playfair Display', serif; letter-spacing: 0.5px; font-weight: 700; }
+        td { background: var(--card-bg); color: var(--text-dark); font-weight: 700; }
+
+        .stock-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #fff; font-size: 0.85rem; display: inline-block; }
+        .stock-verde { background-color: var(--stock-green); }
+        .stock-amarillo { background-color: var(--stock-yellow); color: #000; }
+        .stock-rojo { background-color: var(--stock-red); }
+
+        .total-box-multi { 
+            display: flex; flex-direction: column; align-items: flex-end; margin-top: 18px; 
+            font-size: 1.1rem; padding: 20px; background: #2A030A; border: 2px solid var(--border-gold); border-radius: 6px; 
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+        }
+        .txt-success { color: #FFD700 !important; font-size: 1.8rem; font-weight: 800; font-family: 'Playfair Display', serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        .txt-negative { color: #FF6B6B !important; font-size: 1.8rem; font-weight: 800; font-family: 'Playfair Display', serif; }
+
+        .caja-cuadrada-badge {
+            background: #1E8449; color: #FFFFFF; padding: 8px 15px; border-radius: 20px;
+            font-size: 0.95rem; font-weight: bold; font-family: 'Roboto', sans-serif;
+            display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(30,132,73,0.5);
+            margin-top: 10px; animation: pulseBadge 1.5s infinite alternate;
+        }
+        .caja-descuadrada-badge {
+            background: #C0392B; color: #FFFFFF; padding: 8px 15px; border-radius: 20px;
+            font-size: 0.95rem; font-weight: bold; font-family: 'Roboto', sans-serif;
+            display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(192,57,43,0.5);
+            margin-top: 10px; animation: pulseBadge 1.5s infinite alternate;
+        }
+        @keyframes pulseBadge { 0% { transform: scale(1); } 100% { transform: scale(1.03); } }
+
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 100000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .custom-modal-box { 
+            background: var(--card-bg); padding: 35px; border-radius: 8px; min-width: 320px; max-width: 95%; width: 850px;
+            position: relative; max-height: 90vh; display: flex; flex-direction: column; border: 2px solid var(--border-gold); box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+        .modal-close-btn { 
+            position: absolute; top: 18px; right: 18px; background: var(--primary); color: #FFF;
+            border: 2px solid var(--border-gold); border-radius: 50%; width: 36px; height: 36px; font-weight: bold;
+            font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; z-index: 30;
+            transition: all 0.3s ease;
+        }
+        .modal-close-btn:hover { background: var(--secondary); transform: scale(1.1); }
+
+        .modal-header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-gold); padding-bottom: 12px; margin-bottom: 15px; }
+        .modal-footer-anchored { position: sticky; bottom: -35px; background: var(--card-bg); padding: 15px 0 0 0; border-top: 2px solid var(--border-gold); margin-top: 15px; }
+        .flex-row-justificado { display: grid; grid-template-columns: 2fr 1fr 1.2fr auto; gap: 12px; align-items: center; margin-top: 10px; background: #FFF8EE; padding: 12px; border: 2px solid var(--border-gold); border-radius: 6px; }
+
+        .sticky-falta-cobrar {
+            position: sticky; bottom: 0; background: #1E0207; border: 2px solid var(--border-gold);
+            padding: 15px; margin-top: 12px; text-align: center; z-index: 20; box-shadow: 0 -6px 20px rgba(0,0,0,0.6); border-radius: 6px;
+        }
+
+        #loading_overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(26, 9, 12, 0.92); z-index: 200000; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(6px);
+        }
+        .loading-box {
+            background: var(--card-bg); padding: 40px; border-radius: 8px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); border: 2px solid var(--border-gold); max-width: 420px; width: 90%;
+        }
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 4px solid rgba(197, 160, 40, 0.3);
+            border-left-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #resultados_clientes { position: absolute; background: #fff; border: 2px solid var(--border-gold); z-index: 10; max-height: 200px; overflow-y: auto; display: none; width: 100%; box-shadow: 0 8px 16px rgba(0,0,0,0.2); border-radius: 0 0 6px 6px; }
+        .cliente-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border-gold); font-weight: bold; font-size: 0.95rem; transition: background 0.2s;}
+        .cliente-item:hover { background: rgba(197, 160, 40, 0.15); color: var(--primary); }
+        .btn-nuevo-cliente { width: 100%; padding: 12px; background: #FFF8EE; color: var(--primary); border: none; cursor: pointer; text-align: left; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<!-- BOTÓN X FLOTANTE -->
+<a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+<!-- OVERLAY DE CARGA -->
+<div id="loading_overlay">
+    <div class="loading-box">
+        <div class="spinner-luxury"></div>
+        <div style="font-family:'Playfair Display'; color:var(--primary); font-size:1.4rem; font-weight:700;">Banca y Tesorería Corporativa</div>
+        <div style="color:var(--text); font-size:1rem; font-weight:bold; margin-top:8px;">Sincronizando sistemas dinámicos y pasarelas de pago...</div>
+    </div>
+</div>
+
+<!-- MODAL GENÉRICO -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" style="font-size: 1.35rem; color: var(--primary); margin-bottom: 15px; font-family: 'Playfair Display', serif; border-bottom: 2px solid var(--border-gold); padding-bottom: 10px; text-align: center; font-weight:700;">Título</div>
+        <div id="global_modal_body" style="overflow-y:auto; flex-grow:1;"></div>
+    </div>
+</div>
+
+<!-- MODAL SELECTOR DE PRODUCTOS -->
+<div id="modal_selector_productos" class="custom-modal-overlay">
+    <div class="custom-modal-box" style="width: 850px;">
+        <button class="modal-close-btn" onclick="cerrarSelectorProductos()">✕</button>
+        
+        <div class="modal-header-flex" style="margin-right: 45px;">
+            <h2>🛒 Selector de Productos / Servicios</h2>
+            <button class="btn-refresh" onclick="recargarDatosCatalogo(true)" title="Refrescar Mercancía">🔄 Refrescar</button>
+        </div>
+        
+        <div class="grid-2" style="margin-bottom: 12px;">
+            <input type="text" id="buscador_prod_modal" placeholder="🔍 Buscar por nombre o código..." oninput="filtrarYRenderizarCatalogoSelector()">
+            <select id="orden_prod_modal" onchange="filtrarYRenderizarCatalogoSelector()">
+                <option value="AZ" selected>Orden Alfabético A-Z</option>
+                <option value="ZA">Orden Alfabético Z-A</option>
+                <option value="CAT">Por Categorías</option>
+            </select>
+        </div>
+
+        <div style="overflow-y: auto; flex-grow: 1; max-height: 50vh;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>PRODUCTO</th>
+                        <th>CATEGORÍA</th>
+                        <th>PRECIO</th>
+                        <th>STOCK</th>
+                        <th>CANTIDAD</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody_selector_catalogo"></tbody>
+            </table>
+        </div>
+
+        <div class="modal-footer-anchored">
+            <button class="btn-success" onclick="confirmarSeleccionProductosModal()" style="font-size:1.1rem; padding:15px;">
+                ✅ ACEPTAR SELECCIÓN - TOTAL: <span id="total_modal_selector_txt">$0.00</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL MÉTODOS DE PAGO Y DESGLOSE FINANCIERO (CALCULADORA) -->
+<div id="modal_metodos_pago" class="custom-modal-overlay">
+    <div class="custom-modal-box" style="width: 850px; padding-bottom: 0;">
+        <button class="modal-close-btn" onclick="cerrarModalMetodosPago()">✕</button>
+        <h2 style="text-align: center; margin-top: 0;">💳 Métodos de Pago y Anticipos Financieros</h2>
+        
+        <div style="overflow-y: auto; flex-grow: 1; padding-right: 5px; max-height: 60vh;">
+            <!-- AVANCES -->
+            <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                <label style="margin-top:0;">💸 Avance Retirado:</label>
+                <div id="lista_avances_contenedor"></div>
+                <button type="button" class="btn-add" onclick="agregarLineaAvance()">+ Añadir Avance</button>
+            </div>
+
+            <!-- GASTOS -->
+            <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                <label style="margin-top:0;">🧾 Gastos Operativos:</label>
+                <div id="lista_gastos_contenedor"></div>
+                <button type="button" class="btn-add" onclick="agregarLineaGasto()">+ Añadir Gasto Operativo</button>
+            </div>
+
+            <!-- CONCILIACIONES -->
+            <div id="contenedor_conciliaciones_main"></div>
+
+            <!-- EFECTIVO CAJA FONDO -->
+            <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                <label style="margin-top:0;">💵 Efectivo en Caja Fondo:</label>
+                <div id="lista_efectivo_contenedor"></div>
+                <button type="button" class="btn-add" onclick="agregarLineaEfectivo()">+ Añadir Efectivo</button>
+            </div>
+
+            <!-- VUELTOS EXTRA -->
+            <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <label style="margin-top:0; color: var(--stock-red);">↩️ Vueltos Entregados Extra (Tomados de Caja Fondo):</label>
+                    <button type="button" class="btn-info" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="autoCompensarConVueltoExtra()">⚡ Auto-Compensar Excedente</button>
+                </div>
+                <div id="lista_vueltos_contenedor" style="margin-top: 8px;"></div>
+                <button type="button" class="btn-danger" style="margin-top:10px;" onclick="agregarLineaVuelto()">+ Añadir Vuelto Extra</button>
+            </div>
+        </div>
+
+        <div class="sticky-falta-cobrar">
+            <div id="falta_por_cobrar_multimoneda" style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 12px; font-weight: 800; font-size: 1.15rem; color: #FFFFFF;"></div>
+        </div>
+
+        <button class="btn-success" style="margin-top: 12px; margin-bottom: 18px; padding: 14px;" onclick="cerrarModalMetodosPago()">✅ Confirmar y Guardar Anticipos</button>
+    </div>
+</div>
+
+<div class="wrapper" id="main_wrapper">
+    <div class="main-content">
+        
+        <div class="card">
+            <h2>📄 Emisión de Factura / Proforma Bancaria</h2>
+            <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 25px;">
+                Gestión de emisión con soporte multi-moneda activo, anticipos de pagos y control de inventario integrado.
+            </p>
+            
+            <div class="grid-2">
+                <div>
+                    <label>ASESOR / VENDEDOR:</label>
+                    <select id="venta_vendedor"><option value="" selected>-- SELECCIONAR --</option></select>
+                </div>
+                
+                <div style="position: relative;">
+                    <label>CLIENTE / EMPRESA:</label>
+                    <input type="text" id="buscar_cliente" placeholder="Buscar nombre o cédula..." oninput="filtrarClientes(this.value)" autocomplete="off">
+                    <input type="hidden" id="cliente_id_seleccionado">
+                    <div id="resultados_clientes"></div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN DE GARANTÍA DINÁMICA (DÍA POR DEFECTO EN PRIMERA OPCIÓN) -->
+            <div style="background: rgba(197, 160, 40, 0.05); padding: 16px; border-radius: 6px; border: 2px solid var(--border-gold); margin-top: 20px;">
+                <div class="grid-2" style="gap: 15px; align-items: center;">
+                    <div>
+                        <label style="margin-top: 0; color: var(--primary);">🛡️ APLICAR GARANTÍA:</label>
+                        <select id="garantia_activo" onchange="toggleSeccionGarantia()" style="border: 2px solid var(--border-gold); font-weight: bold;">
+                            <option value="no" selected>No (Sin Garantía)</option>
+                            <option value="si">Sí (Con Garantía)</option>
+                        </select>
+                    </div>
+                    <div id="contenedor_detalles_garantia" style="display: none;">
+                        <label style="margin-top: 0; color: var(--primary);">⏱️ VIGENCIA DE GARANTÍA:</label>
+                        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px;">
+                            <select id="garantia_lapso" style="border: 2px solid var(--border-gold); font-weight: bold;">
+                                <option value="dia" selected>Día(s)</option>
+                                <option value="semana">Semana(s)</option>
+                                <option value="mes">Mes(es)</option>
+                                <option value="anio">Año(s)</option>
+                            </select>
+                            <input type="number" id="garantia_cantidad" value="1" min="1" style="border: 2px solid var(--border-gold); font-weight: bold; text-align: center;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2" style="margin-top:20px; margin-bottom:15px;">
+                <button class="btn-add" style="margin:0; padding:16px;" onclick="abrirSelectorProductosModal()">🛒 Abrir selector de productos</button>
+                <button class="btn-info" style="margin:0; padding:16px;" onclick="abrirModalMetodosPago()">💳 Métodos de Pago (Anticipos)</button>
+            </div>
+
+            <h3>📋 Detalle de la Factura</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>PROD</th>
+                        <th>CANT</th>
+                        <th>SUB $</th>
+                        <th>ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody_carrito_factura"></tbody>
+            </table>
+
+            <!-- SELECTOR DINÁMICO DE MONEDAS ACTIVAS -->
+            <div style="background: rgba(197, 160, 40, 0.08); padding: 16px; border-radius: 6px; border: 2px solid var(--border-gold); margin-top: 20px;">
+                <label style="margin-top: 0; color: var(--primary); font-size: 1.05rem;">💱 MONEDA OFICIAL PARA EL COMPROBANTE PDF:</label>
+                <select id="moneda_factura" style="border: 2px solid var(--border-gold); font-weight: bold; color: var(--primary); font-size: 1.1rem;" onchange="renderizarTablaCarrito()">
+                    <!-- Se poblará dinámicamente con las monedas activas del sistema -->
+                </select>
+            </div>
+
+            <div class="total-box-multi">
+                <div style="color:#FFD700; font-size:0.9rem; font-weight:bold; text-transform:uppercase; margin-bottom:4px;">TOTAL NETO DE LA FACTURA:</div>
+                <div id="total_multimoneda_factura" style="text-align: right; width:100%;"></div>
+                <div id="aviso_caja_cuadrada_container"></div>
+            </div>
+
+            <!-- OPCIONES DE GENERACIÓN DE FACTURA -->
+            <div class="grid-2" style="margin-top: 25px;">
+                <button class="btn-info" onclick="ejecutarGeneracionFactura(false)" style="padding: 16px; font-size: 1.05rem;">
+                    📄 Generar Factura Sin Apartado
+                </button>
+                <button class="btn-success" onclick="ejecutarGeneracionFactura(true)" style="padding: 16px; font-size: 1.05rem;">
+                    📦 Generar Factura Realizando Apartado
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+    let EMPLEADOS = [];
+    let CLIENTES = [];
+    let CONCILIACIONES_CFG = [];
+    let carritoActual = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data } = await window.supabaseClient.auth.getSession();
+        if (data && data.session) {
+            await cargarDatosGlobalesSupabase(data.session);
+        } else {
+            window.location.href = 'index.html';
+        }
+    });
+
+    async function cargarDatosGlobalesSupabase(session) {
+        try {
+            let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id').eq('id', session.user.id).single();
+            if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
+            else {
+                let { data: locales } = await window.supabaseClient.from('locales').select('id').limit(1);
+                if (locales.length > 0) CURRENT_LOCAL_ID = locales[0].id;
+            }
+
+            let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+                CONCILIACIONES_CFG = Array.isArray(conf.conciliaciones) 
+                    ? conf.conciliaciones 
+                    : (conf.conciliaciones?.lista || []);
+            }
+
+            poblarSelectorMonedasDinamico();
+            await recargarDatosCatalogo(false);
+            let loader = document.getElementById('loading_overlay');
+            if (loader) loader.style.display = 'none';
+        } catch(e) {
+            console.error("Error al cargar datos iniciales:", e);
+            let loader = document.getElementById('loading_overlay');
+            if (loader) loader.style.display = 'none';
+        }
+    }
+
+    function toggleSeccionGarantia() {
+        let activo = document.getElementById('garantia_activo').value;
+        let contenedor = document.getElementById('contenedor_detalles_garantia');
+        if (activo === 'si') {
+            contenedor.style.display = 'block';
+        } else {
+            contenedor.style.display = 'none';
+        }
+    }
+
+    function poblarSelectorMonedasDinamico() {
+        const tasas = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasas.moneda_base || 'USD';
+        const secundarias = tasas.secundarias || [];
+
+        let listaMonedas = [monedaBase];
+        secundarias.forEach(s => {
+            if (s.code && !listaMonedas.includes(s.code)) listaMonedas.push(s.code);
+        });
+
+        let selectMoneda = document.getElementById('moneda_factura');
+        if (!selectMoneda) return;
+
+        let html = '';
+        listaMonedas.forEach(m => {
+            let desc = m === 'USD' ? 'Dólar Estadounidense (USD)' : m === 'VES' || m === 'BS' ? 'Bolívar (BS)' : m === 'COP' ? 'Peso Colombiano (COP)' : m === 'EUR' ? 'Euro (EUR)' : m;
+            html += `<option value="${m}" ${m === monedaBase ? 'selected' : ''}>${m} - ${desc}</option>`;
+        });
+        selectMoneda.innerHTML = html;
+    }
+
+    async function recargarDatosCatalogo(mostrarAlerta = true) {
+        try {
+            const [reqCat, reqEmp, reqCli] = await Promise.all([
+                window.supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID),
+                window.supabaseClient.from('empleados').select('*').eq('local_id', CURRENT_LOCAL_ID),
+                window.supabaseClient.from('clientes').select('*').eq('local_id', CURRENT_LOCAL_ID)
+            ]);
+
+            if (reqCat.data) {
+                CATALOGO = reqCat.data.map(p => ({
+                    ...p,
+                    fuente: parseFloat(p.costo_fuente || p.fuente || p.costo || p.precio_costo || 0)
+                }));
+            }
+            if (reqEmp.data) EMPLEADOS = reqEmp.data;
+            if (reqCli.data) CLIENTES = reqCli.data.map(c => ({ id: c.id, nom: c.nombre, cedula: c.cedula || '' }));
+
+            poblarSelectoresEmpleados();
+            renderizarConciliacionesConfiguradas();
+            renderizarTablaCarrito();
+
+            if (document.getElementById('modal_selector_productos').style.display === 'flex') {
+                filtrarYRenderizarCatalogoSelector();
+            }
+
+            if (mostrarAlerta) alert("🔄 Catálogo y clientes refrescados exitosamente.");
+        } catch (e) {
+            console.error("Error al refrescar datos:", e);
+            if (mostrarAlerta) alert("❌ Error al refrescar datos.");
+        }
+    }
+
+    function poblarSelectoresEmpleados() {
+        let optsGen = '<option value="" selected>-- SELECCIONAR --</option>' + 
+            EMPLEADOS.map(e => `<option value="${e.id}">${e.nombre} ${e.apellido}</option>`).join('');
+
+        let selVendedor = document.getElementById('venta_vendedor');
+        if (selVendedor) selVendedor.innerHTML = optsGen;
+    }
+
+    function obtenerOpcionesMonedasDisponibles(monedaSeleccionada = '') {
+        const tasas = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasas.moneda_base || 'USD';
+        const secundarias = tasas.secundarias || [];
+        
+        let listaMonedas = [monedaBase];
+        secundarias.forEach(s => {
+            if (s.code && !listaMonedas.includes(s.code)) listaMonedas.push(s.code);
+        });
+
+        let html = `<option value="" disabled ${!monedaSeleccionada ? 'selected' : ''}>-- Monedas --</option>`;
+        listaMonedas.forEach(m => {
+            html += `<option value="${m}" ${monedaSeleccionada === m ? 'selected' : ''}>${m}</option>`;
+        });
+        return html;
+    }
+
+    function calcularEquivalenteUSD(monto, monedaCodigo) {
+        if (!monto || isNaN(monto) || !monedaCodigo) return 0;
+        const tasas = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasas.moneda_base || 'USD';
+        if (monedaCodigo === monedaBase || monedaCodigo === 'USD') return monto;
+
+        const sec = (tasas.secundarias || []).find(s => s.code === monedaCodigo);
+        if (!sec || !sec.tasa || parseFloat(sec.tasa) === 0) return monto;
+
+        const tasa = parseFloat(sec.tasa);
+        return (sec.operacion === 'dividir') ? (monto * tasa) : (monto / tasa);
+    }
+
+    function abrirSelectorProductosModal() {
+        filtrarYRenderizarCatalogoSelector();
+        document.getElementById('modal_selector_productos').style.display = 'flex';
+    }
+
+    function cerrarSelectorProductos() {
+        document.getElementById('modal_selector_productos').style.display = 'none';
+    }
+
+    function filtrarYRenderizarCatalogoSelector() {
+        let busq = document.getElementById('buscador_prod_modal').value.toLowerCase();
+        let orden = document.getElementById('orden_prod_modal').value;
+
+        let lista = CATALOGO.filter(p => p.nombre.toLowerCase().includes(busq));
+
+        if (orden === 'AZ') lista.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        else if (orden === 'ZA') lista.sort((a, b) => b.nombre.localeCompare(a.nombre));
+        else if (orden === 'CAT') lista.sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
+
+        let tbody = document.getElementById('tbody_selector_catalogo');
+        tbody.innerHTML = '';
+
+        lista.forEach(prod => {
+            let umbralClass = 'stock-verde';
+            if (prod.stock <= (prod.umbral_rojo || 2)) umbralClass = 'stock-rojo';
+            else if (prod.stock <= (prod.umbral_amarillo || 5)) umbralClass = 'stock-amarillo';
+
+            let itemEnCarrito = carritoActual.find(c => c.id === prod.id);
+            let cantActual = itemEnCarrito ? itemEnCarrito.cant : 0;
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${prod.nombre}</strong></td>
+                <td>${prod.categoria || 'General'}</td>
+                <td>$${parseFloat(prod.precio_base || 0).toFixed(2)}</td>
+                <td><span class="stock-badge ${umbralClass}">${prod.stock}</span></td>
+                <td style="white-space:nowrap;">
+                    <button class="btn-danger" style="padding:4px 8px; width:auto;" onclick="modificarCantTempSelector('${prod.id}', -1)">-</button>
+                    <span id="cant_selector_${prod.id}" style="margin:0 8px; font-weight:bold;">${cantActual}</span>
+                    <button class="btn-success" style="padding:4px 8px; width:auto;" onclick="modificarCantTempSelector('${prod.id}', 1)">+</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        calcularTotalModalSelector();
+    }
+
+    function modificarCantTempSelector(prodId, delta) {
+        let prod = CATALOGO.find(p => p.id === prodId);
+        if (!prod) return;
+
+        let item = carritoActual.find(c => c.id === prodId);
+        if (!item && delta > 0) {
+            item = { 
+                id: prod.id, 
+                nom: prod.nombre, 
+                base: parseFloat(prod.precio_base || 0), 
+                fuente: parseFloat(prod.fuente || 0), 
+                cant: 0 
+            };
+            carritoActual.push(item);
+        }
+
+        if (item) {
+            item.cant += delta;
+            if (item.cant <= 0) {
+                carritoActual = carritoActual.filter(c => c.id !== prodId);
+            } else if (item.cant > prod.stock) {
+                item.cant = prod.stock;
+                alert("⚠️ Supera el stock disponible.");
+            }
+        }
+
+        let span = document.getElementById(`cant_selector_${prodId}`);
+        if (span) span.innerText = item ? item.cant : 0;
+
+        calcularTotalModalSelector();
+    }
+
+    function calcularTotalModalSelector() {
+        let total = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
+        document.getElementById('total_modal_selector_txt').innerText = `$${total.toFixed(2)}`;
+    }
+
+    function confirmarSeleccionProductosModal() {
+        cerrarSelectorProductos();
+        renderizarTablaCarrito();
+    }
+
+    function renderizarTablaCarrito() {
+        let tbody = document.getElementById('tbody_carrito_factura');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        let totalUsd = 0;
+
+        carritoActual.forEach(item => {
+            let subtotal = item.base * item.cant;
+            totalUsd += subtotal;
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.nom}</td>
+                <td><input type="number" value="${item.cant}" min="1" style="width:65px; padding:6px; font-weight:bold;" onchange="actualizarCantidadDirecta('${item.id}', this.value)"></td>
+                <td>$${subtotal.toFixed(2)}</td>
+                <td><button class="btn-danger" onclick="eliminarProductoCarrito('${item.id}')">✕</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        let container = document.getElementById('total_multimoneda_factura');
+        if (container) {
+            container.innerHTML = generarHTMLTotalesMultimoneda(totalUsd);
+        }
+
+        calcularFaltaPorCobrar();
+    }
+
+    function actualizarCantidadDirecta(id, cant) {
+        let item = carritoActual.find(c => c.id === id);
+        if (item) {
+            item.cant = parseInt(cant) || 1;
+            renderizarTablaCarrito();
+        }
+    }
+
+    function eliminarProductoCarrito(id) {
+        carritoActual = carritoActual.filter(c => c.id !== id);
+        renderizarTablaCarrito();
+    }
+
+    function abrirModalMetodosPago() {
+        document.getElementById('modal_metodos_pago').style.display = 'flex';
+        calcularFaltaPorCobrar();
+    }
+
+    function cerrarModalMetodosPago() {
+        document.getElementById('modal_metodos_pago').style.display = 'none';
+    }
+
+    function agregarLineaAvance() {
+        let div = document.createElement('div');
+        div.className = 'flex-row-justificado';
+        div.innerHTML = `
+            <input type="text" placeholder="Motivo del Avance" class="av-motivo">
+            <input type="number" step="any" placeholder="Monto" class="av-monto" oninput="calcularFaltaPorCobrar()">
+            <select class="av-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles()}</select>
+            <button type="button" class="btn-danger" style="padding:9px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
+        `;
+        document.getElementById('lista_avances_contenedor').appendChild(div);
+    }
+
+    function agregarLineaGasto() {
+        let div = document.createElement('div');
+        div.className = 'flex-row-justificado';
+        div.innerHTML = `
+            <input type="text" placeholder="Motivo del Gasto" class="ga-motivo">
+            <input type="number" step="any" placeholder="Monto" class="ga-monto" oninput="calcularFaltaPorCobrar()">
+            <select class="ga-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles()}</select>
+            <button type="button" class="btn-danger" style="padding:9px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
+        `;
+        document.getElementById('lista_gastos_contenedor').appendChild(div);
+    }
+
+    function calcularMontoConciliacion(inputElement, porcentaje) {
+        let row = inputElement.closest('.conciliacion-item-row');
+        if (!row) return;
+
+        let montoIngresado = parseFloat(inputElement.value) || 0;
+        let porc = parseFloat(porcentaje) || 0;
+        let montoEsperado = montoIngresado - (montoIngresado * (porc / 100));
+
+        let inputRef = row.querySelector('.con-ref-monto');
+        if (inputRef) {
+            inputRef.value = montoIngresado > 0 ? montoEsperado.toFixed(2) : '';
+        }
+        calcularFaltaPorCobrar();
+    }
+
+    function renderizarConciliacionesConfiguradas() {
+        let container = document.getElementById('contenedor_conciliaciones_main');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (!CONCILIACIONES_CFG || CONCILIACIONES_CFG.length === 0) {
+            container.innerHTML = `
+                <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
+                    <label style="margin-top:0;">🏦 PUNTOS DE PAGO / CONCILIACIONES:</label>
+                    <span style="color:var(--muted); font-size:0.9rem; font-weight:bold;">No hay conciliaciones configuradas.</span>
+                </div>
+            `;
+            return;
+        }
+
+        CONCILIACIONES_CFG.forEach(c => {
+            let porc = parseFloat(c.porcentaje) || 0;
+            let cId = c.id || c.nombre.replace(/\s+/g, '_');
+
+            let div = document.createElement('div');
+            div.style.cssText = 'border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;';
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <label style="margin:0; text-transform:uppercase; color: var(--primary);">🏦 <strong>${c.nombre}</strong> <span style="color:var(--muted); font-size:0.85rem; font-weight:bold;">(Comisión Bancaria ${porc}%)</span></label>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn-info" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="autoConciliarMetodo('${cId}', ${porc})">⚡ Auto-Conciliación</button>
+                        <button type="button" class="btn-add" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="agregarLineaConciliacion('${cId}')">+ Añadir</button>
+                    </div>
+                </div>
+                <div id="contenedor_lineas_conciliacion_${cId}" style="margin-top:8px;"></div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function agregarLineaEfectivo() {
+        let div = document.createElement('div');
+        div.className = 'flex-row-justificado';
+        div.innerHTML = `
+            <input type="number" step="any" placeholder="Monto Efectivo" class="ef-monto" oninput="calcularFaltaPorCobrar()">
+            <select class="ef-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles()}</select>
+            <button type="button" class="btn-danger" style="padding:9px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
+        `;
+        document.getElementById('lista_efectivo_contenedor').appendChild(div);
+        calcularFaltaPorCobrar();
+    }
+
+    function agregarLineaVuelto(montoSugerido = '', monedaSugerida = '') {
+        let div = document.createElement('div');
+        div.className = 'flex-row-justificado';
+        div.innerHTML = `
+            <input type="number" step="any" placeholder="Monto Vuelto" class="vu-monto" value="${montoSugerido}" oninput="calcularFaltaPorCobrar()">
+            <select class="vu-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles(monedaSugerida)}</select>
+            <button type="button" class="btn-danger" style="padding:9px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
+        `;
+        document.getElementById('lista_vueltos_contenedor').appendChild(div);
+        calcularFaltaPorCobrar();
+    }
+
+    function autoCompensarConVueltoExtra() {
+        let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
+        let pagadoUSD = 0;
+
+        document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.av-monto').value) || 0, div.querySelector('.av-moneda').value);
+        });
+
+        document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.ga-monto').value) || 0, div.querySelector('.ga-moneda').value);
+        });
+
+        document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
+            let m = parseFloat(div.querySelector('.con-ref-monto').value) || parseFloat(div.querySelector('.con-monto-ingresado').value) || 0;
+            pagadoUSD += calcularEquivalenteUSD(m, div.querySelector('.con-moneda').value);
+        });
+
+        document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.ef-monto').value) || 0, div.querySelector('.ef-moneda').value);
+        });
+
+        let vueltosPreviosUSD = 0;
+        document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
+            vueltosPreviosUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.vu-monto').value) || 0, div.querySelector('.vu-moneda').value);
+        });
+
+        let excedenteUSD = (pagadoUSD - vueltosPreviosUSD) - totalUSD;
+        if (excedenteUSD > 0) {
+            let monedaBase = CONFIG_GLOBAL.tasas?.moneda_base || 'USD';
+            agregarLineaVuelto(excedenteUSD.toFixed(2), monedaBase);
+        }
+    }
+
+    function agregarLineaConciliacion(cId) {
+        let c = (CONCILIACIONES_CFG || []).find(item => (item.id || item.nombre.replace(/\s+/g, '_')) === cId);
+        if (!c) return;
+
+        let targetDiv = document.getElementById(`contenedor_lineas_conciliacion_${cId}`);
+        if (!targetDiv) return;
+
+        let porc = parseFloat(c.porcentaje) || 0;
+        let monedaPreseleccionada = (c.monedaScope === 'BASE') 
+            ? (CONFIG_GLOBAL.tasas?.moneda_base || 'USD') 
+            : (c.monedaCodigo || '');
+
+        let div = document.createElement('div');
+        div.className = 'flex-row-justificado conciliacion-item-row';
+        div.setAttribute('data-conc-id', c.id || '');
+        div.setAttribute('data-conc-nombre', c.nombre || '');
+        div.setAttribute('data-conc-porcentaje', porc);
+
+        div.innerHTML = `
+            <input type="number" step="any" placeholder="Monto Ingresado" class="con-monto-ingresado" oninput="calcularMontoConciliacion(this, ${porc})">
+            <input type="number" step="any" placeholder="Monto Esperado (-${porc}%)" readonly class="con-ref-monto">
+            <input type="text" placeholder="Referencia / Nro Lote" class="con-ref-codigo">
+            <select class="con-moneda" onchange="calcularFaltaPorCobrar()">${obtenerOpcionesMonedasDisponibles(monedaPreseleccionada)}</select>
+            <button type="button" class="btn-danger" style="padding:9px 12px; width:auto; margin:0;" onclick="this.parentElement.remove(); calcularFaltaPorCobrar();">✕</button>
+        `;
+
+        targetDiv.appendChild(div);
+        calcularFaltaPorCobrar();
+        return div;
+    }
+
+    function autoConciliarMetodo(cId, porcentaje) {
+        let targetDiv = document.getElementById(`contenedor_lineas_conciliacion_${cId}`);
+        if (!targetDiv) return;
+
+        let row = targetDiv.querySelector('.conciliacion-item-row');
+        if (!row) row = agregarLineaConciliacion(cId);
+        if (!row) return;
+
+        let inputMonto = row.querySelector('.con-monto-ingresado');
+        let inputRefMonto = row.querySelector('.con-ref-monto');
+        let selectMoneda = row.querySelector('.con-moneda');
+        let monedaCodigo = selectMoneda ? selectMoneda.value : (CONFIG_GLOBAL.tasas?.moneda_base || 'USD');
+
+        if (!monedaCodigo) {
+            alert("⚠️ Seleccione una moneda antes de auto-conciliar.");
+            return;
+        }
+
+        inputMonto.value = '';
+        inputRefMonto.value = '';
+
+        let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
+        let pagadoUSD = 0;
+
+        document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.av-monto').value) || 0, div.querySelector('.av-moneda').value);
+        });
+
+        document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.ga-monto').value) || 0, div.querySelector('.ga-moneda').value);
+        });
+
+        document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
+            if (div !== row) {
+                let m = parseFloat(div.querySelector('.con-ref-monto').value) || 0;
+                pagadoUSD += calcularEquivalenteUSD(m, div.querySelector('.con-moneda').value);
+            }
+        });
+
+        document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.ef-monto').value) || 0, div.querySelector('.ef-moneda').value);
+        });
+
+        document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD -= calcularEquivalenteUSD(parseFloat(div.querySelector('.vu-monto').value) || 0, div.querySelector('.vu-moneda').value);
+        });
+
+        let restanteUSD = totalUSD - pagadoUSD;
+        if (restanteUSD <= 0) {
+            inputMonto.value = 0;
+            calcularMontoConciliacion(inputMonto, porcentaje);
+            return;
+        }
+
+        const tasas = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasas.moneda_base || 'USD';
+        let montoEsperadoEnMoneda = restanteUSD;
+
+        if (monedaCodigo !== monedaBase) {
+            const sec = (tasas.secundarias || []).find(s => s.code === monedaCodigo);
+            if (sec && sec.tasa && parseFloat(sec.tasa) > 0) {
+                let tasa = parseFloat(sec.tasa);
+                montoEsperadoEnMoneda = (sec.operacion === 'dividir') ? (restanteUSD / tasa) : (restanteUSD * tasa);
+            }
+        }
+
+        let factorDescuento = 1 - ((parseFloat(porcentaje) || 0) / 100);
+        let montoIngresadoRequerido = factorDescuento > 0 ? (montoEsperadoEnMoneda / factorDescuento) : montoEsperadoEnMoneda;
+
+        inputMonto.value = montoIngresadoRequerido.toFixed(2);
+        calcularMontoConciliacion(inputMonto, porcentaje);
+    }
+
+    function calcularFaltaPorCobrar() {
+        let totalUSD = carritoActual.reduce((acc, p) => acc + (p.base * p.cant), 0);
+        let pagadoUSD = 0;
+
+        document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.av-monto').value) || 0, div.querySelector('.av-moneda').value);
+        });
+
+        document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.ga-monto').value) || 0, div.querySelector('.ga-moneda').value);
+        });
+
+        document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.con-ref-monto').value) || 0, div.querySelector('.con-moneda').value);
+        });
+
+        document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.ef-monto').value) || 0, div.querySelector('.ef-moneda').value);
+        });
+
+        document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
+            pagadoUSD -= calcularEquivalenteUSD(parseFloat(div.querySelector('.vu-monto').value) || 0, div.querySelector('.vu-moneda').value);
+        });
+
+        let restaUSD = totalUSD - pagadoUSD;
+        let contFalta = document.getElementById('falta_por_cobrar_multimoneda');
+        if (contFalta) {
+            contFalta.innerHTML = generarHTMLTotalesMultimoneda(restaUSD);
+        }
+
+        let avisoContainer = document.getElementById('aviso_caja_cuadrada_container');
+        if (avisoContainer) {
+            if (totalUSD === 0) {
+                avisoContainer.innerHTML = '';
+            } else if (Math.abs(restaUSD) < 0.01) {
+                avisoContainer.innerHTML = `<div class="caja-cuadrada-badge">✅ CUENTA CUBIERTA / SALDADA</div>`;
+            } else if (restaUSD > 0) {
+                avisoContainer.innerHTML = `<div class="caja-descuadrada-badge">⚠️ SALDO PENDIENTE (FALTA POR COBRAR)</div>`;
+            } else {
+                avisoContainer.innerHTML = `<div class="caja-descuadrada-badge">⚠️ EXCEDENTE (VUELTO PENDIENTE)</div>`;
+            }
+        }
+    }
+
+    function generarHTMLTotalesMultimoneda(montoBaseUSD) {
+        const tasasConfig = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasasConfig.moneda_base || 'USD';
+        const secundarias = tasasConfig.secundarias || [];
+
+        let cssClassBase = montoBaseUSD < 0 ? 'txt-negative' : 'txt-success';
+        let html = `<div class="${cssClassBase}">${monedaBase}: $${montoBaseUSD.toFixed(2)}</div>`;
+
+        secundarias.forEach(sec => {
+            const tasa = parseFloat(sec.tasa);
+            if (sec.code) {
+                let totalConvertido = 0;
+                if (!isNaN(tasa) && tasa > 0) {
+                    totalConvertido = (sec.operacion === 'dividir') ? (montoBaseUSD / tasa) : (montoBaseUSD * tasa);
+                }
+
+                let decimales = (sec.code === 'COP') ? 0 : 2;
+                let simbolo = sec.code === 'VES' ? 'Bs.' : sec.code;
+                let colorEstilo = totalConvertido < 0 ? 'color: #FF6B6B;' : 'color: #FFFFFF;';
+
+                html += `<div style="font-size:1.1rem; ${colorEstilo} font-weight: 800; margin-top:4px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
+                    ${simbolo}: ${totalConvertido.toFixed(decimales)} ${sec.code}
+                </div>`;
+            }
+        });
+
+        return html;
+    }
+
+    // Buscador y selección de clientes local
+    const cajaResultados = document.getElementById('resultados_clientes');
+    function filtrarClientes(texto) {
+        const query = texto.toLowerCase().trim(); 
+        if (!cajaResultados) return;
+        cajaResultados.innerHTML = ""; 
+        if (query.length < 2) { cajaResultados.style.display = "none"; document.getElementById('cliente_id_seleccionado').value = ""; return; }
+        
+        const filtrados = CLIENTES.filter(c => c.nom.toLowerCase().includes(query) || (c.cedula && c.cedula.includes(query)));
+        if (filtrados.length > 0) {
+            filtrados.forEach(c => { 
+                const div = document.createElement('div'); div.className = "cliente-item"; div.textContent = `${c.nom} (V-${c.cedula || 'N/A'})`; 
+                div.onclick = () => seleccionarCliente(c.id, c.nom); 
+                cajaResultados.appendChild(div); 
+            });
+        } else {
+            const btnNuevo = document.createElement('button'); btnNuevo.className = "btn-nuevo-cliente"; btnNuevo.textContent = `+ Añadir Temporal: "${texto}"`; 
+            btnNuevo.onclick = () => abrirModalNuevoClienteLocal(texto); 
+            cajaResultados.appendChild(btnNuevo);
+        }
+        cajaResultados.style.display = "block";
+    }
+
+    function seleccionarCliente(id, nombre) { 
+        document.getElementById('cliente_id_seleccionado').value = id; 
+        document.getElementById('buscar_cliente').value = nombre; 
+        if(cajaResultados) cajaResultados.style.display = "none"; 
+    }
+
+    function abrirModalNuevoClienteLocal(textoInicial = '') {
+        if(cajaResultados) cajaResultados.style.display = "none";
+        let textoTrim = textoInicial.trim();
+        let nombreSugerido = '', apellidoSugerido = '', cedulaSugerida = '';
+        if (/^\d+$/.test(textoTrim)) cedulaSugerida = textoTrim;
+        else { let partes = textoTrim.split(' '); nombreSugerido = partes[0] || ''; apellidoSugerido = partes.slice(1).join(' ') || ''; }
+
+        abrirModalGlobal("Añadir Cliente Temporal", `
+            <p style="text-align:center; color: var(--text-light); font-size: 0.95rem; margin-top:0;">(El cliente se usará para la factura, sin tocar permanentemente la base de datos).</p>
+            <div class="grid-2">
+                <div><label>Nombres:</label><input type="text" id="c_nom_local" placeholder="Ej. Juan" value="${nombreSugerido}"></div>
+                <div><label>Apellidos:</label><input type="text" id="c_ape_local" placeholder="Ej. Pérez" value="${apellidoSugerido}"></div>
+            </div>
+            <div class="grid-2">
+                <div><label>Cédula / RIF:</label><input type="text" id="c_ced_local" placeholder="V-12345678" value="${cedulaSugerida}"></div>
+            </div>
+            <button class="btn-success" onclick="guardarClienteLocal()" style="margin-top:20px; width: 100%; font-size:1.1rem; padding:15px;">💾 Usar Cliente</button>
+            <button class="btn-danger" style="margin-top:10px; width: 100%; font-size:1.1rem; padding:15px;" onclick="cerrarModalGlobal()">Cancelar</button>
+        `);
+    }
+
+    function guardarClienteLocal() {
+        let nom = document.getElementById('c_nom_local').value.trim(), ape = document.getElementById('c_ape_local').value.trim(), c = document.getElementById('c_ced_local').value.trim();
+        if (!nom || !ape) return alert("El nombre y el apellido son obligatorios.");
+        let nombreCompleto = `${nom} ${ape}`;
+        let idTemporal = 'temp_' + Date.now();
+        
+        CLIENTES.push({ id: idTemporal, nom: nombreCompleto, cedula: c });
+        seleccionarCliente(idTemporal, nombreCompleto);
+        cerrarModalGlobal();
+    }
+
+    document.addEventListener('click', (e) => { 
+        let bc = document.getElementById('buscar_cliente');
+        if (bc && !bc.contains(e.target) && cajaResultados && !cajaResultados.contains(e.target)) {
+            cajaResultados.style.display = "none"; 
+        }
+    });
+
+    function abrirModalGlobal(titulo, html) {
+        document.getElementById('global_modal_title').innerText = titulo;
+        document.getElementById('global_modal_body').innerHTML = html;
+        document.getElementById('global_modal').style.display = 'flex';
+    }
+
+    function cerrarModalGlobal() {
+        document.getElementById('global_modal').style.display = 'none';
+    }
+
+    // ========================================================
+    // GENERAR FACTURA (CON O SIN APARTADO) Y PDF BANCARIO
+    // ========================================================
+    async function ejecutarGeneracionFactura(realizarApartado) {
+        let vendedorId = document.getElementById('venta_vendedor').value;
+        let clienteId = document.getElementById('cliente_id_seleccionado').value;
+        let clienteNombre = document.getElementById('buscar_cliente').value.trim() || 'Consumidor Final';
+        let monedaDestino = document.getElementById('moneda_factura').value || 'USD';
+
+        if (!vendedorId) {
+            return alert("❌ Debe seleccionar un Asesor / Vendedor.");
+        }
+        if (carritoActual.length === 0) {
+            return alert("❌ Debe agregar al menos un producto a la factura.");
+        }
+
+        let loader = document.getElementById('loading_overlay');
+        if (loader) loader.style.display = 'flex';
+
+        try {
+            let fechaHoy = new Date().toISOString().slice(0,10);
+            let tasaBs = parseFloat(CONFIG_GLOBAL.tasas?.ves) || 1;
+
+            let totalVentaUSD = 0, totalCapital = 0;
+            let detallesAgrupados = {};
+
+            carritoActual.forEach(p => {
+                let precioCobrado = p.base;
+                let catProd = CATALOGO.find(cat => cat.id === p.id);
+                let capUni = parseFloat(p.fuente || catProd?.fuente || 0);
+
+                if(!detallesAgrupados[p.id]) {
+                    detallesAgrupados[p.id] = { uuid: p.id, nom: p.nom, cant: 0, subtotal: 0, costo_uni: capUni, precio_uni: precioCobrado };
+                }
+                detallesAgrupados[p.id].cant += p.cant;
+                detallesAgrupados[p.id].subtotal += (precioCobrado * p.cant);
+                
+                totalVentaUSD += (precioCobrado * p.cant);
+                totalCapital += (capUni * p.cant);
+            });
+
+            let gananciaNeta = totalVentaUSD - totalCapital;
+
+            // Recopilar anticipos / pagos ingresados en la calculadora
+            let anticiposRegistrados = [];
+            let pagadoUSD = 0;
+
+            document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
+                let m = parseFloat(div.querySelector('.av-monto')?.value) || 0;
+                let mon = div.querySelector('.av-moneda')?.value || 'USD';
+                let concepto = div.querySelector('.av-motivo')?.value || 'Avance Anticipo';
+                if (m > 0) {
+                    let eq = calcularEquivalenteUSD(m, mon);
+                    pagadoUSD += eq;
+                    anticiposRegistrados.push({ concepto: concepto, monto: m, moneda: mon, eq_usd: eq });
+                }
+            });
+
+            document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado').forEach(div => {
+                let m = parseFloat(div.querySelector('.ga-monto')?.value) || 0;
+                let mon = div.querySelector('.ga-moneda')?.value || 'USD';
+                let concepto = div.querySelector('.ga-motivo')?.value || 'Gasto Operativo';
+                if (m > 0) {
+                    let eq = calcularEquivalenteUSD(m, mon);
+                    pagadoUSD += eq;
+                    anticiposRegistrados.push({ concepto: concepto, monto: m, moneda: mon, eq_usd: eq });
+                }
+            });
+
+            document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row').forEach(div => {
+                let m = parseFloat(div.querySelector('.con-ref-monto')?.value) || parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
+                let mon = div.querySelector('.con-moneda')?.value || 'VES';
+                let concNombre = div.getAttribute('data-conc-nombre') || 'Punto de Venta';
+                let ref = div.querySelector('.con-ref-codigo')?.value || 'N/A';
+                if (m > 0) {
+                    let eq = calcularEquivalenteUSD(m, mon);
+                    pagadoUSD += eq;
+                    anticiposRegistrados.push({ concepto: `${concNombre} (Ref: ${ref})`, monto: m, moneda: mon, eq_usd: eq });
+                }
+            });
+
+            document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado').forEach(div => {
+                let m = parseFloat(div.querySelector('.ef-monto')?.value) || 0;
+                let mon = div.querySelector('.ef-moneda')?.value || 'USD';
+                if (m > 0) {
+                    let eq = calcularEquivalenteUSD(m, mon);
+                    pagadoUSD += eq;
+                    anticiposRegistrados.push({ concepto: 'Efectivo Caja Fondo', monto: m, moneda: mon, eq_usd: eq });
+                }
+            });
+
+            document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
+                let m = parseFloat(div.querySelector('.vu-monto')?.value) || 0;
+                let mon = div.querySelector('.vu-moneda')?.value || 'USD';
+                if (m > 0) {
+                    let eq = calcularEquivalenteUSD(m, mon);
+                    pagadoUSD -= eq;
+                    anticiposRegistrados.push({ concepto: 'Vuelto Entregado', monto: -m, moneda: mon, eq_usd: -eq });
+                }
+            });
+
+            let saldoPendienteUSD = totalVentaUSD - pagadoUSD;
+            let turnoFactura = 'Facturación / Apartado';
+
+            // SI SE REALIZA APARTADO, ENVIAR A TODOS LOS MÓDULOS (Balance, Conciliaciones, Inventario, Clientes, Empleados)
+            let loteIdCodigo = null;
+            if (realizarApartado) {
+                // 1. Lotes Diarios
+                let { data: loteRes, error: errLote } = await window.supabaseClient.from('lotes_diarios').insert([{
+                    local_id: CURRENT_LOCAL_ID, 
+                    vendedor_id: vendedorId, 
+                    fecha: fechaHoy, 
+                    turno: turnoFactura, 
+                    total_vendido_usd: totalVentaUSD, 
+                    capital_invertido: totalCapital, 
+                    ganancia_neta: gananciaNeta, 
+                    tasa_bs: tasaBs
+                }]).select().single();
+                
+                if(errLote) throw new Error("Error en lotes_diarios: " + errLote.message);
+                loteIdCodigo = loteRes.id;
+
+                // 2. Gastos Operativos
+                let filasGastos = document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado');
+                for (let div of filasGastos) {
+                    let concepto = div.querySelector('.ga-motivo')?.value || '';
+                    let monto = parseFloat(div.querySelector('.ga-monto')?.value) || 0;
+                    let moneda = div.querySelector('.ga-moneda')?.value || '';
+                    if (monto > 0 && moneda) {
+                        await window.supabaseClient.from('gastos_operativos').insert([{
+                            local_id: CURRENT_LOCAL_ID,
+                            lote_id: loteIdCodigo,
+                            concepto: concepto,
+                            monto: monto,
+                            moneda: moneda,
+                            vendedor_id: vendedorId,
+                            fecha: new Date().toISOString()
+                        }]);
+                    }
+                }
+
+                // 3. Avances Retirados
+                let filasAvances = document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado');
+                for (let div of filasAvances) {
+                    let concepto = div.querySelector('.av-motivo')?.value || '';
+                    let monto = parseFloat(div.querySelector('.av-monto')?.value) || 0;
+                    let moneda = div.querySelector('.av-moneda')?.value || '';
+                    if (monto > 0 && moneda) {
+                        await window.supabaseClient.from('avances_retirados').insert([{
+                            local_id: CURRENT_LOCAL_ID,
+                            lote_id: loteIdCodigo,
+                            concepto: concepto,
+                            monto: monto,
+                            moneda: moneda,
+                            vendedor_id: vendedorId,
+                            fecha: new Date().toISOString()
+                        }]);
+                    }
+                }
+
+                // 4. Caja Fuerte
+                let filasEfectivoGuardia = document.querySelectorAll('#lista_efectivo_contenedor .flex-row-justificado');
+                for (let div of filasEfectivoGuardia) {
+                    let montoEfectivo = parseFloat(div.querySelector('.ef-monto')?.value) || 0;
+                    let monedaEfectivo = div.querySelector('.ef-moneda')?.value || '';
+                    if (montoEfectivo > 0 && monedaEfectivo) {
+                        await window.supabaseClient.from('caja_fuerte').insert([{
+                            local_id: CURRENT_LOCAL_ID,
+                            lote_id: loteIdCodigo,
+                            efectivo: montoEfectivo,
+                            moneda: monedaEfectivo,
+                            total_dia: totalVentaUSD,
+                            turno: turnoFactura,
+                            vendedor_id: vendedorId,
+                            fecha: new Date().toISOString()
+                        }]);
+                    }
+                }
+
+                // 5. Detalle Ventas
+                let arrDetalles = Object.values(detallesAgrupados).map(d => ({
+                    lote_id: loteIdCodigo, 
+                    producto_id: d.uuid, 
+                    cantidad: d.cant, 
+                    subtotal_usd: d.subtotal
+                }));
+                if(arrDetalles.length > 0) {
+                    await window.supabaseClient.from('detalle_ventas').insert(arrDetalles);
+                }
+
+                // 6. Conciliaciones Bancarias
+                let filasConc = document.querySelectorAll('#contenedor_conciliaciones_main .conciliacion-item-row');
+                for (let div of filasConc) {
+                    let concNombre = div.getAttribute('data-conc-nombre') || 'Punto / Conciliación';
+                    let montoIngresado = parseFloat(div.querySelector('.con-monto-ingresado')?.value) || 0;
+                    let montoEsperado = parseFloat(div.querySelector('.con-ref-monto')?.value) || montoIngresado;
+                    let refCodigo = div.querySelector('.con-ref-codigo')?.value || '';
+                    let mon = div.querySelector('.con-moneda')?.value || 'VES';
+
+                    if (montoIngresado > 0) {
+                        await window.supabaseClient.from('conciliacion').insert([{
+                            local_id: CURRENT_LOCAL_ID,
+                            lote_id: loteIdCodigo,
+                            fecha: fechaHoy,
+                            monto_esperado: montoEsperado,
+                            monto_ingresado: montoIngresado,
+                            empleado: vendedorId,
+                            metodo: concNombre,
+                            estado: 'Pendiente',
+                            referencia: refCodigo,
+                            nota: `Factura / Apartado - Moneda: ${mon}`
+                        }]);
+                    }
+                }
+
+                // 7. Control Inventario Snapshot y Descuento de Stock
+                const { data: ultCierreArr } = await window.supabaseClient
+                    .from('control_inventario_cierres')
+                    .select('detalles_json')
+                    .eq('local_id', CURRENT_LOCAL_ID)
+                    .order('id', { ascending: false })
+                    .limit(1);
+
+                let stockAnteriorMap = {};
+                if (ultCierreArr && ultCierreArr.length > 0 && ultCierreArr[0].detalles_json) {
+                    ultCierreArr[0].detalles_json.forEach(item => {
+                        let pId = item.uuid || item.producto_id;
+                        stockAnteriorMap[pId] = parseFloat(item.S) || 0;
+                    });
+                }
+
+                let snapshotInventario = CATALOGO.map(prod => {
+                    let item = detallesAgrupados[prod.id];
+                    let VP_valor = item ? item.cant : 0;
+                    let E_valor = stockAnteriorMap[prod.id] !== undefined ? stockAnteriorMap[prod.id] : (prod.stock + VP_valor);
+                    let S_valor = Math.max(0, E_valor - VP_valor);
+                    let VT_valor = item ? item.subtotal : (VP_valor * (prod.precio_base || 0));
+
+                    return { uuid: prod.id, nombre: prod.nombre, E: E_valor, S: S_valor, VP: VP_valor, PI: prod.precio_base || 0, VT: VT_valor };
+                });
+
+                await window.supabaseClient.from('control_inventario_cierres').insert([{
+                    local_id: CURRENT_LOCAL_ID, 
+                    lote_id: loteIdCodigo, 
+                    empleado_cierra: vendedorId, 
+                    empleado_recibe: vendedorId,
+                    tasa_usd_bs: tasaBs, 
+                    total_usd: totalVentaUSD, 
+                    detalles_json: snapshotInventario
+                }]);
+
+                for (let item of carritoActual) {
+                    let prodActual = CATALOGO.find(p => p.id === item.id);
+                    if (prodActual) {
+                        let nuevoStock = Math.max(0, prodActual.stock - item.cant);
+                        await window.supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', item.id);
+                        prodActual.stock = nuevoStock;
+                    }
+                }
+            }
+
+            if (loader) loader.style.display = 'none';
+
+            // Generar PDF con diseño bancario / corporativo de alta gama
+            generarPDFBancarioCorporativo(clienteNombre, monedaDestino, anticiposRegistrados, saldoPendienteUSD, realizarApartado);
+
+            // Reiniciar carrito y calculadora
+            carritoActual = [];
+            renderizarTablaCarrito();
+            document.getElementById('buscar_cliente').value = '';
+            document.getElementById('cliente_id_seleccionado').value = '';
+            document.getElementById('garantia_activo').value = 'no';
+            toggleSeccionGarantia();
+            document.getElementById('lista_avances_contenedor').innerHTML = '';
+            document.getElementById('lista_gastos_contenedor').innerHTML = '';
+            document.getElementById('lista_efectivo_contenedor').innerHTML = '';
+            document.getElementById('lista_vueltos_contenedor').innerHTML = '';
+            document.querySelectorAll('#contenedor_conciliaciones_main [id^="contenedor_lineas_conciliacion_"]').forEach(el => el.innerHTML = '');
+
+        } catch (e) {
+            if (loader) loader.style.display = 'none';
+            alert("❌ Error crítico en la facturación: " + e.message);
+            console.error(e);
+        }
+    }
+
+    function generarPDFBancarioCorporativo(clienteNombre, monedaDestino, anticiposRegistrados, saldoPendienteUSD, realizadoApartado) {
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let selVendedor = document.getElementById('venta_vendedor');
+            let nombreVendedor = selVendedor.options[selVendedor.selectedIndex]?.text || 'N/A';
+            let nombreEmpresa = CONFIG_GLOBAL.identidad?.nombre || 'Banco y Tesorería Corporativa';
+            let numComprobante = 'FAC-CORP-' + Math.floor(100000 + Math.random() * 900000);
+            
+            let tasaMoneda = 1;
+            const tasasConfig = CONFIG_GLOBAL.tasas || {};
+            if (monedaDestino === 'VES' || monedaDestino === 'BS') tasaMoneda = parseFloat(tasasConfig.ves) || 1;
+            else if (monedaDestino === 'COP') tasaMoneda = parseFloat(tasasConfig.cop) || 1;
+            else if (monedaDestino === 'EUR') tasaMoneda = parseFloat(tasasConfig.eur) || 1;
+
+            let simbolo = monedaDestino === 'USD' ? '$' : monedaDestino === 'EUR' ? '€' : monedaDestino;
+            let decimales = monedaDestino === 'COP' ? 0 : 2;
+
+            // Calcular fechas de Garantía si aplica (Día exacto)
+            let garantiaActiva = document.getElementById('garantia_activo').value === 'si';
+            let textoGarantiaPDF = "No Aplica (Sin Garantía)";
+            if (garantiaActiva) {
+                let lapso = document.getElementById('garantia_lapso').value;
+                let cantidad = parseInt(document.getElementById('garantia_cantidad').value) || 1;
+                let fechaEmisionObj = new Date();
+                let fechaVencimientoObj = new Date(fechaEmisionObj);
+
+                if (lapso === 'dia') fechaVencimientoObj.setDate(fechaEmisionObj.getDate() + cantidad);
+                else if (lapso === 'semana') fechaVencimientoObj.setDate(fechaEmisionObj.getDate() + (cantidad * 7));
+                else if (lapso === 'mes') fechaVencimientoObj.setMonth(fechaEmisionObj.getMonth() + cantidad);
+                else if (lapso === 'anio') fechaVencimientoObj.setFullYear(fechaEmisionObj.getFullYear() + cantidad);
+
+                let formatoFechaStr = (d) => `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+                textoGarantiaPDF = `Vigencia: ${cantidad} ${lapso}(s) | Desde: ${formatoFechaStr(fechaEmisionObj)} Hasta: ${formatoFechaStr(fechaVencimientoObj)}`;
+            }
+
+            // 1. Membrete de Banco / Corporativo
+            doc.setFillColor(26, 9, 12);
+            doc.rect(0, 0, 210, 28, "F");
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(14);
+            doc.setTextColor(212, 175, 55);
+            doc.text(nombreEmpresa.toUpperCase(), 14, 12);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(200, 200, 200);
+            let tipoDocTxt = realizadoApartado ? "ESTADO DE CUENTA Y COMPROBANTE DE APARTADO MERCANTIL" : "FACTURA COMERCIAL Y LIQUIDACIÓN DE TESORERÍA";
+            doc.text(tipoDocTxt, 14, 20);
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(255, 255, 255);
+            doc.text(numComprobante, 196, 12, { align: 'right' });
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(7.5);
+            let fechaEmisionStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
+            doc.text(`Fecha Operación: ${fechaEmisionStr}`, 196, 19, { align: 'right' });
+
+            let posY = 36;
+
+            // 2. Bloque de Datos de Cliente y Asesor
+            doc.setFillColor(250, 248, 245);
+            doc.setDrawColor(197, 160, 40);
+            doc.roundedRect(14, posY, 182, 18, 2, 2, "FD");
+
+            doc.setFontSize(7.5);
+            doc.setTextColor(120, 120, 120);
+            doc.text("CLIENTE / TITULAR:", 17, posY + 5.5);
+            doc.text("ASESOR / DIVISA OFICIAL:", 110, posY + 5.5);
+
+            doc.setFontSize(9);
+            doc.setFont("Helvetica", "bold");
+            doc.setTextColor(40, 40, 40);
+            doc.text(String(clienteNombre.toUpperCase()), 17, posY + 12.5);
+            doc.text(String(`${nombreVendedor} | Expresado en ${monedaDestino}`), 110, posY + 12.5);
+
+            posY += 24;
+
+            // 3. Tabla de Partidas
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(74, 5, 16);
+            doc.text("Detalle de Bienes y Servicios Adquiridos", 14, posY);
+
+            posY += 4;
+            doc.setFontSize(8);
+            doc.setFillColor(74, 5, 16);
+            doc.setTextColor(197, 160, 40);
+            doc.rect(14, posY, 182, 6.5, "F");
+            doc.text("Cant", 17, posY + 4.5);
+            doc.text("Descripción del Producto o Servicio", 35, posY + 4.5);
+            doc.text("Precio Unitario", 135, posY + 4.5, { align: 'right' });
+            doc.text("Subtotal", 192, posY + 4.5, { align: 'right' });
+
+            posY += 6.5;
+            doc.setFont("Helvetica", "normal");
+            doc.setTextColor(40, 40, 40);
+
+            let totalFacturaMoneda = 0;
+
+            carritoActual.forEach((p, idx) => {
+                if (posY > 210) { doc.addPage(); posY = 20; }
+                if (idx % 2 === 0) {
+                    doc.setFillColor(253, 251, 247);
+                    doc.rect(14, posY, 182, 6.5, "F");
+                }
+
+                let subUsd = p.base * p.cant;
+                let unitMoneda = p.base * tasaMoneda;
+                let subMoneda = subUsd * tasaMoneda;
+                totalFacturaMoneda += subMoneda;
+
+                doc.text(String(p.cant), 17, posY + 4.5);
+                doc.text(String(p.nom), 35, posY + 4.5);
+                doc.text(`${simbolo} ${formatearNumero(unitMoneda, decimales)}`, 135, posY + 4.5, { align: 'right' });
+                doc.setFont("Helvetica", "bold");
+                doc.text(`${simbolo} ${formatearNumero(subMoneda, decimales)}`, 192, posY + 4.5, { align: 'right' });
+                doc.setFont("Helvetica", "normal");
+
+                posY += 6.5;
+            });
+
+            posY += 6;
+
+            // 4. Sección Financiera: Anticipos y Saldo Restante
+            if (posY > 185) { doc.addPage(); posY = 20; }
+
+            doc.setFillColor(255, 248, 238);
+            doc.setDrawColor(197, 160, 40);
+            doc.roundedRect(14, posY, 182, 12 + (anticiposRegistrados.length * 6) + 22, 2, 2, "FD");
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.setTextColor(74, 5, 16);
+            doc.text("REGISTRO DE ANTICIPOS Y MÉTODOS DE PAGO APLICADOS:", 17, posY + 6);
+
+            posY += 10;
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8);
+
+            if (anticiposRegistrados.length === 0) {
+                doc.text("• Ningún anticipo registrado (Pago total pendiente).", 17, posY);
+                posY += 6;
+            } else {
+                anticiposRegistrados.forEach(ant => {
+                    let montoConvertidoAnt = ant.eq_usd * tasaMoneda;
+                    doc.text(`• ${ant.concepto}: ${ant.monto} ${ant.moneda} (Equiv: ${simbolo} ${formatearNumero(montoConvertidoAnt, decimales)})`, 17, posY);
+                    posY += 6;
+                });
+            }
+
+            doc.setDrawColor(197, 160, 40);
+            doc.line(17, posY, 193, posY);
+            posY += 5;
+
+            let saldoPendienteMoneda = saldoPendienteUSD * tasaMoneda;
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(9.5);
+            doc.setTextColor(74, 5, 16);
+            doc.text("TOTAL FACTURADO:", 17, posY);
+            doc.text(`${simbolo} ${formatearNumero(totalFacturaMoneda, decimales)}`, 193, posY, { align: 'right' });
+
+            posY += 6;
+            let txtSaldoLabel = saldoPendienteMoneda <= 0.01 ? "SALDO PENDIENTE: 0.00 (CUENTA CUBIERTA)" : "SALDO RESTANTE / PENDIENTE POR COBRAR:";
+            doc.text(txtSaldoLabel, 17, posY);
+            doc.text(`${simbolo} ${formatearNumero(Math.max(0, saldoPendienteMoneda), decimales)}`, 193, posY, { align: 'right' });
+
+            posY += 15;
+
+            // 5. Cláusula de Garantía y Términos / Condiciones Corporativas
+            if (posY > 180) { doc.addPage(); posY = 20; }
+
+            doc.setFillColor(253, 251, 247);
+            doc.setDrawColor(197, 160, 40);
+            doc.roundedRect(14, posY, 182, 38, 2, 2, "FD");
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(7.5);
+            doc.setTextColor(74, 5, 16);
+            doc.text("TÉRMINOS, CONDICIONES Y POLÍTICAS DE GARANTÍA COMERCIAL:", 17, posY + 5);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(6.8);
+            doc.setTextColor(80, 80, 80);
+            let textoTerminos = `• COBERTURA DE GARANTÍA: ${textoGarantiaPDF}`;
+            textoTerminos += "\n• CONDICIÓN ESTÉTICA Y EMPAQUE: La mercancía objeto de devolución no debe presentar ningún tipo de deterioro y debe ser entregada con su caja, bolsa y cualquier accesorio original que incluya.";
+            textoTerminos += "\n• RESPONSABILIDAD DE FÁBRICA: La institución se hace responsable únicamente por defectos o daños de fabricación comprobables.";
+            textoTerminos += "\n• EXCLUSIONES DE COBERTURA: No nos hacemos responsables bajo ninguna circunstancia por deterioro físico, golpes, fracturas, mal uso o manipulación indebida.";
+            textoTerminos += "\n• VALIDEZ DE RECLAMOS: Toda devolución o trámite de garantía solo será válido y procesado estrictamente dentro de los días hábiles comerciales.";
+
+            doc.text(textoTerminos, 17, posY + 9.5, { maxWidth: 176 });
+
+            doc.save(`Factura_Corporativa_${clienteNombre.replace(/\s+/g, '_')}_${numComprobante}.pdf`);
+            alert("✅ Comprobante bancario corporativo con garantía y términos generado exitosamente en PDF.");
+
+        } catch (e) {
+            alert("❌ Error al generar el PDF bancario: " + e.message);
+            console.error(e);
+        }
+    }
+
+    function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
+    function formatearNumero(v, d = 2) { if (isNaN(v) || v == null) return "0"; let num = parseFloat(v); if (d === 0) num = Math.round(num); let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; }
+</script>
+</body>
+</html>

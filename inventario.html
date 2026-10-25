@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario | Panel Premium</title>
+    
+    <!-- Supabase SDK & Motor de Negocio -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="motor.js"></script>
+    
+    <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
+        /* ========================================================= */
+        :root {
+            --active-gold: #D4AF37; 
+            --active-gold-bright: #F5D061; 
+            
+            /* Paleta Carmesí Institucional */
+            --crimson: #7A171D;
+            --crimson-dark: #4A0E12;
+            --crimson-light: #9B222A;
+
+            /* Base y texto */
+            --bg: #FDFBF7; 
+            --text: #2A2A2A; 
+            --text-light: #555555;
+            --border: #E8E0D5; 
+            --card-bg: #FFFFFF; 
+            --input-bg: #FFFFFF;
+            
+            /* Estados Sólidos (para badges) */
+            --success: #2E7D32; 
+            --warning: #B8860B; 
+            --danger: #8B0000;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); color: var(--text); margin: 0; padding: 0; 
+            line-height: 1.5;
+        }
+
+        .wrapper { display: block; min-height: 100vh; position: relative; padding: 40px 20px 100px 20px; max-width: 1000px; margin: 0 auto; }
+        
+        h1, h2, h3, .serif-font {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            letter-spacing: 0.5px;
+        }
+
+        /* ========================================================= */
+        /* BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA              */
+        /* ========================================================= */
+        .close-corner-btn {
+            position: fixed; top: 20px; right: 25px; z-index: 10000;
+            background: rgba(122, 23, 29, 0.95); backdrop-filter: blur(8px);
+            border: 2px solid var(--active-gold); color: #ffffff;
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem; font-weight: bold; cursor: pointer; text-decoration: none;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
+
+        /* ========================================================= */
+        /* CONTENEDORES, TARJETAS Y COMPONENTES                      */
+        /* ========================================================= */
+        .card { 
+            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
+            border-top: 4px solid var(--crimson);
+        }
+
+        h2 { 
+            color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; 
+            border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px; text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .toggle-section-btn {
+            background: linear-gradient(135deg, var(--crimson-dark) 0%, var(--crimson) 100%); 
+            color: var(--active-gold); border: 1px solid var(--active-gold); 
+            padding: 18px 25px; width: 100%; border-radius: 6px; cursor: pointer; 
+            font-weight: bold; font-size: 1.15rem; text-transform: uppercase; 
+            letter-spacing: 1.5px; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); text-align: left;
+            display: flex; justify-content: space-between; align-items: center;
+            font-family: 'Georgia', serif; box-shadow: 0 6px 15px rgba(90, 17, 26, 0.35);
+        }
+        .toggle-section-btn:hover { filter: brightness(1.15); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(90, 17, 26, 0.5); }
+
+        .collapsible-content {
+            display: none; padding-top: 25px; animation: fadeIn 0.4s ease;
+        }
+
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 15px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { 
+            width: 100%; padding: 14px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.95rem; 
+            background-color: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD;
+        }
+        input:focus, select:focus { outline: none; background-color: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
+
+        .grid-vertical { display: flex; flex-direction: column; gap: 15px; }
+
+        button.btn-action { 
+            background: linear-gradient(135deg, var(--crimson), var(--crimson-dark)); 
+            color: var(--active-gold); border: 1px solid var(--active-gold); 
+            padding: 16px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; 
+            width: 100%; margin-top: 20px; font-size: 1rem; text-transform: uppercase; 
+            letter-spacing: 1.5px; transition: all 0.3s;
+        }
+        button.btn-action:hover { box-shadow: 0 8px 20px rgba(122, 23, 29, 0.4); transform: translateY(-2px); filter: brightness(1.1); }
+
+        .cat-header { 
+            background: linear-gradient(90deg, var(--crimson-dark), var(--crimson)); 
+            color: var(--active-gold); padding: 14px 18px; margin-top: 20px; margin-bottom: 0; 
+            border: 2px solid var(--active-gold); border-bottom: none;
+            font-weight: bold; width: 100%; font-family: 'Georgia', serif;
+            letter-spacing: 1.5px; font-size: 1.05rem; border-top-left-radius: 6px; border-top-right-radius: 6px;
+        }
+
+        .consulta-item { 
+            padding: 18px 15px; font-size: 0.95rem; 
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--active-gold); 
+            border-left: 2px solid var(--active-gold); 
+            border-right: 2px solid var(--active-gold); 
+            transition: all 0.2s;
+            background-color: #FFFFFF;
+        }
+        
+        .row-success { background-color: rgba(46, 125, 50, 0.08) !important; }
+        .row-warning { background-color: rgba(184, 134, 11, 0.12) !important; }
+        .row-danger { background-color: rgba(139, 0, 0, 0.10) !important; }
+        
+        .item-name { font-weight: bold; color: var(--text); display: block; margin-bottom: 4px; font-size: 1.05rem;}
+        .item-cat { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;}
+        
+        .badge-stock {
+            padding: 8px 16px; border-radius: 4px; font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+            display: inline-block; text-align: center; min-width: 90px; letter-spacing: 1px;
+        }
+        .badge-stock-success { background: var(--success); color: #FFFFFF; border: 1px solid #1B5E20; }
+        .badge-stock-warning { background: var(--warning); color: #000000; border: 1px solid #9D7B24; }
+        .badge-stock-danger { background: var(--danger); color: #FFFFFF; border: 1px solid #5a111a; }
+
+        .grid-3-filtros {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 0 20px 15px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        @media (max-width: 768px) {
+            .grid-3-filtros { grid-template-columns: 1fr; }
+        }
+
+        /* PANTALLAS DE CARGA Y BLOQUEO AUTÓNOMAS */
+        @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spinGold { 100% { transform: rotate(360deg); } }
+
+        .overlay-luxury { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: radial-gradient(circle at center, #5C0614 0%, #2A050B 100%); 
+            z-index: 999999; display: flex; justify-content: center; align-items: center; flex-direction: column; 
+        }
+        .card-luxury-menu { 
+            background: #FFFFFF; padding: 50px 40px; text-align: center; width: 90%; max-width: 480px; 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8); position: relative; border-radius: 6px;
+            animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .pantalla-bloqueo-card {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 2px solid var(--active-gold);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(212, 175, 55, 0.1);
+        }
+        .pin-wrapper { position: relative; width: 100%; margin-top: 15px; }
+        .pin-wrapper input { text-align: center; font-size: 1.5rem; letter-spacing: 8px; padding-right: 50px; font-weight: bold; color: var(--crimson-dark); width: 100%; padding: 12px; border: 1px solid var(--active-gold); border-radius: 4px; background: var(--input-bg); outline: none; }
+        .pin-toggle-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: transparent; border: none; font-size: 1.5rem; width: 40px; height: 40px; margin: 0; padding: 0; color: var(--active-gold); cursor: pointer; }
+        .pin-toggle-btn:hover { transform: translateY(-50%) scale(1.1); }
+        .msg-red { color: var(--danger); font-weight: bold; margin-top: 10px; animation: fadeIn 0.3s; }
+        .msg-green { color: var(--success); font-weight: bold; margin-top: 10px; font-size: 1.1rem; animation: fadeIn 0.3s; }
+
+        .btn-info { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border: 1px solid var(--active-gold); padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; text-transform: uppercase; font-family: 'Georgia', serif; }
+        .btn-danger { background: var(--danger); color: #ffffff; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 0.95rem; text-transform: uppercase; font-family: 'Georgia', serif; }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE CARGA AUTÓNOMA -->
+    <div id="loading_overlay" class="overlay-luxury">
+        <div class="card-luxury-menu">
+            <div style="width: 50px; height: 50px; margin: 0 auto 30px auto; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: #D4AF37; border-radius: 50%; animation: spinGold 1s linear infinite;"></div>
+            <div id="loading_title_txt" style="color: #111111; font-family: Georgia, serif; font-size: 1.4rem; letter-spacing: 2px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;">INVENTARIO FÍSICO</div>
+            <div style="color: #555555; font-size: 0.95rem; margin-bottom: 25px; font-family: Georgia, serif;">"El éxito está en los detalles."</div>
+            <div id="loading_subtitle_txt" style="color: #777777; font-size: 0.85rem; line-height: 1.6;">Sincronizando información de mercancía y existencias...</div>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE BLOQUEO GLOBAL POR PIN -->
+    <div id="pantalla_bloqueo_global" class="overlay-luxury" style="display:none;">
+        <div class="card-luxury-menu pantalla-bloqueo-card">
+            <div style="font-family: 'Georgia', serif; font-size: 1.4rem; color: var(--crimson-dark); letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">ACCESO AUTORIZADO</div>
+            <div style="font-size: 0.95rem; color: var(--text); border-bottom: 1px solid var(--active-gold); padding-bottom: 10px; margin-bottom: 15px;">Módulo Protegido. Ingrese su contraseña general:</div>
+            <div class="pin-wrapper">
+                <input type="password" id="pin_ingreso_global" placeholder="****" maxlength="8" autocomplete="new-password">
+                <button type="button" class="pin-toggle-btn" id="btn_ojo_pin" onclick="UIBOX.toggleVerPin()">🙈</button>
+            </div>
+            <div id="controles_bloqueo">
+                <button class="btn-info" id="btn_desbloquear_pin" style="margin-top: 25px;">Verificar Acceso</button>
+                <button class="btn-danger" onclick="window.location.href='principal.html'" style="background: transparent; border: 1px solid var(--danger); color: var(--danger);">Volver al Menú</button>
+            </div>
+            <div id="msj_respuesta_pin"></div>
+        </div>
+    </div>
+
+    <!-- BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA -->
+    <a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+<div class="wrapper" id="main_wrapper" style="display: none;">
+    <div class="main-content">
+        
+        <!-- SECCIÓN DE EXPORTACIÓN PDF -->
+        <div class="card" style="padding: 0; border: none; background: transparent; box-shadow: none;">
+            <button class="toggle-section-btn" onclick="toggleSeccion('sec_pdf', 'arrow_pdf')">
+                <span>📄 Exportación de Reportes PDF</span>
+                <span id="arrow_pdf">▼</span>
+            </button>
+            <div id="sec_pdf" class="collapsible-content card" style="border-top: none; margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label>Tipo de documento</label>
+                        <select id="sel_pdf_exportar">
+                            <option value="" disabled selected>Seleccione una opción...</option>
+                            <option value="inv">Inventario Físico</option>
+                            <option value="caja">Listado de Precios</option>
+                            <option value="inv_caja">Inventario + Precio</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Moneda a reflejar</label>
+                        <select id="sel_pdf_moneda">
+                            <option value="" disabled selected>Seleccione una opción...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Orden de Organización</label>
+                        <select id="sel_pdf_orden">
+                            <option value="" disabled selected>Seleccione una opción...</option>
+                            <option value="az">Alfabético A-Z</option>
+                            <option value="cat">Por Categorías</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Filtro de Existencias</label>
+                        <select id="sel_pdf_stock">
+                            <option value="" disabled selected>Seleccione una opción...</option>
+                            <option value="todos">Mostrar Todo el Catálogo</option>
+                            <option value="con_stock">Ocultar Mercancía Agotada</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid-vertical" style="margin-top:20px;">
+                    <button class="btn-action" onclick="ejecutarAccionPDF('descargar')">Descargar Documento PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE INVENTARIO -->
+        <div class="card" style="padding: 10px 0 0 0; background: transparent; border: none; box-shadow: none;">
+            <h2 class="serif-font" style="padding: 0 20px;">📦 Inventario</h2>
+            
+            <div class="grid-3-filtros">
+                <div>
+                    <label style="font-size:0.8rem; margin:0;">🔍 Buscar Mercancía:</label>
+                    <input type="text" id="buscar_inv_fisico" placeholder="Escriba el nombre..." oninput="renderInventarioFisico()" style="margin-top:5px; background: white;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; margin:0;">Visualización de datos:</label>
+                    <select id="orden_inv_fisico" onchange="renderInventarioFisico()" style="margin-top:5px; background: white;">
+                        <option value="cat">Agrupados por Categoría</option>
+                        <option value="az">Listado Alfabético (A-Z)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; margin:0;">Filtro en tiempo real:</label>
+                    <select id="filtro_stock_fisico" onchange="renderInventarioFisico()" style="margin-top:5px; background: white;">
+                        <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
+                        <option value="todos">Mostrar Todo el Catálogo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="inv_lista_readonly" style="padding: 0 20px 20px 20px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const UIBOX = {
+        mostrarCargando: function(titulo, subtitulo) {
+            const overlay = document.getElementById('loading_overlay');
+            if (overlay) {
+                if(titulo) document.getElementById('loading_title_txt').innerText = titulo;
+                if(subtitulo) document.getElementById('loading_subtitle_txt').innerHTML = subtitulo;
+                overlay.style.display = 'flex';
+                overlay.style.opacity = '1';
+            }
+        },
+        ocultarCargando: function() {
+            const overlay = document.getElementById('loading_overlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.display = 'none'; }, 500);
+            }
+        },
+        toggleVerPin: function() {
+            const input = document.getElementById('pin_ingreso_global');
+            const btn = document.getElementById('btn_ojo_pin');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerText = '👁️';
+            } else {
+                input.type = 'password';
+                btn.innerText = '🙈';
+            }
+        },
+        bloquearPantallaPIN: function(callbackVerificarPIN) {
+            const bloqueo = document.getElementById('pantalla_bloqueo_global');
+            const main = document.getElementById('main_wrapper');
+            const input = document.getElementById('pin_ingreso_global');
+            const btnVerificar = document.getElementById('btn_desbloquear_pin');
+            const controles = document.getElementById('controles_bloqueo');
+            const msj = document.getElementById('msj_respuesta_pin');
+
+            if (bloqueo && main) {
+                bloqueo.style.display = 'flex';
+                main.style.display = 'none';
+                input.value = '';
+                msj.innerHTML = '';
+                controles.style.display = 'block';
+
+                btnVerificar.onclick = () => {
+                    const pinIngresado = input.value.trim();
+                    controles.style.display = 'none';
+                    msj.innerHTML = '<div class="msg-green">Verificando Credenciales...</div>';
+                    
+                    setTimeout(() => {
+                        if (callbackVerificarPIN(pinIngresado)) {
+                            msj.innerHTML = '<div class="msg-green">¡Acceso Autorizado!</div>';
+                            setTimeout(() => {
+                                bloqueo.style.display = 'none';
+                                main.style.display = 'block';
+                                input.value = '';
+                                msj.innerHTML = '';
+                                controles.style.display = 'block';
+                            }, 500); 
+                        } else {
+                            msj.innerHTML = '<div class="msg-red">❌ Contraseña Incorrecta</div>';
+                            input.value = '';
+                            setTimeout(() => { msj.innerHTML = ''; controles.style.display = 'block'; }, 1500);
+                        }
+                    }, 800);
+                };
+            }
+        }
+    };
+
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+
+    function toggleSeccion(idContenedor, idFlecha) {
+        let cont = document.getElementById(idContenedor);
+        let flecha = document.getElementById(idFlecha);
+        if (cont.style.display === "none" || cont.style.display === "") {
+            cont.style.display = "block";
+            flecha.innerText = "▲";
+        } else {
+            cont.style.display = "none";
+            flecha.innerText = "▼";
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        UIBOX.mostrarCargando("INVENTARIO FÍSICO", "Sincronizando información de mercancía y existencias...");
+
+        try {
+            const estado = await AppMotor.inicializar();
+            CONFIG_GLOBAL = estado.configuracion || {};
+            CATALOGO = (estado.catalogo || []).map(p => ({
+                uuid: p.id, 
+                nom: p.nombre, 
+                cat: p.categoria || "General", 
+                base: p.precio_base || 0, 
+                mBase: p.moneda_base || 'USD', 
+                stock: parseFloat(p.stock) || 0, 
+                umbralAmarillo: parseFloat(p.umbral_amarillo) || 5, 
+                umbralRojo: parseFloat(p.umbral_rojo) || 0
+            }));
+
+            actualizarSelectoresMonedaExportacion();
+            renderInventarioFisico();
+
+            // Verificación del bloqueo por PIN para el módulo 'inventario'
+            const permisos = CONFIG_GLOBAL.permisos_modulos || {};
+            const moduloBloqueado = permisos.inventario && permisos.inventario.general;
+            const tienePin = !!CONFIG_GLOBAL.identidad?.admin_pass;
+
+            if (tienePin && moduloBloqueado) {
+                UIBOX.ocultarCargando();
+                UIBOX.bloquearPantallaPIN((pin) => {
+                    return AppMotor.verificarPinAdministrador(pin);
+                });
+            } else {
+                UIBOX.ocultarCargando();
+                document.getElementById('main_wrapper').style.display = 'block';
+            }
+        } catch (err) {
+            UIBOX.ocultarCargando();
+            if (err.message === "NoAutorizado") {
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('main_wrapper').style.display = 'none';
+                alert("Error al cargar inventario: " + err.message);
+            }
+        }
+    });
+
+    function renderInventarioFisico() {
+        let busqueda = (document.getElementById('buscar_inv_fisico')?.value || "").toLowerCase().trim();
+        let ord = document.getElementById('orden_inv_fisico').value; 
+        let filtroStock = document.getElementById('filtro_stock_fisico').value;
+        let arr = [...CATALOGO]; 
+
+        // Filtrado por término de búsqueda
+        if (busqueda !== "") {
+            arr = arr.filter(p => p.nom.toLowerCase().includes(busqueda) || p.cat.toLowerCase().includes(busqueda));
+        }
+
+        // Filtro de existencias
+        if (filtroStock === 'con_stock') {
+            arr = arr.filter(p => parseFloat(p.stock) > 0);
+        }
+
+        arr.sort((a,b) => ord==='cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom))); 
+        
+        let html = ""; let lC = "";
+        arr.forEach((p) => { 
+            if(ord === 'cat' && p.cat !== lC) { 
+                html += `<div class="cat-header">${p.cat.toUpperCase()}</div>`; 
+                lC = p.cat; 
+            } 
+
+            let stockVal = p.stock;
+            let badgeClass = 'badge-stock-success'; 
+            let rowClass = 'row-success'; 
+
+            if (stockVal <= p.umbralRojo) {
+                badgeClass = 'badge-stock-danger'; 
+                rowClass = 'row-danger';
+            } else if (stockVal <= p.umbralAmarillo) {
+                badgeClass = 'badge-stock-warning'; 
+                rowClass = 'row-warning';
+            }
+
+            html += `
+                <div class="consulta-item ${rowClass}">
+                    <span>
+                        <span class="item-name">${limpiarNombre(p.nom)}</span>
+                        <span class="item-cat">Categoría: ${p.cat}</span>
+                    </span>
+                    <span class="badge-stock ${badgeClass}">Und:<br>${formatearNumero(p.stock, 2)}</span>
+                </div>`; 
+        });
+        
+        if (html !== "") {
+            html += `<div style="border-bottom: 3px solid var(--active-gold); border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; height: 3px; background: transparent; width: 100%;"></div>`;
+        }
+
+        document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--text-light); text-align:center; padding: 20px; font-style:italic; border: 1px solid var(--border);">No se encontraron registros con los filtros actuales.</p>';
+    }
+
+    /* SELECTOR DE MONEDAS DINÁMICO PARA EXPORTACIÓN PDF */
+    function actualizarSelectoresMonedaExportacion() {
+        let sel = document.getElementById('sel_pdf_moneda');
+        if (!sel) return;
+
+        let tasasConfig = CONFIG_GLOBAL.tasas || {};
+        let monedaBase = tasasConfig.moneda_base || 'USD';
+        let secundarias = tasasConfig.secundarias || [];
+
+        let html = `<option value="" disabled selected>Seleccione una opción...</option>`;
+        html += `<option value="ALL">Todas las Monedas</option>`;
+        html += `<option value="${monedaBase}">Solo ${monedaBase} (${monedaBase})</option>`;
+
+        secundarias.forEach(s => {
+            if (s.code && parseFloat(s.tasa) > 0) {
+                html += `<option value="${s.code}">Solo ${s.code} (${s.code})</option>`;
+            }
+        });
+
+        sel.innerHTML = html;
+    }
+
+    function ejecutarAccionPDF(accion) {
+        let valDoc = document.getElementById('sel_pdf_exportar').value;
+        let modMon = document.getElementById('sel_pdf_moneda').value;
+        let ordPdf = document.getElementById('sel_pdf_orden').value;
+        let filtroStock = document.getElementById('sel_pdf_stock').value; 
+        
+        if(!valDoc || !modMon || !ordPdf || !filtroStock) {
+            return alert("⛔ Error de Procedimiento: Por favor, seleccione todas las opciones obligatorias del documento antes de intentar exportar el reporte.");
+        }
+        
+        if (accion === 'descargar') {
+            generarPDFInventarioNativo(valDoc, modMon, ordPdf, filtroStock);
+        }
+    }
+
+    function generarPDFInventarioNativo(valDoc, modMoneda, ordPdf, filtroStock) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Panel Empresarial';
+        let showCaja = ["inv_caja", "caja"].includes(valDoc);
+
+        let arr = [...CATALOGO];
+        if (filtroStock === 'con_stock') arr = arr.filter(p => parseFloat(p.stock) > 0);
+        arr.sort((a,b) => ordPdf === 'cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)));
+
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(90, 17, 26); 
+        doc.text(nombreLocal.toUpperCase(), 14, 18);
+
+        doc.setFont("Helvetica", "italic");
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Reporte Analítico de Inventario (${valDoc.toUpperCase()}) - ${new Date().toLocaleDateString()}`, 14, 24);
+
+        doc.setDrawColor(212, 175, 55); 
+        doc.setLineWidth(0.8);
+        doc.line(14, 28, 196, 28);
+
+        let posY = 34;
+        let lC = "";
+
+        arr.forEach((p, index) => {
+            if (ordPdf === 'cat' && p.cat !== lC) {
+                if (posY > 265) { doc.addPage(); posY = 20; }
+                doc.setFillColor(122, 23, 29); 
+                doc.rect(14, posY, 182, 7, "F");
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(9);
+                doc.setTextColor(212, 175, 55); 
+                doc.text(p.cat.toUpperCase(), 18, posY + 5);
+                posY += 8;
+                lC = p.cat;
+            }
+
+            let usdValor = convertirA_USD(p.base, p.mBase);
+            let arrayCaja = showCaja ? obtenerLineasMonedasDinamicas(usdValor, modMoneda) : [];
+            let maxLineas = Math.max(arrayCaja.length, 1);
+            let alturaCelda = Math.max(12, 6 + (maxLineas * 4.5));
+
+            if (posY + alturaCelda > 280) { doc.addPage(); posY = 20; }
+
+            if (index % 2 === 0) {
+                doc.setFillColor(249, 248, 246);
+                doc.rect(14, posY, 182, alturaCelda, "F");
+            }
+
+            let pNom = limpiarNombre(p.nom);
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(40, 40, 40);
+            doc.text(pNom, 18, posY + 5);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(90, 90, 90);
+            doc.text(`Stock: ${p.stock} Und.`, 18, posY + 10);
+
+            if (showCaja) {
+                let colX = 145;
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(122, 23, 29); 
+                doc.text("Valores:", colX, posY + 5);
+                
+                doc.setFont("Helvetica", "normal");
+                doc.setTextColor(60, 60, 60);
+                let offsetV = posY + 9;
+                arrayCaja.forEach(linea => {
+                    doc.text(linea, colX, offsetV);
+                    offsetV += 4.5;
+                });
+            }
+
+            posY += alturaCelda;
+        });
+
+        doc.save(`Reporte_Inventario_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`);
+    }
+
+    /* OBTENER LÍNEAS DE MONEDAS DINÁMICAS PARA EL PDF */
+    function obtenerLineasMonedasDinamicas(usd, modMoneda) {
+        let lineas = [];
+        let tasasConfig = CONFIG_GLOBAL.tasas || {};
+        let monedaBase = tasasConfig.moneda_base || 'USD';
+        let secundarias = tasasConfig.secundarias || [];
+
+        let calcularMontoEnMoneda = (code, tasa, operacion) => {
+            if (code === monedaBase) return usd;
+            if (!tasa || tasa === 0) return 0;
+            return (operacion === 'dividir') ? (usd / tasa) : (usd * tasa);
+        };
+
+        if (modMoneda === 'ALL' || modMoneda === monedaBase) {
+            lineas.push(`$${formatearNumero(usd)} ${monedaBase}`);
+        }
+
+        secundarias.forEach(sec => {
+            if (sec.code && (modMoneda === 'ALL' || modMoneda === sec.code)) {
+                let tasaVal = parseFloat(sec.tasa) || 0;
+                if (tasaVal > 0) {
+                    let montoConv = calcularMontoEnMoneda(sec.code, tasaVal, sec.operacion);
+                    let dec = (sec.code === 'COP') ? 0 : 2;
+                    let simbolo = sec.code === 'VES' ? 'Bs.' : sec.code;
+                    lineas.push(`${simbolo} ${formatearNumero(montoConv, dec)}`);
+                }
+            }
+        });
+
+        return lineas;
+    }
+
+    function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
+    function formatearNumero(v, d = 2) { if (isNaN(v) || v == null) return "0"; let num = parseFloat(v); if (d === 0) num = Math.round(num); let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; }
+    
+    function convertirA_USD(m, mon) {
+        let tasasConfig = CONFIG_GLOBAL.tasas || {};
+        let monedaBase = tasasConfig.moneda_base || 'USD';
+        if (mon === monedaBase) return parseFloat(m);
+
+        let sec = (tasasConfig.secundarias || []).find(s => s.code === mon);
+        if (!sec || !sec.tasa || parseFloat(sec.tasa) === 0) return parseFloat(m);
+
+        let tasa = parseFloat(sec.tasa);
+        return (sec.operacion === 'dividir') ? (parseFloat(m) * tasa) : (parseFloat(m) / tasa);
+    }
+</script>
+</body>
+</html>

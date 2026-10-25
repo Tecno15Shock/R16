@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Proveedores | Panel</title>
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Fondo Claro)*/
+        /* ========================================================= */
+        :root {
+            --active-gold: #D4AF37; 
+            --crimson: #7A171D;
+            --crimson-dark: #4A0E12; 
+            --crimson-light: #9B222A;
+            --bg: #FDFBF7; 
+            --text: #2A2A2A; 
+            --text-light: #555555;
+            --border: #E8E0D5; 
+            --card-bg: #FFFFFF; 
+            --item-bg: #FCFBFA; 
+            --success: #2E7D32; 
+            --warning: #B8860B; 
+            --danger: #8B0000;
+            --info: #2c3e50;
+            --title-font: 'Playfair Display', serif;
+        }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; }
+        
+        .wrapper { display: block; min-height: 100vh; position: relative; padding: 40px 20px 100px 20px; max-width: 1000px; margin: 0 auto; }
+
+        /* Ocultar barra superior y menú lateral por si plantillas externas intentan cargarlos */
+        .top-bar, .sidebar, .sidebar-overlay, .menu-toggle-btn { display: none !important; }
+
+        /* ========================================================= */
+        /* BOTÓN X FLOTANTE CON FONDO BLANCO                         */
+        /* ========================================================= */
+        .close-corner-btn {
+            position: fixed; top: 20px; right: 25px; z-index: 10000;
+            background: #FFFFFF; backdrop-filter: blur(8px);
+            border: 2px solid var(--active-gold); color: var(--crimson-dark);
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem; font-weight: bold; cursor: pointer; text-decoration: none;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        .close-corner-btn:hover { background: var(--crimson-dark); color: #FFFFFF; transform: scale(1.1) rotate(90deg); }
+
+        .card { 
+            background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
+            border-top: 4px solid var(--crimson); position: relative; overflow: hidden;
+        }
+
+        .acordeon-header { padding: 18px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); border-bottom: 1px solid var(--border); transition: background 0.3s; }
+        .acordeon-header:hover { background: rgba(212, 175, 55, 0.05); }
+        .acordeon-title { margin: 0; color: var(--crimson-dark); font-size: 1.1rem; font-weight: bold; font-family: var(--title-font); }
+        .acordeon-content { padding: 20px; display: none; animation: fadeIn 0.3s ease; }
+        
+        input, select { 
+            width: 100%; padding: 12px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; 
+            font-size: 1rem; background: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD; font-family: 'Roboto', sans-serif;
+        }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
+
+        label { font-size: 0.9rem; font-weight: 700; display: block; margin-top: 14px; color: var(--crimson-dark); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        button { font-family: 'Roboto', sans-serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+        
+        .btn-info { background: linear-gradient(135deg, var(--crimson-dark), var(--crimson)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-warning { background: var(--warning); color: white; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media(max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .tabla-historial { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 15px; }
+        .tabla-historial th { background: var(--crimson-dark); color: #fff; padding: 10px; text-align: left; font-family: var(--title-font); }
+        .tabla-historial td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); font-weight: 500; }
+        .badge-entrada { color: var(--success); font-weight: bold; }
+        .badge-salida { color: var(--danger); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- BOTÓN X FLOTANTE CON FONDO BLANCO -->
+    <a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+    <div class="wrapper" id="main_wrapper">
+        <main class="main-content" style="display: none;" id="contenido_principal">
+            
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h1 style="color: var(--crimson-dark); font-family: var(--title-font); text-transform: uppercase; margin: 0; font-size: 1.8rem;">🚚 Gestión de Proveedores</h1>
+                <p style="color: var(--text-light); font-size: 0.95rem; margin-top: 5px;">Directorio de empresas y control de movimientos de mercancía.</p>
+            </div>
+
+            <!-- 1. CREAR PROVEEDOR -->
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="acordeon-header" onclick="UI_Proveedores.toggleSeccion('sec-crear', 'icon-crear')">
+                    <h2 class="acordeon-title">1. Crear Nuevo Proveedor</h2>
+                    <span id="icon-crear" style="color: var(--active-gold);">▼</span>
+                </div>
+                <div id="sec-crear" class="acordeon-content">
+                    <form id="form-crear-proveedor" class="grid-2">
+                        <div><label>Nombre de la Empresa</label><input type="text" id="prov_nombre" required></div>
+                        <div><label>RIF Comercial</label><input type="text" id="prov_rif"></div>
+                        <div><label>Teléfono</label><input type="tel" id="prov_tel"></div>
+                        <div>
+                            <label>Moneda de Facturación</label>
+                            <select id="prov_moneda">
+                                <option value="USD">Dólares (USD)</option>
+                                <option value="VES">Bolívares (VES)</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <button type="button" class="btn-info" onclick="UI_Proveedores.guardarProveedor()">Registrar Proveedor</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. AÑADIR O ELIMINAR MERCANCÍA -->
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="acordeon-header" onclick="UI_Proveedores.toggleSeccion('sec-movimiento', 'icon-movimiento')">
+                    <h2 class="acordeon-title">2. Añadir / Eliminar Mercancía</h2>
+                    <span id="icon-movimiento" style="color: var(--active-gold);">▼</span>
+                </div>
+                <div id="sec-movimiento" class="acordeon-content">
+                    <p style="color: var(--text-light); font-size: 0.85rem; margin-top:0;">* Utiliza valores positivos (Ej. 10) para ingresos y negativos (Ej. -5) para devoluciones/daños.</p>
+                    <form id="form-movimiento-stock" class="grid-2">
+                        <div><label>Proveedor Involucrado</label><select id="mov_proveedor_id" required></select></div>
+                        <div><label>Producto</label><select id="mov_producto_id" required></select></div>
+                        <div><label>Cantidad (+/-)</label><input type="number" id="mov_cantidad" required placeholder="Ej. 10 o -2"></div>
+                        <div><label>Costo Asociado (Opcional)</label><input type="number" id="mov_costo" step="0.01" value="0.00"></div>
+                        <div style="grid-column: 1 / -1;"><label>Justificación / Motivo del movimiento</label><input type="text" id="mov_nota" required placeholder="Ej. Compra factura #123, o Devolución por daño"></div>
+                        
+                        <div style="grid-column: 1 / -1;">
+                            <button type="button" class="btn-warning" onclick="UI_Proveedores.registrarMovimiento()">Ejecutar Ajuste de Inventario</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. HISTORIAL DE MOVIMIENTOS -->
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="acordeon-header" onclick="UI_Proveedores.toggleSeccion('sec-historial', 'icon-historial'); UI_Proveedores.cargarHistorial();">
+                    <h2 class="acordeon-title">3. Historial de Operaciones</h2>
+                    <span id="icon-historial" style="color: var(--active-gold);">▼</span>
+                </div>
+                <div id="sec-historial" class="acordeon-content" style="overflow-x: auto;">
+                    <table class="tabla-historial">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Producto</th>
+                                <th>Proveedor</th>
+                                <th>Movimiento</th>
+                                <th>Justificación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla_historial_body">
+                            <!-- Se llena por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="motor.js"></script>
+    <script src="plantilla_base.js"></script>
+    <script>
+        const UI_Proveedores = {
+            async iniciar() {
+                try {
+                    UIBase.mostrarCargando("Sincronizando", "Cargando logística...");
+                    await AppMotor.inicializar();
+                    this.renderizarSelects();
+                    document.getElementById('contenido_principal').style.display = 'flex';
+                    UIBase.ocultarCargando();
+                } catch (e) {
+                    UIBase.ocultarCargando();
+                    UIBase.mostrarModalLocal("Error", e.message);
+                }
+            },
+
+            toggleSeccion(id, iconId) {
+                const el = document.getElementById(id);
+                const icon = document.getElementById(iconId);
+                if (el.style.display === 'none' || el.style.display === '') {
+                    el.style.display = 'block';
+                    icon.innerText = '▲';
+                } else {
+                    el.style.display = 'none';
+                    icon.innerText = '▼';
+                }
+            },
+
+            renderizarSelects() {
+                const selectProv = document.getElementById('mov_proveedor_id');
+                const selectProd = document.getElementById('mov_producto_id');
+                
+                selectProv.innerHTML = '<option value="">-- Seleccione Proveedor --</option>';
+                AppMotor.estadoGlobal.proveedores.forEach(p => {
+                    selectProv.innerHTML += `<option value="${p.id}">${p.nombre_empresa}</option>`;
+                });
+
+                selectProd.innerHTML = '<option value="">-- Seleccione Producto --</option>';
+                AppMotor.estadoGlobal.catalogo.filter(c => c.tipo !== 'servicio').forEach(prod => {
+                    selectProd.innerHTML += `<option value="${prod.id}">${prod.nombre} (Stock actual: ${prod.stock})</option>`;
+                });
+            },
+
+            async guardarProveedor() {
+                const nombre = document.getElementById('prov_nombre').value;
+                if(!nombre) return UIBase.mostrarModalLocal("Atención", "El nombre es obligatorio.");
+
+                const datos = {
+                    nombre_empresa: nombre,
+                    rif_comercial: document.getElementById('prov_rif').value,
+                    telefono: document.getElementById('prov_tel').value,
+                    moneda_preferida: document.getElementById('prov_moneda').value
+                };
+
+                try {
+                    UIBase.mostrarCargando("Guardando", "Registrando proveedor...");
+                    await AppMotor.crearProveedor(datos);
+                    this.renderizarSelects();
+                    document.getElementById('form-crear-proveedor').reset();
+                    UIBase.ocultarCargando();
+                    UIBase.mostrarAnimacionGuardando("Proveedor registrado");
+                } catch (e) {
+                    UIBase.ocultarCargando();
+                    UIBase.mostrarModalLocal("Error", e.message);
+                }
+            },
+
+            async registrarMovimiento() {
+                const provId = document.getElementById('mov_proveedor_id').value;
+                const prodId = document.getElementById('mov_producto_id').value;
+                const cant = parseFloat(document.getElementById('mov_cantidad').value);
+                const costo = parseFloat(document.getElementById('mov_costo').value) || 0;
+                const nota = document.getElementById('mov_nota').value.trim();
+                
+                if(!provId || !prodId || isNaN(cant) || cant === 0 || !nota) {
+                    return UIBase.mostrarModalLocal("Faltan datos", "Verifica la cantidad (no puede ser cero) y añade una justificación clara.");
+                }
+
+                try {
+                    UIBase.mostrarCargando("Procesando", "Ajustando inventario...");
+                    await AppMotor.registrarEntradaMercancia(prodId, provId, cant, costo, "USD", nota);
+                    this.renderizarSelects(); 
+                    document.getElementById('form-movimiento-stock').reset();
+                    if(document.getElementById('sec-historial').style.display === 'block') this.cargarHistorial();
+                    UIBase.ocultarCargando();
+                    UIBase.mostrarAnimacionGuardando("Ajuste procesado con éxito");
+                } catch (e) {
+                    UIBase.ocultarCargando();
+                    UIBase.mostrarModalLocal("Error", e.message);
+                }
+            },
+
+            async cargarHistorial() {
+                const tbody = document.getElementById('tabla_historial_body');
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando historial...</td></tr>';
+                
+                try {
+                    const { data, error } = await AppMotor.supabase
+                        .from('proveedores_historial_entradas')
+                        .select('cantidad, nota, creado_en, catalogo(nombre), proveedores(nombre_empresa)')
+                        .eq('local_id', AppMotor.estadoGlobal.local_id)
+                        .order('creado_en', { ascending: false })
+                        .limit(30);
+
+                    if (error) throw error;
+                    
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay registros aún.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map(reg => {
+                        const cant = parseFloat(reg.cantidad);
+                        const claseBadge = cant > 0 ? 'badge-entrada' : 'badge-salida';
+                        const signo = cant > 0 ? '+' : '';
+                        const fecha = new Date(reg.creado_en).toLocaleDateString('es-VE', {hour:'2-digit', minute:'2-digit'});
+                        
+                        return `<tr>
+                            <td>${fecha}</td>
+                            <td>${reg.catalogo?.nombre || 'Desconocido'}</td>
+                            <td>${reg.proveedores?.nombre_empresa || 'N/A'}</td>
+                            <td class="${claseBadge}">${signo}${cant}</td>
+                            <td>${reg.nota}</td>
+                        </tr>`;
+                    }).join('');
+
+                } catch (e) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger);">Error: ${e.message}</td></tr>`;
+                }
+            }
+        };
+        window.addEventListener('load', () => UI_Proveedores.iniciar());
+    </script>
+</body>
+</html>

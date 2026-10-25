@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧮 Conversor Monetario | Panel Ultra-Premium</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #FDFBF7;                 
+            --card-bg: #FFFFFF;            
+            --item-bg: #FFFDF9;            
+            --text: #111111;               
+            --text-dark: #000000;
+            --muted: #555555;              
+            --border-gold: #C5A028;        
+            --gold-light: #5A4008;         
+            --primary: #4A0510;            
+            --secondary: #7A0000;          
+            --danger: #990000;             
+            --success: #1E8449;            
+            --warning: #B8860B;
+        }
+
+        /* Clases de ocultamiento inteligente por moneda */
+        body.hide-ves .moneda-ves { display: none !important; }
+        body.hide-cop .moneda-cop { display: none !important; }
+        body.hide-eur .moneda-eur { display: none !important; }
+        body.hide-usdt .moneda-usdt { display: none !important; }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.6; }
+        .wrapper { display: block; min-height: 100vh; position: relative; }
+
+        /* ========================================================= */
+        /* BOTÓN X FLOTANTE EN LA ESQUINA SUPERIOR DERECHA           */
+        /* ========================================================= */
+        .close-corner-btn {
+            position: fixed; top: 20px; right: 25px; z-index: 10000;
+            background: rgba(74, 5, 16, 0.95); backdrop-filter: blur(8px);
+            border: 2px solid var(--border-gold); color: #ffffff;
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem; font-weight: bold; cursor: pointer; text-decoration: none;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
+
+        /* BANNER INTELIGENTE DE TASAS ACTIVAS */
+        .smart-rates-banner {
+            background: linear-gradient(135deg, #2A030A, var(--primary));
+            border-bottom: 3px solid var(--border-gold);
+            color: #FFF; padding: 12px 20px; font-size: 0.95rem;
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 999;
+        }
+        .rate-badge {
+            background: rgba(197, 160, 40, 0.2); border: 1px solid var(--border-gold);
+            padding: 4px 10px; border-radius: 4px; font-weight: bold; font-family: 'Playfair Display', serif;
+            color: #FFD700; display: inline-flex; align-items: center; gap: 6px;
+        }
+
+        .main-content { max-width: 900px; margin: 0 auto; padding: 40px 20px 100px 20px; }
+        
+        .card { 
+            background: var(--card-bg); padding: 30px; border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 12px 30px rgba(0,0,0,0.06); border: 2px solid var(--border-gold);
+            position: relative; overflow: hidden;
+        }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, #C5A028, var(--secondary)); }
+        
+        h1 { color: var(--primary); margin: 0 0 8px 0; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; font-size: 1.8rem; text-align: center; }
+        h2 { color: var(--primary); margin: 0 0 15px 0; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; font-size: 1.35rem; border-bottom: 2px solid var(--border-gold); padding-bottom: 10px; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .main-content { padding: 20px 15px; } }
+
+        label { font-size: 0.9rem; font-weight: 700; display: block; margin-top: 14px; color: var(--gold-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { 
+            width: 100%; padding: 13px; margin-top: 6px; background: #FFFFFF; color: var(--text-dark);
+            border: 2px solid var(--border-gold); border-radius: 6px; font-size: 1.05rem; font-weight: 700; transition: 0.3s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px rgba(197, 160, 40, 0.6); background: #FFFFFF; }
+
+        /* PESTAÑAS DE NAVEGACIÓN ENTRE MODOS */
+        .tabs-container { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid var(--border-gold); padding-bottom: 15px; }
+        .tab-mode-btn { 
+            flex: 1; padding: 12px; background: #FFF8EE; border: 2px solid var(--border-gold); color: var(--primary);
+            font-family: 'Playfair Display', serif; font-weight: bold; text-transform: uppercase; border-radius: 6px;
+            cursor: pointer; transition: all 0.3s ease; font-size: 1rem; letter-spacing: 1px; text-align: center;
+        }
+        .tab-mode-btn.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #FFFFFF; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+        /* DISPLAY DE CÁLCULO */
+        .calc-display { 
+            background: #2A030A; padding: 25px; border-radius: 6px; text-align: center; 
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4); border: 2px solid var(--border-gold); margin-top: 25px; 
+        }
+        .calc-display .title { 
+            font-size: 0.9rem; color: #FFD700; margin-bottom: 12px; font-weight: bold;
+            font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .calc-res.main { 
+            font-size: 2.2rem; color: #FFD700; font-weight: 800; margin-bottom: 8px;
+            font-family: 'Playfair Display', serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        .calc-res.sub { 
+            font-size: 1.15rem; color: #FFFFFF; font-weight: 700;
+            font-family: 'Roboto', sans-serif; letter-spacing: 0.5px; margin-top: 6px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* OVERLAY DE CARGA */
+        #loading_overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(26, 9, 12, 0.92); z-index: 200000; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(6px);
+        }
+        .loading-box {
+            background: var(--card-bg); padding: 40px; border-radius: 8px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); border: 2px solid var(--border-gold); max-width: 420px; width: 90%;
+        }
+        .spinner-luxury {
+            width: 50px; height: 50px; border: 4px solid rgba(197, 160, 40, 0.3);
+            border-left-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- BOTÓN X FLOTANTE -->
+<a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+<!-- BANNER INTELIGENTE DE TASAS ACTIVAS -->
+<div id="smart_banner_tasas" class="smart-rates-banner">
+    <span>🌐 Reconociendo monedas y tasas activas...</span>
+</div>
+
+<!-- OVERLAY DE CARGA -->
+<div id="loading_overlay">
+    <div class="loading-box">
+        <div class="spinner-luxury"></div>
+        <div style="font-family:'Playfair Display'; color:var(--primary); font-size:1.4rem; font-weight:700;">Conversor Monetario</div>
+        <div style="color:var(--text); font-size:1rem; font-weight:bold; margin-top:8px;">Sincronizando tasas de cambio inteligentes...</div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <div class="main-content">
+        
+        <div class="card" style="text-align: center; padding: 25px;">
+            <h1>🧮 CONVERSOR MONETARIO</h1>
+            <p style="color: var(--muted); margin: 5px 0 0 0; font-weight: 500;">Herramienta de cálculo rápido con y sin ajuste porcentual adaptada a cierres.</p>
+        </div>
+
+        <div class="card">
+            <!-- PESTAÑAS DE SELECCIÓN DE MODO -->
+            <div class="tabs-container">
+                <button class="tab-mode-btn active" id="btn_modo_sin" onclick="cambiarModo('sin')">1. Cambio sin Porcentaje</button>
+                <button class="tab-mode-btn" id="btn_modo_con" onclick="cambiarModo('con')">2. Cambio con Porcentaje</button>
+            </div>
+
+            <!-- CONTENEDOR MODO SIN PORCENTAJE -->
+            <div id="seccion_sin_porcentaje">
+                <h2>Conversión Estándar (Sin Porcentaje)</h2>
+                <div class="grid-2">
+                    <div>
+                        <label>Monto a Convertir:</label>
+                        <input type="number" step="any" id="monto_sin" oninput="calcularSinPorcentaje()" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label>Moneda de Origen:</label>
+                        <select id="moneda_sin" onchange="calcularSinPorcentaje()">
+                            <!-- Se poblará dinámicamente con reconocimiento inteligente -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="calc-display">
+                    <div class="title" id="titulo_display_sin">💳 Equivalencias Oficiales Exactas:</div>
+                    <div id="resultados_dinamicos_sin"></div>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR MODO CON PORCENTAJE -->
+            <div id="seccion_con_porcentaje" style="display: none;">
+                <h2>Conversión con Ajuste Porcentual (% / Comisión)</h2>
+                <div class="grid-2">
+                    <div>
+                        <label>Monto a Convertir:</label>
+                        <input type="number" step="any" id="monto_con" oninput="calcularConPorcentaje()" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label>Moneda de Origen:</label>
+                        <select id="moneda_con" onchange="calcularConPorcentaje()">
+                            <!-- Se poblará dinámicamente con reconocimiento inteligente -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>Tipo de Ajuste:</label>
+                        <select id="tipo_ajuste" onchange="calcularConPorcentaje()">
+                            <option value="sumar">Incrementar / Recargo (+ %)</option>
+                            <option value="restar">Descontar / Rebaja (- %)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Porcentaje (%):</label>
+                        <input type="number" step="0.1" id="valor_porcentaje" value="0" oninput="calcularConPorcentaje()" placeholder="Ej. 5 o 3.5">
+                    </div>
+                </div>
+
+                <div class="calc-display">
+                    <div class="title">💳 Resultado con Ajuste Aplicado:</div>
+                    <div style="font-size: 0.95rem; color: #FFF8EE; margin-bottom: 8px;" id="detalle_base_calculo">Base original equivalente: 0.00</div>
+                    <div id="resultados_dinamicos_con"></div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+    window.SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    window.SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    
+    // Variables de reconocimiento inteligente de tasas
+    let MONEDA_BASE = 'USD';
+    let MONEDAS_ACTIVAS = []; // Array de objetos { code, tasa, operacion }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const { data } = await window.supabaseClient.auth.getSession();
+            if (data && data.session) {
+                await sincronizarSesionSupabase(data.session);
+            } else {
+                window.location.href = 'index.html';
+            }
+        } catch (err) {
+            console.error("Error de autenticación:", err);
+            document.getElementById('loading_overlay').style.display = 'none';
+        }
+    });
+
+    async function sincronizarSesionSupabase(session) {
+        const userId = session.user.id;
+        let { data: perfil } = await window.supabaseClient.from('perfiles').select('local_id').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+        } else {
+            let { data: localesList } = await window.supabaseClient.from('locales').select('id').limit(1);
+            if(localesList && localesList.length > 0) CURRENT_LOCAL_ID = localesList[0].id;
+        }
+        await cargarConfiguracionSupabase();
+    }
+
+    async function cargarConfiguracionSupabase() {
+        if(!CURRENT_LOCAL_ID) return;
+        try {
+            const { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle();
+            if (conf) {
+                CONFIG_GLOBAL = conf;
+            }
+
+            // RECONOCIMIENTO INTELIGENTE DE MONEDAS Y TASAS (Inspirado en Cierres_6.html)
+            reconocerMonedasYTasasActivas();
+
+            calcularSinPorcentaje();
+            calcularConPorcentaje();
+
+            setTimeout(() => {
+                let overlay = document.getElementById('loading_overlay');
+                if(overlay) {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => overlay.style.display = 'none', 500);
+                }
+            }, 500);
+        } catch(e) { 
+            console.error("Error al cargar configuración:", e);
+            document.getElementById('loading_overlay').style.display = 'none';
+        }
+    }
+
+    /**
+     * RECONOCIMIENTO INTELIGENTE DE MONEDAS Y TASAS ACTIVAS
+     */
+    function reconocerMonedasYTasasActivas() {
+        let t = CONFIG_GLOBAL.tasas || {};
+        MONEDA_BASE = t.moneda_base || 'USD';
+        MONEDAS_ACTIVAS = [];
+
+        // Limpiar clases previas de ocultamiento en el body
+        ['ves', 'cop', 'eur', 'usdt'].forEach(m => document.body.classList.remove(`hide-${m}`));
+
+        // Soporte para formato array secundarias o formato plano
+        if (Array.isArray(t.secundarias) && t.secundarias.length > 0) {
+            t.secundarias.forEach(sec => {
+                let tasaVal = parseFloat(sec.tasa) || 0;
+                let codigo = (sec.code || '').toUpperCase();
+                if (codigo && tasaVal > 0) {
+                    MONEDAS_ACTIVAS.push({
+                        code: codigo,
+                        tasa: tasaVal,
+                        operacion: sec.operacion || 'multiplicar'
+                    });
+                } else {
+                    document.body.classList.add(`hide-${codigo.toLowerCase()}`);
+                }
+            });
+        } else {
+            // Formato plano clásico (ves, cop, eur)
+            ['ves', 'cop', 'eur'].forEach(m => {
+                let val = parseFloat(t[m] || t[m.toUpperCase()] || 0);
+                if (val > 0) {
+                    MONEDAS_ACTIVAS.push({
+                        code: m.toUpperCase(),
+                        tasa: val,
+                        operacion: 'multiplicar'
+                    });
+                } else {
+                    document.body.classList.add(`hide-${m.toLowerCase()}`);
+                }
+            });
+        }
+
+        // Renderizar Banner Inteligente Superior
+        let bannerHtml = `<span class="rate-badge">💎 Moneda Base: ${MONEDA_BASE}</span>`;
+        if (MONEDAS_ACTIVAS.length > 0) {
+            MONEDAS_ACTIVAS.forEach(m => {
+                bannerHtml += `<span class="rate-badge">📈 ${m.code}: ${m.tasa} (${m.operacion})</span>`;
+            });
+        } else {
+            bannerHtml += `<span style="color:#FFD700; font-size:0.85rem;">⚠️ No hay monedas secundarias activas configuradas.</span>`;
+        }
+        document.getElementById('smart_banner_tasas').innerHTML = bannerHtml;
+
+        // Poblar selects de moneda de origen dinámicamente
+        poblarSelectoresMonedaOrigen();
+    }
+
+    function poblarSelectoresMonedaOrigen() {
+        let opcionesHtml = `<option value="${MONEDA_BASE}" selected>${MONEDA_BASE}</option>`;
+        MONEDAS_ACTIVAS.forEach(m => {
+            opcionesHtml += `<option value="${m.code}">${m.code}</option>`;
+        });
+
+        let selSin = document.getElementById('moneda_sin');
+        let selCon = document.getElementById('moneda_con');
+        if (selSin) selSin.innerHTML = opcionesHtml;
+        if (selCon) selCon.innerHTML = opcionesHtml;
+    }
+
+    /**
+     * CONVERSIÓN INTELIGENTE UNIVERSAL TOMANDO DE REFERENCIA CIERRES
+     */
+    function convertirA_MonedaBase(monto, monedaCodigo) {
+        if (!monto || isNaN(monto)) return 0;
+        if (monedaCodigo === MONEDA_BASE) return monto;
+
+        const sec = MONEDAS_ACTIVAS.find(s => s.code === monedaCodigo);
+        if (!sec || !sec.tasa || parseFloat(sec.tasa) === 0) return monto;
+
+        const tasa = parseFloat(sec.tasa);
+        // Si la operación es dividir (como en Cierres_6.html) o multiplicar
+        return (sec.operacion === 'dividir') ? (monto * tasa) : (monto / tasa);
+    }
+
+    function convertirDesdeMonedaBase(montoBase, monedaCodigo) {
+        if (!montoBase || isNaN(montoBase)) return 0;
+        if (monedaCodigo === MONEDA_BASE) return montoBase;
+
+        const sec = MONEDAS_ACTIVAS.find(s => s.code === monedaCodigo);
+        if (!sec || !sec.tasa || parseFloat(sec.tasa) === 0) return montoBase;
+
+        const tasa = parseFloat(sec.tasa);
+        return (sec.operacion === 'dividir') ? (montoBase / tasa) : (montoBase * tasa);
+    }
+
+    function cambiarModo(modo) {
+        let btnSin = document.getElementById('btn_modo_sin');
+        let btnCon = document.getElementById('btn_modo_con');
+        let secSin = document.getElementById('seccion_sin_porcentaje');
+        let secCon = document.getElementById('seccion_con_porcentaje');
+
+        if (modo === 'sin') {
+            btnSin.classList.add('active');
+            btnCon.classList.remove('active');
+            secSin.style.display = 'block';
+            secCon.style.display = 'none';
+        } else {
+            btnCon.classList.add('active');
+            btnSin.classList.remove('active');
+            secCon.style.display = 'block';
+            secSin.style.display = 'none';
+        }
+    }
+
+    function calcularSinPorcentaje() {
+        let monto = parseFloat(document.getElementById('monto_sin').value) || 0;
+        let monedaIn = document.getElementById('moneda_sin').value;
+
+        let montoBase = convertirA_MonedaBase(monto, monedaIn);
+
+        let htmlRes = `<div class="calc-res main">${MONEDA_BASE}: $${formatearNumero(montoBase)}</div>`;
+        MONEDAS_ACTIVAS.forEach(m => {
+            let valConv = convertirDesdeMonedaBase(montoBase, m.code);
+            let decimales = (m.code === 'COP') ? 0 : 2;
+            htmlRes += `<div class="calc-res sub moneda-${m.code.toLowerCase()}">${m.code}: ${formatearNumero(valConv, decimales)} ${m.code}</div>`;
+        });
+
+        document.getElementById('resultados_dinamicos_sin').innerHTML = htmlRes;
+    }
+
+    function calcularConPorcentaje() {
+        let monto = parseFloat(document.getElementById('monto_con').value) || 0;
+        let monedaIn = document.getElementById('moneda_con').value;
+        let tipoAjuste = document.getElementById('tipo_ajuste').value;
+        let porcentaje = parseFloat(document.getElementById('valor_porcentaje').value) || 0;
+
+        let montoBaseOriginal = convertirA_MonedaBase(monto, monedaIn);
+        
+        let factor = porcentaje / 100;
+        let montoBaseFinal = tipoAjuste === 'sumar' ? montoBaseOriginal * (1 + factor) : montoBaseOriginal * (1 - factor);
+
+        document.getElementById('detalle_base_calculo').innerText = `Base original equivalente: ${MONEDA_BASE} $${formatearNumero(montoBaseOriginal)} (${porcentaje}% ${tipoAjuste === 'sumar' ? 'recargo' : 'rebaja'})`;
+
+        let htmlRes = `<div class="calc-res main">${MONEDA_BASE}: $${formatearNumero(montoBaseFinal)}</div>`;
+        MONEDAS_ACTIVAS.forEach(m => {
+            let valConv = convertirDesdeMonedaBase(montoBaseFinal, m.code);
+            let decimales = (m.code === 'COP') ? 0 : 2;
+            htmlRes += `<div class="calc-res sub moneda-${m.code.toLowerCase()}">${m.code}: ${formatearNumero(valConv, decimales)} ${m.code}</div>`;
+        });
+
+        document.getElementById('resultados_dinamicos_con').innerHTML = htmlRes;
+    }
+
+    function formatearNumero(v, d = 2) { 
+        if (isNaN(v) || v == null) return "0"; 
+        let num = parseFloat(v); if (d === 0) num = Math.round(num); 
+        let p = num.toFixed(d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+        if (d > 0 && p[1] === "00") return p[0]; return p.length > 1 ? p[0] + "," + p[1] : p[0]; 
+    }
+</script>
+</body>
+</html>

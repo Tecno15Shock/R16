@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Catálogo | Panel Ejecutivo</title>
+    
+    <!-- Librería Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Núcleo de Lógica -->
+    <script src="motor.js"></script>
+    
+    <style>
+        /* ========================================================= */
+        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
+        /* ========================================================= */
+        :root {
+            --bg: #FDFBF7;
+            --text: #2A2A2A;
+            --primary: #5C0614;
+            --secondary: #8B0000;
+            --active-gold: #D4AF37;
+            --card-bg: #FFFFFF;
+            --input-bg: #FFFFFF;
+            --border-radius: 6px;
+            --danger: #8B0000;
+            --success: #2E7D32;
+            --warning: #B8860B;
+            --main-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --title-font: 'Georgia', 'Times New Roman', serif;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: var(--main-font); 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 0; 
+            line-height: 1.5;
+        }
+
+        .wrapper { 
+            display: block; 
+            min-height: 100vh; 
+            position: relative; 
+            padding: 40px 20px 100px 20px; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+        }
+
+        /* ========================================================= */
+        /* BOTONES FLOTANTES EN ESQUINA SUPERIOR DERECHA (X y REFRESCAR) */
+        /* ========================================================= */
+        .corner-btns-container {
+            position: fixed;
+            top: 20px;
+            right: 25px;
+            z-index: 10000;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .close-corner-btn, .refresh-corner-btn {
+            background: rgba(122, 23, 29, 0.95);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--active-gold);
+            color: #ffffff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
+        .refresh-corner-btn:hover { background: var(--primary); transform: scale(1.1) rotate(180deg); }
+
+        /* COMPONENTES Y TARJETAS */
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-top: 4px solid var(--primary);
+            margin-bottom: 25px;
+        }
+
+        input, select, textarea { 
+            width: 100%; padding: 12px; margin-top: 6px; 
+            border: 1px solid var(--active-gold); border-radius: var(--border-radius); 
+            font-size: 0.95rem; background: var(--input-bg); color: var(--text); 
+            border-left: 4px solid var(--secondary); outline: none; 
+            font-family: var(--main-font); 
+        }
+        input:focus, select:focus, textarea:focus { 
+            border-color: var(--active-gold); 
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.3); 
+        }
+
+        button { 
+            position: relative; overflow: hidden; 
+            font-family: var(--title-font); 
+            border: none; padding: 12px 18px; border-radius: var(--border-radius); 
+            cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; 
+            font-size: 0.95rem; text-transform: uppercase; display: inline-flex; 
+            align-items: center; justify-content: center; gap: 8px; 
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
+        
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--danger); color: #ffffff; }
+
+        /* ACORDES */
+        .acordeon-header {
+            background: #8B0000; 
+            border: 2px solid var(--active-gold); 
+            border-radius: var(--border-radius);
+            padding: 15px 20px;
+            margin-top: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+        }
+        .acordeon-header:hover {
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); 
+            transform: translateY(-2px);
+        }
+        .acordeon-title {
+            margin: 0;
+            font-family: var(--title-font);
+            font-size: 1.2rem;
+            color: var(--active-gold); 
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .acordeon-content {
+            display: none; 
+            padding: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--active-gold);
+            border-top: none; 
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            margin-bottom: 15px;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media(max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .tabla-permisos { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        .tabla-permisos th { background: var(--primary); color: var(--active-gold); padding: 10px; text-align: center; font-family: var(--title-font); text-transform: uppercase; }
+        .tabla-permisos td { padding: 10px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); text-align: center; color: var(--text); }
+        .tabla-permisos td:first-child { text-align: left; font-weight: bold; color: var(--primary); }
+
+        .switch-label { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--input-bg); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: var(--border-radius); margin-bottom: 8px; cursor: pointer; color: var(--text); font-weight: bold; }
+
+        /* PANTALLAS DE CARGA Y BLOQUEO AUTÓNOMAS */
+        @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spinGold { 100% { transform: rotate(360deg); } }
+
+        .overlay-luxury { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: radial-gradient(circle at center, #5C0614 0%, #2A050B 100%); 
+            z-index: 999999; display: flex; justify-content: center; align-items: center; flex-direction: column; 
+        }
+        .card-luxury-menu { 
+            background: #FFFFFF; padding: 50px 40px; text-align: center; width: 90%; max-width: 480px; 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8); position: relative; border-radius: 6px;
+            animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .pantalla-bloqueo-card {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 2px solid var(--active-gold);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(212, 175, 55, 0.1);
+        }
+        .pin-wrapper { position: relative; width: 100%; margin-top: 15px; }
+        .pin-wrapper input { text-align: center; font-size: 1.5rem; letter-spacing: 8px; padding-right: 50px; font-weight: bold; color: var(--primary); width: 100%; padding: 12px; border: 1px solid var(--active-gold); border-radius: var(--border-radius); background: var(--input-bg); outline: none; }
+        .pin-toggle-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: transparent; border: none; font-size: 1.5rem; width: 40px; height: 40px; margin: 0; padding: 0; color: var(--active-gold); cursor: pointer; }
+        .pin-toggle-btn:hover { transform: translateY(-50%) scale(1.1); }
+        .msg-red { color: var(--danger); font-weight: bold; margin-top: 10px; animation: fadeIn 0.3s; }
+        .msg-green { color: var(--success); font-weight: bold; margin-top: 10px; font-size: 1.1rem; animation: fadeIn 0.3s; }
+
+        .badge-tipo {
+            display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .badge-simple { background: rgba(46, 125, 50, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .badge-preparado { background: rgba(184, 134, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .cost-tag { font-size: 0.82rem; color: #777777; display: block; }
+        .price-tag { font-size: 0.95rem; font-weight: bold; color: var(--primary); }
+
+        /* ESTILOS PARA MODULO DESPLEGABLE DE INGREDIENTES Y STEPPER */
+        .ing-row-card {
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: var(--border-radius);
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ing-select-dropdown-container {
+            position: relative;
+            width: 100%;
+        }
+        .ing-dropdown-toggle {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--active-gold);
+            border-left: 4px solid var(--secondary);
+            padding: 10px 12px;
+            border-radius: var(--border-radius);
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0;
+            font-family: var(--main-font);
+            font-weight: normal;
+            text-transform: none;
+        }
+        .ing-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            max-height: 250px;
+            overflow-y: auto;
+            background: var(--card-bg);
+            border: 2px solid var(--active-gold);
+            border-radius: var(--border-radius);
+            z-index: 999;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            margin-top: 4px;
+        }
+        .ing-dropdown-menu.show { display: block; }
+        .ing-search-box {
+            padding: 8px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        .ing-search-box input { margin: 0; padding: 8px; font-size: 0.85rem; }
+        .ing-sort-select { margin-top: 5px; margin-bottom: 0; padding: 6px; font-size: 0.85rem; }
+        .ing-option-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .ing-option-item:hover { background: rgba(212, 175, 55, 0.15); color: var(--primary); font-weight: bold; }
+
+        .stepper-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--input-bg);
+            border: 1px solid var(--active-gold);
+            border-radius: var(--border-radius);
+            padding: 4px;
+            width: fit-content;
+        }
+        .stepper-btn {
+            background: var(--primary);
+            color: var(--active-gold);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            text-transform: none;
+        }
+        .stepper-btn:hover { background: var(--secondary); transform: scale(1.05); }
+        .stepper-input {
+            width: 90px;
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: bold;
+            color: var(--primary);
+            border: none;
+            background: transparent;
+            padding: 4px;
+            margin: 0;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE CARGA AUTÓNOMA -->
+    <div id="loading_overlay" class="overlay-luxury">
+        <div class="card-luxury-menu">
+            <div style="width: 50px; height: 50px; margin: 0 auto 30px auto; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: #D4AF37; border-radius: 50%; animation: spinGold 1s linear infinite;"></div>
+            <div id="loading_title_txt" style="color: #111111; font-family: Georgia, serif; font-size: 1.4rem; letter-spacing: 2px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;">GESTIÓN DE CATÁLOGO</div>
+            <div style="color: #555555; font-size: 0.95rem; margin-bottom: 25px; font-family: Georgia, serif;">"El éxito está en los detalles."</div>
+            <div id="loading_subtitle_txt" style="color: #777777; font-size: 0.85rem; line-height: 1.6;">Sincronizando información operativa y catálogo...</div>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE BLOQUEO GLOBAL POR PIN -->
+    <div id="pantalla_bloqueo_global" class="overlay-luxury" style="display:none;">
+        <div class="card-luxury-menu pantalla-bloqueo-card">
+            <div style="font-family: var(--title-font); font-size: 1.4rem; color: var(--primary); letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">ACCESO AUTORIZADO</div>
+            <div style="font-size: 0.95rem; color: var(--text); border-bottom: 1px solid var(--active-gold); padding-bottom: 10px; margin-bottom: 15px;">Módulo Protegido. Ingrese su contraseña general:</div>
+            <div class="pin-wrapper">
+                <input type="password" id="pin_ingreso_global" placeholder="****" maxlength="8" autocomplete="new-password">
+                <button type="button" class="pin-toggle-btn" id="btn_ojo_pin" onclick="UIBase.toggleVerPin()">🙈</button>
+            </div>
+            <div id="controles_bloqueo">
+                <button class="btn-info" id="btn_desbloquear_pin" style="margin-top: 25px;">Verificar Acceso</button>
+                <button class="btn-danger" onclick="window.location.href='principal.html'" style="background: transparent; border: 1px solid var(--danger); color: var(--danger);">Volver al Menú</button>
+            </div>
+            <div id="msj_respuesta_pin"></div>
+        </div>
+    </div>
+
+    <!-- BOTONES FLOTANTES EN LA ESQUINA SUPERIOR DERECHA (Refrescar y X) -->
+    <div class="corner-btns-container">
+        <button type="button" class="refresh-corner-btn" onclick="UICatalogo.recargarDatosSupabase()" title="Refrescar Catálogo desde Supabase">🔄</button>
+        <a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+    </div>
+
+<div class="wrapper" id="main_wrapper" style="display: none;">
+    <main class="main-content">
+        <h1 style="color: var(--primary); font-family: var(--title-font); text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--active-gold); padding-bottom: 12px; margin-top: 0; letter-spacing: 1.5px;">
+            📁 Gestión de Catálogo e Inventario
+        </h1>
+
+        <!-- 1. CATEGORÍAS -->
+        <div>
+            <div class="acordeon-header" onclick="UICatalogo.toggleSeccion('sec_categorias', 'icon_categorias')">
+                <h2 class="acordeon-title">📁 1. Categorías de Productos</h2>
+                <span id="icon_categorias" style="color: var(--active-gold); font-weight: bold;">▼</span>
+            </div>
+            <div id="sec_categorias" class="acordeon-content">
+                <input type="hidden" id="edit_categoria_index" value="-1">
+                <div class="grid-2" style="align-items: flex-end;">
+                    <div>
+                        <label>Nombre de la Categoría:</label>
+                        <input type="text" id="nueva_categoria_input" placeholder="Ej: Bebidas, Víveres, Repostería">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" id="btn_guardar_categoria" onclick="UICatalogo.guardarCategoria()" class="btn-info">CREAR CATEGORÍA</button>
+                        <button type="button" id="btn_cancelar_categoria" onclick="UICatalogo.cancelarEdicionCategoria()" class="btn-danger" style="display:none; width: auto;">Cancelar</button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto; margin-top: 15px;">
+                    <table class="tabla-permisos" id="tabla_gestion_categorias"></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. REGISTRO Y EDICIÓN DE MERCANCÍA -->
+        <div>
+            <div class="acordeon-header" onclick="UICatalogo.toggleSeccion('sec_mercancia', 'icon_mercancia')">
+                <h2 class="acordeon-title">📦 2. Registro y Edición de Productos</h2>
+                <span id="icon_mercancia" style="color: var(--active-gold); font-weight: bold;">▼</span>
+            </div>
+            <div id="sec_mercancia" class="acordeon-content">
+                <div class="switch-label" style="margin-bottom: 20px;">
+                    <div>
+                        <span style="opacity: 0.8;">MONEDA BASE PRINCIPAL DEL SISTEMA:</span>
+                        <strong id="label_moneda_base_actual" style="color: var(--primary); font-size: 1.1rem; margin-left: 8px;">USD</strong>
+                    </div>
+                    <button type="button" onclick="UICatalogo.actualizarMonedaBaseUI()" class="btn-info" style="width: auto; margin: 0; padding: 6px 14px; font-size: 0.85rem;">🔄 Refrescar Moneda</button>
+                </div>
+
+                <input type="hidden" id="edit_prod_uuid" value="">
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Tipo de Referencia / Producto:</label>
+                    <select id="form_prod_tipo" onchange="UICatalogo.alternarTipoProducto()">
+                        <option value="simple">📦 Producto Unitario / Simple (Insumo o Mercancía Directa)</option>
+                        <option value="preparado">☕ Producto Compuesto / Receta (Combo o Preparado)</option>
+                    </select>
+                </div>
+                
+                <div class="grid-2">
+                    <div>
+                        <label>Nombre Comercial / Referencia:</label>
+                        <input type="text" id="form_prod_nom" placeholder="Mercancía">
+                    </div>
+                    <div>
+                        <label>Categoría Asignada:</label>
+                        <select id="form_prod_cat"></select>
+                    </div>
+                </div>
+                
+                <div class="grid-2">
+                    <div>
+                        <label>Moneda del Costo Fuente:</label>
+                        <select id="form_prod_moneda"></select>
+                    </div>
+                    <div>
+                        <label>Costo Fuente (A como me sale / Compra):</label>
+                        <input type="number" step="0.01" id="form_prod_fuente" placeholder="0.00">
+                    </div>
+                </div>
+                
+                <div class="grid-2">
+                    <div>
+                        <label>Precio Base de Venta (A como lo vendo):</label>
+                        <input type="number" step="0.01" id="form_prod_base" placeholder="0.00">
+                    </div>
+                    <div></div>
+                </div>
+                
+                <div class="grid-2" id="contenedor_stock_directo">
+                    <div>
+                        <label>Unidad de Medida:</label>
+                        <select id="form_prod_unidad">
+                            <option value="Unidad">Unidad</option>
+                            <option value="Gramo">Gramo</option>
+                            <option value="Kilo">Kilo</option>
+                            <option value="Mililitro">Mililitro</option>
+                            <option value="Litro">Litro</option>
+                            <option value="Ración">Ración</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Stock Físico Actual:</label>
+                        <input type="number" step="0.01" id="form_prod_stock" placeholder="0">
+                    </div>
+                </div>
+                
+                <div class="grid-2" id="contenedor_umbrales" style="margin-top:15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                    <div>
+                        <label style="color:var(--warning); font-weight:bold;">⚠️ Alerta Amarilla (Stock Bajo):</label>
+                        <input type="number" id="form_prod_u_amarillo" value="5">
+                    </div>
+                    <div>
+                        <label style="color:var(--danger); font-weight:bold;">🚨 Alerta Roja (Stock Crítico):</label>
+                        <input type="number" id="form_prod_u_rojo" value="0">
+                    </div>
+                </div>
+                
+                <!-- Receta / Ingredientes Avanzada con Selector Desplegable, Buscador y Stepper -->
+                <div id="contenedor_receta" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                    <label style="color:var(--warning); font-weight:bold; display:block; margin-bottom:10px;">📋 Insumos e Ingredientes Requeridos por Unidad Producida</label>
+                    <div id="ingredientes-container"></div>
+                    <button type="button" class="btn-warning" onclick="UICatalogo.agregarFilaIngrediente()" style="margin-top: 10px; width: auto; font-size: 0.85rem;">+ AÑADIR INSUMO A LA RECETA</button>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 25px;">
+                    <button type="button" id="btn_guardar_producto" onclick="UICatalogo.guardarProductoSupabase()" class="btn-info">💾 CONSOLIDAR EN CATÁLOGO SUPABASE</button>
+                    <button type="button" id="btn_cancelar_edit" onclick="UICatalogo.limpiarFormProducto()" class="btn-danger" style="display:none; width: auto;">CANCELAR EDICIÓN</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. HISTORIAL DE CATÁLOGO ACTUAL -->
+        <div>
+            <div class="acordeon-header" onclick="UICatalogo.toggleSeccion('sec_historial', 'icon_historial')">
+                <h2 class="acordeon-title">📋 3. Historial de Catálogo Registrado</h2>
+                <span id="icon_historial" style="color: var(--active-gold); font-weight: bold;">▼</span>
+            </div>
+            <div id="sec_historial" class="acordeon-content">
+                <div class="grid-2" style="margin-bottom: 15px;">
+                    <div>
+                        <input type="text" id="buscar_gestion_prod" placeholder="🔍 Buscar por nombre o categoría..." oninput="UICatalogo.renderTablaGestionProductos()">
+                    </div>
+                    <div>
+                        <select id="orden_gestion_prod" onchange="UICatalogo.renderTablaGestionProductos()">
+                            <option value="az">🔤 Orden Alfabético (A-Z)</option>
+                            <option value="cat">📁 Agrupar por Categoría</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="tabla-permisos" id="tabla_gestion_productos"></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. COPIA DE SEGURIDAD E IMPORTACIÓN MASIVA -->
+        <div>
+            <div class="acordeon-header" onclick="UICatalogo.toggleSeccion('sec_backup', 'icon_backup')">
+                <h2 class="acordeon-title">💾 4. Copia de Seguridad e Importación Masiva</h2>
+                <span id="icon_backup" style="color: var(--active-gold); font-weight: bold;">▼</span>
+            </div>
+            <div id="sec_backup" class="acordeon-content">
+                <p style="font-size:0.9rem; color:#555; margin-top:0;">Exporte su catálogo completo en formato JSON (con el stock en 0) para respaldar o clonar la mercancía entre locales hermanos que compartan el mismo inventario.</p>
+                <div class="grid-2" style="align-items: flex-end; margin-top: 15px;">
+                    <div>
+                        <button type="button" onclick="UICatalogo.exportarCopiaSeguridad()" class="btn-info" style="margin:0;">📥 DESCARGAR COPIA DE SEGURIDAD (STOCK 0)</button>
+                    </div>
+                    <div>
+                        <label style="font-size:0.85rem; font-weight:bold; color:var(--primary);">📤 Inyectar Copia en este Local:</label>
+                        <input type="file" id="input_archivo_backup" accept=".json" style="margin-top:4px; padding:8px;" onchange="UICatalogo.importarCopiaSeguridad(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const UIBase = {
+        mostrarCargando: function(titulo, subtitulo) {
+            let overlay = document.getElementById('loading_overlay');
+            if (overlay) {
+                if(titulo) document.getElementById('loading_title_txt').innerText = titulo;
+                if(subtitulo) document.getElementById('loading_subtitle_txt').innerHTML = subtitulo;
+                overlay.style.display = 'flex';
+                overlay.style.opacity = '1';
+            }
+        },
+        ocultarCargando: function() {
+            const overlay = document.getElementById('loading_overlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.display = 'none'; }, 500);
+            }
+        },
+        sincronizarNombreLocal: function(nombre) {},
+        toggleVerPin: function() {
+            const input = document.getElementById('pin_ingreso_global');
+            const btn = document.getElementById('btn_ojo_pin');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerText = '👁️';
+            } else {
+                input.type = 'password';
+                btn.innerText = '🙈';
+            }
+        },
+        bloquearPantallaPIN: function(callbackVerificarPIN) {
+            const bloqueo = document.getElementById('pantalla_bloqueo_global');
+            const main = document.getElementById('main_wrapper');
+            const input = document.getElementById('pin_ingreso_global');
+            const btnVerificar = document.getElementById('btn_desbloquear_pin');
+            const controles = document.getElementById('controles_bloqueo');
+            const msj = document.getElementById('msj_respuesta_pin');
+
+            if (bloqueo && main) {
+                bloqueo.style.display = 'flex';
+                main.style.display = 'none';
+                input.value = '';
+                msj.innerHTML = '';
+                controles.style.display = 'block';
+
+                btnVerificar.onclick = () => {
+                    const pinIngresado = input.value.trim();
+                    controles.style.display = 'none';
+                    msj.innerHTML = '<div class="msg-green">Verificando Credenciales...</div>';
+                    
+                    setTimeout(() => {
+                        if (callbackVerificarPIN(pinIngresado)) {
+                            msj.innerHTML = '<div class="msg-green">¡Acceso Autorizado!</div>';
+                            setTimeout(() => {
+                                bloqueo.style.display = 'none';
+                                main.style.display = 'block';
+                                input.value = '';
+                                msj.innerHTML = '';
+                                controles.style.display = 'block';
+                            }, 500); 
+                        } else {
+                            msj.innerHTML = '<div class="msg-red">❌ Contraseña Incorrecta</div>';
+                            input.value = '';
+                            setTimeout(() => { msj.innerHTML = ''; controles.style.display = 'block'; }, 1500);
+                        }
+                    }, 800);
+                };
+            }
+        }
+    };
+
+    const UICatalogo = {
+        catalogo: [],
+        categorias: [],
+
+        async init() {
+            UIBase.mostrarCargando("INICIALIZANDO MÓDULO", "Verificando acceso y sincronizando catálogo con Supabase...");
+            try {
+                const estado = await AppMotor.inicializar();
+                const conf = estado.configuracion || {};
+                const permisos = conf.permisos_modulos || {};
+                
+                const bloqueoGeneral = permisos.gestion_catalogo && permisos.gestion_catalogo.general;
+                const tienePin = !!conf.identidad?.admin_pass;
+
+                if (tienePin && bloqueoGeneral) {
+                    UIBase.ocultarCargando();
+                    UIBase.bloquearPantallaPIN((pin) => {
+                        const esCorrecto = AppMotor.verificarPinAdministrador(pin);
+                        if (esCorrecto) {
+                            document.getElementById('main_wrapper').style.display = 'block';
+                            UICatalogo.cargarModulo(estado);
+                        }
+                        return esCorrecto;
+                    });
+                } else {
+                    UIBase.ocultarCargando();
+                    document.getElementById('main_wrapper').style.display = 'block';
+                    this.cargarModulo(estado);
+                }
+            } catch (e) {
+                UIBase.ocultarCargando();
+                if (e.message === "NoAutorizado") {
+                    window.location.href = 'index.html';
+                } else {
+                    alert("Error al inicializar el catálogo: " + e.message);
+                }
+            }
+        },
+
+        cargarModulo(estado) {
+            const conf = estado.configuracion || {};
+            const nombreLocal = estado.datosLocal?.nombre || conf?.identidad?.nombre || 'Sistema';
+            UIBase.sincronizarNombreLocal(nombreLocal);
+
+            this.categorias = (conf.categorias || []).sort((a, b) => a.localeCompare(b));
+
+            this.catalogo = (estado.catalogo || []).map(p => ({
+                uuid: p.id, 
+                nom: p.nombre, 
+                cat: p.categoria || "General", 
+                tipo: p.tipo || "simple",
+                base: p.precio_base || 0, 
+                mBase: p.moneda_base || 'USD',
+                fuente: p.costo_fuente || 0, 
+                unidad: p.unidad || 'Unidad', 
+                stock: p.stock || 0, 
+                umbralAmarillo: p.umbral_amarillo || 5, 
+                umbralRojo: p.umbral_rojo || 0, 
+                receta: p.receta || []
+            }));
+
+            this.actualizarMonedaBaseUI();
+            this.poblarSelectorMonedasProducto();
+            this.renderCategorias();
+            this.renderTablaGestionProductos();
+        },
+
+        async recargarDatosSupabase() {
+            UIBase.mostrarCargando("REFRESCANDO", "Sincronizando datos recientes desde Supabase...");
+            try {
+                await AppMotor.sincronizarDatosMaestros();
+                const estado = {
+                    configuracion: AppMotor.estadoGlobal.configuracion,
+                    catalogo: AppMotor.estadoGlobal.catalogo,
+                    datosLocal: AppMotor.estadoGlobal.datosLocal
+                };
+                this.cargarModulo(estado);
+                UIBase.ocultarCargando();
+                alert("✅ Catálogo y datos actualizados correctamente desde Supabase.");
+            } catch(e) {
+                UIBase.ocultarCargando();
+                alert("Error al refrescar datos: " + e.message);
+            }
+        },
+
+        toggleSeccion(id, iconId) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(iconId);
+            if (el.style.display === 'block') {
+                el.style.display = 'none';
+                if (icon) icon.innerText = '▼';
+            } else {
+                el.style.display = 'block';
+                if (icon) icon.innerText = '▲';
+            }
+        },
+
+        actualizarMonedaBaseUI() {
+            const mb = AppMotor.estadoGlobal.sistemaMonetario?.moneda_base || 'USD';
+            const el = document.getElementById('label_moneda_base_actual');
+            if (el) el.innerText = mb;
+        },
+
+        poblarSelectorMonedasProducto() {
+            const sm = AppMotor.estadoGlobal.sistemaMonetario || { moneda_base: 'USD', secundarias: [] };
+            let lista = [sm.moneda_base];
+            if (Array.isArray(sm.secundarias)) {
+                sm.secundarias.forEach(s => {
+                    const cod = typeof s === 'string' ? s : s.code;
+                    if (cod && !lista.includes(cod)) lista.push(cod);
+                });
+            }
+            const select = document.getElementById('form_prod_moneda');
+            if (select) select.innerHTML = lista.map(m => `<option value="${m}">${m}</option>`).join('');
+        },
+
+        renderCategorias() {
+            this.categorias.sort((a, b) => a.localeCompare(b));
+            let html = "<thead><tr><th>Categoría</th><th style='text-align:center;'>Acción</th></tr></thead><tbody>";
+            this.categorias.forEach((c, i) => {
+                html += `<tr>
+                    <td style="font-weight:bold; color:var(--active-gold);">${c}</td>
+                    <td style="text-align:center;">
+                        <button type="button" class="btn-info" style="padding:4px 10px; margin:0; width:auto; font-size:0.8rem;" onclick="UICatalogo.editarCategoria(${i})">✏️ EDITAR</button>
+                        <button type="button" class="btn-danger" style="padding:4px 8px; margin:0; width:auto; font-size:0.8rem;" onclick="UICatalogo.eliminarCategoria(${i})">🗑️</button>
+                    </td>
+                </tr>`;
+            });
+            html += "</tbody>";
+            document.getElementById('tabla_gestion_categorias').innerHTML = html;
+            
+            const selectCat = document.getElementById('form_prod_cat');
+            if (selectCat) {
+                selectCat.innerHTML = this.categorias.length 
+                    ? this.categorias.map(c => `<option value="${c}">${c}</option>`).join('')
+                    : `<option value="General">General</option>`;
+            }
+        },
+
+        async guardarCategoria() {
+            let n = document.getElementById('nueva_categoria_input').value.trim();
+            let idx = parseInt(document.getElementById('edit_categoria_index').value);
+            if (!n) return alert("El nombre de la categoría no puede estar vacío.");
+
+            if (idx >= 0) {
+                this.categorias[idx] = n;
+            } else {
+                if (this.categorias.includes(n)) return alert("La categoría ya se encuentra registrada.");
+                this.categorias.push(n);
+            }
+
+            UIBase.mostrarCargando("GUARDANDO", "Sincronizando categorías en la base de datos...");
+            try {
+                await AppMotor._guardarConfigParcial('categorias', this.categorias);
+                this.renderCategorias();
+                this.cancelarEdicionCategoria();
+                UIBase.ocultarCargando();
+            } catch(e) {
+                UIBase.ocultarCargando();
+                alert("Error al guardar categoría: " + e.message);
+            }
+        },
+
+        editarCategoria(i) {
+            document.getElementById('nueva_categoria_input').value = this.categorias[i];
+            document.getElementById('edit_categoria_index').value = i;
+            document.getElementById('btn_guardar_categoria').innerText = "💾 CONFIRMAR CAMBIO";
+            document.getElementById('btn_cancelar_categoria').style.display = "inline-block";
+        },
+
+        cancelarEdicionCategoria() {
+            document.getElementById('nueva_categoria_input').value = '';
+            document.getElementById('edit_categoria_index').value = "-1";
+            document.getElementById('btn_guardar_categoria').innerText = "CREAR CATEGORÍA";
+            document.getElementById('btn_cancelar_categoria').style.display = "none";
+        },
+
+        async eliminarCategoria(i) {
+            if (!confirm(`¿Está seguro de borrar la categoría "${this.categorias[i]}"?`)) return;
+            this.categorias.splice(i, 1);
+            UIBase.mostrarCargando("ELIMINANDO", "Actualizando lista de categorías...");
+            try {
+                await AppMotor._guardarConfigParcial('categorias', this.categorias);
+                this.renderCategorias();
+                this.cancelarEdicionCategoria();
+                UIBase.ocultarCargando();
+            } catch(e) {
+                UIBase.ocultarCargando();
+                alert("Error al eliminar categoría: " + e.message);
+            }
+        },
+
+        alternarTipoProducto() {
+            let tipo = document.getElementById('form_prod_tipo').value;
+            document.getElementById('contenedor_stock_directo').style.display = tipo === 'simple' ? 'grid' : 'none';
+            document.getElementById('contenedor_umbrales').style.display = tipo === 'simple' ? 'grid' : 'none';
+            document.getElementById('contenedor_receta').style.display = tipo === 'preparado' ? 'block' : 'none';
+        },
+
+        /* ========================================================= */
+        /* MÓDULO RECETA AVANZADO: BUSCADOR, ORDEN Y STEPPER         */
+        /* ========================================================= */
+        agregarFilaIngrediente(selectedUuid = '', selectedCant = 1) {
+            let cont = document.getElementById('ingredientes-container');
+            let rowId = 'ing_row_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+
+            let rowDiv = document.createElement('div');
+            rowDiv.id = rowId;
+            rowDiv.className = 'ing-row-card';
+            rowDiv.dataset.uuid = selectedUuid;
+
+            let inicialObj = this.catalogo.find(p => p.uuid === selectedUuid);
+            let displayText = inicialObj ? `${inicialObj.nom} (${inicialObj.unidad})` : "🔍 Seleccionar Insumo o Mercancía...";
+
+            rowDiv.innerHTML = `
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div class="ing-select-dropdown-container" style="flex: 2;">
+                        <button type="button" class="ing-dropdown-toggle" onclick="UICatalogo.toggleDropdownMenu('${rowId}')">
+                            <span class="ing-selected-label">${displayText}</span>
+                            <span>▼</span>
+                        </button>
+                        <div class="ing-dropdown-menu" id="menu_${rowId}">
+                            <div class="ing-search-box">
+                                <input type="text" placeholder="Buscar insumo..." oninput="UICatalogo.filtrarOpcionesDropdown('${rowId}', this.value)">
+                                <select class="ing-sort-select" onchange="UICatalogo.ordenarOpcionesDropdown('${rowId}', this.value)">
+                                    <option value="az">🔤 Orden Alfabético (A-Z)</option>
+                                    <option value="cat">📁 Agrupar por Categoría</option>
+                                </select>
+                            </div>
+                            <div class="ing-options-list" id="list_${rowId}"></div>
+                        </div>
+                    </div>
+                    <div class="stepper-container">
+                        <button type="button" class="stepper-btn" onclick="UICatalogo.cambiarStepper('${rowId}', -1)">-</button>
+                        <input type="number" step="0.01" class="stepper-input" value="${selectedCant}" onchange="UICatalogo.validarStepperInput('${rowId}', this.value)">
+                        <button type="button" class="stepper-btn" onclick="UICatalogo.cambiarStepper('${rowId}', 1)">+</button>
+                    </div>
+                    <button type="button" class="btn-danger" style="margin:0; padding:10px 14px; width:auto;" onclick="document.getElementById('${rowId}').remove()">✕</button>
+                </div>
+            `;
+
+            cont.appendChild(rowDiv);
+            this.poblarOpcionesDropdown(rowId, 'az', '');
+        },
+
+        toggleDropdownMenu(rowId) {
+            // Cerrar otros menús abiertos
+            document.querySelectorAll('.ing-dropdown-menu').forEach(m => {
+                if(m.id !== 'menu_' + rowId) m.classList.remove('show');
+            });
+            let menu = document.getElementById('menu_' + rowId);
+            menu.classList.toggle('show');
+        },
+
+        poblarOpcionesDropdown(rowId, ordenMode, filtroTexto) {
+            let listContainer = document.getElementById('list_' + rowId);
+            if (!listContainer) return;
+
+            let simples = [...this.catalogo].filter(p => p.tipo === 'simple');
+            
+            if (ordenMode === 'cat') {
+                simples.sort((a, b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
+            } else {
+                simples.sort((a, b) => a.nom.localeCompare(b.nom));
+            }
+
+            if (filtroTexto) {
+                let q = filtroTexto.toLowerCase();
+                simples = simples.filter(p => p.nom.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
+            }
+
+            if (simples.length === 0) {
+                listContainer.innerHTML = `<div style="padding: 10px; color: #777; text-align:center;">No se encontraron insumos</div>`;
+                return;
+            }
+
+            let html = '';
+            simples.forEach(p => {
+                let label = ordenMode === 'cat' ? `[${p.cat}] ${p.nom} (${p.unidad})` : `${p.nom} (${p.unidad})`;
+                html += `<div class="ing-option-item" onclick="UICatalogo.seleccionarIngredienteDropdown('${rowId}', '${p.uuid}', '${p.nom.replace(/'/g, "\\'")}', '${p.unidad}')">${label}</div>`;
+            });
+            listContainer.innerHTML = html;
+        },
+
+        filtrarOpcionesDropdown(rowId, texto) {
+            let menu = document.getElementById('menu_' + rowId);
+            let sortSelect = menu.querySelector('.ing-sort-select');
+            this.poblarOpcionesDropdown(rowId, sortSelect.value, texto);
+        },
+
+        ordenarOpcionesDropdown(rowId, mode) {
+            let menu = document.getElementById('menu_' + rowId);
+            let searchInput = menu.querySelector('.ing-search-box input');
+            this.poblarOpcionesDropdown(rowId, mode, searchInput.value);
+        },
+
+        seleccionarIngredienteDropdown(rowId, uuid, nom, unidad) {
+            let row = document.getElementById(rowId);
+            row.dataset.uuid = uuid;
+            let labelSpan = row.querySelector('.ing-selected-label');
+            labelSpan.innerText = `${nom} (${unidad})`;
+            document.getElementById('menu_' + rowId).classList.remove('show');
+        },
+
+        cambiarStepper(rowId, delta) {
+            let row = document.getElementById(rowId);
+            let input = row.querySelector('.stepper-input');
+            let val = (parseFloat(input.value) || 0) + delta;
+            if (val < 0) val = 0;
+            input.value = parseFloat(val.toFixed(2));
+        },
+
+        validarStepperInput(rowId, valStr) {
+            let row = document.getElementById(rowId);
+            let input = row.querySelector('.stepper-input');
+            let val = parseFloat(valStr) || 0;
+            if (val < 0) val = 0;
+            input.value = val;
+        },
+
+        async guardarProductoSupabase() {
+            let nom = document.getElementById('form_prod_nom').value.trim();
+            let cat = document.getElementById('form_prod_cat').value;
+            if (!nom) return alert("El nombre comercial del producto es obligatorio.");
+
+            let uuid = document.getElementById('edit_prod_uuid').value;
+            let tipoProd = document.getElementById('form_prod_tipo').value;
+            let recetaArr = [];
+
+            if (tipoProd === 'preparado') {
+                document.querySelectorAll('#ingredientes-container > .ing-row-card').forEach(row => {
+                    let idIng = row.dataset.uuid;
+                    let cantIng = parseFloat(row.querySelector('.stepper-input').value) || 0;
+                    if (idIng && cantIng > 0) recetaArr.push({ uuid: idIng, cant: cantIng });
+                });
+            }
+
+            let precioBaseVal = parseFloat(document.getElementById('form_prod_base').value) || 0; 
+            let costoFuenteVal = parseFloat(document.getElementById('form_prod_fuente').value) || 0; 
+            let monSeleccionada = document.getElementById('form_prod_moneda').value || 'USD';
+
+            let payload = {
+                local_id: AppMotor.estadoGlobal.local_id,
+                nombre: nom,
+                categoria: cat || "General",
+                tipo: tipoProd,
+                precio_base: precioBaseVal,
+                moneda_base: monSeleccionada,
+                costo_fuente: costoFuenteVal,
+                stock: tipoProd === 'simple' ? (parseFloat(document.getElementById('form_prod_stock').value) || 0) : 0,
+                unidad: document.getElementById('form_prod_unidad').value || 'Unidad',
+                umbral_amarillo: parseFloat(document.getElementById('form_prod_u_amarillo').value) || 5,
+                umbral_rojo: parseFloat(document.getElementById('form_prod_u_rojo').value) || 0,
+                receta: recetaArr,
+                activo: true
+            };
+
+            UIBase.mostrarCargando("GUARDANDO", "Consolidando referencia en la base de datos...");
+            try {
+                if (uuid) {
+                    let { error } = await AppMotor.supabase.from('catalogo').update(payload).eq('id', uuid);
+                    if (error) throw error;
+                } else {
+                    let { error } = await AppMotor.supabase.from('catalogo').insert([payload]);
+                    if (error) throw error;
+                }
+                await AppMotor.sincronizarDatosMaestros();
+                this.cargarModulo(AppMotor.estadoGlobal);
+                this.limpiarFormProducto();
+                UIBase.ocultarCargando();
+                alert("✅ Producto consolidado con éxito en el catálogo.");
+            } catch(err) {
+                UIBase.ocultarCargando();
+                alert("Error al consolidar producto: " + err.message);
+            }
+        },
+
+        editarProducto(idx) {
+            let p = this.catalogo[idx];
+            document.getElementById('edit_prod_uuid').value = p.uuid || '';
+            document.getElementById('form_prod_tipo').value = p.tipo || 'simple';
+            this.alternarTipoProducto();
+            
+            document.getElementById('form_prod_nom').value = p.nom;
+            document.getElementById('form_prod_cat').value = p.cat;
+            document.getElementById('form_prod_moneda').value = p.mBase || 'USD';
+            document.getElementById('form_prod_base').value = p.base;
+            document.getElementById('form_prod_fuente').value = p.fuente;
+            document.getElementById('form_prod_stock').value = p.stock;
+            document.getElementById('form_prod_unidad').value = p.unidad || 'Unidad';
+            document.getElementById('form_prod_u_amarillo').value = p.umbralAmarillo || 5;
+            document.getElementById('form_prod_u_rojo').value = p.umbralRojo || 0;
+
+            const contIng = document.getElementById('ingredientes-container');
+            contIng.innerHTML = '';
+            if (p.tipo === 'preparado' && Array.isArray(p.receta)) {
+                p.receta.forEach(ing => {
+                    this.agregarFilaIngrediente(ing.uuid, ing.cant);
+                });
+            }
+
+            document.getElementById('btn_guardar_producto').innerText = "💾 ACTUALIZAR REGISTRO";
+            document.getElementById('btn_cancelar_edit').style.display = "inline-block";
+            
+            const secMercancia = document.getElementById('sec_mercancia');
+            if (secMercancia.style.display !== "block") this.toggleSeccion('sec_mercancia', 'icon_mercancia');
+            secMercancia.scrollIntoView({ behavior: 'smooth' });
+        },
+
+        limpiarFormProducto() {
+            ['edit_prod_uuid','form_prod_nom','form_prod_base','form_prod_stock','form_prod_fuente'].forEach(id => {
+                let el = document.getElementById(id);
+                if (el) el.value = "";
+            });
+            document.getElementById('ingredientes-container').innerHTML = '';
+            document.getElementById('btn_guardar_producto').innerText = "💾 CONSOLIDAR EN CATÁLOGO SUPABASE";
+            document.getElementById('btn_cancelar_edit').style.display = "none";
+            document.getElementById('form_prod_tipo').value = 'simple';
+            this.alternarTipoProducto();
+        },
+
+        async eliminarProductoSupabase(uuid) {
+            if (!confirm("⚠️ ¿Está seguro de remover permanentemente esta referencia del catálogo?")) return;
+            UIBase.mostrarCargando("ELIMINANDO", "Eliminando registro de Supabase...");
+            try {
+                let { error } = await AppMotor.supabase.from('catalogo').delete().eq('id', uuid);
+                if (error) throw error;
+                await AppMotor.sincronizarDatosMaestros();
+                this.cargarModulo(AppMotor.estadoGlobal);
+                UIBase.ocultarCargando();
+            } catch(err) {
+                UIBase.ocultarCargando();
+                alert("Error al eliminar referencia: " + err.message);
+            }
+        },
+
+        renderTablaGestionProductos() {
+            let ord = document.getElementById('orden_gestion_prod') ? document.getElementById('orden_gestion_prod').value : "az";
+            let arr = [...this.catalogo];
+            arr.sort((a,b) => ord === 'cat' ? a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom) : a.nom.localeCompare(b.nom));
+            let q = document.getElementById('buscar_gestion_prod') ? document.getElementById('buscar_gestion_prod').value.toLowerCase() : "";
+
+            let html = `<thead>
+                <tr>
+                    <th>Referencia / Categoría</th>
+                    <th>Costos</th>
+                    <th style="text-align:center;">Stock</th>
+                    <th style="text-align:center;">Acciones</th>
+                </tr>
+            </thead><tbody>`;
+
+            arr.filter(p => p.nom.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q)).forEach((p) => {
+                let idxOriginal = this.catalogo.findIndex(x => x.uuid === p.uuid);
+                let badgeClass = p.tipo === 'preparado' ? 'badge-preparado' : 'badge-simple';
+                let tipoTxt = p.tipo === 'preparado' ? 'Receta' : 'Simple';
+
+                html += `
+                <tr>
+                    <td>
+                        <strong style="color:var(--text); font-size: 1rem;">${p.nom}</strong>
+                        <span class="badge-tipo ${badgeClass}" style="margin-left: 6px;">${tipoTxt}</span>
+                        <br>
+                        <span style="font-size:0.85rem; color:var(--active-gold); opacity:0.9;">📁 ${p.cat}</span>
+                    </td>
+                    <td>
+                        <span class="cost-tag">Precio Al Costo: ${p.mBase} ${p.fuente.toFixed(2)}</span>
+                        <span class="price-tag">Precio de Venta: ${p.mBase} ${p.base.toFixed(2)}</span>
+                    </td>
+                    <td style="text-align:center; font-weight:bold; font-size:1.05rem;">
+                        ${p.tipo === 'preparado' ? '∞' : `${p.stock} <small style='font-size:0.75rem;'>${p.unidad}</small>`}
+                    </td>
+                    <td style="text-align:center;">
+                        <div style="display:flex; justify-content:center; gap:5px;">
+                            <button type="button" class="btn-info" style="padding:5px 10px; font-size:0.8rem; width:auto;" onclick="UICatalogo.editarProducto(${idxOriginal})">✏️ EDITAR</button>
+                            <button type="button" class="btn-danger" style="padding:5px 8px; font-size:0.8rem; width:auto;" onclick="UICatalogo.eliminarProductoSupabase('${p.uuid}')">🗑️</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            html += "</tbody>";
+            document.getElementById('tabla_gestion_productos').innerHTML = html;
+        },
+
+        /* ========================================================= */
+        /* COPIA DE SEGURIDAD E IMPORTACIÓN (STOCK EN 0)             */
+        /* ========================================================= */
+        exportarCopiaSeguridad() {
+            if (this.catalogo.length === 0) return alert("No hay productos en el catálogo para exportar.");
+            
+            // Generar copia con stock en 0 y sin ID estricto para inserción limpia
+            let copia = this.catalogo.map(p => ({
+                nombre: p.nom,
+                categoria: p.cat,
+                tipo: p.tipo,
+                precio_base: p.base,
+                moneda_base: p.mBase,
+                costo_fuente: p.fuente,
+                stock: 0, // Stock siempre en 0 como se solicitó
+                unidad: p.unidad,
+                umbral_amarillo: p.umbralAmarillo,
+                umbral_rojo: p.umbralRojo,
+                receta: p.receta,
+                activo: true
+            }));
+
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(copia, null, 2));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `catalogo_backup_local_${AppMotor.estadoGlobal.local_id || 'general'}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        },
+
+        async importarCopiaSeguridad(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+
+            let reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    let items = JSON.parse(e.target.result);
+                    if (!Array.isArray(items)) throw new Error("El archivo JSON no tiene un formato de catálogo válido.");
+
+                    if (!confirm(`⚠️ Se van a inyectar ${items.length} productos en este local (con stock en 0). ¿Desea continuar?`)) {
+                        event.target.value = '';
+                        return;
+                    }
+
+                    UIBase.mostrarCargando("IMPORTANDO", "Inyectando mercancía en la base de datos de Supabase...");
+
+                    // Mapear cada elemento para asociarlo al local actual y asegurar stock en 0
+                    let payloadBatch = items.map(p => ({
+                        local_id: AppMotor.estadoGlobal.local_id,
+                        nombre: p.nombre,
+                        categoria: p.categoria || "General",
+                        tipo: p.tipo || "simple",
+                        precio_base: p.precio_base || 0,
+                        moneda_base: p.moneda_base || 'USD',
+                        costo_fuente: p.costo_fuente || 0,
+                        stock: 0, // Forzado a 0
+                        unidad: p.unidad || 'Unidad',
+                        umbral_amarillo: p.umbral_amarillo || 5,
+                        umbral_rojo: p.umbral_rojo || 0,
+                        receta: p.receta || [],
+                        activo: true
+                    }));
+
+                    let { error } = await AppMotor.supabase.from('catalogo').insert(payloadBatch);
+                    if (error) throw error;
+
+                    await AppMotor.sincronizarDatosMaestros();
+                    this.cargarModulo(AppMotor.estadoGlobal);
+                    UIBase.ocultarCargando();
+                    alert("✅ ¡Catálogo importado e inyectado con éxito!");
+                    event.target.value = '';
+                } catch(err) {
+                    UIBase.ocultarCargando();
+                    alert("Error al importar archivo: " + err.message);
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => UICatalogo.init());
+</script>
+</body>
+</html>

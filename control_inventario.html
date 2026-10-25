@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Control de Inventario y Trazabilidad E/S | Panel Luxury</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Fuentes Ultra-Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --active-gold: #D4AF37; 
+            --bg: #FDFBF7; 
+            --primary: #5C0614; 
+            --secondary: #8B0000; 
+            --danger: #8B0000; 
+            --success: #2E7D32; 
+            --warning: #B8860B; 
+            --text: #2A2A2A; 
+            --border: #D4AF37; 
+            --card-bg: #FFFFFF; 
+            --item-bg: #FAF6ED; 
+            --muted: #666666;
+            --input-bg: #FFFFFF;
+        }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; scroll-behavior: smooth; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .wrapper { display: block; min-height: 100vh; position: relative; padding-bottom: 100px; max-width: 1200px; margin: 0 auto; padding-top: 40px; }
+
+        /* BOTÓN DE CIERRE (X) EN LA ESQUINA SUPERIOR DERECHA */
+        .close-corner-btn {
+            position: fixed;
+            top: 25px;
+            right: 30px;
+            z-index: 10000;
+            background: rgba(92, 6, 20, 0.95);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--active-gold);
+            color: #ffffff;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
+
+        /* CARD & ACCORDION */
+        .main-content { padding: 20px; padding-bottom: 130px; display: flex; flex-direction: column; gap: 18px; }
+        .card { background: var(--card-bg); border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid rgba(212, 175, 55, 0.4); border-top: 4px solid var(--primary); position: relative; overflow: hidden; }
+        .card-header { padding: 18px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); transition: filter 0.3s ease; user-select: none; border-bottom: 2px solid var(--border); }
+        .card-header:hover { filter: brightness(1.15); }
+        .card-header h2 { color: var(--active-gold); margin: 0; font-size: 1.2rem; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1.5px; border: none; padding: 0; display: flex; align-items: center; gap: 10px; }
+        .accordion-icon { font-size: 1.1rem; color: var(--active-gold); font-weight: bold; transition: transform 0.3s ease; }
+        .card-body { max-height: 0; overflow: hidden; padding: 0 25px; opacity: 0; transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), padding 0.3s ease, opacity 0.3s ease; background: var(--card-bg); }
+        .card.open .card-body { max-height: 5000px; padding: 25px; opacity: 1; transition: max-height 0.6s ease-in-out, padding 0.3s ease, opacity 0.4s ease; }
+        .card.open .accordion-icon { transform: rotate(180deg); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 10px; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { width: 100%; padding: 11px; margin-top: 5px; border: 1px solid var(--active-gold); border-radius: 4px; font-size: 0.95rem; background: var(--input-bg); transition: all 0.3s ease; color: var(--text); border-left: 4px solid var(--secondary); font-family: 'Roboto', sans-serif; }
+        input:focus, select:focus { outline: none; background: #FFF; border-color: var(--primary); box-shadow: 0 0 10px rgba(92, 6, 20, 0.15); }
+
+        button { font-family: 'Playfair Display', serif; border: none; padding: 12px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 0.95rem; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+        button:active { transform: scale(0.98); }
+        
+        .btn-success { background: linear-gradient(135deg, var(--success), #1b5e20); color: white; border-bottom: 2px solid #0d3810; }
+        .btn-warning { background: linear-gradient(135deg, var(--warning), #935116); color: #fff; }
+        .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
+        .btn-danger { background: var(--danger); color: white; border: 1px solid #5c0614; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.88rem; border: 1px solid rgba(212, 175, 55, 0.4); }
+        th, td { border: 1px solid rgba(212, 175, 55, 0.4); padding: 10px; text-align: left; }
+        th { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: var(--active-gold); font-family: 'Playfair Display', serif; }
+
+        .prov-badge { font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block; text-align: center; }
+        .prov-pos { background: rgba(46, 125, 50, 0.15); color: #2e7d32; border: 1px solid #2e7d32; }
+        .prov-neg { background: rgba(139, 0, 0, 0.15); color: var(--danger); border: 1px solid var(--danger); }
+        .prov-zero { color: var(--muted); opacity: 0.6; }
+
+        #loading_overlay, #pantalla_bloqueo_admin { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, #5C0614 0%, #2A050B 100%); z-index: 1000000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease-in-out; }
+        .custom-modal-box { background: var(--card-bg); padding: 30px; border-radius: 6px; width: 95%; max-width: 1100px; max-height: 92vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid var(--active-gold); }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: var(--primary); color: var(--active-gold); border: 1px solid var(--active-gold); border-radius: 50%; width: 34px; height: 34px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .custom-modal-title { font-family: 'Playfair Display', serif; font-size: 1.35rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+        #global_modal_body { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+
+        .loading-box { background: var(--card-bg); padding: 40px; border-radius: 6px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 2px solid var(--active-gold); position: relative; max-width: 420px; width: 90%; }
+        .spinner-luxury { width: 45px; height: 45px; border: 4px solid rgba(212, 175, 55, 0.2); border-left-color: var(--active-gold); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
+    </style>
+</head>
+<body>
+
+<!-- PANTALLA DE CARGA AUTÓNOMA -->
+<div id="loading_overlay">
+    <div class="loading-box">
+        <div class="spinner-luxury"></div>
+        <div style="font-family:'Playfair Display', serif; font-size:1.3rem; color:var(--primary); font-weight:bold;">Sincronizando Módulo</div>
+        <div style="font-size:0.9rem; color:var(--muted); margin-top:8px;">Verificando seguridad inteligente y trazabilidad E/S...</div>
+    </div>
+</div>
+
+<!-- SISTEMA DE BLOQUEO INTELIGENTE -->
+<div id="pantalla_bloqueo_admin" style="display: none;">
+    <div class="loading-box" style="padding: 30px;">
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--active-gold); font-size: 1.3rem; padding-bottom: 10px; margin-bottom: 15px; font-family: 'Playfair Display', serif;">🔒 ACCESO PROTEGIDO</h2>
+        <p id="label_nivel_seguridad" style="font-size: 0.9rem; color: var(--muted); margin-bottom: 20px;">Nivel de seguridad requerido activo. Introduce el PIN:</p>
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="password" id="pin_ingreso_body" placeholder="••••" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; width: 100%; padding-right: 45px; font-family: monospace; border: 2px solid var(--active-gold);" onkeyup="if(event.key==='Enter') verificarPinBody()">
+            <span id="icono_ojo_pin" onclick="toggleVerPin()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.3rem;">👁️</span>
+        </div>
+        <button id="btn_desbloquear_pin" class="btn-info" onclick="verificarPinBody()">AUTENTICAR</button>
+        <button id="btn_volver_pin" class="btn-danger" onclick="window.location.href='principal.html'" style="margin-top: 10px; background: transparent; border: 1px solid var(--danger); color: var(--danger);">VOLVER AL INICIO</button>
+    </div>
+</div>
+
+<!-- VENTANA MODAL GLOBAL -->
+<div id="global_modal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <button class="modal-close-btn" onclick="cerrarModalGlobal()">✕</button>
+        <div id="global_modal_title" class="custom-modal-title">Título</div>
+        <div id="global_modal_body"></div>
+    </div>
+</div>
+
+<!-- BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA -->
+<a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
+
+<div class="wrapper" id="main_wrapper" style="display: none;">
+    
+    <div class="main-content">
+        
+        <h1 style="color: var(--primary); font-family: 'Playfair Display', serif; text-align: center; text-transform: uppercase; border-bottom: 2px solid var(--active-gold); padding-bottom: 12px; margin-top: 0; letter-spacing: 1.5px;" id="main_top_title">
+            📋 Control de Inventario y Trazabilidad E/S
+        </h1>
+
+        <!-- 🔍 1. ACORDEÓN: TRAZABILIDAD Y SEGUIDILLA E/S (REPLEGADO) -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>🔍 1. Seguidilla de Cierres E/S (Trazabilidad Turno por Turno)</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.9rem; color:var(--muted); margin-top:0; margin-bottom:15px;">
+                    Seleccione un producto para ver cómo pasó de la <strong>E (Inicial) del primer día</strong> a la <strong>S (Final) del último día</strong>. Muestra la cadena continua de <strong>Fecha, Hora, Turno, Empleado, Ventas y Entradas de Proveedor</strong>.
+                </p>
+                
+                <div class="grid-3">
+                    <div>
+                        <label>Producto Exclusivo:</label>
+                        <select id="seg_producto_id">
+                            <option value="">Cargando catálogo...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Rango de Tiempo:</label>
+                        <select id="seg_tipo_periodo" onchange="alternarSelectorPeriodo()">
+                            <option value="semana" selected>Por Semana</option>
+                            <option value="mes">Por Mes</option>
+                            <option value="anio">Por Año</option>
+                        </select>
+                    </div>
+                    <div id="box_selector_fecha">
+                        <label>Fecha de la Semana:</label>
+                        <input type="date" id="seg_fecha_referencia">
+                    </div>
+                </div>
+
+                <button class="btn-info" onclick="consultarSeguimientoMercancia()" style="margin-top:18px;">🔄 GENERAR SEGUIDILLA DE CIERRES (E ➔ S)</button>
+
+                <div id="resultado_seguimiento_container" style="margin-top:20px; display:none;"></div>
+            </div>
+        </div>
+
+        <!-- 📋 2. ACORDEÓN: HISTORIAL DE CIERRES REGISTRADOS (REPLEGADO) -->
+        <div class="card">
+            <div class="card-header" onclick="toggleAcordeon(this)">
+                <h2>📋 2. Historial de Cierres de Turno (Auditorías Guardadas)</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.9rem; color:var(--muted); margin-top: 0; margin-bottom: 15px;">
+                    Cierres individuales almacenados en Supabase. Al eliminar un reporte, puedes elegir si deseas reintegrar la mercancía o purgar por completo.
+                </p>
+                
+                <div style="overflow-x:auto;">
+                    <table id="tabla_control_inventario_cierres">
+                        <tr><th>Fecha y Hora</th><th>Entregó</th><th>Recibió</th><th>Tasa BS</th><th>Total Venta ($)</th><th>Acciones</th></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🧹 3. ACORDEÓN: LIMPIEZA Y PURGA MASIVA POR PERÍODO -->
+        <div class="card" style="border-top-color: var(--danger);">
+            <div class="card-header" style="background: linear-gradient(135deg, #8B0000 0%, #3B0918 100%);" onclick="toggleAcordeon(this)">
+                <h2>🧹 3. Limpieza y Purga Masiva por Período (Día, Semana, Mes, Año)</h2>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.9rem; color:var(--muted); margin-top: 0; margin-bottom: 15px;">
+                    Seleccione un rango específico (Día, Semana, Mes o Año) para ejecutar la depuración masiva aplicando cualquiera de los 3 principios de eliminación.
+                </p>
+
+                <div class="grid-2">
+                    <div>
+                        <label>Filtrar Rango por:</label>
+                        <select id="purga_tipo_rango" onchange="alternarSelectorRangoPurga()">
+                            <option value="dia">Por Día</option>
+                            <option value="semana" selected>Por Semana</option>
+                            <option value="mes">Por Mes</option>
+                            <option value="anio">Por Año</option>
+                        </select>
+                    </div>
+                    <div id="box_selector_purga">
+                        <label>Fecha de Referencia:</label>
+                        <input type="date" id="purga_fecha_val">
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <label style="color: var(--danger); font-weight: bold; margin-bottom: 10px;">SELECCIONE EL MODO DE PURGA A APLICAR EN EL RANGO:</label>
+                    <div class="grid-3">
+                        <button class="btn-warning" style="margin: 0; padding: 12px; font-size: 0.8rem;" onclick="ejecutarPurgaMasiva('solo_reportes')">
+                            1️⃣ Eliminar Solo Historial del Rango
+                        </button>
+                        <button class="btn-danger" style="margin: 0; padding: 12px; font-size: 0.8rem;" onclick="ejecutarPurgaMasiva('reportes_y_relacionados')">
+                            2️⃣ Eliminar Historial y Relacionados
+                        </button>
+                        <button class="btn-success" style="margin: 0; padding: 12px; font-size: 0.8rem;" onclick="ejecutarPurgaMasiva('reintegrar_stock_masivo')">
+                            3️⃣ Eliminar, Limpiar y REINTEGRAR STOCK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://khazglefhixcdynrdixj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__ysP-HoZp2sWZLqQfnDOAg_zcTQSV3i';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_LOCAL_ID = null;
+    let CONFIG_GLOBAL = {};
+    let CATALOGO = [];
+    let HISTORIAL_PROVEEDORES = [];
+    let datosControlInventario = [];
+    let empleadosMapGlobal = {};
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data || !data.session) { 
+                alert("Sin sesión activa."); 
+                window.location.href = 'index.html';
+                return; 
+            }
+            await inicializarDatos(data.session.user.id);
+        } catch (err) { 
+            console.error(err); 
+        }
+    });
+
+    function toggleAcordeon(header) {
+        let card = header.parentElement;
+        let icon = header.querySelector('.accordion-icon');
+        card.classList.toggle('open');
+        icon.style.transform = card.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)";
+    }
+
+    function toggleVerPin() {
+        let input = document.getElementById('pin_ingreso_body');
+        let icono = document.getElementById('icono_ojo_pin');
+        input.type = (input.type === 'password') ? 'text' : 'password';
+        icono.innerText = (input.type === 'text') ? '🙈' : '👁️';
+    }
+
+    async function verificarPinBody() {
+        let pinIngresado = document.getElementById('pin_ingreso_body').value.trim();
+        let pinReal = CONFIG_GLOBAL?.identidad?.admin_pass;
+
+        if (pinReal && pinIngresado === pinReal) {
+            document.getElementById('main_wrapper').style.display = 'block';
+            document.getElementById('pantalla_bloqueo_admin').style.display = 'none';
+        } else {
+            alert("❌ PIN Incorrecto.");
+        }
+    }
+
+    async function inicializarDatos(userId) {
+        let { data: perfil } = await supabaseClient.from('perfiles').select('local_id, nombre').eq('id', userId).single();
+        if (perfil && perfil.local_id) {
+            CURRENT_LOCAL_ID = perfil.local_id;
+
+            let [resConf, resLocal, resEmp, resCat, resHistProv] = await Promise.all([
+                supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).maybeSingle(),
+                supabaseClient.from('locales').select('nombre').eq('id', CURRENT_LOCAL_ID).maybeSingle(),
+                supabaseClient.from('empleados').select('id, nombre, apellido').eq('local_id', CURRENT_LOCAL_ID),
+                supabaseClient.from('catalogo').select('*').eq('local_id', CURRENT_LOCAL_ID).order('nombre', { ascending: true }),
+                supabaseClient.from('proveedores_historial_entradas').select('*').eq('local_id', CURRENT_LOCAL_ID)
+            ]);
+
+            if (resConf.data) CONFIG_GLOBAL = resConf.data;
+            if (resEmp.data) {
+                resEmp.data.forEach(e => { empleadosMapGlobal[e.id] = `${e.nombre} ${e.apellido}`; });
+            }
+            window.empleadosMap = empleadosMapGlobal;
+
+            let nombreLocal = resLocal.data?.nombre || CONFIG_GLOBAL?.identidad?.nombre || 'Panel Empresarial';
+            document.getElementById('main_top_title').innerHTML = `📋 Control de Inventario`;
+
+            CATALOGO = resCat.data || [];
+            HISTORIAL_PROVEEDORES = resHistProv.data || [];
+
+            poblarSelectProductos();
+        } else {
+            return alert("Error: Perfil no vinculado a un local.");
+        }
+        
+        let pinRegistrado = CONFIG_GLOBAL?.identidad?.admin_pass;
+        if (!pinRegistrado || pinRegistrado.trim() === "") {
+            document.getElementById('pantalla_bloqueo_admin').style.display = 'none';
+            document.getElementById('main_wrapper').style.display = 'block';
+        } else {
+            document.getElementById('label_nivel_seguridad').innerText = `Módulo protegido con PIN de Administrador (Nivel Alto). Introduce tu contraseña:`;
+            document.getElementById('pantalla_bloqueo_admin').style.display = 'flex';
+        }
+
+        await cargarHistorialControlInventario();
+        let hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('seg_fecha_referencia').value = hoy;
+        document.getElementById('purga_fecha_val').value = hoy;
+
+        setTimeout(() => {
+            document.getElementById('loading_overlay').style.display = 'none';
+        }, 600);
+    }
+
+    function poblarSelectProductos() {
+        let select = document.getElementById('seg_producto_id');
+        select.innerHTML = '<option value="">-- Selecciona un Producto --</option>';
+        CATALOGO.forEach(p => {
+            let opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${limpiarNombre(p.nombre)} (Stock Físico Actual: ${p.stock || 0})`;
+            select.appendChild(opt);
+        });
+    }
+
+    function alternarSelectorPeriodo() {
+        let tipo = document.getElementById('seg_tipo_periodo').value;
+        let box = document.getElementById('box_selector_fecha');
+        let hoy = new Date().toISOString().split('T')[0];
+
+        if (tipo === 'semana') {
+            box.innerHTML = `<label>Fecha de la Semana:</label><input type="date" id="seg_fecha_referencia" value="${hoy}">`;
+        } else if (tipo === 'mes') {
+            box.innerHTML = `<label>Seleccionar Mes:</label><input type="month" id="seg_fecha_referencia" value="${hoy.substring(0, 7)}">`;
+        } else if (tipo === 'anio') {
+            box.innerHTML = `<label>Seleccionar Año:</label><input type="number" id="seg_fecha_referencia" min="2020" max="2050" value="${hoy.substring(0, 4)}">`;
+        }
+    }
+
+    function alternarSelectorRangoPurga() {
+        let tipo = document.getElementById('purga_tipo_rango').value;
+        let box = document.getElementById('box_selector_purga');
+        let hoy = new Date().toISOString().split('T')[0];
+
+        if (tipo === 'dia') {
+            box.innerHTML = `<label>Seleccionar Día:</label><input type="date" id="purga_fecha_val" value="${hoy}">`;
+        } else if (tipo === 'semana') {
+            box.innerHTML = `<label>Fecha dentro de la Semana:</label><input type="date" id="purga_fecha_val" value="${hoy}">`;
+        } else if (tipo === 'mes') {
+            box.innerHTML = `<label>Seleccionar Mes:</label><input type="month" id="purga_fecha_val" value="${hoy.substring(0, 7)}">`;
+        } else if (tipo === 'anio') {
+            box.innerHTML = `<label>Seleccionar Año:</label><input type="number" id="purga_fecha_val" min="2020" max="2050" value="${hoy.substring(0, 4)}">`;
+        }
+    }
+
+    async function consultarSeguimientoMercancia() {
+        let prodId = document.getElementById('seg_producto_id').value;
+        let tipoPeriodo = document.getElementById('seg_tipo_periodo').value;
+        let fechaRefVal = document.getElementById('seg_fecha_referencia').value;
+        let contenedor = document.getElementById('resultado_seguimiento_container');
+
+        if (!prodId) return alert("Por favor selecciona un producto para evaluar.");
+        if (!fechaRefVal) return alert("Selecciona una fecha o período.");
+
+        let prod = CATALOGO.find(p => p.id === prodId);
+        let nombreProd = limpiarNombre(prod ? prod.nombre : 'Producto');
+
+        mostrarModalLocal("Sincronizando Seguidilla", `Construyendo flujo paso a paso para ${nombreProd}...`);
+
+        try {
+            let fechaInicio, fechaFin;
+            if (tipoPeriodo === 'semana') {
+                let dateObj = new Date(fechaRefVal + 'T00:00:00');
+                let dayOfWeek = dateObj.getDay(); 
+                let diffToMon = dateObj.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                fechaInicio = new Date(dateObj.setDate(diffToMon)).toISOString().split('T')[0];
+                let endDateObj = new Date(fechaInicio + 'T00:00:00');
+                endDateObj.setDate(endDateObj.getDate() + 6);
+                fechaFin = endDateObj.toISOString().split('T')[0];
+            } else if (tipoPeriodo === 'mes') {
+                fechaInicio = `${fechaRefVal}-01`;
+                let [a, m] = fechaRefVal.split('-');
+                let ultDia = new Date(a, m, 0).getDate();
+                fechaFin = `${fechaRefVal}-${String(ultDia).padStart(2, '0')}`;
+            } else if (tipoPeriodo === 'anio') {
+                fechaInicio = `${fechaRefVal}-01-01`;
+                fechaFin = `${fechaRefVal}-12-31`;
+            }
+
+            const [resCierres, resProveedores] = await Promise.all([
+                supabaseClient.from('control_inventario_cierres').select('*, lotes_diarios(fecha, turno, vendedor_id)').eq('local_id', CURRENT_LOCAL_ID).order('fecha', { ascending: true }),
+                supabaseClient.from('proveedores_historial_entradas').select('*').eq('local_id', CURRENT_LOCAL_ID).eq('producto_id', prodId).order('fecha', { ascending: true })
+            ]);
+
+            let cierresAll = resCierres.data || [];
+
+            let cierresPrevios = cierresAll.filter(c => (c.fecha || '').substring(0, 10) < fechaInicio);
+            let eInicialAcumulada = 0;
+
+            if (cierresPrevios.length > 0) {
+                let ultCierrePrevio = cierresPrevios[cierresPrevios.length - 1];
+                let jsonDet = ultCierrePrevio.detalles_json || [];
+                let match = jsonDet.find(d => limpiarNombre(d.nombre).toLowerCase() === nombreProd.toLowerCase());
+                if (match) {
+                    let eVal = parseFloat(match.E || 0);
+                    let epVal = parseFloat(match.E_prov || 0);
+                    let sVal = parseFloat(match.S || 0);
+                    let vpVal = parseFloat(match.VP || 0);
+                    eInicialAcumulada = eVal + epVal - sVal - vpVal;
+                }
+            } else if (cierresAll.length > 0) {
+                let primerCierre = cierresAll[0];
+                let jsonDet = primerCierre.detalles_json || [];
+                let match = jsonDet.find(d => limpiarNombre(d.nombre).toLowerCase() === nombreProd.toLowerCase());
+                if (match) eInicialAcumulada = parseFloat(match.E || 0);
+            } else {
+                eInicialAcumulada = parseFloat(prod.stock || 0);
+            }
+
+            let cierresPeriodo = cierresAll.filter(c => {
+                let f = (c.fecha || '').substring(0, 10);
+                return f >= fechaInicio && f <= fechaFin;
+            });
+
+            let eCorriendo = eInicialAcumulada;
+            let totalVentasPeriodo = 0;
+            let totalEntradasProvPeriodo = 0;
+            let totalMermasPeriodo = 0;
+
+            let filasHtml = "";
+            let eventosPDF = [];
+
+            if (cierresPeriodo.length === 0) {
+                filasHtml = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--muted); font-style:italic;">No hay cierres de inventario registrados entre <strong>${fechaInicio}</strong> y <strong>${fechaFin}</strong>.</td></tr>`;
+            } else {
+                cierresPeriodo.forEach((cierre, idx) => {
+                    let fechaHora = new Date(cierre.fecha).toLocaleString();
+                    let nomEmpleadoCierra = empleadosMapGlobal[cierre.empleado_cierra] || 'Vendedor Desconocido';
+                    let nomEmpleadoRecibe = empleadosMapGlobal[cierre.empleado_recibe] || 'N/A';
+                    let turnoNombre = cierre.lotes_diarios?.turno || 'Turno Cierre';
+
+                    let detalles = cierre.detalles_json || [];
+                    let itemProd = detalles.find(d => limpiarNombre(d.nombre).toLowerCase() === nombreProd.toLowerCase()) || {};
+
+                    let eProvTurno = parseFloat(itemProd.E_prov ?? itemProd.E_Proveedor ?? 0);
+                    let vpTurno = parseFloat(itemProd.VP ?? itemProd.ventas ?? itemProd.cantidad ?? 0);
+                    let sMermaTurno = parseFloat(itemProd.S ?? itemProd.mermas ?? 0);
+
+                    let eStockTurnoInicial = eCorriendo; 
+                    let sStockTurnoFinal = eStockTurnoInicial + eProvTurno - sMermaTurno - vpTurno;
+
+                    eCorriendo = sStockTurnoFinal;
+
+                    totalVentasPeriodo += vpTurno;
+                    totalEntradasProvPeriodo += eProvTurno;
+                    totalMermasPeriodo += sMermaTurno;
+
+                    eventosPDF.push({
+                        fechaHora: fechaHora,
+                        turno: turnoNombre,
+                        empleado: nomEmpleadoCierra,
+                        E: eStockTurnoInicial,
+                        E_prov: eProvTurno,
+                        VP: vpTurno,
+                        S_merma: sMermaTurno,
+                        S: sStockTurnoFinal
+                    });
+
+                    filasHtml += `
+                        <tr style="background:${idx % 2 === 0 ? 'var(--card-bg)' : 'var(--item-bg)'};">
+                            <td style="font-weight:bold; text-align:center;">${fechaHora}</td>
+                            <td style="text-align:center;"><span style="background:var(--primary); color:var(--active-gold); padding:2px 6px; border-radius:3px; font-weight:bold; font-size:0.8rem;">${turnoNombre}</span></td>
+                            <td><strong style="color:var(--primary);">${nomEmpleadoCierra}</strong><br><small style="color:var(--muted);">Recibió: ${nomEmpleadoRecibe}</small></td>
+                            <td style="text-align:center; font-weight:bold; color:var(--primary); font-size:1rem; background:rgba(212,175,55,0.1);">${eStockTurnoInicial}</td>
+                            <td style="text-align:center;">${eProvTurno > 0 ? `<span class="prov-badge prov-pos">+${eProvTurno}</span>` : '0'}</td>
+                            <td style="text-align:center; font-weight:bold; color:var(--danger); font-size:1rem;">${vpTurno > 0 ? '-' + vpTurno : '0'}</td>
+                            <td style="text-align:center;">${sMermaTurno > 0 ? `<span class="prov-badge prov-neg">-${sMermaTurno}</span>` : '0'}</td>
+                            <td style="text-align:center; font-weight:bold; color:var(--success); font-size:1.1rem; background:rgba(46,125,50,0.1);">${sStockTurnoFinal}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            let sFinalGeneral = eCorriendo;
+
+            window.datosKardexActual = {
+                nombreProducto: nombreProd,
+                periodo: `${fechaInicio} al ${fechaFin}`,
+                primeraE: eInicialAcumulada,
+                ultimaS: sFinalGeneral,
+                totalEntradas: totalEntradasProvPeriodo,
+                totalMermas: totalMermasPeriodo,
+                totalVentas: totalVentasPeriodo,
+                eventos: eventosPDF
+            };
+
+            let htmlResumen = `
+                <div style="background:var(--item-bg); padding:18px; border-radius:4px; border:1px solid var(--border); margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h3 style="margin:0; color:var(--primary); font-family:'Playfair Display', serif;">📦 TRAZABILIDAD Y SEGUIDILLA E/S: ${nombreProd.toUpperCase()}</h3>
+                            <p style="margin:4px 0; font-size:0.9rem;">Período Evaluado: <strong>${fechaInicio}</strong> al <strong>${fechaFin}</strong></p>
+                        </div>
+                        <div style="width:250px;">
+                            <button class="btn-success" style="margin:0; padding:10px; font-size:0.85rem;" onclick="generarPDFKardexTextoPlano()">📄 DESCARGAR REPORTE SEGUIDILLA (PDF)</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-4" style="margin-top:15px;">
+                        <div style="background:#fff; padding:12px; border-radius:4px; text-align:center; border:1px solid var(--border);">
+                            <small style="color:var(--muted); font-weight:bold;">1. E INICIAL (DÍA 1)</small>
+                            <div style="font-size:1.3rem; font-weight:bold; color:var(--primary);">${eInicialAcumulada} un.</div>
+                        </div>
+                        <div style="background:#fff; padding:12px; border-radius:4px; text-align:center; border:1px solid var(--border);">
+                            <small style="color:var(--muted); font-weight:bold;">2. ENTRADAS (+) / MERMAS (-)</small>
+                            <div style="font-size:1.1rem; font-weight:bold;"><span style="color:var(--success);">+${totalEntradasProvPeriodo}</span> / <span style="color:var(--danger);">-${totalMermasPeriodo}</span></div>
+                        </div>
+                        <div style="background:#fff; padding:12px; border-radius:4px; text-align:center; border:1px solid var(--border);">
+                            <small style="color:var(--muted); font-weight:bold;">3. VENTAS TOTALES (V.P)</small>
+                            <div style="font-size:1.3rem; font-weight:bold; color:var(--danger);">${totalVentasPeriodo} un.</div>
+                        </div>
+                        <div style="background:#fff; padding:12px; border-radius:4px; text-align:center; border:1px solid var(--border);">
+                            <small style="color:var(--muted); font-weight:bold;">4. S FINAL (DÍA 7)</small>
+                            <div style="font-size:1.3rem; font-weight:bold; color:var(--success);">${sFinalGeneral} un.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table>
+                        <tr>
+                            <th style="text-align:center;">Fecha y Hora del Cierre</th>
+                            <th style="text-align:center;">Turno</th>
+                            <th>Vendedor (Entregó / Cierre)</th>
+                            <th style="text-align:center; background:rgba(212,175,55,0.2);">E (Stock Inicial)</th>
+                            <th style="text-align:center;">E. Prov (+)</th>
+                            <th style="text-align:center;">V.P (Ventas -)</th>
+                            <th style="text-align:center;">S (Mermas -)</th>
+                            <th style="text-align:center; background:var(--primary); color:var(--active-gold);">S (Stock Final / Quedó)</th>
+                        </tr>
+                        ${filasHtml}
+                    </table>
+                </div>
+            `;
+
+            cerrarModalGlobal();
+            contenedor.innerHTML = htmlResumen;
+            contenedor.style.display = 'block';
+
+        } catch (e) {
+            cerrarModalGlobal();
+            alert("❌ Error al procesar la seguidilla: " + e.message);
+            console.error(e);
+        }
+    }
+
+    function generarPDFKardexTextoPlano() {
+        let datos = window.datosKardexActual;
+        if (!datos) return alert("No hay datos de seguidilla cargados.");
+
+        mostrarModalLocal("Generando PDF", "Exportando reporte de seguidilla...");
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Panel Empresarial';
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(13);
+            doc.text(nombreLocal.toUpperCase(), 14, 15);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.text(`REPORTE DE SEGUIDILLA DE CIERRES (TRAZABILIDAD TURNO A TURNO)`, 14, 21);
+            doc.text(`Producto: ${datos.nombreProducto}`, 14, 26);
+            doc.text(`Período: ${datos.periodo}`, 14, 31);
+            doc.text(`Fecha Emisión: ${new Date().toLocaleString()}`, 196, 15, { align: 'right' });
+
+            doc.setLineWidth(0.4);
+            doc.line(14, 34, 196, 34);
+
+            let posY = 40;
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(9.5);
+            doc.text("RESUMEN DE CONTINUIDAD E ➔ S:", 14, posY);
+
+            posY += 5;
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.text(`* E Inicial (Día 1): ${datos.primeraE} un.`, 16, posY);
+            doc.text(`* Entradas Prov.: +${datos.totalEntradas} un.`, 85, posY);
+            doc.text(`* Mermas/Ajustes: -${datos.totalMermas} un.`, 145, posY);
+            
+            posY += 5;
+            doc.text(`* Ventas Totales (V.P): -${datos.totalVentas} un.`, 16, posY);
+            doc.setFont("Helvetica", "bold");
+            doc.text(`* S Final (Día 7): ${datos.ultimaS} un.`, 85, posY);
+
+            posY += 7;
+            doc.line(14, posY, 196, posY);
+
+            posY += 5;
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(7.5);
+            doc.text("FECHA Y HORA", 14, posY);
+            doc.text("TURNO / EMPLEADO", 60, posY);
+            doc.text("E (INICIAL)", 115, posY, { align: 'center' });
+            doc.text("E.PROV", 138, posY, { align: 'center' });
+            doc.text("V.P (VENTA)", 160, posY, { align: 'center' });
+            doc.text("S (FINAL)", 196, posY, { align: 'right' });
+
+            posY += 2;
+            doc.line(14, posY, 196, posY);
+
+            posY += 4;
+            doc.setFont("Helvetica", "normal");
+
+            if (!datos.eventos || datos.eventos.length === 0) {
+                doc.text("No existen cierres de turno registrados.", 14, posY);
+            } else {
+                datos.eventos.forEach((ev) => {
+                    if (posY > 275) {
+                        doc.addPage();
+                        posY = 15;
+                        doc.setFont("Helvetica", "bold");
+                        doc.text("FECHA Y HORA", 14, posY);
+                        doc.text("TURNO / EMPLEADO", 60, posY);
+                        doc.text("E (INICIAL)", 115, posY, { align: 'center' });
+                        doc.text("E.PROV", 138, posY, { align: 'center' });
+                        doc.text("V.P (VENTA)", 160, posY, { align: 'center' });
+                        doc.text("S (FINAL)", 196, posY, { align: 'right' });
+                        posY += 2;
+                        doc.line(14, posY, 196, posY);
+                        posY += 4;
+                        doc.setFont("Helvetica", "normal");
+                    }
+
+                    let empStr = `${ev.turno} - ${ev.empleado.length > 20 ? ev.empleado.substring(0, 18) + '..' : ev.empleado}`;
+
+                    doc.text(ev.fechaHora, 14, posY);
+                    doc.text(empStr, 60, posY);
+                    doc.text(String(ev.E), 115, posY, { align: 'center' });
+                    doc.text(ev.E_prov > 0 ? `+${ev.E_prov}` : '0', 138, posY, { align: 'center' });
+                    doc.text(ev.VP > 0 ? `-${ev.VP}` : '0', 160, posY, { align: 'center' });
+                    doc.setFont("Helvetica", "bold");
+                    doc.text(String(ev.S), 196, posY, { align: 'right' });
+                    doc.setFont("Helvetica", "normal");
+
+                    posY += 5;
+                });
+            }
+
+            doc.save(`Seguidilla_ES_${datos.nombreProducto}_${new Date().toISOString().substring(0,10)}.pdf`);
+            cerrarModalGlobal();
+        } catch (e) {
+            cerrarModalGlobal();
+            alert("❌ Error generando PDF de seguidilla: " + e.message);
+        }
+    }
+
+    async function cargarHistorialControlInventario() {
+        let tablaEl = document.getElementById('tabla_control_inventario_cierres');
+        if(!tablaEl) return;
+        try {
+            let { data, error } = await supabaseClient
+                .from('control_inventario_cierres')
+                .select('*')
+                .eq('local_id', CURRENT_LOCAL_ID)
+                .order('fecha', { ascending: false });
+                
+            if(error) throw error;
+
+            let html = `<tr><th>Fecha y Hora</th><th>Entregó</th><th>Recibió</th><th>Tasa BS</th><th>Total Venta ($)</th><th>Acciones</th></tr>`;
+            
+            if(!data || data.length === 0) {
+                html += `<tr><td colspan="6" style="text-align:center; padding: 20px; color:var(--muted); font-style:italic;">No hay registros de cierre en Supabase.</td></tr>`;
+            } else {
+                datosControlInventario = data;
+                data.forEach((c, idx) => {
+                    let nomCierra = empleadosMapGlobal[c.empleado_cierra] || 'N/A';
+                    let nomRecibe = empleadosMapGlobal[c.empleado_recibe] || 'N/A';
+                    
+                    html += `<tr>
+                        <td style="text-align:center;">${new Date(c.fecha).toLocaleString()}</td>
+                        <td>${nomCierra}</td>
+                        <td>${nomRecibe}</td>
+                        <td style="text-align:center;">${c.tasa_usd_bs || 1}</td>
+                        <td style="text-align:right; font-weight:bold; color:var(--success);">$${parseFloat(c.total_usd || 0).toFixed(2)}</td>
+                        <td style="text-align:center; display:flex; gap:6px; justify-content:center;">
+                            <button class="btn-info" style="padding:6px 12px; margin:0; font-size:0.85rem; width:auto;" onclick="abrirAuditoria(${idx})">🔒 Ver / Editar</button>
+                            <button class="btn-danger" style="padding:6px 10px; margin:0; font-size:0.85rem; width:auto;" onclick="gestionarOpcionesEliminacion('${c.id}', ${idx})">🗑️</button>
+                        </td>
+                    </tr>`;
+                });
+            }
+            tablaEl.innerHTML = html;
+        } catch (e) { 
+            console.error("Error cargando cierres:", e);
+        }
+    }
+
+    function gestionarOpcionesEliminacion(idCierre, idx) {
+        let registro = datosControlInventario[idx];
+        let fechaStr = new Date(registro.fecha).toLocaleString();
+
+        let htmlOpciones = `
+            <div style="padding: 10px; text-align: left;">
+                <p style="margin-top:0; font-size: 0.95rem; color: var(--text);">
+                    Selecciona el método que deseas aplicar para eliminar el reporte del <strong>${fechaStr}</strong>:
+                </p>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                    <button class="btn-warning" style="margin:0; text-align: left; padding: 14px;" onclick="ejecutarEliminacionReporte('${idCierre}', 'solo_reporte')">
+                        <strong>1️⃣ Eliminar solo el reporte</strong><br>
+                        <small style="font-weight: normal; opacity: 0.9;">Borra únicamente este registro de auditoría, sin tocar ningún otro dato ni existencias.</small>
+                    </button>
+
+                    <button class="btn-danger" style="margin:0; text-align: left; padding: 14px;" onclick="ejecutarEliminacionReporte('${idCierre}', 'reporte_y_relacionados')">
+                        <strong>2️⃣ Eliminar reporte y todo lo relacionado</strong><br>
+                        <small style="font-weight: normal; opacity: 0.9;">Elimina el reporte y los movimientos o lotes asociados directamente en el sistema.</small>
+                    </button>
+
+                    <button class="btn-success" style="margin:0; text-align: left; padding: 14px;" onclick="ejecutarEliminacionReporte('${idCierre}', 'reintegrar_mercancia')">
+                        <strong>3️⃣ Eliminar reporte, limpiar y REINTEGRAR MERCANCÍA</strong><br>
+                        <small style="font-weight: normal; opacity: 0.9;">Revierte el cierre y devuelve al inventario activo de cada producto las cantidades vendidas/afectadas como si nada hubiera pasado.</small>
+                    </button>
+                </div>
+
+                <button class="btn-info" style="margin-top: 20px; background: #555;" onclick="cerrarModalGlobal()">Cancelar</button>
+            </div>
+        `;
+        abrirModalGlobal("⚙️ OPCIONES DE ELIMINACIÓN DE REPORTE", htmlOpciones);
+    }
+
+    async function ejecutarEliminacionReporte(idCierre, modo) {
+        let registro = datosControlInventario.find(r => r.id === idCierre);
+        if (!registro) return alert("Registro no encontrado.");
+
+        if (!confirm(`⚠️ ¿Estás completamente seguro de ejecutar el modo [${modo.toUpperCase()}]? Esta acción no se puede deshacer.`)) return;
+
+        mostrarModalLocal("Procesando...", "Aplicando cambios en la base de datos de Supabase...");
+
+        try {
+            if (modo === 'reintegrar_mercancia') {
+                let detalles = registro.detalles_json || [];
+                for (let d of detalles) {
+                    let nombreProd = limpiarNombre(d.nombre);
+                    let cantidadVenta = parseFloat(d.VP || d.ventas || 0);
+
+                    if (cantidadVenta > 0) {
+                        let productoCatalogo = CATALOGO.find(p => limpiarNombre(p.nombre).toLowerCase() === nombreProd.toLowerCase());
+                        if (productoCatalogo) {
+                            let stockActual = parseFloat(productoCatalogo.stock || 0);
+                            let stockRestaurado = stockActual + cantidadVenta;
+
+                            await supabaseClient
+                                .from('catalogo')
+                                .update({ stock: stockRestaurado })
+                                .eq('id', productoCatalogo.id);
+                            
+                            productoCatalogo.stock = stockRestaurado;
+                        }
+                    }
+                }
+            }
+
+            if (modo === 'reporte_y_relacionados' || modo === 'reintegrar_mercancia') {
+                if (registro.lote_id) {
+                    await supabaseClient.from('lotes_diarios').delete().eq('id', registro.lote_id);
+                }
+            }
+
+            let { error } = await supabaseClient.from('control_inventario_cierres').delete().eq('id', idCierre);
+            if (error) throw error;
+
+            cerrarModalGlobal();
+            alert("✅ ¡Reporte eliminado y proceso aplicado con éxito!");
+            await cargarHistorialControlInventario();
+            poblarSelectProductos();
+        } catch (e) {
+            cerrarModalGlobal();
+            alert("❌ Error al procesar la eliminación: " + e.message);
+        }
+    }
+
+    // =========================================================================
+    // 🧹 MÓDULO 3: PURGA MASIVA POR RANGO DE TIEMPO (DÍA, SEMANA, MES, AÑO)
+    // =========================================================================
+    async function ejecutarPurgaMasiva(modo) {
+        let tipoRango = document.getElementById('purga_tipo_rango').value;
+        let fechaRefVal = document.getElementById('purga_fecha_val').value;
+
+        if (!fechaRefVal) return alert("Por favor selecciona una fecha válida para el rango.");
+
+        let fechaInicio, fechaFin;
+
+        if (tipoRango === 'dia') {
+            fechaInicio = fechaRefVal;
+            fechaFin = fechaRefVal;
+        } else if (tipoRango === 'semana') {
+            let dateObj = new Date(fechaRefVal + 'T00:00:00');
+            let dayOfWeek = dateObj.getDay(); 
+            let diffToMon = dateObj.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+            fechaInicio = new Date(dateObj.setDate(diffToMon)).toISOString().split('T')[0];
+            let endDateObj = new Date(fechaInicio + 'T00:00:00');
+            endDateObj.setDate(endDateObj.getDate() + 6);
+            fechaFin = endDateObj.toISOString().split('T')[0];
+        } else if (tipoRango === 'mes') {
+            fechaInicio = `${fechaRefVal}-01`;
+            let [a, m] = fechaRefVal.split('-');
+            let ultDia = new Date(a, m, 0).getDate();
+            fechaFin = `${fechaRefVal}-${String(ultDia).padStart(2, '0')}`;
+        } else if (tipoRango === 'anio') {
+            fechaInicio = `${fechaRefVal}-01-01`;
+            fechaFin = `${fechaRefVal}-12-31`;
+        }
+
+        let cierresAfiliados = datosControlInventario.filter(c => {
+            let f = (c.fecha || '').substring(0, 10);
+            return f >= fechaInicio && f <= fechaFin;
+        });
+
+        if (cierresAfiliados.length === 0) {
+            return alert(`No se encontraron registros de auditoría entre ${fechaInicio} y ${fechaFin}.`);
+        }
+
+        let mensajeConfirmacion = `⚠️ ATENCIÓN: Se van a eliminar ${cierresAfiliados.length} reportes de inventario comprendidos entre ${fechaInicio} y ${fechaFin}.\n\nModo de operación: [${modo.toUpperCase()}]\n\n¿Desea ejecutar la purga masiva?`;
+        if (!confirm(mensajeConfirmacion)) return;
+
+        mostrarModalLocal("Ejecutando Purga", `Procesando ${cierresAfiliados.length} cierres en Supabase...`);
+
+        try {
+            if (modo === 'reintegrar_stock_masivo') {
+                let sumaVentasPorProducto = {};
+
+                cierresAfiliados.forEach(registro => {
+                    let detalles = registro.detalles_json || [];
+                    detalles.forEach(d => {
+                        let nombreLimpio = limpiarNombre(d.nombre).toLowerCase();
+                        let vp = parseFloat(d.VP || d.ventas || 0);
+                        if (vp > 0) {
+                            sumaVentasPorProducto[nombreLimpio] = (sumaVentasPorProducto[nombreLimpio] || 0) + vp;
+                        }
+                    });
+                });
+
+                for (let key in sumaVentasPorProducto) {
+                    let totalDevolver = sumaVentasPorProducto[key];
+                    let prodCat = CATALOGO.find(p => limpiarNombre(p.nombre).toLowerCase() === key);
+                    if (prodCat) {
+                        let stockNuevo = parseFloat(prodCat.stock || 0) + totalDevolver;
+                        await supabaseClient
+                            .from('catalogo')
+                            .update({ stock: stockNuevo })
+                            .eq('id', prodCat.id);
+                        prodCat.stock = stockNuevo;
+                    }
+                }
+            }
+
+            let idsAEliminar = cierresAfiliados.map(c => c.id);
+
+            if (modo === 'reportes_y_relacionados' || modo === 'reintegrar_stock_masivo') {
+                let lotesIds = cierresAfiliados.map(c => c.lote_id).filter(id => id != null);
+                if (lotesIds.length > 0) {
+                    await supabaseClient.from('lotes_diarios').delete().in('id', lotesIds);
+                }
+            }
+
+            let { error } = await supabaseClient.from('control_inventario_cierres').delete().in('id', idsAEliminar);
+            if (error) throw error;
+
+            cerrarModalGlobal();
+            alert(`✅ ¡Purga masiva completada con éxito! Se procesaron ${cierresAfiliados.length} reportes.`);
+            await cargarHistorialControlInventario();
+            poblarSelectProductos();
+        } catch (e) {
+            cerrarModalGlobal();
+            alert("❌ Error en la purga masiva: " + e.message);
+        }
+    }
+
+    function obtenerDetallesCompletos(registro) {
+        let detallesGuardados = registro.detalles_json || [];
+        let mapaGuardados = {};
+        let fechaCierreStr = (registro.fecha || '').substring(0, 10);
+
+        detallesGuardados.forEach(d => {
+            let nombreLimpio = limpiarNombre(d.nombre || 'Producto');
+            mapaGuardados[nombreLimpio.toLowerCase()] = {
+                nombre: nombreLimpio,
+                E: parseFloat(d.E ?? d.entrada ?? d.stock_inicial ?? 0),
+                E_prov: parseFloat(d.E_prov ?? d.E_Proveedor ?? 0),
+                S: parseFloat(d.S ?? d.salida ?? d.mermas ?? 0),
+                VP: parseFloat(d.VP ?? d.cantidad ?? d.ventas ?? 0),
+                PI: parseFloat(d.PI ?? d.precio_interno ?? 0),
+                VT: parseFloat(d.VT ?? d.subtotal_usd ?? 0)
+            };
+        });
+
+        let listaFinal = [];
+        CATALOGO.forEach(cat => {
+            let nombreCat = limpiarNombre(cat.nombre);
+            let key = nombreCat.toLowerCase();
+            let movsProv = HISTORIAL_PROVEEDORES.filter(h => h.producto_id === cat.id && h.fecha && h.fecha.substring(0,10) === fechaCierreStr);
+            let eProvNeto = movsProv.reduce((acc, item) => acc + (parseFloat(item.cantidad) || 0), 0);
+
+            if (mapaGuardados[key]) {
+                let item = mapaGuardados[key];
+                if (eProvNeto !== 0) item.E_prov = eProvNeto; 
+                listaFinal.push(item);
+                delete mapaGuardados[key];
+            } else {
+                listaFinal.push({
+                    nombre: nombreCat,
+                    E: parseFloat(cat.stock || 0),
+                    E_prov: eProvNeto,
+                    S: 0,
+                    VP: 0,
+                    PI: parseFloat(cat.precio_venta || cat.precio_base || 0),
+                    VT: 0
+                });
+            }
+        });
+
+        for (let k in mapaGuardados) listaFinal.push(mapaGuardados[k]);
+        listaFinal.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+        return listaFinal;
+    }
+
+    function abrirAuditoria(idx) {
+        let registro = datosControlInventario[idx];
+        let detalles = obtenerDetallesCompletos(registro);
+        let nomCierra = empleadosMapGlobal[registro.empleado_cierra] || 'N/A';
+        let nomRecibe = empleadosMapGlobal[registro.empleado_recibe] || 'N/A';
+        let fechaActualFormat = (registro.fecha || '').replace(' ', 'T').substring(0, 16);
+        
+        window.currentAuditoriaEditIndex = idx;
+        window.currentDetallesEditados = detalles;
+
+        let htmlTabla = `<table style="width:100%; border-collapse:collapse; text-align:center; font-size:0.85rem;">
+            <tr>
+                <th style="padding:8px; text-align:left;">Producto</th>
+                <th style="width:11%;">E (St. Inicial)</th>
+                <th style="width:11%; color: var(--active-gold);">E. Prov</th>
+                <th style="width:11%;">S (Mermas)</th>
+                <th style="width:11%;">V.P (Ventas)</th>
+                <th style="width:12%;">Stock Final (S)</th>
+                <th style="width:13%;">P. Unit ($)</th>
+                <th style="width:15%;">Total Venta ($)</th>
+            </tr>`;
+        
+        detalles.forEach((d, i) => {
+            let eProvVal = parseFloat(d.E_prov) || 0;
+            let eVal = parseFloat(d.E) || 0;
+            let sVal = parseFloat(d.S) || 0;
+            let vpVal = parseFloat(d.VP) || 0;
+            let piVal = parseFloat(d.PI) || 0;
+            let stockFinalCalculado = eVal + eProvVal - sVal - vpVal;
+            let totalUSD = vpVal * piVal;
+
+            let badgeEProvClass = eProvVal > 0 ? "prov-pos" : (eProvVal < 0 ? "prov-neg" : "prov-zero");
+            let signoProv = eProvVal > 0 ? "+" : "";
+
+            htmlTabla += `<tr>
+                <td style="text-align:left; font-weight:bold;">${d.nombre}</td>
+                <td><input type="number" id="input_e_${i}" value="${eVal}" style="width:100%; text-align:center; padding:4px;" onchange="recalcularFilaAuditoria(${i})"></td>
+                <td style="text-align:center;">
+                    <span class="prov-badge ${badgeEProvClass}" style="font-size:0.85rem;">${signoProv}${eProvVal}</span>
+                    <input type="hidden" id="input_eprov_${i}" value="${eProvVal}">
+                </td>
+                <td><input type="number" id="input_s_${i}" value="${sVal}" style="width:100%; text-align:center; padding:4px;" onchange="recalcularFilaAuditoria(${i})"></td>
+                <td><input type="number" id="input_vp_${i}" value="${vpVal}" step="any" style="width:100%; text-align:center; padding:4px; font-weight:bold; color:var(--success);" onchange="recalcularFilaAuditoria(${i})"></td>
+                <td id="td_stock_final_${i}" style="font-weight:bold; color:var(--primary); font-size:1rem;">${stockFinalCalculado}</td>
+                <td><input type="number" id="input_pi_${i}" value="${piVal}" step="any" style="width:100%; text-align:right; padding:4px;" onchange="recalcularFilaAuditoria(${i})"></td>
+                <td id="td_vt_${i}" style="text-align:right; font-weight:bold; color:var(--success);">$${totalUSD.toFixed(2)}</td>
+            </tr>`;
+        });
+        htmlTabla += `</table>`;
+
+        let htmlVista = `
+            <div style="margin-bottom:12px; font-size:0.9rem; text-align:left; background:var(--item-bg); padding:12px; border-radius:4px; border:1px solid var(--border);">
+                <div class="grid-2" style="margin-bottom:8px;">
+                    <div>
+                        <label style="margin-top:0;">📅 EDITAR FECHA Y HORA DEL CIERRE:</label>
+                        <input type="datetime-local" id="edit_fecha_cierre_global" value="${fechaActualFormat}">
+                    </div>
+                    <div>
+                        <p style="margin:3px 0;"><strong>Vendedor Entregó:</strong> ${nomCierra}</p>
+                        <p style="margin:3px 0;"><strong>Vendedor Recibió:</strong> ${nomRecibe}</p>
+                        <p style="margin:3px 0;"><strong>Tasa USD/BS:</strong> ${registro.tasa_usd_bs || 1}</p>
+                    </div>
+                </div>
+            </div>
+            <div style="background:var(--card-bg); border:1px solid var(--border); padding:5px; max-height:360px; overflow-y:auto; border-radius:4px;">${htmlTabla}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; gap:10px;">
+                <button class="btn-success" style="margin:0; width:50%;" onclick="guardarCambiosAuditoriaManual()">💾 GUARDAR Y SINCRONIZAR</button>
+                <button class="btn-warning" style="margin:0; width:50%;" onclick="descargarAuditoriaPDF(${idx})">📄 DESCARGAR PDF</button>
+            </div>
+            <button class="btn-danger" style="margin-top:10px; width:100%; background: #555;" onclick="cerrarModalGlobal()">CERRAR</button>
+        `;
+        abrirModalGlobal("AUDITORÍA DE CIERRE / CONTROL E Y S", htmlVista);
+    }
+
+    function recalcularFilaAuditoria(i) {
+        let e = parseFloat(document.getElementById(`input_e_${i}`).value) || 0;
+        let eProv = parseFloat(document.getElementById(`input_eprov_${i}`).value) || 0;
+        let s = parseFloat(document.getElementById(`input_s_${i}`).value) || 0;
+        let vp = parseFloat(document.getElementById(`input_vp_${i}`).value) || 0;
+        let pi = parseFloat(document.getElementById(`input_pi_${i}`).value) || 0;
+
+        let stockFinal = e + eProv - s - vp;
+        let vt = vp * pi;
+
+        document.getElementById(`td_stock_final_${i}`).innerText = stockFinal;
+        document.getElementById(`td_vt_${i}`).innerText = `$${vt.toFixed(2)}`;
+
+        if (window.currentDetallesEditados && window.currentDetallesEditados[i]) {
+            window.currentDetallesEditados[i].E = e;
+            window.currentDetallesEditados[i].S = s;
+            window.currentDetallesEditados[i].VP = vp;
+            window.currentDetallesEditados[i].PI = pi;
+            window.currentDetallesEditados[i].VT = vt;
+        }
+    }
+
+    async function guardarCambiosAuditoriaManual() {
+        let idx = window.currentAuditoriaEditIndex;
+        let registro = datosControlInventario[idx];
+        let detalles = window.currentDetallesEditados || [];
+        let nuevaFechaVal = document.getElementById('edit_fecha_cierre_global').value;
+        if (!nuevaFechaVal) return alert("Selecciona una fecha válida.");
+
+        let fechaNuevaFormat = nuevaFechaVal.replace('T', ' ') + ':00';
+        let nuevosDetalles = [];
+        let totalGeneralUsd = 0;
+
+        detalles.forEach((d, i) => {
+            let eVal = parseFloat(document.getElementById(`input_e_${i}`).value) || 0;
+            let eProvVal = parseFloat(document.getElementById(`input_eprov_${i}`).value) || 0;
+            let sVal = parseFloat(document.getElementById(`input_s_${i}`).value) || 0;
+            let vpVal = parseFloat(document.getElementById(`input_vp_${i}`).value) || 0;
+            let piVal = parseFloat(document.getElementById(`input_pi_${i}`).value) || 0;
+            let vtVal = vpVal * piVal;
+            totalGeneralUsd += vtVal;
+
+            nuevosDetalles.push({ nombre: d.nombre, E: eVal, E_prov: eProvVal, S: sVal, VP: vpVal, PI: piVal, VT: vtVal });
+        });
+
+        mostrarModalLocal("Sincronizando", "Actualizando cierre y seguidilla de inventario...");
+        try {
+            let { error } = await supabaseClient
+                .from('control_inventario_cierres')
+                .update({ fecha: fechaNuevaFormat, detalles_json: nuevosDetalles, total_usd: totalGeneralUsd })
+                .eq('id', registro.id);
+
+            if(error) throw error;
+
+            cerrarModalGlobal();
+            alert("✅ Cierre actualizado correctamente.");
+            await cargarHistorialControlInventario();
+        } catch (e) {
+            cerrarModalGlobal();
+            alert("❌ Error al guardar: " + e.message);
+        }
+    }
+
+    function descargarAuditoriaPDF(idx) {
+        let registro = datosControlInventario[idx];
+        let detalles = obtenerDetallesCompletos(registro);
+        let nomCierra = empleadosMapGlobal[registro.empleado_cierra] || 'N/A';
+        let nomRecibe = empleadosMapGlobal[registro.empleado_recibe] || 'N/A';
+        let fechaStr = new Date(registro.fecha).toLocaleString();
+        let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Panel Empresarial';
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(15);
+        doc.setTextColor(92, 6, 20);
+        doc.text(nombreLocal.toUpperCase(), 14, 16);
+
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(100, 100, 100);
+        doc.text("REPORTE DE AUDITORÍA DE CIERRE DE TURNO", 14, 22);
+
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(40, 40, 40);
+        doc.text(`Fecha/Hora: ${fechaStr}`, 196, 16, { align: 'right' });
+
+        doc.setDrawColor(212, 175, 55);
+        doc.setLineWidth(0.8);
+        doc.line(14, 26, 196, 26);
+
+        doc.setFillColor(250, 246, 237);
+        doc.roundedRect(14, 30, 182, 15, 2, 2, "F");
+
+        doc.setFontSize(7.5);
+        doc.setTextColor(100, 100, 100);
+        doc.text("VENDEDOR ENTREGÓ:", 17, 36);
+        doc.text("VENDEDOR RECIBIÓ / TASA:", 110, 36);
+
+        doc.setFontSize(9);
+        doc.setFont("Helvetica", "bold");
+        doc.setTextColor(40, 40, 40);
+        doc.text(String(nomCierra.toUpperCase()), 17, 42);
+        doc.text(String(`${nomRecibe.toUpperCase()} | Tasa: ${registro.tasa_usd_bs || 1}`), 110, 42);
+
+        let posY = 51;
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(92, 6, 20);
+        doc.text("Detalle de Existencias E / S por Producto", 14, posY);
+
+        posY += 4;
+        doc.setFontSize(8);
+        doc.setFillColor(92, 6, 20);
+        doc.setTextColor(212, 175, 55);
+        doc.rect(14, posY, 182, 6.5, "F");
+        doc.text("Descripción del Producto", 16, posY + 4.5);
+        doc.text("E (Inicial)", 90, posY + 4.5, { align: 'center' });
+        doc.text("E.Prov", 110, posY + 4.5, { align: 'center' });
+        doc.text("S (Mermas)", 130, posY + 4.5, { align: 'center' });
+        doc.text("V.P (Ventas)", 150, posY + 4.5, { align: 'center' });
+        doc.text("Stock Final (S)", 172, posY + 4.5, { align: 'center' });
+        doc.text("Total ($)", 194, posY + 4.5, { align: 'right' });
+
+        posY += 6.5;
+        doc.setFont("Helvetica", "normal");
+        doc.setTextColor(40, 40, 40);
+
+        detalles.forEach((d, index) => {
+            if (posY > 265) { doc.addPage(); posY = 20; }
+            if (index % 2 === 0) { doc.setFillColor(250, 246, 237); doc.rect(14, posY, 182, 6.5, "F"); }
+
+            let eProvVal = parseFloat(d.E_prov) || 0;
+            let stockFinal = (parseFloat(d.E)||0) + eProvVal - (parseFloat(d.S)||0) - (parseFloat(d.VP)||0);
+
+            doc.text(String(d.nombre), 16, posY + 4.5);
+            doc.text(String(d.E), 90, posY + 4.5, { align: 'center' });
+            doc.text(eProvVal > 0 ? `+${eProvVal}` : '0', 110, posY + 4.5, { align: 'center' });
+            doc.text(String(d.S), 130, posY + 4.5, { align: 'center' });
+            doc.text(String(d.VP), 150, posY + 4.5, { align: 'center' });
+            doc.text(String(stockFinal), 172, posY + 4.5, { align: 'center' });
+            doc.setFont("Helvetica", "bold");
+            doc.text(`$${parseFloat(d.VT).toFixed(2)}`, 194, posY + 4.5, { align: 'right' });
+            doc.setFont("Helvetica", "normal");
+
+            posY += 6.5;
+        });
+
+        doc.save(`Cierre_${registro.fecha.substring(0,10)}.pdf`);
+    }
+
+    function limpiarNombre(n) { return (n || "").replace(/box_-/g, "").trim(); }
+    function abrirModalGlobal(t, h) { 
+        document.getElementById('global_modal_title').innerText = t; 
+        document.getElementById('global_modal_body').innerHTML = h; 
+        document.getElementById('global_modal').style.display = 'flex'; 
+    }
+    function cerrarModalGlobal() { document.getElementById('global_modal').style.display = 'none'; }
+    function mostrarModalLocal(t, m) { abrirModalGlobal(t, `<div style="padding:15px; text-align:center;"><div class="spinner-luxury" style="width: 35px; height: 35px; border-width: 3px; margin: 0 auto 10px auto;"></div><span style="font-weight:bold; color:var(--primary); font-family:'Playfair Display', serif;">${m}</span></div>`); }
+</script>
+</body>
+</html>
