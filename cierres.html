@@ -364,6 +364,9 @@
                 CONCILIACIONES_CFG = Array.isArray(conf.conciliaciones) 
                     ? conf.conciliaciones 
                     : (conf.conciliaciones?.lista || []);
+                
+                // ORDENAR CONCILIACIONES ALFABÉTICAMENTE (A-Z)
+                CONCILIACIONES_CFG.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
             }
 
             await recargarDatosCatalogo(false);
@@ -385,7 +388,15 @@
                     fuente: parseFloat(p.costo_fuente || p.fuente || p.costo || p.precio_costo || 0)
                 }));
             }
-            if (reqEmp.data) EMPLEADOS = reqEmp.data;
+            if (reqEmp.data) {
+                EMPLEADOS = reqEmp.data;
+                // ORDENAR EMPLEADOS ALFABÉTICAMENTE POR NOMBRE Y APELLIDO (A-Z)
+                EMPLEADOS.sort((a, b) => {
+                    let nombreA = `${a.nombre || ''} ${a.apellido || ''}`.trim();
+                    let nombreB = `${b.nombre || ''} ${b.apellido || ''}`.trim();
+                    return nombreA.localeCompare(nombreB);
+                });
+            }
 
             poblarSelectoresEmpleados();
             renderizarConciliacionesConfiguradas();
@@ -637,6 +648,9 @@
             `;
             return;
         }
+
+        // Asegurar orden alfabético al renderizar por si acaso
+        CONCILIACIONES_CFG.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
 
         CONCILIACIONES_CFG.forEach(c => {
             let porc = parseFloat(c.porcentaje) || 0;
