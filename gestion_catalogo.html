@@ -12,9 +12,6 @@
     <script src="motor.js"></script>
     
     <style>
-        /* ========================================================= */
-        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
-        /* ========================================================= */
         :root {
             --bg: #FDFBF7;
             --text: #2A2A2A;
@@ -51,9 +48,6 @@
             margin: 0 auto; 
         }
 
-        /* ========================================================= */
-        /* BOTONES FLOTANTES EN ESQUINA SUPERIOR DERECHA (X y REFRESCAR) */
-        /* ========================================================= */
         .corner-btns-container {
             position: fixed;
             top: 20px;
@@ -84,7 +78,6 @@
         .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
         .refresh-corner-btn:hover { background: var(--primary); transform: scale(1.1) rotate(180deg); }
 
-        /* COMPONENTES Y TARJETAS */
         .card {
             background: var(--card-bg);
             padding: 25px;
@@ -123,7 +116,6 @@
         .btn-warning { background: var(--warning); color: white; }
         .btn-danger { background: var(--danger); color: #ffffff; }
 
-        /* ACORDES */
         .acordeon-header {
             background: #8B0000; 
             border: 2px solid var(--active-gold); 
@@ -166,9 +158,21 @@
         .tabla-permisos td { padding: 10px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); text-align: center; color: var(--text); }
         .tabla-permisos td:first-child { text-align: left; font-weight: bold; color: var(--primary); }
 
+        /* LÍNEAS DE DIVISIÓN DE HISTORIAL (LETRAS A, B, C O CATEGORÍA) */
+        .tr-separador-alfabetico {
+            background: #5C0614 !important;
+            color: var(--active-gold) !important;
+            font-family: var(--title-font);
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-align: left !important;
+            padding: 12px 15px !important;
+            border-top: 3px solid var(--active-gold);
+            border-bottom: 2px solid var(--active-gold);
+        }
+
         .switch-label { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--input-bg); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: var(--border-radius); margin-bottom: 8px; cursor: pointer; color: var(--text); font-weight: bold; }
 
-        /* PANTALLAS DE CARGA Y BLOQUEO AUTÓNOMAS */
         @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spinGold { 100% { transform: rotate(360deg); } }
@@ -199,12 +203,15 @@
         .badge-tipo {
             display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .badge-simple { background: rgba(46, 125, 50, 0.2); color: var(--success); border: 1px solid var(--success); }
-        .badge-preparado { background: rgba(184, 134, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .badge-materia { background: rgba(184, 134, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .badge-detallado { background: rgba(46, 125, 50, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .badge-compuesto { background: rgba(92, 6, 20, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+        .badge-mayor { background: rgba(0, 102, 204, 0.2); color: #0066cc; border: 1px solid #0066cc; }
+        .badge-servicio { background: rgba(102, 102, 102, 0.2); color: #555555; border: 1px solid #555555; }
+
         .cost-tag { font-size: 0.82rem; color: #777777; display: block; }
         .price-tag { font-size: 0.95rem; font-weight: bold; color: var(--primary); }
 
-        /* ESTILOS PARA MODULO DESPLEGABLE DE INGREDIENTES Y STEPPER */
         .ing-row-card {
             background: rgba(212, 175, 55, 0.05);
             border: 1px solid rgba(212, 175, 55, 0.4);
@@ -317,7 +324,6 @@
 </head>
 <body>
 
-    <!-- PANTALLA DE CARGA AUTÓNOMA -->
     <div id="loading_overlay" class="overlay-luxury">
         <div class="card-luxury-menu">
             <div style="width: 50px; height: 50px; margin: 0 auto 30px auto; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: #D4AF37; border-radius: 50%; animation: spinGold 1s linear infinite;"></div>
@@ -327,7 +333,6 @@
         </div>
     </div>
 
-    <!-- PANTALLA DE BLOQUEO GLOBAL POR PIN -->
     <div id="pantalla_bloqueo_global" class="overlay-luxury" style="display:none;">
         <div class="card-luxury-menu pantalla-bloqueo-card">
             <div style="font-family: var(--title-font); font-size: 1.4rem; color: var(--primary); letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">ACCESO AUTORIZADO</div>
@@ -344,7 +349,6 @@
         </div>
     </div>
 
-    <!-- BOTONES FLOTANTES EN LA ESQUINA SUPERIOR DERECHA (Refrescar y X) -->
     <div class="corner-btns-container">
         <button type="button" class="refresh-corner-btn" onclick="UICatalogo.recargarDatosSupabase()" title="Refrescar Catálogo desde Supabase">🔄</button>
         <a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
@@ -400,15 +404,18 @@
                 <div style="margin-bottom: 15px;">
                     <label>Tipo de Referencia / Producto:</label>
                     <select id="form_prod_tipo" onchange="UICatalogo.alternarTipoProducto()">
-                        <option value="simple">📦 Producto Unitario / Simple (Insumo o Mercancía Directa)</option>
-                        <option value="preparado">☕ Producto Compuesto / Receta (Combo o Preparado)</option>
+                        <option value="materia_prima">🌾 Materia Prima (Gramo, Libra, Kilo, Mililitro, Litro, Unidad)</option>
+                        <option value="detallado">📦 Producto Detallado (Unidad de venta directa)</option>
+                        <option value="compuesto">☕ Producto Compuesto / Receta (Depende de Materia Prima)</option>
+                        <option value="al_mayor">📦 Producto Al Mayor (Derivado dinámico de Producto Detallado)</option>
+                        <option value="servicio">🛠️ Servicio o Mano de Obra (Sin inventario, comisión/precio empleado)</option>
                     </select>
                 </div>
                 
                 <div class="grid-2">
                     <div>
                         <label>Nombre Comercial / Referencia:</label>
-                        <input type="text" id="form_prod_nom" placeholder="Mercancía">
+                        <input type="text" id="form_prod_nom" placeholder="Ej: Harina, Café Latte, Caja de Refrescos">
                     </div>
                     <div>
                         <label>Categoría Asignada:</label>
@@ -422,29 +429,30 @@
                         <select id="form_prod_moneda"></select>
                     </div>
                     <div>
-                        <label>Costo Fuente (A como me sale / Compra):</label>
+                        <label>Costo / Inversión (A como sale / Compra):</label>
                         <input type="number" step="0.01" id="form_prod_fuente" placeholder="0.00">
                     </div>
                 </div>
                 
                 <div class="grid-2">
                     <div>
-                        <label>Precio Base de Venta (A como lo vendo):</label>
+                        <label>Precio Base de Venta:</label>
                         <input type="number" step="0.01" id="form_prod_base" placeholder="0.00">
                     </div>
-                    <div></div>
+                    <div id="div_parametro_extra"></div>
                 </div>
                 
+                <!-- SECCIÓN PARA MATERIA PRIMA Y DETALLADO -->
                 <div class="grid-2" id="contenedor_stock_directo">
                     <div>
-                        <label>Unidad de Medida:</label>
+                        <label>Unidad de Medida / Presentación:</label>
                         <select id="form_prod_unidad">
                             <option value="Unidad">Unidad</option>
                             <option value="Gramo">Gramo</option>
+                            <option value="Libra">Libra</option>
                             <option value="Kilo">Kilo</option>
                             <option value="Mililitro">Mililitro</option>
                             <option value="Litro">Litro</option>
-                            <option value="Ración">Ración</option>
                         </select>
                     </div>
                     <div>
@@ -464,11 +472,32 @@
                     </div>
                 </div>
                 
-                <!-- Receta / Ingredientes Avanzada con Selector Desplegable, Buscador y Stepper -->
+                <!-- SECCIÓN PARA PRODUCTO COMPUESTO (RECETA) -->
                 <div id="contenedor_receta" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
-                    <label style="color:var(--warning); font-weight:bold; display:block; margin-bottom:10px;">📋 Insumos e Ingredientes Requeridos por Unidad Producida</label>
+                    <label style="color:var(--warning); font-weight:bold; display:block; margin-bottom:10px;">📋 Insumos de Materia Prima Requeridos (Deducción Automática)</label>
                     <div id="ingredientes-container"></div>
-                    <button type="button" class="btn-warning" onclick="UICatalogo.agregarFilaIngrediente()" style="margin-top: 10px; width: auto; font-size: 0.85rem;">+ AÑADIR INSUMO A LA RECETA</button>
+                    <button type="button" class="btn-warning" onclick="UICatalogo.agregarFilaIngrediente()" style="margin-top: 10px; width: auto; font-size: 0.85rem;">+ AÑADIR MATERIA PRIMA A LA RECETA</button>
+                </div>
+
+                <!-- SECCIÓN PARA PRODUCTO AL MAYOR (MATEMÁTICA DINÁMICA) -->
+                <div id="contenedor_al_mayor" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                    <label style="color:var(--primary); font-weight:bold; display:block; margin-bottom:8px;">📦 Vínculo con Producto Detallado</label>
+                    <div class="grid-2">
+                        <div>
+                            <label>Seleccionar Producto Detallado Origen:</label>
+                            <select id="form_prod_origen_mayor"></select>
+                        </div>
+                        <div>
+                            <label>Factor de Conversión (Unidades que trae el Mayor):</label>
+                            <input type="number" step="0.01" id="form_prod_factor_mayor" placeholder="Ej: 12 unidades por bulto/caja" value="1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN PARA SERVICIO O MANO DE OBRA -->
+                <div id="contenedor_servicio" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                    <label style="color:var(--primary); font-weight:bold; display:block; margin-bottom:8px;">🛠️ Configuración de Servicio y Ganancia para Empleado</label>
+                    <p style="font-size: 0.85rem; color: #555; margin-top:0;">Este ítem no maneja inventario físico. Define el costo interno para la empresa y el precio estipulado para la ganancia del colaborador.</p>
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-top: 25px;">
@@ -478,7 +507,7 @@
             </div>
         </div>
 
-        <!-- 3. HISTORIAL DE CATÁLOGO ACTUAL -->
+        <!-- 3. HISTORIAL DE CATÁLOGO REGISTRADO (CON LÍNEAS DE DIVISIÓN A, B, C...) -->
         <div>
             <div class="acordeon-header" onclick="UICatalogo.toggleSeccion('sec_historial', 'icon_historial')">
                 <h2 class="acordeon-title">📋 3. Historial de Catálogo Registrado</h2>
@@ -491,8 +520,8 @@
                     </div>
                     <div>
                         <select id="orden_gestion_prod" onchange="UICatalogo.renderTablaGestionProductos()">
-                            <option value="az">🔤 Orden Alfabético (A-Z)</option>
-                            <option value="cat">📁 Agrupar por Categoría</option>
+                            <option value="alfabetico">🔤 Orden Alfabético con Líneas Divisorias (A, B, C...)</option>
+                            <option value="categoria">📁 Agrupar por Categoría con Líneas Divisorias</option>
                         </select>
                     </div>
                 </div>
@@ -542,7 +571,6 @@
                 setTimeout(() => { overlay.style.display = 'none'; }, 500);
             }
         },
-        sincronizarNombreLocal: function(nombre) {},
         toggleVerPin: function() {
             const input = document.getElementById('pin_ingreso_global');
             const btn = document.getElementById('btn_ojo_pin');
@@ -636,16 +664,13 @@
 
         cargarModulo(estado) {
             const conf = estado.configuracion || {};
-            const nombreLocal = estado.datosLocal?.nombre || conf?.identidad?.nombre || 'Sistema';
-            UIBase.sincronizarNombreLocal(nombreLocal);
-
             this.categorias = (conf.categorias || []).sort((a, b) => a.localeCompare(b));
 
             this.catalogo = (estado.catalogo || []).map(p => ({
                 uuid: p.id, 
                 nom: p.nombre, 
                 cat: p.categoria || "General", 
-                tipo: p.tipo || "simple",
+                tipo: p.tipo || "detallado",
                 base: p.precio_base || 0, 
                 mBase: p.moneda_base || 'USD',
                 fuente: p.costo_fuente || 0, 
@@ -653,12 +678,15 @@
                 stock: p.stock || 0, 
                 umbralAmarillo: p.umbral_amarillo || 5, 
                 umbralRojo: p.umbral_rojo || 0, 
-                receta: p.receta || []
+                receta: p.receta || [],
+                origenMayorId: p.origen_mayor_id || '',
+                factorMayor: p.factor_mayor || 1
             }));
 
             this.actualizarMonedaBaseUI();
             this.poblarSelectorMonedasProducto();
             this.renderCategorias();
+            this.poblarSelectorOrigenMayor();
             this.renderTablaGestionProductos();
         },
 
@@ -709,6 +737,15 @@
             }
             const select = document.getElementById('form_prod_moneda');
             if (select) select.innerHTML = lista.map(m => `<option value="${m}">${m}</option>`).join('');
+        },
+
+        poblarSelectorOrigenMayor() {
+            const select = document.getElementById('form_prod_origen_mayor');
+            if (!select) return;
+            let detallados = this.catalogo.filter(p => p.tipo === 'detallado');
+            select.innerHTML = detallados.length 
+                ? detallados.map(p => `<option value="${p.uuid}">${p.nom} (Stock: ${p.stock} ${p.unidad})</option>`).join('')
+                : '<option value="">No hay productos detallados registrados</option>';
         },
 
         renderCategorias() {
@@ -789,14 +826,28 @@
 
         alternarTipoProducto() {
             let tipo = document.getElementById('form_prod_tipo').value;
-            document.getElementById('contenedor_stock_directo').style.display = tipo === 'simple' ? 'grid' : 'none';
-            document.getElementById('contenedor_umbrales').style.display = tipo === 'simple' ? 'grid' : 'none';
-            document.getElementById('contenedor_receta').style.display = tipo === 'preparado' ? 'block' : 'none';
+            
+            document.getElementById('contenedor_stock_directo').style.display = (tipo === 'materia_prima' || tipo === 'detallado') ? 'grid' : 'none';
+            document.getElementById('contenedor_umbrales').style.display = (tipo === 'materia_prima' || tipo === 'detallado') ? 'grid' : 'none';
+            document.getElementById('contenedor_receta').style.display = tipo === 'compuesto' ? 'block' : 'none';
+            document.getElementById('contenedor_al_mayor').style.display = tipo === 'al_mayor' ? 'block' : 'none';
+            document.getElementById('contenedor_servicio').style.display = tipo === 'servicio' ? 'block' : 'none';
+
+            let selectUnidad = document.getElementById('form_prod_unidad');
+            if (tipo === 'materia_prima') {
+                selectUnidad.innerHTML = `
+                    <option value="Gramo">Gramo</option>
+                    <option value="Libra">Libra</option>
+                    <option value="Kilo">Kilo</option>
+                    <option value="Mililitro">Mililitro</option>
+                    <option value="Litro">Litro</option>
+                    <option value="Unidad">Unidad</option>
+                `;
+            } else {
+                selectUnidad.innerHTML = `<option value="Unidad">Unidad</option>`;
+            }
         },
 
-        /* ========================================================= */
-        /* MÓDULO RECETA AVANZADO: BUSCADOR, ORDEN Y STEPPER         */
-        /* ========================================================= */
         agregarFilaIngrediente(selectedUuid = '', selectedCant = 1) {
             let cont = document.getElementById('ingredientes-container');
             let rowId = 'ing_row_' + Date.now() + '_' + Math.floor(Math.random()*1000);
@@ -807,7 +858,7 @@
             rowDiv.dataset.uuid = selectedUuid;
 
             let inicialObj = this.catalogo.find(p => p.uuid === selectedUuid);
-            let displayText = inicialObj ? `${inicialObj.nom} (${inicialObj.unidad})` : "🔍 Seleccionar Insumo o Mercancía...";
+            let displayText = inicialObj ? `${inicialObj.nom} (${inicialObj.unidad})` : "🔍 Seleccionar Materia Prima...";
 
             rowDiv.innerHTML = `
                 <div style="display: flex; gap: 10px; align-items: center;">
@@ -818,7 +869,7 @@
                         </button>
                         <div class="ing-dropdown-menu" id="menu_${rowId}">
                             <div class="ing-search-box">
-                                <input type="text" placeholder="Buscar insumo..." oninput="UICatalogo.filtrarOpcionesDropdown('${rowId}', this.value)">
+                                <input type="text" placeholder="Buscar materia prima..." oninput="UICatalogo.filtrarOpcionesDropdown('${rowId}', this.value)">
                                 <select class="ing-sort-select" onchange="UICatalogo.ordenarOpcionesDropdown('${rowId}', this.value)">
                                     <option value="az">🔤 Orden Alfabético (A-Z)</option>
                                     <option value="cat">📁 Agrupar por Categoría</option>
@@ -841,7 +892,6 @@
         },
 
         toggleDropdownMenu(rowId) {
-            // Cerrar otros menús abiertos
             document.querySelectorAll('.ing-dropdown-menu').forEach(m => {
                 if(m.id !== 'menu_' + rowId) m.classList.remove('show');
             });
@@ -853,26 +903,26 @@
             let listContainer = document.getElementById('list_' + rowId);
             if (!listContainer) return;
 
-            let simples = [...this.catalogo].filter(p => p.tipo === 'simple');
+            let materias = [...this.catalogo].filter(p => p.tipo === 'materia_prima');
             
             if (ordenMode === 'cat') {
-                simples.sort((a, b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
+                materias.sort((a, b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
             } else {
-                simples.sort((a, b) => a.nom.localeCompare(b.nom));
+                materias.sort((a, b) => a.nom.localeCompare(b.nom));
             }
 
             if (filtroTexto) {
                 let q = filtroTexto.toLowerCase();
-                simples = simples.filter(p => p.nom.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
+                materias = materias.filter(p => p.nom.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
             }
 
-            if (simples.length === 0) {
-                listContainer.innerHTML = `<div style="padding: 10px; color: #777; text-align:center;">No se encontraron insumos</div>`;
+            if (materias.length === 0) {
+                listContainer.innerHTML = `<div style="padding: 10px; color: #777; text-align:center;">No hay materias primas registradas</div>`;
                 return;
             }
 
             let html = '';
-            simples.forEach(p => {
+            materias.forEach(p => {
                 let label = ordenMode === 'cat' ? `[${p.cat}] ${p.nom} (${p.unidad})` : `${p.nom} (${p.unidad})`;
                 html += `<div class="ing-option-item" onclick="UICatalogo.seleccionarIngredienteDropdown('${rowId}', '${p.uuid}', '${p.nom.replace(/'/g, "\\'")}', '${p.unidad}')">${label}</div>`;
             });
@@ -924,7 +974,7 @@
             let tipoProd = document.getElementById('form_prod_tipo').value;
             let recetaArr = [];
 
-            if (tipoProd === 'preparado') {
+            if (tipoProd === 'compuesto') {
                 document.querySelectorAll('#ingredientes-container > .ing-row-card').forEach(row => {
                     let idIng = row.dataset.uuid;
                     let cantIng = parseFloat(row.querySelector('.stepper-input').value) || 0;
@@ -944,11 +994,13 @@
                 precio_base: precioBaseVal,
                 moneda_base: monSeleccionada,
                 costo_fuente: costoFuenteVal,
-                stock: tipoProd === 'simple' ? (parseFloat(document.getElementById('form_prod_stock').value) || 0) : 0,
+                stock: (tipoProd === 'materia_prima' || tipoProd === 'detallado') ? (parseFloat(document.getElementById('form_prod_stock').value) || 0) : 0,
                 unidad: document.getElementById('form_prod_unidad').value || 'Unidad',
                 umbral_amarillo: parseFloat(document.getElementById('form_prod_u_amarillo').value) || 5,
                 umbral_rojo: parseFloat(document.getElementById('form_prod_u_rojo').value) || 0,
                 receta: recetaArr,
+                origen_mayor_id: tipoProd === 'al_mayor' ? document.getElementById('form_prod_origen_mayor').value : null,
+                factor_mayor: tipoProd === 'al_mayor' ? (parseFloat(document.getElementById('form_prod_factor_mayor').value) || 1) : 1,
                 activo: true
             };
 
@@ -975,7 +1027,7 @@
         editarProducto(idx) {
             let p = this.catalogo[idx];
             document.getElementById('edit_prod_uuid').value = p.uuid || '';
-            document.getElementById('form_prod_tipo').value = p.tipo || 'simple';
+            document.getElementById('form_prod_tipo').value = p.tipo || 'detallado';
             this.alternarTipoProducto();
             
             document.getElementById('form_prod_nom').value = p.nom;
@@ -988,9 +1040,14 @@
             document.getElementById('form_prod_u_amarillo').value = p.umbralAmarillo || 5;
             document.getElementById('form_prod_u_rojo').value = p.umbralRojo || 0;
 
+            if (p.tipo === 'al_mayor') {
+                document.getElementById('form_prod_origen_mayor').value = p.origenMayorId || '';
+                document.getElementById('form_prod_factor_mayor').value = p.factorMayor || 1;
+            }
+
             const contIng = document.getElementById('ingredientes-container');
             contIng.innerHTML = '';
-            if (p.tipo === 'preparado' && Array.isArray(p.receta)) {
+            if (p.tipo === 'compuesto' && Array.isArray(p.receta)) {
                 p.receta.forEach(ing => {
                     this.agregarFilaIngrediente(ing.uuid, ing.cant);
                 });
@@ -1012,7 +1069,7 @@
             document.getElementById('ingredientes-container').innerHTML = '';
             document.getElementById('btn_guardar_producto').innerText = "💾 CONSOLIDAR EN CATÁLOGO SUPABASE";
             document.getElementById('btn_cancelar_edit').style.display = "none";
-            document.getElementById('form_prod_tipo').value = 'simple';
+            document.getElementById('form_prod_tipo').value = 'materia_prima';
             this.alternarTipoProducto();
         },
 
@@ -1031,60 +1088,135 @@
             }
         },
 
+        // CÁLCULO DE PRODUCCIÓN MÁXIMA PARA PRODUCTOS COMPUESTOS
+        calcularProduccionPosible(p) {
+            if (!p.receta || p.receta.length === 0) return 0;
+            let maxProducible = Infinity;
+            p.receta.forEach(ing => {
+                let materiaPrima = this.catalogo.find(m => m.uuid === ing.uuid);
+                if (!materiaPrima || ing.cant <= 0) {
+                    maxProducible = 0;
+                } else {
+                    let posibleConEsteInsumo = Math.floor(materiaPrima.stock / ing.cant);
+                    if (posibleConEsteInsumo < maxProducible) {
+                        maxProducible = posibleConEsteInsumo;
+                    }
+                }
+            });
+            return maxProducible === Infinity ? 0 : maxProducible;
+        },
+
+        // CÁLCULO DINÁMICO PARA PRODUCTOS AL MAYOR
+        calcularStockAlMayor(p) {
+            if (!p.origenMayorId) return 0;
+            let origen = this.catalogo.find(m => m.uuid === p.origenMayorId);
+            if (!origen || p.factorMayor <= 0) return 0;
+            return Math.floor(origen.stock / p.factorMayor);
+        },
+
         renderTablaGestionProductos() {
-            let ord = document.getElementById('orden_gestion_prod') ? document.getElementById('orden_gestion_prod').value : "az";
-            let arr = [...this.catalogo];
-            arr.sort((a,b) => ord === 'cat' ? a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom) : a.nom.localeCompare(b.nom));
+            let ord = document.getElementById('orden_gestion_prod') ? document.getElementById('orden_gestion_prod').value : "alfabetico";
             let q = document.getElementById('buscar_gestion_prod') ? document.getElementById('buscar_gestion_prod').value.toLowerCase() : "";
+
+            let arr = [...this.catalogo].filter(p => p.nom.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
+            let tbodyHtml = "";
+
+            if (ord === 'alfabetico') {
+                // ORDENAR ALFABÉTICAMENTE Y CREAR LÍNEAS DIVISORIAS (A, B, C...)
+                arr.sort((a, b) => a.nom.localeCompare(b.nom));
+                
+                let letraActual = "";
+                arr.forEach((p) => {
+                    let inicial = p.nom.charAt(0).toUpperCase();
+                    if (inicial !== letraActual) {
+                        letraActual = inicial;
+                        tbodyHtml += `<tr><td colspan="4" class="tr-separador-alfabetico">🔤 LETRA: ${letraActual}</td></tr>`;
+                    }
+                    tbodyHtml += this.generarFilaTablaProducto(p);
+                });
+            } else {
+                // AGRUPAR POR CATEGORÍA CON LÍNEAS DIVISORIAS
+                arr.sort((a, b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
+                
+                let categoriaActual = "";
+                arr.forEach((p) => {
+                    if (p.cat !== categoriaActual) {
+                        categoriaActual = p.cat;
+                        tbodyHtml += `<tr><td colspan="4" class="tr-separador-alfabetico">📁 CATEGORÍA: ${categoriaActual.toUpperCase()}</td></tr>`;
+                    }
+                    tbodyHtml += this.generarFilaTablaProducto(p);
+                });
+            }
+
+            if (arr.length === 0) {
+                tbodyHtml = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #777;">No se encontraron registros en el catálogo.</td></tr>`;
+            }
 
             let html = `<thead>
                 <tr>
-                    <th>Referencia / Categoría</th>
+                    <th>Referencia / Tipo</th>
                     <th>Costos</th>
-                    <th style="text-align:center;">Stock</th>
+                    <th style="text-align:center;">Stock / Disponibilidad</th>
                     <th style="text-align:center;">Acciones</th>
                 </tr>
-            </thead><tbody>`;
+            </thead><tbody>${tbodyHtml}</tbody>`;
 
-            arr.filter(p => p.nom.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q)).forEach((p) => {
-                let idxOriginal = this.catalogo.findIndex(x => x.uuid === p.uuid);
-                let badgeClass = p.tipo === 'preparado' ? 'badge-preparado' : 'badge-simple';
-                let tipoTxt = p.tipo === 'preparado' ? 'Receta' : 'Simple';
-
-                html += `
-                <tr>
-                    <td>
-                        <strong style="color:var(--text); font-size: 1rem;">${p.nom}</strong>
-                        <span class="badge-tipo ${badgeClass}" style="margin-left: 6px;">${tipoTxt}</span>
-                        <br>
-                        <span style="font-size:0.85rem; color:var(--active-gold); opacity:0.9;">📁 ${p.cat}</span>
-                    </td>
-                    <td>
-                        <span class="cost-tag">Precio Al Costo: ${p.mBase} ${p.fuente.toFixed(2)}</span>
-                        <span class="price-tag">Precio de Venta: ${p.mBase} ${p.base.toFixed(2)}</span>
-                    </td>
-                    <td style="text-align:center; font-weight:bold; font-size:1.05rem;">
-                        ${p.tipo === 'preparado' ? '∞' : `${p.stock} <small style='font-size:0.75rem;'>${p.unidad}</small>`}
-                    </td>
-                    <td style="text-align:center;">
-                        <div style="display:flex; justify-content:center; gap:5px;">
-                            <button type="button" class="btn-info" style="padding:5px 10px; font-size:0.8rem; width:auto;" onclick="UICatalogo.editarProducto(${idxOriginal})">✏️ EDITAR</button>
-                            <button type="button" class="btn-danger" style="padding:5px 8px; font-size:0.8rem; width:auto;" onclick="UICatalogo.eliminarProductoSupabase('${p.uuid}')">🗑️</button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            html += "</tbody>";
             document.getElementById('tabla_gestion_productos').innerHTML = html;
         },
 
-        /* ========================================================= */
-        /* COPIA DE SEGURIDAD E IMPORTACIÓN (STOCK EN 0)             */
-        /* ========================================================= */
+        generarFilaTablaProducto(p) {
+            let idxOriginal = this.catalogo.findIndex(x => x.uuid === p.uuid);
+            
+            let badgeClass = 'badge-detallado';
+            let tipoTxt = 'Detallado';
+            let stockDisplay = `${p.stock} <small style='font-size:0.75rem;'>${p.unidad}</small>`;
+
+            if (p.tipo === 'materia_prima') {
+                badgeClass = 'badge-materia';
+                tipoTxt = 'Materia Prima';
+            } else if (p.tipo === 'compuesto') {
+                badgeClass = 'badge-compuesto';
+                tipoTxt = 'Compuesto';
+                let prodPosible = this.calcularProduccionPosible(p);
+                stockDisplay = `<strong style="color:var(--primary);">Producción Máx: ${prodPosible}</strong>`;
+            } else if (p.tipo === 'al_mayor') {
+                badgeClass = 'badge-mayor';
+                tipoTxt = 'Al Mayor';
+                let stockMayor = this.calcularStockAlMayor(p);
+                stockDisplay = `<strong style="color:#0066cc;">Disponibles: ${stockMayor} Al Mayor</strong> (Factor: ${p.factorMayor})`;
+            } else if (p.tipo === 'servicio') {
+                badgeClass = 'badge-servicio';
+                tipoTxt = 'Servicio / Mano de Obra';
+                stockDisplay = 'N/A (Servicio)';
+            }
+
+            return `
+            <tr>
+                <td>
+                    <strong style="color:var(--text); font-size: 1rem;">${p.nom}</strong>
+                    <span class="badge-tipo ${badgeClass}" style="margin-left: 6px;">${tipoTxt}</span>
+                    <br>
+                    <span style="font-size:0.85rem; color:var(--active-gold); opacity:0.9;">📁 ${p.cat}</span>
+                </td>
+                <td>
+                    <span class="cost-tag">Costo: ${p.mBase} ${p.fuente.toFixed(2)}</span>
+                    <span class="price-tag">Venta: ${p.mBase} ${p.base.toFixed(2)}</span>
+                </td>
+                <td style="text-align:center; font-weight:bold; font-size:1.00rem;">
+                    ${stockDisplay}
+                </td>
+                <td style="text-align:center;">
+                    <div style="display:flex; justify-content:center; gap:5px;">
+                        <button type="button" class="btn-info" style="padding:5px 10px; font-size:0.8rem; width:auto;" onclick="UICatalogo.editarProducto(${idxOriginal})">✏️ EDITAR</button>
+                        <button type="button" class="btn-danger" style="padding:5px 8px; font-size:0.8rem; width:auto;" onclick="UICatalogo.eliminarProductoSupabase('${p.uuid}')">🗑️</button>
+                    </div>
+                </td>
+            </tr>`;
+        },
+
         exportarCopiaSeguridad() {
             if (this.catalogo.length === 0) return alert("No hay productos en el catálogo para exportar.");
             
-            // Generar copia con stock en 0 y sin ID estricto para inserción limpia
             let copia = this.catalogo.map(p => ({
                 nombre: p.nom,
                 categoria: p.cat,
@@ -1092,11 +1224,13 @@
                 precio_base: p.base,
                 moneda_base: p.mBase,
                 costo_fuente: p.fuente,
-                stock: 0, // Stock siempre en 0 como se solicitó
+                stock: 0,
                 unidad: p.unidad,
                 umbral_amarillo: p.umbralAmarillo,
                 umbral_rojo: p.umbralRojo,
                 receta: p.receta,
+                origen_mayor_id: p.origenMayorId,
+                factor_mayor: p.factorMayor,
                 activo: true
             }));
 
@@ -1117,7 +1251,7 @@
             reader.onload = async (e) => {
                 try {
                     let items = JSON.parse(e.target.result);
-                    if (!Array.isArray(items)) throw new Error("El archivo JSON no tiene un formato de catálogo válido.");
+                    if (!Array.isArray(items)) throw new Error("El archivo JSON no tiene un formato válido.");
 
                     if (!confirm(`⚠️ Se van a inyectar ${items.length} productos en este local (con stock en 0). ¿Desea continuar?`)) {
                         event.target.value = '';
@@ -1126,20 +1260,21 @@
 
                     UIBase.mostrarCargando("IMPORTANDO", "Inyectando mercancía en la base de datos de Supabase...");
 
-                    // Mapear cada elemento para asociarlo al local actual y asegurar stock en 0
                     let payloadBatch = items.map(p => ({
                         local_id: AppMotor.estadoGlobal.local_id,
                         nombre: p.nombre,
                         categoria: p.categoria || "General",
-                        tipo: p.tipo || "simple",
+                        tipo: p.tipo || "detallado",
                         precio_base: p.precio_base || 0,
                         moneda_base: p.moneda_base || 'USD',
                         costo_fuente: p.costo_fuente || 0,
-                        stock: 0, // Forzado a 0
+                        stock: 0,
                         unidad: p.unidad || 'Unidad',
                         umbral_amarillo: p.umbral_amarillo || 5,
                         umbral_rojo: p.umbral_rojo || 0,
                         receta: p.receta || [],
+                        origen_mayor_id: p.origen_mayor_id || null,
+                        factor_mayor: p.factor_mayor || 1,
                         activo: true
                     }));
 
