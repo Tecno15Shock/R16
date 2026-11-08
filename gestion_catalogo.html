@@ -158,7 +158,6 @@
         .tabla-permisos td { padding: 10px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); text-align: center; color: var(--text); }
         .tabla-permisos td:first-child { text-align: left; font-weight: bold; color: var(--primary); }
 
-        /* LÍNEAS DE DIVISIÓN DE HISTORIAL (LETRAS A, B, C O CATEGORÍA) */
         .tr-separador-alfabetico {
             background: #5C0614 !important;
             color: var(--active-gold) !important;
@@ -212,7 +211,7 @@
         .cost-tag { font-size: 0.82rem; color: #777777; display: block; }
         .price-tag { font-size: 0.95rem; font-weight: bold; color: var(--primary); }
 
-        .ing-row-card {
+        .ing-row-card, .lote-row-card {
             background: rgba(212, 175, 55, 0.05);
             border: 1px solid rgba(212, 175, 55, 0.4);
             border-radius: var(--border-radius);
@@ -320,6 +319,13 @@
             margin: 0;
             outline: none;
         }
+        .producto-fila-resaltado {
+            animation: flashHighlight 2s ease;
+        }
+        @keyframes flashHighlight {
+            0% { background-color: rgba(212, 175, 55, 0.4); }
+            100% { background-color: transparent; }
+        }
     </style>
 </head>
 <body>
@@ -404,22 +410,36 @@
                 <div style="margin-bottom: 15px;">
                     <label>Tipo de Referencia / Producto:</label>
                     <select id="form_prod_tipo" onchange="UICatalogo.alternarTipoProducto()">
-                        <option value="materia_prima">🌾 Materia Prima (Gramo, Libra, Kilo, Mililitro, Litro, Unidad)</option>
-                        <option value="detallado">📦 Producto Detallado (Unidad de venta directa)</option>
+                        <option value="" disabled selected>-- 🧭 Seleccione el tipo de mercancía o servicio --</option>
+                        <option value="servicio">🛠️ Servicios o Mano de obra (Sin inventario, comisión/precio empleado)</option>
+                        <option value="detallado">📦 Producto detallado (Unidad de venta directa)</option>
+                        <option value="al_mayor">📦 Producto al mayor (Derivado dinámico de Producto Detallado)</option>
+                        <option value="materia_prima">🌾 Materia prima (Gramo, Libra, Kilo, Mililitro, Litro, Unidad)</option>
                         <option value="compuesto">☕ Producto Compuesto / Receta (Depende de Materia Prima)</option>
-                        <option value="al_mayor">📦 Producto Al Mayor (Derivado dinámico de Producto Detallado)</option>
-                        <option value="servicio">🛠️ Servicio o Mano de Obra (Sin inventario, comisión/precio empleado)</option>
                     </select>
                 </div>
                 
                 <div class="grid-2">
                     <div>
                         <label>Nombre Comercial / Referencia:</label>
-                        <input type="text" id="form_prod_nom" placeholder="Ej: Harina, Café Latte, Caja de Refrescos">
+                        <input type="text" id="form_prod_nom" placeholder="Ej: Harina Pan, Refresco 2L, Café Latte">
                     </div>
                     <div>
                         <label>Categoría Asignada:</label>
                         <select id="form_prod_cat"></select>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>Código de Barras:</label>
+                        <input type="text" id="form_prod_codigo_barras" placeholder="Escanear o ingresar código...">
+                    </div>
+                    <div>
+                        <label id="lbl_condicion_iva_dinamico">Condición Fiscal (Impuesto):</label>
+                        <select id="form_prod_condicion_iva">
+                            <!-- Las opciones se cargan y sincronizan dinámicamente según configuración -->
+                        </select>
                     </div>
                 </div>
                 
@@ -443,7 +463,7 @@
                 </div>
                 
                 <!-- SECCIÓN PARA MATERIA PRIMA Y DETALLADO -->
-                <div class="grid-2" id="contenedor_stock_directo">
+                <div class="grid-2" id="contenedor_stock_directo" style="display:none;">
                     <div>
                         <label>Unidad de Medida / Presentación:</label>
                         <select id="form_prod_unidad">
@@ -456,12 +476,22 @@
                         </select>
                     </div>
                     <div>
-                        <label>Stock Físico Actual:</label>
-                        <input type="number" step="0.01" id="form_prod_stock" placeholder="0">
+                        <label>Stock Físico Actual (Autocalculado por Lotes):</label>
+                        <input type="number" step="0.01" id="form_prod_stock" placeholder="0" readonly style="background:#f9f9f9; font-weight:bold;">
                     </div>
                 </div>
+
+                <!-- SECCIÓN PROFESIONAL DE LOTES Y FECHAS DE VENCIMIENTO -->
+                <div id="contenedor_lotes" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="color:var(--primary); font-weight:bold; margin:0;">🏷️ Control de Lotes y Fechas de Vencimiento</label>
+                        <button type="button" class="btn-success" onclick="UICatalogo.agregarFilaLote()" style="margin:0; width:auto; font-size:0.8rem; padding:6px 12px;">+ Añadir Lote y Vencimiento</button>
+                    </div>
+                    <p style="font-size:0.85rem; color:#666; margin-top:0;">Agregue cantidades específicas por lote y su fecha de caducidad para auditoría profesional.</p>
+                    <div id="lotes-container"></div>
+                </div>
                 
-                <div class="grid-2" id="contenedor_umbrales" style="margin-top:15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                <div class="grid-2" id="contenedor_umbrales" style="display:none; margin-top:15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
                     <div>
                         <label style="color:var(--warning); font-weight:bold;">⚠️ Alerta Amarilla (Stock Bajo):</label>
                         <input type="number" id="form_prod_u_amarillo" value="5">
@@ -507,7 +537,7 @@
             </div>
         </div>
 
-        <!-- 3. HISTORIAL DE CATÁLOGO REGISTRADO (CON LÍNEAS DE DIVISIÓN A, B, C...) -->
+        <!-- 3. HISTORIAL DE CATÁLOGO REGISTRADO -->
         <div>
             <div class="acordeon-header" onclick="UICatalogo.toggleSeccion('sec_historial', 'icon_historial')">
                 <h2 class="acordeon-title">📋 3. Historial de Catálogo Registrado</h2>
@@ -516,7 +546,7 @@
             <div id="sec_historial" class="acordeon-content">
                 <div class="grid-2" style="margin-bottom: 15px;">
                     <div>
-                        <input type="text" id="buscar_gestion_prod" placeholder="🔍 Buscar por nombre o categoría..." oninput="UICatalogo.renderTablaGestionProductos()">
+                        <input type="text" id="buscar_gestion_prod" placeholder="🔍 Buscar por nombre, código de barras o categoría..." oninput="UICatalogo.renderTablaGestionProductos()">
                     </div>
                     <div>
                         <select id="orden_gestion_prod" onchange="UICatalogo.renderTablaGestionProductos()">
@@ -554,6 +584,21 @@
 </div>
 
 <script>
+    const MATRIZ_PAISES_AMERICA = [
+        { code: 'VE', nombre: 'Venezuela 🇻🇪', impuesto: 'IVA', tasaGen: 16.0 },
+        { code: 'CO', nombre: 'Colombia 🇨🇴', impuesto: 'IVA', tasaGen: 19.0 },
+        { code: 'MX', nombre: 'México 🇲🇽', impuesto: 'IVA', tasaGen: 16.0 },
+        { code: 'PE', nombre: 'Perú 🇵🇪', impuesto: 'IGV', tasaGen: 18.0 },
+        { code: 'AR', nombre: 'Argentina 🇦🇷', impuesto: 'IVA', tasaGen: 21.0 },
+        { code: 'CL', nombre: 'Chile 🇨🇱', impuesto: 'IVA', tasaGen: 19.0 },
+        { code: 'EC', nombre: 'Ecuador 🇪🇨', impuesto: 'IVA', tasaGen: 15.0 },
+        { code: 'DO', nombre: 'Rep. Dominicana 🇩🇴', impuesto: 'ITBIS', tasaGen: 18.0 },
+        { code: 'PA', nombre: 'Panamá 🇵🇦', impuesto: 'ITBMS', tasaGen: 7.0 },
+        { code: 'GT', nombre: 'Guatemala 🇬🇹', impuesto: 'IVA', tasaGen: 12.0 },
+        { code: 'CR', nombre: 'Costa Rica 🇨🇷', impuesto: 'IVA', tasaGen: 13.0 },
+        { code: 'US', nombre: 'Estados Unidos 🇺🇸', impuesto: 'Sales Tax', tasaGen: 7.0 }
+    ];
+
     const UIBase = {
         mostrarCargando: function(titulo, subtitulo) {
             let overlay = document.getElementById('loading_overlay');
@@ -626,6 +671,7 @@
     const UICatalogo = {
         catalogo: [],
         categorias: [],
+        ultimoUuidEditado: null,
 
         async init() {
             UIBase.mostrarCargando("INICIALIZANDO MÓDULO", "Verificando acceso y sincronizando catálogo con Supabase...");
@@ -666,11 +712,32 @@
             const conf = estado.configuracion || {};
             this.categorias = (conf.categorias || []).sort((a, b) => a.localeCompare(b));
 
+            // Sincronizar impuesto del país configurado
+            const paisConfig = estado.datosLocal?.pais_fiscal || conf.fiscal?.pais || 'VE';
+            const paisObj = MATRIZ_PAISES_AMERICA.find(p => p.code === paisConfig) || MATRIZ_PAISES_AMERICA[0];
+            const nombreImpuesto = paisObj.impuesto;
+            const tasaImpuesto = paisObj.tasaGen;
+
+            document.getElementById('lbl_condicion_iva_dinamico').innerText = `Condición Fiscal (${nombreImpuesto} ${tasaImpuesto}%):`;
+            const selectCondicion = document.getElementById('form_prod_condicion_iva');
+            
+            const regimenGlobalDefecto = conf.fiscal?.regimen_cobranza || 'estandar';
+
+            // Opciones idénticas y sincronizadas con configuración
+            selectCondicion.innerHTML = `
+                <option value="estandar">🧾 Cobro Inmediato Estándar (${nombreImpuesto} incluido)</option>
+                <option value="diferido">🤝 Permite Pago Diferido (${nombreImpuesto} diferido / crédito)</option>
+                <option value="retencion">🏛️ Sujeto a Retención Fiscal</option>
+            `;
+            selectCondicion.value = regimenGlobalDefecto;
+
             this.catalogo = (estado.catalogo || []).map(p => ({
                 uuid: p.id, 
                 nom: p.nombre, 
                 cat: p.categoria || "General", 
                 tipo: p.tipo || "detallado",
+                codigoBarras: p.codigo_barras || '',
+                condicionIva: p.condicion_iva || regimenGlobalDefecto,
                 base: p.precio_base || 0, 
                 mBase: p.moneda_base || 'USD',
                 fuente: p.costo_fuente || 0, 
@@ -679,6 +746,7 @@
                 umbralAmarillo: p.umbral_amarillo || 5, 
                 umbralRojo: p.umbral_rojo || 0, 
                 receta: p.receta || [],
+                lotes: p.lotes || [],
                 origenMayorId: p.origen_mayor_id || '',
                 factorMayor: p.factor_mayor || 1
             }));
@@ -688,6 +756,37 @@
             this.renderCategorias();
             this.poblarSelectorOrigenMayor();
             this.renderTablaGestionProductos();
+
+            if (this.ultimoUuidEditado) {
+                let uuidTarget = this.ultimoUuidEditado;
+                setTimeout(() => {
+                    let filaTarget = document.getElementById('row_prod_' + uuidTarget);
+                    if (filaTarget) {
+                        filaTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        filaTarget.classList.add('producto-fila-resaltado');
+                    }
+                }, 300);
+            }
+        },
+
+        limpiarFormProducto() {
+            ['edit_prod_uuid','form_prod_nom','form_prod_codigo_barras','form_prod_base','form_prod_stock','form_prod_fuente'].forEach(id => {
+                let el = document.getElementById(id);
+                if (el) el.value = "";
+            });
+            document.getElementById('ingredientes-container').innerHTML = '';
+            document.getElementById('lotes-container').innerHTML = '';
+            document.getElementById('btn_guardar_producto').innerText = "💾 CONSOLIDAR EN CATÁLOGO SUPABASE";
+            document.getElementById('btn_cancelar_edit').style.display = "none";
+            
+            // Restablecer el selector de tipo de referencia al modo "Escoger" por defecto
+            document.getElementById('form_prod_tipo').value = "";
+            this.alternarTipoProducto();
+            
+            const conf = AppMotor.estadoGlobal.configuracion || {};
+            const regimenGlobalDefecto = conf.fiscal?.regimen_cobranza || 'estandar';
+            const selectCondicion = document.getElementById('form_prod_condicion_iva');
+            if (selectCondicion) selectCondicion.value = regimenGlobalDefecto;
         },
 
         async recargarDatosSupabase() {
@@ -827,8 +926,10 @@
         alternarTipoProducto() {
             let tipo = document.getElementById('form_prod_tipo').value;
             
-            document.getElementById('contenedor_stock_directo').style.display = (tipo === 'materia_prima' || tipo === 'detallado') ? 'grid' : 'none';
-            document.getElementById('contenedor_umbrales').style.display = (tipo === 'materia_prima' || tipo === 'detallado') ? 'grid' : 'none';
+            let esInventarioDirecto = (tipo === 'materia_prima' || tipo === 'detallado');
+            document.getElementById('contenedor_stock_directo').style.display = esInventarioDirecto ? 'grid' : 'none';
+            document.getElementById('contenedor_lotes').style.display = esInventarioDirecto ? 'block' : 'none';
+            document.getElementById('contenedor_umbrales').style.display = esInventarioDirecto ? 'grid' : 'none';
             document.getElementById('contenedor_receta').style.display = tipo === 'compuesto' ? 'block' : 'none';
             document.getElementById('contenedor_al_mayor').style.display = tipo === 'al_mayor' ? 'block' : 'none';
             document.getElementById('contenedor_servicio').style.display = tipo === 'servicio' ? 'block' : 'none';
@@ -846,6 +947,48 @@
             } else {
                 selectUnidad.innerHTML = `<option value="Unidad">Unidad</option>`;
             }
+        },
+
+        /* GESTIÓN DE LOTES Y VENCIMIENTOS */
+        agregarFilaLote(numLote = '', fechaVenc = '', cantidadLote = 0) {
+            let cont = document.getElementById('lotes-container');
+            let loteId = 'lote_row_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+
+            let rowDiv = document.createElement('div');
+            rowDiv.id = loteId;
+            rowDiv.className = 'lote-row-card';
+
+            rowDiv.innerHTML = `
+                <div class="grid-2" style="align-items: center;">
+                    <div>
+                        <label style="font-size:0.85rem;">Número de Lote / Identificador:</label>
+                        <input type="text" class="lote-num-input" placeholder="Ej: LOT-2026-A" value="${numLote}" style="margin-top:2px; padding:8px;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85rem;">Fecha de Vencimiento:</label>
+                        <input type="date" class="lote-fecha-input" value="${fechaVenc}" style="margin-top:2px; padding:8px;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-end; margin-top: 5px;">
+                    <div style="flex: 1;">
+                        <label style="font-size:0.85rem;">Cantidad en este Lote:</label>
+                        <input type="number" step="0.01" class="lote-cant-input" placeholder="0" value="${cantidadLote}" style="margin-top:2px; padding:8px;" oninput="UICatalogo.recalcularStockTotalPorLotes()">
+                    </div>
+                    <button type="button" class="btn-danger" style="margin:0; padding:9px 14px; width:auto;" onclick="document.getElementById('${loteId}').remove(); UICatalogo.recalcularStockTotalPorLotes();">✕ Quitar Lote</button>
+                </div>
+            `;
+            cont.appendChild(rowDiv);
+            this.recalcularStockTotalPorLotes();
+        },
+
+        recalcularStockTotalPorLotes() {
+            let total = 0;
+            document.querySelectorAll('#lotes-container > .lote-row-card').forEach(row => {
+                let cant = parseFloat(row.querySelector('.lote-cant-input').value) || 0;
+                total += cant;
+            });
+            let stockInput = document.getElementById('form_prod_stock');
+            if (stockInput) stockInput.value = parseFloat(total.toFixed(2));
         },
 
         agregarFilaIngrediente(selectedUuid = '', selectedCant = 1) {
@@ -966,13 +1109,18 @@
         },
 
         async guardarProductoSupabase() {
+            let tipoProd = document.getElementById('form_prod_tipo').value;
+            if (!tipoProd) return alert("⚠️ Debe seleccionar el tipo de referencia o servicio antes de consolidar el producto.");
+
             let nom = document.getElementById('form_prod_nom').value.trim();
             let cat = document.getElementById('form_prod_cat').value;
             if (!nom) return alert("El nombre comercial del producto es obligatorio.");
 
             let uuid = document.getElementById('edit_prod_uuid').value;
-            let tipoProd = document.getElementById('form_prod_tipo').value;
+            this.ultimoUuidEditado = uuid || null;
+
             let recetaArr = [];
+            let lotesArr = [];
 
             if (tipoProd === 'compuesto') {
                 document.querySelectorAll('#ingredientes-container > .ing-row-card').forEach(row => {
@@ -982,23 +1130,38 @@
                 });
             }
 
+            if (tipoProd === 'materia_prima' || tipoProd === 'detallado') {
+                document.querySelectorAll('#lotes-container > .lote-row-card').forEach(row => {
+                    let numL = row.querySelector('.lote-num-input').value.trim();
+                    let fecV = row.querySelector('.lote-fecha-input').value;
+                    let cantL = parseFloat(row.querySelector('.lote-cant-input').value) || 0;
+                    if (cantL > 0) {
+                        lotesArr.push({ lote: numL || 'S/N', fecha_vencimiento: fecV || null, cantidad: cantL });
+                    }
+                });
+            }
+
             let precioBaseVal = parseFloat(document.getElementById('form_prod_base').value) || 0; 
             let costoFuenteVal = parseFloat(document.getElementById('form_prod_fuente').value) || 0; 
             let monSeleccionada = document.getElementById('form_prod_moneda').value || 'USD';
+            let stockTotalFinal = parseFloat(document.getElementById('form_prod_stock').value) || 0;
 
             let payload = {
                 local_id: AppMotor.estadoGlobal.local_id,
                 nombre: nom,
                 categoria: cat || "General",
                 tipo: tipoProd,
+                codigo_barras: document.getElementById('form_prod_codigo_barras').value.trim(),
+                condicion_iva: document.getElementById('form_prod_condicion_iva').value,
                 precio_base: precioBaseVal,
                 moneda_base: monSeleccionada,
                 costo_fuente: costoFuenteVal,
-                stock: (tipoProd === 'materia_prima' || tipoProd === 'detallado') ? (parseFloat(document.getElementById('form_prod_stock').value) || 0) : 0,
+                stock: (tipoProd === 'materia_prima' || tipoProd === 'detallado') ? stockTotalFinal : 0,
                 unidad: document.getElementById('form_prod_unidad').value || 'Unidad',
                 umbral_amarillo: parseFloat(document.getElementById('form_prod_u_amarillo').value) || 5,
                 umbral_rojo: parseFloat(document.getElementById('form_prod_u_rojo').value) || 0,
                 receta: recetaArr,
+                lotes: lotesArr,
                 origen_mayor_id: tipoProd === 'al_mayor' ? document.getElementById('form_prod_origen_mayor').value : null,
                 factor_mayor: tipoProd === 'al_mayor' ? (parseFloat(document.getElementById('form_prod_factor_mayor').value) || 1) : 1,
                 activo: true
@@ -1010,8 +1173,9 @@
                     let { error } = await AppMotor.supabase.from('catalogo').update(payload).eq('id', uuid);
                     if (error) throw error;
                 } else {
-                    let { error } = await AppMotor.supabase.from('catalogo').insert([payload]);
+                    let { dataInserted, error } = await AppMotor.supabase.from('catalogo').insert([payload]).select().single();
                     if (error) throw error;
+                    if (dataInserted) this.ultimoUuidEditado = dataInserted.id;
                 }
                 await AppMotor.sincronizarDatosMaestros();
                 this.cargarModulo(AppMotor.estadoGlobal);
@@ -1026,12 +1190,15 @@
 
         editarProducto(idx) {
             let p = this.catalogo[idx];
+            this.ultimoUuidEditado = p.uuid;
             document.getElementById('edit_prod_uuid').value = p.uuid || '';
             document.getElementById('form_prod_tipo').value = p.tipo || 'detallado';
             this.alternarTipoProducto();
             
             document.getElementById('form_prod_nom').value = p.nom;
             document.getElementById('form_prod_cat').value = p.cat;
+            document.getElementById('form_prod_codigo_barras').value = p.codigoBarras || '';
+            document.getElementById('form_prod_condicion_iva').value = p.condicionIva || 'estandar';
             document.getElementById('form_prod_moneda').value = p.mBase || 'USD';
             document.getElementById('form_prod_base').value = p.base;
             document.getElementById('form_prod_fuente').value = p.fuente;
@@ -1053,24 +1220,20 @@
                 });
             }
 
+            const contLotes = document.getElementById('lotes-container');
+            contLotes.innerHTML = '';
+            if (Array.isArray(p.lotes) && p.lotes.length > 0) {
+                p.lotes.forEach(l => {
+                    this.agregarFilaLote(l.lote, l.fecha_vencimiento, l.cantidad);
+                });
+            }
+
             document.getElementById('btn_guardar_producto').innerText = "💾 ACTUALIZAR REGISTRO";
             document.getElementById('btn_cancelar_edit').style.display = "inline-block";
             
             const secMercancia = document.getElementById('sec_mercancia');
             if (secMercancia.style.display !== "block") this.toggleSeccion('sec_mercancia', 'icon_mercancia');
             secMercancia.scrollIntoView({ behavior: 'smooth' });
-        },
-
-        limpiarFormProducto() {
-            ['edit_prod_uuid','form_prod_nom','form_prod_base','form_prod_stock','form_prod_fuente'].forEach(id => {
-                let el = document.getElementById(id);
-                if (el) el.value = "";
-            });
-            document.getElementById('ingredientes-container').innerHTML = '';
-            document.getElementById('btn_guardar_producto').innerText = "💾 CONSOLIDAR EN CATÁLOGO SUPABASE";
-            document.getElementById('btn_cancelar_edit').style.display = "none";
-            document.getElementById('form_prod_tipo').value = 'materia_prima';
-            this.alternarTipoProducto();
         },
 
         async eliminarProductoSupabase(uuid) {
@@ -1088,7 +1251,6 @@
             }
         },
 
-        // CÁLCULO DE PRODUCCIÓN MÁXIMA PARA PRODUCTOS COMPUESTOS
         calcularProduccionPosible(p) {
             if (!p.receta || p.receta.length === 0) return 0;
             let maxProducible = Infinity;
@@ -1106,7 +1268,6 @@
             return maxProducible === Infinity ? 0 : maxProducible;
         },
 
-        // CÁLCULO DINÁMICO PARA PRODUCTOS AL MAYOR
         calcularStockAlMayor(p) {
             if (!p.origenMayorId) return 0;
             let origen = this.catalogo.find(m => m.uuid === p.origenMayorId);
@@ -1118,13 +1279,11 @@
             let ord = document.getElementById('orden_gestion_prod') ? document.getElementById('orden_gestion_prod').value : "alfabetico";
             let q = document.getElementById('buscar_gestion_prod') ? document.getElementById('buscar_gestion_prod').value.toLowerCase() : "";
 
-            let arr = [...this.catalogo].filter(p => p.nom.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
+            let arr = [...this.catalogo].filter(p => p.nom.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(q)));
             let tbodyHtml = "";
 
             if (ord === 'alfabetico') {
-                // ORDENAR ALFABÉTICAMENTE Y CREAR LÍNEAS DIVISORIAS (A, B, C...)
                 arr.sort((a, b) => a.nom.localeCompare(b.nom));
-                
                 let letraActual = "";
                 arr.forEach((p) => {
                     let inicial = p.nom.charAt(0).toUpperCase();
@@ -1135,9 +1294,7 @@
                     tbodyHtml += this.generarFilaTablaProducto(p);
                 });
             } else {
-                // AGRUPAR POR CATEGORÍA CON LÍNEAS DIVISORIAS
                 arr.sort((a, b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
-                
                 let categoriaActual = "";
                 arr.forEach((p) => {
                     if (p.cat !== categoriaActual) {
@@ -1154,9 +1311,9 @@
 
             let html = `<thead>
                 <tr>
-                    <th>Referencia / Tipo</th>
-                    <th>Costos</th>
-                    <th style="text-align:center;">Stock / Disponibilidad</th>
+                    <th>Referencia / Tipo / Código de Barras</th>
+                    <th>Costos y Fiscalidad</th>
+                    <th style="text-align:center;">Stock / Lotes y Vencimientos</th>
                     <th style="text-align:center;">Acciones</th>
                 </tr>
             </thead><tbody>${tbodyHtml}</tbody>`;
@@ -1190,20 +1347,40 @@
                 stockDisplay = 'N/A (Servicio)';
             }
 
+            let ivaBadge = '';
+            if (p.condicionIva === 'diferido') ivaBadge = '<span style="color:var(--warning); font-size:0.75rem; display:block;">🤝 Pago Diferido (Sin IVA Inicial)</span>';
+            else if (p.condicionIva === 'retencion') ivaBadge = '<span style="color:var(--primary); font-size:0.75rem; display:block;">🏛️ Sujeto a Retención Fiscal</span>';
+            else ivaBadge = '<span style="color:#555; font-size:0.75rem; display:block;">🧾 Cobro Inmediato Estándar</span>';
+
+            let lotesHtml = '';
+            if (Array.isArray(p.lotes) && p.lotes.length > 0) {
+                lotesHtml = `<div style="margin-top:4px; font-size:0.78rem; background:rgba(0,0,0,0.03); padding:4px; border-radius:4px;">`;
+                p.lotes.forEach(l => {
+                    let vencTxt = l.fecha_vencimiento ? `Vence: ${l.fecha_vencimiento}` : 'Sin fecha';
+                    lotesHtml += `<div>📦 Lote: <b>${l.lote}</b> (${l.cantidad} un.) - <span style="color:var(--danger);">${vencTxt}</span></div>`;
+                });
+                lotesHtml += `</div>`;
+            }
+
+            let codigoBarrasTxt = p.codigoBarras ? `<small style="color:#666; display:block;">barcode: ${p.codigoBarras}</small>` : '';
+
             return `
-            <tr>
+            <tr id="row_prod_${p.uuid}">
                 <td>
                     <strong style="color:var(--text); font-size: 1rem;">${p.nom}</strong>
                     <span class="badge-tipo ${badgeClass}" style="margin-left: 6px;">${tipoTxt}</span>
+                    ${codigoBarrasTxt}
                     <br>
                     <span style="font-size:0.85rem; color:var(--active-gold); opacity:0.9;">📁 ${p.cat}</span>
                 </td>
                 <td>
                     <span class="cost-tag">Costo: ${p.mBase} ${p.fuente.toFixed(2)}</span>
                     <span class="price-tag">Venta: ${p.mBase} ${p.base.toFixed(2)}</span>
+                    ${ivaBadge}
                 </td>
                 <td style="text-align:center; font-weight:bold; font-size:1.00rem;">
                     ${stockDisplay}
+                    ${lotesHtml}
                 </td>
                 <td style="text-align:center;">
                     <div style="display:flex; justify-content:center; gap:5px;">
@@ -1221,6 +1398,8 @@
                 nombre: p.nom,
                 categoria: p.cat,
                 tipo: p.tipo,
+                codigo_barras: p.codigoBarras,
+                condicion_iva: p.condicionIva,
                 precio_base: p.base,
                 moneda_base: p.mBase,
                 costo_fuente: p.fuente,
@@ -1229,6 +1408,7 @@
                 umbral_amarillo: p.umbralAmarillo,
                 umbral_rojo: p.umbralRojo,
                 receta: p.receta,
+                lotes: [],
                 origen_mayor_id: p.origenMayorId,
                 factor_mayor: p.factorMayor,
                 activo: true
@@ -1265,6 +1445,8 @@
                         nombre: p.nombre,
                         categoria: p.categoria || "General",
                         tipo: p.tipo || "detallado",
+                        codigo_barras: p.codigo_barras || '',
+                        condicion_iva: p.condicion_iva || 'estandar',
                         precio_base: p.precio_base || 0,
                         moneda_base: p.moneda_base || 'USD',
                         costo_fuente: p.costo_fuente || 0,
@@ -1273,6 +1455,7 @@
                         umbral_amarillo: p.umbral_amarillo || 5,
                         umbral_rojo: p.umbral_rojo || 0,
                         receta: p.receta || [],
+                        lotes: [],
                         origen_mayor_id: p.origen_mayor_id || null,
                         factor_mayor: p.factor_mayor || 1,
                         activo: true
