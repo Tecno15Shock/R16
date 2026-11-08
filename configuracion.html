@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración - Sistema Administrativo</title>
+    <title>Configuración | Panel Ejecutivo</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="motor.js"></script>
 
     <style>
-        /* ========================================================= */
-        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
-        /* ========================================================= */
         :root {
             --bg: #FDFBF7;
             --text: #2A2A2A;
@@ -48,9 +45,6 @@
             margin: 0 auto; 
         }
 
-        /* ========================================================= */
-        /* BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA              */
-        /* ========================================================= */
         .close-corner-btn {
             position: fixed; top: 20px; right: 25px; z-index: 10000;
             background: rgba(122, 23, 29, 0.95); backdrop-filter: blur(8px);
@@ -62,9 +56,6 @@
         }
         .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
 
-        /* ========================================================= */
-        /* COMPONENTES Y TARJETAS                                    */
-        /* ========================================================= */
         .card {
             background: var(--card-bg);
             padding: 25px;
@@ -103,7 +94,6 @@
         .btn-warning { background: var(--warning); color: white; }
         .btn-danger { background: var(--danger); color: #ffffff; }
 
-        /* ACORDES */
         .acordeon-header {
             background: #8B0000; 
             border: 2px solid var(--active-gold); 
@@ -151,10 +141,17 @@
         .formula-preview { display: block; font-size: 0.8rem; color: var(--success); margin-top: 5px; font-weight: bold; }
         .switch-label { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--input-bg); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: var(--border-radius); margin-bottom: 8px; cursor: pointer; color: var(--text); font-weight: bold; }
 
+        .fiscal-card-info {
+            background: rgba(212, 175, 55, 0.08);
+            border: 1px solid var(--active-gold);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-top: 15px;
+        }
+
         .danger-zone { margin-top: 25px; border: 2px dashed var(--danger); padding: 20px; border-radius: var(--border-radius); background: rgba(139,0,0,0.03); }
         .danger-title { color: var(--danger); font-family: var(--title-font); font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
 
-        /* PANTALLA DE CARGA Y BLOQUEO */
         @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
@@ -192,10 +189,8 @@
 </head>
 <body>
 
-    <!-- BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA -->
     <a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
 
-    <!-- MENSAJE DE ERROR CRÍTICO (Oculto por defecto) -->
     <div id="pantalla_error_auth" style="display: none; padding: 40px; text-align: center; background-color: var(--primary); color: white; height: 100vh; flex-direction: column; justify-content: center; align-items: center;">
         <h1 style="color: var(--active-gold);">⚠️ ACCESO DENEGADO</h1>
         <p>No se encontró una sesión activa con la base de datos.</p>
@@ -203,7 +198,6 @@
         <button type="button" class="btn-info" onclick="window.location.href='index.html'" style="width: auto; padding: 10px 25px; margin-top: 20px;">Ir al Login</button>
     </div>
 
-    <!-- PANTALLA DE BLOQUEO GLOBAL POR PIN -->
     <div id="pantalla_bloqueo_global" class="overlay-luxury" style="display:none;">
         <div class="card-luxury-menu pantalla-bloqueo-card">
             <div style="font-family: var(--title-font); font-size: 1.4rem; color: var(--primary); letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">ACCESO AUTORIZADO</div>
@@ -224,16 +218,43 @@
     <main class="main-content">
         <h1 style="color: var(--primary); font-family: var(--title-font); text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px;">Ajustes del Sistema</h1>
 
-        <!-- 1. IDENTIDAD -->
+        <!-- 1. IDENTIDAD FISCAL Y PAÍS -->
         <div>
             <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-identidad', 'icon-identidad', this)">
-                <h2 class="acordeon-title">🏪 1. Identidad</h2>
+                <h2 class="acordeon-title">🏛️ 1. Identidad Fiscal y Ubicación (América)</h2>
                 <span id="icon-identidad" style="color: var(--active-gold);">▼</span>
             </div>
             <div id="sec-identidad" class="acordeon-content">
-                <label>Nombre del Establecimiento:</label>
-                <input type="text" id="cfg_nombre_local" placeholder="Ej: Refresquería Flor">
-                <button class="btn-info" onclick="UIConfig.guardarIdentidad()">💾 Guardar Nombre</button>
+                <div class="grid-2">
+                    <div>
+                        <label>Nombre del Establecimiento / Razón Social:</label>
+                        <input type="text" id="cfg_nombre_local" placeholder="Ej: Refresquería Flor C.A.">
+                    </div>
+                    <div>
+                        <label>País Operativo y Régimen Fiscal:</label>
+                        <select id="cfg_pais_fiscal" onchange="UIConfig.actualizarInformacionFiscalPais()"></select>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-top: 15px;">
+                    <div>
+                        <label id="lbl_identificacion_fiscal">Identificación Fiscal (RIF / NIT / RUC / RFC):</label>
+                        <input type="text" id="cfg_identificacion_fiscal" placeholder="Ej: J-12345678-0">
+                    </div>
+                    <div>
+                        <label>Mecanismo Especial de Pago / Crédito de IVA:</label>
+                        <select id="cfg_regimen_cobranza_iva">
+                            <option value="estandar">🧾 Cobro Inmediato Estándar (IVA incluido en factura)</option>
+                            <option value="diferido">🤝 Permite Pago Diferido de IVA (Facturación a crédito / Venta sin IVA inicial)</option>
+                            <option value="retencion">🏛️ Sujeto a Retención Fiscal (Contribuyentes Especiales)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Cuadro informativo dinámico del Impuesto según el país -->
+                <div class="fiscal-card-info" id="cuadro_info_fiscal_pais"></div>
+
+                <button class="btn-info" onclick="UIConfig.guardarIdentidadyfiscal()" style="margin-top: 20px;">💾 Guardar Datos Identidad y Fiscalidad</button>
             </div>
         </div>
 
@@ -311,7 +332,7 @@
             </div>
         </div>
 
-        <!-- 5. MANTENIMIENTO Y BORRADO DE DATOS (ACTUALIZADO) -->
+        <!-- 5. MANTENIMIENTO Y BORRADO DE DATOS -->
         <div>
             <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-borrado', 'icon-borrado', this)">
                 <h2 class="acordeon-title">🗑️ 5. Mantenimiento de Datos</h2>
@@ -370,9 +391,6 @@
 </div>
 
 <script>
-    /* ========================================================= */
-    /* OBJETO UI BASE AUTÓNOMO CON SISTEMA DE BLOQUEO POR PIN    */
-    /* ========================================================= */
     const UIBase = {
         mostrarCargando: function(titulo, subtitulo) {
             let overlay = document.getElementById('loading_overlay');
@@ -456,11 +474,26 @@
         }
     };
 
+    const MATRIZ_PAISES_AMERICA = [
+        { code: 'VE', nombre: 'Venezuela 🇻🇪', impuesto: 'IVA', tasaGen: 16.0, tasaRed: 8.0, labelId: 'RIF (Ej: J-12345678-0)', desc: 'SENIAT - Permite ventas gravadas, exentas y diferidas (clientes que compran sin IVA para pago posterior).' },
+        { code: 'CO', nombre: 'Colombia 🇨🇴', impuesto: 'IVA', tasaGen: 19.0, tasaRed: 5.0, labelId: 'NIT (Ej: 900.123.456-1)', desc: 'DIAN - Manejo de ReteIVA y tarifas diferenciales.' },
+        { code: 'MX', nombre: 'México 🇲🇽', impuesto: 'IVA', tasaGen: 16.0, tasaRed: 8.0, labelId: 'RFC (Ej: ABC123456T10)', desc: 'SAT - Impuesto al Valor Agregado con tasa del 8% en frontera norte.' },
+        { code: 'PE', nombre: 'Perú 🇵🇪', impuesto: 'IGV', tasaGen: 18.0, tasaRed: 10.0, labelId: 'RUC (Ej: 20123456789)', desc: 'SUNAT - Impuesto General a las Ventas e IPM.' },
+        { code: 'AR', nombre: 'Argentina 🇦🇷', impuesto: 'IVA', tasaGen: 21.0, tasaRed: 10.5, labelId: 'CUIT (Ej: 30-12345678-9)', desc: 'AFIP - Alícuota general de IVA y percepción según condición del cliente.' },
+        { code: 'CL', nombre: 'Chile 🇨🇱', impuesto: 'IVA', tasaGen: 19.0, tasaRed: 0.0, labelId: 'RUT (Ej: 76.123.456-7)', desc: 'SII - Impuesto a las Ventas y Servicios.' },
+        { code: 'EC', nombre: 'Ecuador 🇪🇨', impuesto: 'IVA', tasaGen: 15.0, tasaRed: 5.0, labelId: 'RUC (Ej: 1791234567001)', desc: 'SRI - Impuesto al Valor Agregado.' },
+        { code: 'DO', nombre: 'Rep. Dominicana 🇩🇴', impuesto: 'ITBIS', tasaGen: 18.0, tasaRed: 16.0, labelId: 'RNC (Ej: 1-01-12345-6)', desc: 'DGII - Impuesto sobre Transferencias de Bienes Industrializados y Servicios.' },
+        { code: 'PA', nombre: 'Panamá 🇵🇦', impuesto: 'ITBMS', tasaGen: 7.0, tasaRed: 10.0, labelId: 'RUC (Ej: 155123-1-654321)', desc: 'DGI - Impuesto de Transferencia de Bienes Muebles y Servicios.' },
+        { code: 'GT', nombre: 'Guatemala 🇬🇹', impuesto: 'IVA', tasaGen: 12.0, tasaRed: 5.0, labelId: 'NIT (Ej: 1234567-8)', desc: 'SAT - Régimen General y Pequeño Contribuyente.' },
+        { code: 'CR', nombre: 'Costa Rica 🇨🇷', impuesto: 'IVA', tasaGen: 13.0, tasaRed: 4.0, labelId: 'Cédula Jurídica / NITE', desc: 'Ministerio de Hacienda - Impuesto sobre el Valor Agregado.' },
+        { code: 'US', nombre: 'Estados Unidos 🇺🇸', impuesto: 'Sales Tax', tasaGen: 7.0, tasaRed: 0.0, labelId: 'EIN / SSN', desc: 'State & Local Sales Tax según condado/estado.' }
+    ];
+
     const CATALOGO_MONEDAS = [
         { code: 'USD', name: '🇺🇸 Dólar estadounidense ($)' },
         { code: 'CAD', name: '🇨🇦 Dólar canadiense (CA$)' },
         { code: 'MXN', name: '🇲🇽 Peso mexicano ($)' },
-        { code: 'BZD', name: '🇧🇿 Dólar beliceño (BZ$)' },
+        { code: 'BZD', name: '🇧ℤ Dólar beliceño (BZ$)' },
         { code: 'CRC', name: '🇨🇷 Colón costarricense (₡)' },
         { code: 'GTQ', name: '🇬🇹 Quetzal guatemalteco (Q)' },
         { code: 'HNL', name: '🇭🇳 Lempira hondureño (L)' },
@@ -554,9 +587,33 @@
         },
 
         poblarSelectoresCatologos() {
+            const selectPais = document.getElementById('cfg_pais_fiscal');
+            selectPais.innerHTML = '';
+            MATRIZ_PAISES_AMERICA.forEach(p => selectPais.insertAdjacentHTML('beforeend', `<option value="${p.code}">${p.nombre} [Impuesto: ${p.impuesto} ${p.tasaGen}%]</option>`));
+
             const selectBase = document.getElementById('select_moneda_base');
             selectBase.innerHTML = '';
             CATALOGO_MONEDAS.forEach(m => selectBase.insertAdjacentHTML('beforeend', `<option value="${m.code}">${m.name}</option>`));
+        },
+
+        actualizarInformacionFiscalPais() {
+            const codPais = document.getElementById('cfg_pais_fiscal').value;
+            const paisObj = MATRIZ_PAISES_AMERICA.find(p => p.code === codPais) || MATRIZ_PAISES_AMERICA[0];
+
+            document.getElementById('lbl_identificacion_fiscal').innerText = `Identificación Fiscal (${paisObj.labelId}):`;
+            document.getElementById('cfg_identificacion_fiscal').placeholder = `Ej: ${paisObj.labelId}`;
+
+            const contInfo = document.getElementById('cuadro_info_fiscal_pais');
+            contInfo.innerHTML = `
+                <div style="font-weight:bold; color:var(--primary); font-size:1.05rem; margin-bottom:4px;">
+                    🏛️ Configuración Fiscal Activada: ${paisObj.nombre}
+                </div>
+                <div style="font-size:0.9rem; color:var(--text);">
+                    • <strong>Tipo de Impuesto Nacional:</strong> ${paisObj.impuesto}<br>
+                    • <strong>Alícuota General:</strong> ${paisObj.tasaGen}% | <strong>Alícuota Reducida:</strong> ${paisObj.tasaRed}%<br>
+                    • <strong>Normativa / Ente Regulador:</strong> ${paisObj.desc}
+                </div>
+            `;
         },
 
         generarTablaModulos() {
@@ -602,6 +659,17 @@
             const nombreLocal = local?.nombre || conf?.identidad?.nombre || '';
             document.getElementById('cfg_nombre_local').value = nombreLocal;
 
+            const paisGuardado = local?.pais_fiscal || conf?.fiscal?.pais || 'VE';
+            document.getElementById('cfg_pais_fiscal').value = paisGuardado;
+            
+            const idFiscal = local?.identificacion_fiscal || conf?.fiscal?.identificacion_fiscal || '';
+            document.getElementById('cfg_identificacion_fiscal').value = idFiscal;
+
+            const regimenIva = conf?.fiscal?.regimen_cobranza || 'diferido';
+            document.getElementById('cfg_regimen_cobranza_iva').value = regimenIva;
+
+            this.actualizarInformacionFiscalPais();
+
             const matriz = conf.permisos_modulos || {};
             document.querySelectorAll('#lista_modulos_bloqueo tr').forEach(tr => {
                 const m = matriz[tr.dataset.modId];
@@ -625,16 +693,26 @@
             }
         },
 
-        async guardarIdentidad() {
+        async guardarIdentidadyfiscal() {
             const nombre = document.getElementById('cfg_nombre_local').value.trim();
-            if(!nombre) return alert("El nombre no puede estar vacío.");
-            UIBase.mostrarCargando("Guardando", "Actualizando nombre...");
+            const pais = document.getElementById('cfg_pais_fiscal').value;
+            const idFiscal = document.getElementById('cfg_identificacion_fiscal').value.trim();
+            const regimenIva = document.getElementById('cfg_regimen_cobranza_iva').value;
+
+            if(!nombre) return alert("El nombre comercial no puede estar vacío.");
+
+            UIBase.mostrarCargando("GUARDANDO", "Sincronizando identidad y país fiscal en Supabase...");
             try { 
-                await AppMotor.actualizarIdentidad(nombre); 
+                await AppMotor.actualizarIdentidadYFiscalidad({
+                    nombre: nombre,
+                    pais_fiscal: pais,
+                    identificacion_fiscal: idFiscal,
+                    regimen_cobranza: regimenIva
+                }); 
                 UIBase.ocultarCargando(); 
-                alert("Nombre guardado exitosamente."); 
+                alert("✅ Identidad y Parámetros Fiscales guardados exitosamente."); 
             } 
-            catch(e) { UIBase.ocultarCargando(); alert("Error: " + e.message); }
+            catch(e) { UIBase.ocultarCargando(); alert("Error al guardar: " + e.message); }
         },
 
         async guardarPinGeneral() {
