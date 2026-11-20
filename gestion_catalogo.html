@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Catálogo | Panel Ejecutivo</title>
-    
+
     <!-- Librería Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+
     <!-- Núcleo de Lógica -->
     <script src="motor.js"></script>
-    
+
     <style>
         :root {
             --bg: #FDFBF7;
@@ -29,23 +29,23 @@
         }
 
         * { box-sizing: border-box; }
-        
-        body { 
-            font-family: var(--main-font); 
-            background: var(--bg); 
-            color: var(--text); 
-            margin: 0; 
-            padding: 0; 
+
+        body {
+            font-family: var(--main-font);
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
             line-height: 1.5;
         }
 
-        .wrapper { 
-            display: block; 
-            min-height: 100vh; 
-            position: relative; 
-            padding: 40px 20px 100px 20px; 
-            max-width: 1000px; 
-            margin: 0 auto; 
+        .wrapper {
+            display: block;
+            min-height: 100vh;
+            position: relative;
+            padding: 40px 20px 100px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
         .corner-btns-container {
@@ -78,47 +78,37 @@
         .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
         .refresh-corner-btn:hover { background: var(--primary); transform: scale(1.1) rotate(180deg); }
 
-        .card {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-top: 4px solid var(--primary);
-            margin-bottom: 25px;
+        input, select, textarea {
+            width: 100%; padding: 12px; margin-top: 6px;
+            border: 1px solid var(--active-gold); border-radius: var(--border-radius);
+            font-size: 0.95rem; background: var(--input-bg); color: var(--text);
+            border-left: 4px solid var(--secondary); outline: none;
+            font-family: var(--main-font);
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--active-gold);
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
         }
 
-        input, select, textarea { 
-            width: 100%; padding: 12px; margin-top: 6px; 
-            border: 1px solid var(--active-gold); border-radius: var(--border-radius); 
-            font-size: 0.95rem; background: var(--input-bg); color: var(--text); 
-            border-left: 4px solid var(--secondary); outline: none; 
-            font-family: var(--main-font); 
-        }
-        input:focus, select:focus, textarea:focus { 
-            border-color: var(--active-gold); 
-            box-shadow: 0 0 8px rgba(212, 175, 55, 0.3); 
-        }
-
-        button { 
-            position: relative; overflow: hidden; 
-            font-family: var(--title-font); 
-            border: none; padding: 12px 18px; border-radius: var(--border-radius); 
-            cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; 
-            font-size: 0.95rem; text-transform: uppercase; display: inline-flex; 
-            align-items: center; justify-content: center; gap: 8px; 
-            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+        button {
+            position: relative; overflow: hidden;
+            font-family: var(--title-font);
+            border: none; padding: 12px 18px; border-radius: var(--border-radius);
+            cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px;
+            font-size: 0.95rem; text-transform: uppercase; display: inline-flex;
+            align-items: center; justify-content: center; gap: 8px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         button:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
-        
+
         .btn-info { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--active-gold); border: 1px solid var(--active-gold); }
         .btn-success { background: var(--success); color: white; }
         .btn-warning { background: var(--warning); color: white; }
         .btn-danger { background: var(--danger); color: #ffffff; }
 
         .acordeon-header {
-            background: #8B0000; 
-            border: 2px solid var(--active-gold); 
+            background: #8B0000;
+            border: 2px solid var(--active-gold);
             border-radius: var(--border-radius);
             padding: 15px 20px;
             margin-top: 15px;
@@ -129,62 +119,205 @@
             transition: transform 0.2s ease, box-shadow 0.3s ease;
         }
         .acordeon-header:hover {
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); 
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
             transform: translateY(-2px);
         }
         .acordeon-title {
             margin: 0;
             font-family: var(--title-font);
             font-size: 1.2rem;
-            color: var(--active-gold); 
+            color: var(--active-gold);
             text-transform: uppercase;
             font-weight: bold;
         }
         .acordeon-content {
-            display: none; 
+            display: none;
             padding: 20px;
             background: var(--card-bg);
             border: 1px solid var(--active-gold);
-            border-top: none; 
+            border-top: none;
             border-radius: 0 0 var(--border-radius) var(--border-radius);
             margin-bottom: 15px;
         }
 
+        /* Sub-desplegables anidados dentro de Registro y Edición */
+        .sub-acordeon-header {
+            background: linear-gradient(135deg, #5C0614, #8B0000);
+            border: 1px solid var(--active-gold);
+            border-left: 5px solid var(--active-gold);
+            border-radius: var(--border-radius);
+            padding: 12px 16px;
+            margin-top: 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease, box-shadow 0.25s ease;
+        }
+        .sub-acordeon-header:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(92, 6, 20, 0.18);
+        }
+        .sub-acordeon-title {
+            margin: 0;
+            font-family: var(--title-font);
+            font-size: 1rem;
+            color: var(--active-gold);
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .sub-acordeon-content {
+            display: none;
+            padding: 16px;
+            background: #FDFBF7;
+            border: 1px solid rgba(212, 175, 55, 0.65);
+            border-top: none;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            animation: fadeIn 0.25s ease;
+        }
+        .sub-acordeon-content.abierto {
+            display: block;
+        }
+
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        @media(max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+        .grid-3-filtros { display: grid; grid-template-columns: 1.5fr 1.2fr auto; gap: 12px; align-items: center; }
+        @media(max-width: 768px) {
+            .grid-2, .grid-3-filtros { grid-template-columns: 1fr; }
+        }
 
         .tabla-permisos { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
         .tabla-permisos th { background: var(--primary); color: var(--active-gold); padding: 10px; text-align: center; font-family: var(--title-font); text-transform: uppercase; }
         .tabla-permisos td { padding: 10px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); text-align: center; color: var(--text); }
         .tabla-permisos td:first-child { text-align: left; font-weight: bold; color: var(--primary); }
 
-        .tr-separador-alfabetico {
+        .tr-separador-desplegable {
             background: #5C0614 !important;
             color: var(--active-gold) !important;
             font-family: var(--title-font);
-            font-size: 1.1rem;
-            letter-spacing: 1px;
+            font-size: 1.05rem;
+            letter-spacing: 0.8px;
             text-align: left !important;
             padding: 12px 15px !important;
             border-top: 3px solid var(--active-gold);
             border-bottom: 2px solid var(--active-gold);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease;
+        }
+        .tr-separador-desplegable:hover {
+            background: #7A091C !important;
+        }
+        .grupo-header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .grupo-contador-badge {
+            background: rgba(212, 175, 55, 0.18);
+            border: 1px solid var(--active-gold);
+            color: var(--active-gold);
+            padding: 2px 9px;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-family: var(--main-font);
+            margin-right: 10px;
         }
 
-        .switch-label { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--input-bg); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: var(--border-radius); margin-bottom: 8px; cursor: pointer; color: var(--text); font-weight: bold; }
+        .switch-label { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--input-bg); border: 1px solid rgba(212, 175, 55, 0.35); border-radius: var(--border-radius); margin-bottom: 8px; cursor: pointer; color: var(--text); font-weight: bold; }
+
+        /* Bloque Comisión Empleado dentro de Cotización */
+        .comision-empleado-box {
+            margin-top: 16px;
+            border: 1px solid var(--active-gold);
+            border-left: 4px solid var(--primary);
+            border-radius: var(--border-radius);
+            background: rgba(212, 175, 55, 0.06);
+            overflow: hidden;
+        }
+        .comision-empleado-trigger {
+            width: 100%;
+            margin: 0;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #5C0614, #8B0000);
+            color: var(--active-gold);
+            border: none;
+            border-radius: 0;
+            justify-content: space-between;
+            text-align: left;
+            font-size: 0.88rem;
+            letter-spacing: 0.4px;
+        }
+        .comision-empleado-panel {
+            display: none;
+            padding: 15px;
+            background: var(--card-bg);
+            border-top: 1px solid rgba(212, 175, 55, 0.45);
+        }
+        .comision-empleado-panel.abierto {
+            display: block;
+            animation: fadeIn 0.25s ease;
+        }
+        .badge-comision {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.74rem;
+            font-weight: bold;
+            background: rgba(46, 125, 50, 0.14);
+            color: var(--success);
+            border: 1px solid rgba(46, 125, 50, 0.35);
+        }
+        .badge-imp-ganancia {
+            display: inline-block;
+            margin-top: 4px;
+            margin-left: 4px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.74rem;
+            font-weight: bold;
+            background: rgba(92, 6, 20, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(92, 6, 20, 0.3);
+        }
+
+        /* Modal Filtro Tipo de Mercancía */
+        .modal-filtro-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);
+            z-index: 99999; display: none; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-filtro-box {
+            background: #FFFFFF; width: 100%; max-width: 460px;
+            border-radius: var(--border-radius); border: 2px solid var(--active-gold);
+            padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+            animation: scaleUp 0.25s ease;
+        }
+        .filtro-tipo-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 12px; border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: var(--border-radius); margin-bottom: 8px;
+            background: #FDFBF7; cursor: pointer; font-weight: bold;
+        }
+        .filtro-tipo-item input[type="checkbox"] {
+            width: 20px; height: 20px; margin: 0; cursor: pointer; accent-color: var(--primary);
+        }
 
         @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spinGold { 100% { transform: rotate(360deg); } }
 
-        .overlay-luxury { 
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: radial-gradient(circle at center, #5C0614 0%, #2A050B 100%); 
-            z-index: 999999; display: flex; justify-content: center; align-items: center; flex-direction: column; 
+        .overlay-luxury {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, #5C0614 0%, #2A050B 100%);
+            z-index: 999999; display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
-        .card-luxury-menu { 
-            background: #FFFFFF; padding: 50px 40px; text-align: center; width: 90%; max-width: 480px; 
+        .card-luxury-menu {
+            background: #FFFFFF; padding: 50px 40px; text-align: center; width: 90%; max-width: 480px;
             box-shadow: 0 25px 60px rgba(0,0,0,0.8); position: relative; border-radius: 6px;
-            animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+            animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .pantalla-bloqueo-card {
             background: var(--card-bg);
@@ -221,10 +354,7 @@
             flex-direction: column;
             gap: 10px;
         }
-        .ing-select-dropdown-container {
-            position: relative;
-            width: 100%;
-        }
+        .ing-select-dropdown-container { position: relative; width: 100%; }
         .ing-dropdown-toggle {
             width: 100%;
             background: var(--input-bg);
@@ -397,18 +527,11 @@
                 <span id="icon_mercancia" style="color: var(--active-gold); font-weight: bold;">▼</span>
             </div>
             <div id="sec_mercancia" class="acordeon-content">
-                <div class="switch-label" style="margin-bottom: 20px;">
-                    <div>
-                        <span style="opacity: 0.8;">MONEDA BASE PRINCIPAL DEL SISTEMA:</span>
-                        <strong id="label_moneda_base_actual" style="color: var(--primary); font-size: 1.1rem; margin-left: 8px;">USD</strong>
-                    </div>
-                    <button type="button" onclick="UICatalogo.actualizarMonedaBaseUI()" class="btn-info" style="width: auto; margin: 0; padding: 6px 14px; font-size: 0.85rem;">🔄 Refrescar Moneda</button>
-                </div>
-
                 <input type="hidden" id="edit_prod_uuid" value="">
-                
-                <div style="margin-bottom: 15px;">
-                    <label>Tipo de Referencia / Producto:</label>
+
+                <!-- Tipo de Referencia / Producto -->
+                <div style="margin-bottom: 10px;">
+                    <label style="font-weight: bold; color: var(--primary);">Tipo de Referencia / Producto:</label>
                     <select id="form_prod_tipo" onchange="UICatalogo.alternarTipoProducto()">
                         <option value="" disabled selected>-- 🧭 Seleccione el tipo de mercancía o servicio --</option>
                         <option value="servicio">🛠️ Servicios o Mano de obra (Sin inventario, comisión/precio empleado)</option>
@@ -418,118 +541,179 @@
                         <option value="compuesto">☕ Producto Compuesto / Receta (Depende de Materia Prima)</option>
                     </select>
                 </div>
-                
-                <div class="grid-2">
-                    <div>
-                        <label>Nombre Comercial / Referencia:</label>
-                        <input type="text" id="form_prod_nom" placeholder="Ej: Harina Pan, Refresco 2L, Café Latte">
-                    </div>
-                    <div>
-                        <label>Categoría Asignada:</label>
-                        <select id="form_prod_cat"></select>
-                    </div>
-                </div>
 
-                <div class="grid-2">
-                    <div>
-                        <label>Código de Barras:</label>
-                        <input type="text" id="form_prod_codigo_barras" placeholder="Escanear o ingresar código...">
+                <!-- SUB-DESPLEGABLE 1: PRODUCTO -->
+                <div>
+                    <div class="sub-acordeon-header" onclick="UICatalogo.toggleSubSeccion('sub_sec_producto', 'sub_icon_producto')">
+                        <span class="sub-acordeon-title">🏷️ Producto</span>
+                        <span id="sub_icon_producto" style="color: var(--active-gold); font-weight: bold;">▶</span>
                     </div>
-                    <div>
-                        <label id="lbl_condicion_iva_dinamico">Condición Fiscal (Impuesto):</label>
-                        <select id="form_prod_condicion_iva">
-                            <!-- Las opciones se cargan y sincronizan dinámicamente según configuración -->
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="grid-2">
-                    <div>
-                        <label>Moneda del Costo Fuente:</label>
-                        <select id="form_prod_moneda"></select>
-                    </div>
-                    <div>
-                        <label>Costo / Inversión (A como sale / Compra):</label>
-                        <input type="number" step="0.01" id="form_prod_fuente" placeholder="0.00">
-                    </div>
-                </div>
-                
-                <div class="grid-2">
-                    <div>
-                        <label>Precio Base de Venta:</label>
-                        <input type="number" step="0.01" id="form_prod_base" placeholder="0.00">
-                    </div>
-                    <div id="div_parametro_extra"></div>
-                </div>
-                
-                <!-- SECCIÓN PARA MATERIA PRIMA Y DETALLADO -->
-                <div class="grid-2" id="contenedor_stock_directo" style="display:none;">
-                    <div>
-                        <label>Unidad de Medida / Presentación:</label>
-                        <select id="form_prod_unidad">
-                            <option value="Unidad">Unidad</option>
-                            <option value="Gramo">Gramo</option>
-                            <option value="Libra">Libra</option>
-                            <option value="Kilo">Kilo</option>
-                            <option value="Mililitro">Mililitro</option>
-                            <option value="Litro">Litro</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Stock Físico Actual (Autocalculado por Lotes):</label>
-                        <input type="number" step="0.01" id="form_prod_stock" placeholder="0" readonly style="background:#f9f9f9; font-weight:bold;">
-                    </div>
-                </div>
-
-                <!-- SECCIÓN PROFESIONAL DE LOTES Y FECHAS DE VENCIMIENTO -->
-                <div id="contenedor_lotes" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <label style="color:var(--primary); font-weight:bold; margin:0;">🏷️ Control de Lotes y Fechas de Vencimiento</label>
-                        <button type="button" class="btn-success" onclick="UICatalogo.agregarFilaLote()" style="margin:0; width:auto; font-size:0.8rem; padding:6px 12px;">+ Añadir Lote y Vencimiento</button>
-                    </div>
-                    <p style="font-size:0.85rem; color:#666; margin-top:0;">Agregue cantidades específicas por lote y su fecha de caducidad para auditoría profesional.</p>
-                    <div id="lotes-container"></div>
-                </div>
-                
-                <div class="grid-2" id="contenedor_umbrales" style="display:none; margin-top:15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
-                    <div>
-                        <label style="color:var(--warning); font-weight:bold;">⚠️ Alerta Amarilla (Stock Bajo):</label>
-                        <input type="number" id="form_prod_u_amarillo" value="5">
-                    </div>
-                    <div>
-                        <label style="color:var(--danger); font-weight:bold;">🚨 Alerta Roja (Stock Crítico):</label>
-                        <input type="number" id="form_prod_u_rojo" value="0">
-                    </div>
-                </div>
-                
-                <!-- SECCIÓN PARA PRODUCTO COMPUESTO (RECETA) -->
-                <div id="contenedor_receta" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
-                    <label style="color:var(--warning); font-weight:bold; display:block; margin-bottom:10px;">📋 Insumos de Materia Prima Requeridos (Deducción Automática)</label>
-                    <div id="ingredientes-container"></div>
-                    <button type="button" class="btn-warning" onclick="UICatalogo.agregarFilaIngrediente()" style="margin-top: 10px; width: auto; font-size: 0.85rem;">+ AÑADIR MATERIA PRIMA A LA RECETA</button>
-                </div>
-
-                <!-- SECCIÓN PARA PRODUCTO AL MAYOR (MATEMÁTICA DINÁMICA) -->
-                <div id="contenedor_al_mayor" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
-                    <label style="color:var(--primary); font-weight:bold; display:block; margin-bottom:8px;">📦 Vínculo con Producto Detallado</label>
-                    <div class="grid-2">
-                        <div>
-                            <label>Seleccionar Producto Detallado Origen:</label>
-                            <select id="form_prod_origen_mayor"></select>
+                    <div id="sub_sec_producto" class="sub-acordeon-content">
+                        <div class="grid-2">
+                            <div>
+                                <label>Categoría Asignada:</label>
+                                <select id="form_prod_cat"></select>
+                            </div>
+                            <div>
+                                <label>Nombre Comercial / Referencia:</label>
+                                <input type="text" id="form_prod_nom" placeholder="Ej: Harina Pan, Refresco 2L, Café Latte">
+                            </div>
                         </div>
-                        <div>
-                            <label>Factor de Conversión (Unidades que trae el Mayor):</label>
-                            <input type="number" step="0.01" id="form_prod_factor_mayor" placeholder="Ej: 12 unidades por bulto/caja" value="1">
+                        <div style="margin-top: 12px;">
+                            <label>Código de Barras:</label>
+                            <input type="text" id="form_prod_codigo_barras" placeholder="Escanear o ingresar código...">
                         </div>
                     </div>
                 </div>
 
-                <!-- SECCIÓN PARA SERVICIO O MANO DE OBRA -->
-                <div id="contenedor_servicio" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
-                    <label style="color:var(--primary); font-weight:bold; display:block; margin-bottom:8px;">🛠️ Configuración de Servicio y Ganancia para Empleado</label>
-                    <p style="font-size: 0.85rem; color: #555; margin-top:0;">Este ítem no maneja inventario físico. Define el costo interno para la empresa y el precio estipulado para la ganancia del colaborador.</p>
+                <!-- SUB-DESPLEGABLE 2: INVENTARIO -->
+                <div>
+                    <div class="sub-acordeon-header" onclick="UICatalogo.toggleSubSeccion('sub_sec_inventario', 'sub_icon_inventario')">
+                        <span class="sub-acordeon-title">📦 Inventario</span>
+                        <span id="sub_icon_inventario" style="color: var(--active-gold); font-weight: bold;">▶</span>
+                    </div>
+                    <div id="sub_sec_inventario" class="sub-acordeon-content">
+                        <div id="contenedor_stock_directo" style="display:none; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                            <div>
+                                <label>Unidad de Medida / Presentación:</label>
+                                <select id="form_prod_unidad">
+                                    <option value="Unidad">Unidad</option>
+                                    <option value="Gramo">Gramo</option>
+                                    <option value="Libra">Libra</option>
+                                    <option value="Kilo">Kilo</option>
+                                    <option value="Mililitro">Mililitro</option>
+                                    <option value="Litro">Litro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="color:var(--danger); font-weight:bold;">🚨 Alerta Roja (Stock Crítico):</label>
+                                <input type="number" id="form_prod_u_rojo" value="0">
+                            </div>
+                            <div>
+                                <label style="color:var(--warning); font-weight:bold;">⚠️ Alerta Amarilla (Stock Bajo):</label>
+                                <input type="number" id="form_prod_u_amarillo" value="5">
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="form_prod_stock" value="0">
+
+                        <!-- Control de Lotes y Fechas de Vencimiento -->
+                        <div id="contenedor_lotes" style="display:none; margin-top: 14px; padding: 14px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                                <label style="color:var(--primary); font-weight:bold; margin:0;">🏷️ Control de Lotes y Fechas de Vencimiento <span id="resumen_stock_lotes_txt" style="color: var(--success); font-size: 0.85rem;">(Stock total: 0)</span></label>
+                                <button type="button" class="btn-success" onclick="UICatalogo.agregarFilaLote()" style="margin:0; width:auto; font-size:0.8rem; padding:6px 12px;">+ Añadir Lote y Vencimiento</button>
+                            </div>
+                            <p style="font-size:0.85rem; color:#666; margin-top:0;">Agregue cantidades específicas por lote y su fecha de caducidad para auditoría profesional.</p>
+                            <div id="lotes-container"></div>
+                        </div>
+
+                        <!-- Producto Compuesto (Receta) -->
+                        <div id="contenedor_receta" style="display:none; margin-top: 14px; padding: 14px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                            <label style="color:var(--warning); font-weight:bold; display:block; margin-bottom:10px;">📋 Insumos de Materia Prima Requeridos (Deducción Automática)</label>
+                            <div id="ingredientes-container"></div>
+                            <button type="button" class="btn-warning" onclick="UICatalogo.agregarFilaIngrediente()" style="margin-top: 10px; width: auto; font-size: 0.85rem;">+ AÑADIR MATERIA PRIMA A LA RECETA</button>
+                        </div>
+
+                        <!-- Producto Al Mayor -->
+                        <div id="contenedor_al_mayor" style="display:none; margin-top: 14px; padding: 14px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                            <label style="color:var(--primary); font-weight:bold; display:block; margin-bottom:8px;">📦 Vínculo con Producto Detallado</label>
+                            <div class="grid-2">
+                                <div>
+                                    <label>Seleccionar Producto Detallado Origen:</label>
+                                    <select id="form_prod_origen_mayor"></select>
+                                </div>
+                                <div>
+                                    <label>Factor de Conversión (Unidades que trae el Mayor):</label>
+                                    <input type="number" step="0.01" id="form_prod_factor_mayor" placeholder="Ej: 12 unidades por bulto/caja" value="1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Servicio -->
+                        <div id="contenedor_servicio" style="display:none; margin-top: 14px; padding: 14px; border: 1px solid var(--active-gold); background: var(--input-bg); border-radius: var(--border-radius);">
+                            <label style="color:var(--primary); font-weight:bold; display:block; margin-bottom:6px;">🛠️ Servicio o Mano de Obra</label>
+                            <p style="font-size: 0.85rem; color: #555; margin:0;">Este ítem no maneja inventario físico ni lotes.</p>
+                        </div>
+                    </div>
                 </div>
-                
+
+                <!-- SUB-DESPLEGABLE 3: COTIZACIÓN -->
+                <div>
+                    <div class="sub-acordeon-header" onclick="UICatalogo.toggleSubSeccion('sub_sec_cotizacion', 'sub_icon_cotizacion')">
+                        <span class="sub-acordeon-title">💵 Cotización</span>
+                        <span id="sub_icon_cotizacion" style="color: var(--active-gold); font-weight: bold;">▶</span>
+                    </div>
+                    <div id="sub_sec_cotizacion" class="sub-acordeon-content">
+                        <div class="grid-2">
+                            <div>
+                                <label>Moneda del Costo Fuente:</label>
+                                <select id="form_prod_moneda" onchange="UICatalogo.actualizarPreviewComision()"></select>
+                            </div>
+                            <div>
+                                <label>Costo / Inversión (A como sale / Compra):</label>
+                                <input type="number" step="0.01" id="form_prod_fuente" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 12px;">
+                            <label>Precio de Caja:</label>
+                            <input type="number" step="0.01" id="form_prod_base" placeholder="0.00" oninput="UICatalogo.actualizarPreviewComision()">
+                        </div>
+
+                        <!-- Al final de Cotización: Ganancia por comisión de venta (excluye materia prima) -->
+                        <div id="contenedor_comision_empleado" class="comision-empleado-box" style="display: none;">
+                            <button type="button" class="comision-empleado-trigger" onclick="UICatalogo.togglePanelComisionEmpleado()">
+                                <span id="txt_trigger_comision">Habilitar ganancia por comisión de venta en esta mercancía</span>
+                                <span id="icon_panel_comision">▼</span>
+                            </button>
+                            <div id="panel_comision_empleado" class="comision-empleado-panel">
+                                <label class="switch-label" style="margin-bottom: 12px;">
+                                    <span>Habilitar ganancia por comisión de venta en esta mercancía</span>
+                                    <input type="checkbox" id="form_comision_activa" onchange="UICatalogo.alternarCamposComision()" style="width: auto; margin: 0; transform: scale(1.2);">
+                                </label>
+                                <div id="campos_comision_detalle" class="grid-2" style="display: none; align-items: end;">
+                                    <div>
+                                        <label>Modalidad de Comisión:</label>
+                                        <select id="form_comision_tipo" onchange="UICatalogo.actualizarPreviewComision()">
+                                            <option value="porcentaje">Porcentaje (%)</option>
+                                            <option value="monto_exacto">Monto exacto</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label id="lbl_valor_comision">Valor de Comisión (%):</label>
+                                        <input type="number" step="0.01" min="0" id="form_comision_valor" placeholder="0.00" oninput="UICatalogo.actualizarPreviewComision()">
+                                    </div>
+                                </div>
+                                <div id="preview_comision_empleado" style="margin-top: 10px; font-size: 0.85rem; color: var(--primary); font-weight: bold;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-DESPLEGABLE 4: IMPUESTO -->
+                <div>
+                    <div class="sub-acordeon-header" onclick="UICatalogo.toggleSubSeccion('sub_sec_impuesto', 'sub_icon_impuesto')">
+                        <span class="sub-acordeon-title">⚖️ Impuesto</span>
+                        <span id="sub_icon_impuesto" style="color: var(--active-gold); font-weight: bold;">▶</span>
+                    </div>
+                    <div id="sub_sec_impuesto" class="sub-acordeon-content">
+                        <div class="grid-2">
+                            <div>
+                                <label id="lbl_condicion_iva_dinamico">Condición Fiscal / Estatus (IVA 16%):</label>
+                                <select id="form_prod_condicion_iva"></select>
+                            </div>
+                            <div>
+                                <label>Impuesto sobre la Ganancia (Configuración en Ajustes):</label>
+                                <select id="form_prod_impuesto_ganancia" onchange="UICatalogo.actualizarResumenImpuestoProducto()">
+                                    <option value="todos">Aplicar todos los impuestos sobre ganancia configurados</option>
+                                    <option value="ninguno">Sin impuesto sobre la ganancia adicional</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="resumen_impuesto_configuracion" style="margin-top: 12px; padding: 10px 12px; background: #FFFFFF; border: 1px solid rgba(212,175,55,0.45); border-radius: var(--border-radius); font-size: 0.85rem; color: #444;"></div>
+                    </div>
+                </div>
+
                 <div style="display: flex; gap: 10px; margin-top: 25px;">
                     <button type="button" id="btn_guardar_producto" onclick="UICatalogo.guardarProductoSupabase()" class="btn-info">💾 CONSOLIDAR EN CATÁLOGO SUPABASE</button>
                     <button type="button" id="btn_cancelar_edit" onclick="UICatalogo.limpiarFormProducto()" class="btn-danger" style="display:none; width: auto;">CANCELAR EDICIÓN</button>
@@ -544,15 +728,20 @@
                 <span id="icon_historial" style="color: var(--active-gold); font-weight: bold;">▼</span>
             </div>
             <div id="sec_historial" class="acordeon-content">
-                <div class="grid-2" style="margin-bottom: 15px;">
+                <div class="grid-3-filtros" style="margin-bottom: 15px;">
                     <div>
                         <input type="text" id="buscar_gestion_prod" placeholder="🔍 Buscar por nombre, código de barras o categoría..." oninput="UICatalogo.renderTablaGestionProductos()">
                     </div>
                     <div>
-                        <select id="orden_gestion_prod" onchange="UICatalogo.renderTablaGestionProductos()">
-                            <option value="alfabetico">🔤 Orden Alfabético con Líneas Divisorias (A, B, C...)</option>
-                            <option value="categoria">📁 Agrupar por Categoría con Líneas Divisorias</option>
+                        <select id="orden_gestion_prod" onchange="UICatalogo.cambiarModoOrdenHistorial()">
+                            <option value="alfabetico">🔤 Orden Alfabético Desplegable (A, B, C...)</option>
+                            <option value="categoria">📁 Agrupar por Categoría Desplegable</option>
                         </select>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-info" onclick="UICatalogo.abrirModalFiltroTipos()" style="margin: 0; width: auto; padding: 11px 14px; font-size: 0.85rem;">
+                            🏷️ Tipo de Mercancía <span id="badge_filtro_tipos_count">(0 marcados)</span>
+                        </button>
                     </div>
                 </div>
                 <div style="overflow-x:auto;">
@@ -583,20 +772,115 @@
     </main>
 </div>
 
+<!-- VENTANA EMERGENTE: SELECCIÓN DE TIPO DE MERCANCÍA EN HISTORIAL -->
+<div class="modal-filtro-overlay" id="modal_filtro_tipos">
+    <div class="modal-filtro-box">
+        <h3 style="margin: 0 0 8px 0; color: var(--primary); font-family: var(--title-font); border-bottom: 2px solid var(--active-gold); padding-bottom: 8px;">
+            🏷️ Tipo de Referencia / Producto
+        </h3>
+        <p style="margin: 0 0 14px 0; font-size: 0.85rem; color: #555;">
+            Marque en los recuadros qué tipos de mercancía desea mostrar en el historial:
+        </p>
+
+        <div id="lista_checkbox_tipos_mercancia">
+            <label class="filtro-tipo-item">
+                <span>📦 Producto detallado (Unidad de venta directa)</span>
+                <input type="checkbox" class="chk-filtro-tipo" value="detallado" onchange="UICatalogo.aplicarFiltroTiposEnVivo()">
+            </label>
+            <label class="filtro-tipo-item">
+                <span>🌾 Materia prima</span>
+                <input type="checkbox" class="chk-filtro-tipo" value="materia_prima" onchange="UICatalogo.aplicarFiltroTiposEnVivo()">
+            </label>
+            <label class="filtro-tipo-item">
+                <span>☕ Producto Compuesto / Receta</span>
+                <input type="checkbox" class="chk-filtro-tipo" value="compuesto" onchange="UICatalogo.aplicarFiltroTiposEnVivo()">
+            </label>
+            <label class="filtro-tipo-item">
+                <span>📦 Producto al mayor</span>
+                <input type="checkbox" class="chk-filtro-tipo" value="al_mayor" onchange="UICatalogo.aplicarFiltroTiposEnVivo()">
+            </label>
+            <label class="filtro-tipo-item">
+                <span>🛠️ Servicios o Mano de obra</span>
+                <input type="checkbox" class="chk-filtro-tipo" value="servicio" onchange="UICatalogo.aplicarFiltroTiposEnVivo()">
+            </label>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+            <button type="button" class="btn-warning" style="margin: 0; padding: 8px; font-size: 0.8rem;" onclick="UICatalogo.toggleTodosTiposFiltro(true)">Marcar Todos</button>
+            <button type="button" class="btn-danger" style="margin: 0; padding: 8px; font-size: 0.8rem;" onclick="UICatalogo.toggleTodosTiposFiltro(false)">Desmarcar Todos</button>
+        </div>
+        <button type="button" class="btn-info" style="margin-top: 12px;" onclick="UICatalogo.cerrarModalFiltroTipos()">Aplicar y Cerrar</button>
+    </div>
+</div>
+
 <script>
     const MATRIZ_PAISES_AMERICA = [
-        { code: 'VE', nombre: 'Venezuela 🇻🇪', impuesto: 'IVA', tasaGen: 16.0 },
-        { code: 'CO', nombre: 'Colombia 🇨🇴', impuesto: 'IVA', tasaGen: 19.0 },
-        { code: 'MX', nombre: 'México 🇲🇽', impuesto: 'IVA', tasaGen: 16.0 },
-        { code: 'PE', nombre: 'Perú 🇵🇪', impuesto: 'IGV', tasaGen: 18.0 },
-        { code: 'AR', nombre: 'Argentina 🇦🇷', impuesto: 'IVA', tasaGen: 21.0 },
-        { code: 'CL', nombre: 'Chile 🇨🇱', impuesto: 'IVA', tasaGen: 19.0 },
-        { code: 'EC', nombre: 'Ecuador 🇪🇨', impuesto: 'IVA', tasaGen: 15.0 },
-        { code: 'DO', nombre: 'Rep. Dominicana 🇩🇴', impuesto: 'ITBIS', tasaGen: 18.0 },
-        { code: 'PA', nombre: 'Panamá 🇵🇦', impuesto: 'ITBMS', tasaGen: 7.0 },
-        { code: 'GT', nombre: 'Guatemala 🇬🇹', impuesto: 'IVA', tasaGen: 12.0 },
-        { code: 'CR', nombre: 'Costa Rica 🇨🇷', impuesto: 'IVA', tasaGen: 13.0 },
-        { code: 'US', nombre: 'Estados Unidos 🇺🇸', impuesto: 'Sales Tax', tasaGen: 7.0 }
+        { code: 'CA', nombre: 'Canadá 🇨🇦', impuesto: 'GST/HST', tasaGen: 5.0, estatusList: [
+            { id: 'gst_registrant', nombre: '🧾 GST/HST Registrant (Standard)' }, { id: 'small_supplier', nombre: '👤 Small Supplier (Under $30k)' }
+        ]},
+        { code: 'US', nombre: 'Estados Unidos 🇺🇸', impuesto: 'Sales Tax', tasaGen: 7.0, estatusList: [
+            { id: 'sole_proprietorship', nombre: '👤 Sole Proprietorship / LLC' }, { id: 'corporation_c_s', nombre: '🏢 Corporation (C-Corp / S-Corp)' }
+        ]},
+        { code: 'MX', nombre: 'México 🇲🇽', impuesto: 'IVA', tasaGen: 16.0, estatusList: [
+            { id: 'moral_general', nombre: '🏢 Persona Moral - Régimen General' }, { id: 'resico', nombre: '⭐ RESICO (Régimen Simplificado)' }, { id: 'persona_fisica', nombre: '👤 Persona Física con Actividad Empresarial' }
+        ]},
+        { code: 'BZ', nombre: 'Belice 🇧ℤ', impuesto: 'GST', tasaGen: 12.5, estatusList: [
+            { id: 'gst_registered_bz', nombre: '🧾 GST Registered Business' }, { id: 'exempt_bz', nombre: '📋 Exempt / Small Trader' }
+        ]},
+        { code: 'CR', nombre: 'Costa Rica 🇨🇷', impuesto: 'IVA', tasaGen: 13.0, estatusList: [
+            { id: 'tradicional_cr', nombre: '🧾 Régimen Tradicional (IVA 13%)' }, { id: 'simplificado_cr', nombre: '📊 Tributación Simplificada' }
+        ]},
+        { code: 'SV', nombre: 'El Salvador 🇸🇻', impuesto: 'IVA', tasaGen: 13.0, estatusList: [
+            { id: 'contribuyente_iva_sv', nombre: '🧾 Contribuyente de IVA (General)' }, { id: 'pequeño_contribuyente_sv', nombre: '👤 Pequeño Contribuyente' }
+        ]},
+        { code: 'GT', nombre: 'Guatemala 🇬🇹', impuesto: 'IVA', tasaGen: 12.0, estatusList: [
+            { id: 'pequeño_contribuyente', nombre: '⭐ Pequeño Contribuyente (5%)' }, { id: 'general_gt', nombre: '📊 Régimen General (12% IVA)' }
+        ]},
+        { code: 'HN', nombre: 'Honduras 🇭🇳', impuesto: 'ISV', tasaGen: 15.0, estatusList: [
+            { id: 'comerciante_isv', nombre: '🧾 Comerciante Individual / Sociedad (ISV)' }, { id: 'exento_hn', nombre: '📋 Exonerado / Régimen Especial' }
+        ]},
+        { code: 'NI', nombre: 'Nicaragua 🇳🇮', impuesto: 'IVA', tasaGen: 15.0, estatusList: [
+            { id: 'cuota_fija_ni', nombre: '⭐ Régimen de Cuota Fija' }, { id: 'regimen_general_ni', nombre: '📊 Régimen General' }
+        ]},
+        { code: 'PA', nombre: 'Panamá 🇵🇦', impuesto: 'ITBMS', tasaGen: 7.0, estatusList: [
+            { id: 'general_pa', nombre: '🏢 Contribuyente Comercial Regular' }, { id: 'pequeño_pa', nombre: '👤 Comerciante Minorista / Simplificado' }
+        ]},
+        { code: 'AR', nombre: 'Argentina 🇦🇷', impuesto: 'IVA', tasaGen: 21.0, estatusList: [
+            { id: 'resp_inscripto', nombre: '🧾 Responsable Inscripto' }, { id: 'monotributo', nombre: '⭐ Monotributista' }, { id: 'exento_ar', nombre: '📋 Exento / No Alcance' }
+        ]},
+        { code: 'BO', nombre: 'Bolivia 🇧🇴', impuesto: 'IVA', tasaGen: 13.0, estatusList: [
+            { id: 'regimen_general_bo', nombre: '🧾 Régimen General (IVA / IT)' }, { id: 'rc_iva_bo', nombre: '👤 Régimen Complementario al IVA' }
+        ]},
+        { code: 'BR', nombre: 'Brasil 🇧🇷', impuesto: 'ICMS/ISS', tasaGen: 18.0, estatusList: [
+            { id: 'simples_nacional', nombre: '⭐ Simples Nacional' }, { id: 'lucro_presumido', nombre: '🏢 Lucro Presumido / Lucro Real' }
+        ]},
+        { code: 'CL', nombre: 'Chile 🇨🇱', impuesto: 'IVA', tasaGen: 19.0, estatusList: [
+            { id: 'propyme', nombre: '📈 Régimen Pro Pyme' }, { id: 'primera_categoria', nombre: '🏢 Renta Efectiva - Contabilidad Completa' }
+        ]},
+        { code: 'CO', nombre: 'Colombia 🇨🇴', impuesto: 'IVA', tasaGen: 19.0, estatusList: [
+            { id: 'responsable_iva', nombre: '🧾 Responsable de IVA (Régimen Común)' }, { id: 'no_responsable_iva', nombre: '👤 No Responsable de IVA' }, { id: 'simple', nombre: '📊 Régimen Simple de Tributación (RST)' }
+        ]},
+        { code: 'EC', nombre: 'Ecuador 🇪🇨', impuesto: 'IVA', tasaGen: 15.0, estatusList: [
+            { id: 'rimpe_emprendedor', nombre: '⭐ RIMPE Emprendedor / Negocio Popular' }, { id: 'general_ec', nombre: '📊 Régimen General (Sociedades)' }
+        ]},
+        { code: 'GY', nombre: 'Guyana 🇬🇾', impuesto: 'VAT', tasaGen: 14.0, estatusList: [
+            { id: 'vat_registered_gy', nombre: '🧾 VAT Registered Commercial Business' }, { id: 'non_vat_gy', nombre: '📋 Non-VAT Registered Small Business' }
+        ]},
+        { code: 'PY', nombre: 'Paraguay 🇵🇾', impuesto: 'IVA', tasaGen: 10.0, estatusList: [
+            { id: 'ire_simple_ressimple', nombre: '⭐ RESSIMPLE / IRE Simplificado' }, { id: 'general_py', nombre: '📊 Régimen General (IVA / IRE)' }
+        ]},
+        { code: 'PE', nombre: 'Perú 🇵🇪', impuesto: 'IGV', tasaGen: 18.0, estatusList: [
+            { id: 'mype', nombre: '💼 Régimen MYPE Tributario (RMT)' }, { id: 'rus', nombre: '🛒 Nuevo RUS' }, { id: 'general_pe', nombre: '📊 Régimen General' }
+        ]},
+        { code: 'SR', nombre: 'Surinam 🇸🇷', impuesto: 'OM', tasaGen: 10.0, estatusList: [
+            { id: 'omzetbelasting_sr', nombre: '🧾 Omzetbelasting Registered' }, { id: 'small_business_sr', nombre: '👤 Small Business / Vrijgesteld' }
+        ]},
+        { code: 'UY', nombre: 'Uruguay 🇺🇾', impuesto: 'IVA', tasaGen: 22.0, estatusList: [
+            { id: 'literal_e', nombre: '⭐ Literal E (IVA Mínimo)' }, { id: 'irae_general', nombre: '🏢 IRAE - Régimen General' }
+        ]},
+        { code: 'VE', nombre: 'Venezuela 🇻🇪', impuesto: 'IVA', tasaGen: 16.0, estatusList: [
+            { id: 'estandar', nombre: '🧾 Contribuyente Ordinario / Estándar (IVA 16%)' }, { id: 'retencion', nombre: '🏛️ Contribuyente Especial (Agente de Retención)' }, { id: 'diferido', nombre: '🤝 Contribuyente con Crédito / Pago Diferido' }, { id: 'formal', nombre: '📋 Contribuyente Formal / Exento' }
+        ]}
     ];
 
     const UIBase = {
@@ -613,7 +897,7 @@
             const overlay = document.getElementById('loading_overlay');
             if (overlay) {
                 overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 500);
+                setTimeout(() => { overlay.style.display = 'none'; }, 350);
             }
         },
         toggleVerPin: function() {
@@ -646,7 +930,7 @@
                     const pinIngresado = input.value.trim();
                     controles.style.display = 'none';
                     msj.innerHTML = '<div class="msg-green">Verificando Credenciales...</div>';
-                    
+
                     setTimeout(() => {
                         if (callbackVerificarPIN(pinIngresado)) {
                             msj.innerHTML = '<div class="msg-green">¡Acceso Autorizado!</div>';
@@ -656,7 +940,7 @@
                                 input.value = '';
                                 msj.innerHTML = '';
                                 controles.style.display = 'block';
-                            }, 500); 
+                            }, 500);
                         } else {
                             msj.innerHTML = '<div class="msg-red">❌ Contraseña Incorrecta</div>';
                             input.value = '';
@@ -671,7 +955,10 @@
     const UICatalogo = {
         catalogo: [],
         categorias: [],
+        impuestosGananciaConfig: [],
         ultimoUuidEditado: null,
+        tiposSeleccionadosFiltro: [],
+        gruposAbiertos: {},
 
         async init() {
             UIBase.mostrarCargando("INICIALIZANDO MÓDULO", "Verificando acceso y sincronizando catálogo con Supabase...");
@@ -679,7 +966,7 @@
                 const estado = await AppMotor.inicializar();
                 const conf = estado.configuracion || {};
                 const permisos = conf.permisos_modulos || {};
-                
+
                 const bloqueoGeneral = permisos.gestion_catalogo && permisos.gestion_catalogo.general;
                 const tienePin = !!conf.identidad?.admin_pass;
 
@@ -712,53 +999,87 @@
             const conf = estado.configuracion || {};
             this.categorias = (conf.categorias || []).sort((a, b) => a.localeCompare(b));
 
-            // Sincronizar impuesto del país configurado
-            const paisConfig = estado.datosLocal?.pais_fiscal || conf.fiscal?.pais || 'VE';
-            const paisObj = MATRIZ_PAISES_AMERICA.find(p => p.code === paisConfig) || MATRIZ_PAISES_AMERICA[0];
-            const nombreImpuesto = paisObj.impuesto;
-            const tasaImpuesto = paisObj.tasaGen;
+            const bloqueImpuesto = conf.impuesto || conf.fiscal || {};
+            this.impuestosGananciaConfig = Array.isArray(bloqueImpuesto.impuestos_ganancia)
+                ? bloqueImpuesto.impuestos_ganancia
+                : [];
 
-            document.getElementById('lbl_condicion_iva_dinamico').innerText = `Condición Fiscal (${nombreImpuesto} ${tasaImpuesto}%):`;
+            const paisConfig = bloqueImpuesto.pais || estado.datosLocal?.pais_fiscal || conf.fiscal?.pais || 'VE';
+            const paisObj = MATRIZ_PAISES_AMERICA.find(p => p.code === paisConfig) || MATRIZ_PAISES_AMERICA.find(p => p.code === 'VE');
+            const nombreImpuesto = paisObj ? paisObj.impuesto : 'IVA';
+            const tasaImpuesto = paisObj ? paisObj.tasaGen : 16.0;
+
+            document.getElementById('lbl_condicion_iva_dinamico').innerText = `Condición Fiscal / Estatus (${nombreImpuesto} ${tasaImpuesto}%):`;
             const selectCondicion = document.getElementById('form_prod_condicion_iva');
-            
-            const regimenGlobalDefecto = conf.fiscal?.regimen_cobranza || 'estandar';
 
-            // Opciones idénticas y sincronizadas con configuración
-            selectCondicion.innerHTML = `
-                <option value="estandar">🧾 Cobro Inmediato Estándar (${nombreImpuesto} incluido)</option>
-                <option value="diferido">🤝 Permite Pago Diferido (${nombreImpuesto} diferido / crédito)</option>
-                <option value="retencion">🏛️ Sujeto a Retención Fiscal</option>
-            `;
-            selectCondicion.value = regimenGlobalDefecto;
+            let opcionesHTML = '';
+            if (paisObj && Array.isArray(paisObj.estatusList)) {
+                paisObj.estatusList.forEach(est => {
+                    opcionesHTML += `<option value="${est.id}">📌 ${est.nombre}</option>`;
+                });
+            } else {
+                opcionesHTML = `<option value="estandar">🧾 Régimen Estándar (${nombreImpuesto} ${tasaImpuesto}%)</option>`;
+            }
+            if (Array.isArray(bloqueImpuesto.estatus_custom)) {
+                bloqueImpuesto.estatus_custom.forEach(est => {
+                    if (!est.pais || est.pais === paisConfig) {
+                        opcionesHTML += `<option value="${est.id}">${est.nombre}</option>`;
+                    }
+                });
+            }
+            selectCondicion.innerHTML = opcionesHTML;
 
-            this.catalogo = (estado.catalogo || []).map(p => ({
-                uuid: p.id, 
-                nom: p.nombre, 
-                cat: p.categoria || "General", 
-                tipo: p.tipo || "detallado",
-                codigoBarras: p.codigo_barras || '',
-                condicionIva: p.condicion_iva || regimenGlobalDefecto,
-                base: p.precio_base || 0, 
-                mBase: p.moneda_base || 'USD',
-                fuente: p.costo_fuente || 0, 
-                unidad: p.unidad || 'Unidad', 
-                stock: p.stock || 0, 
-                umbralAmarillo: p.umbral_amarillo || 5, 
-                umbralRojo: p.umbral_rojo || 0, 
-                receta: p.receta || [],
-                lotes: p.lotes || [],
-                origenMayorId: p.origen_mayor_id || '',
-                factorMayor: p.factor_mayor || 1
-            }));
+            const regimenGlobalDefecto = bloqueImpuesto.regimen_cobranza || (paisObj?.estatusList[0]?.id || 'estandar');
+            if (Array.from(selectCondicion.options).some(o => o.value === regimenGlobalDefecto)) {
+                selectCondicion.value = regimenGlobalDefecto;
+            }
 
-            this.actualizarMonedaBaseUI();
+            this.poblarSelectorImpuestosGanancia();
+
+            this.catalogo = (estado.catalogo || [])
+                .filter(p => p.activo !== false)
+                .map(p => ({
+                    uuid: p.id,
+                    nom: p.nombre,
+                    cat: p.categoria || "General",
+                    tipo: p.tipo || "detallado",
+                    codigoBarras: p.codigo_barras || '',
+                    condicionIva: p.condicion_iva || regimenGlobalDefecto,
+                    impuestoGananciaModo: p.impuesto_ganancia_modo || 'todos',
+                    impuestoGananciaConfig: p.impuesto_ganancia_config || this.impuestosGananciaConfig,
+                    base: parseFloat(p.precio_base) || 0,
+                    mBase: p.moneda_base || 'USD',
+                    fuente: parseFloat(p.costo_fuente) || 0,
+                    unidad: p.unidad || 'Unidad',
+                    stock: parseFloat(p.stock) || 0,
+                    umbralAmarillo: p.umbral_amarillo || 5,
+                    umbralRojo: p.umbral_rojo || 0,
+                    receta: p.receta || [],
+                    lotes: p.lotes || [],
+                    origenMayorId: p.origen_mayor_id || '',
+                    factorMayor: p.factor_mayor || 1,
+                    comisionActiva: p.tipo !== 'materia_prima' && (p.comision_empleado_activa === true || p.ganancia_empleado_activa === true),
+                    comisionTipo: (p.comision_empleado_tipo || p.ganancia_empleado_tipo || 'porcentaje') === 'monto_exacto' || (p.comision_empleado_tipo || p.ganancia_empleado_tipo) === 'monto_fijo' ? 'monto_exacto' : 'porcentaje',
+                    comisionValor: parseFloat(p.comision_empleado_valor ?? p.ganancia_empleado_valor ?? 0) || 0
+                }));
+
             this.poblarSelectorMonedasProducto();
             this.renderCategorias();
             this.poblarSelectorOrigenMayor();
+            this.actualizarBadgeFiltroTipos();
             this.renderTablaGestionProductos();
 
             if (this.ultimoUuidEditado) {
                 let uuidTarget = this.ultimoUuidEditado;
+                const prodEditado = this.catalogo.find(x => x.uuid === uuidTarget);
+                if (prodEditado) {
+                    const ord = document.getElementById('orden_gestion_prod')?.value || 'alfabetico';
+                    const keyGrupo = ord === 'categoria'
+                        ? `cat_${prodEditado.cat}`
+                        : `let_${prodEditado.nom.charAt(0).toUpperCase()}`;
+                    this.gruposAbiertos[keyGrupo] = true;
+                    this.renderTablaGestionProductos();
+                }
                 setTimeout(() => {
                     let filaTarget = document.getElementById('row_prod_' + uuidTarget);
                     if (filaTarget) {
@@ -769,24 +1090,155 @@
             }
         },
 
+        poblarSelectorImpuestosGanancia() {
+            const sel = document.getElementById('form_prod_impuesto_ganancia');
+            if (!sel) return;
+            const prev = sel.value || 'todos';
+            let html = `
+                <option value="todos">📊 Todos los impuestos sobre ganancia configurados (${this.impuestosGananciaConfig.length})</option>
+                <option value="ninguno">🚫 Sin impuesto sobre la ganancia adicional</option>
+            `;
+            this.impuestosGananciaConfig.forEach((imp, idx) => {
+                const valTxt = imp.tipo === 'fijo' ? `${imp.valor}` : `${imp.valor}%`;
+                html += `<option value="imp_${idx}">${imp.nombre || 'Impuesto #' + (idx + 1)} (${valTxt})</option>`;
+            });
+            sel.innerHTML = html;
+            if (Array.from(sel.options).some(o => o.value === prev)) {
+                sel.value = prev;
+            }
+            this.actualizarResumenImpuestoProducto();
+        },
+
+        actualizarResumenImpuestoProducto() {
+            const modo = document.getElementById('form_prod_impuesto_ganancia')?.value || 'todos';
+            const res = document.getElementById('resumen_impuesto_configuracion');
+            if (!res) return;
+
+            if (modo === 'ninguno') {
+                res.innerHTML = `<strong>Destino de impuesto sobre ganancia:</strong> Ninguno seleccionado para este producto.`;
+                return;
+            }
+
+            if (this.impuestosGananciaConfig.length === 0) {
+                res.innerHTML = `<em>No hay impuestos sobre la ganancia registrados en Configuración → Impuesto sobre Ganancia y Sociedad.</em>`;
+                return;
+            }
+
+            const items = modo === 'todos'
+                ? this.impuestosGananciaConfig
+                : [this.impuestosGananciaConfig[parseInt(modo.replace('imp_', ''), 10)]].filter(Boolean);
+
+            const listaTxt = items.map(i => `${i.nombre}: ${i.tipo === 'fijo' ? '$' + i.valor : i.valor + '%'}`).join(' | ');
+            res.innerHTML = `<strong>Impuesto sobre ganancia vinculado (línea <code>impuesto</code>):</strong> ${listaTxt}`;
+        },
+
+        toggleSubSeccion(id, iconId, forzarEstado = null) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(iconId);
+            if (!el) return;
+            let abierto;
+            if (forzarEstado !== null) {
+                abierto = !!forzarEstado;
+                el.classList.toggle('abierto', abierto);
+            } else {
+                abierto = el.classList.toggle('abierto');
+            }
+            if (icon) icon.innerText = abierto ? '▼' : '▶';
+        },
+
+        recogerTodosSubMenusProducto() {
+            this.toggleSubSeccion('sub_sec_producto', 'sub_icon_producto', false);
+            this.toggleSubSeccion('sub_sec_inventario', 'sub_icon_inventario', false);
+            this.toggleSubSeccion('sub_sec_cotizacion', 'sub_icon_cotizacion', false);
+            this.toggleSubSeccion('sub_sec_impuesto', 'sub_icon_impuesto', false);
+        },
+
+        togglePanelComisionEmpleado(forzarEstado = null) {
+            const tipo = document.getElementById('form_prod_tipo').value;
+            if (!tipo || tipo === 'materia_prima') return;
+
+            const panel = document.getElementById('panel_comision_empleado');
+            const icon = document.getElementById('icon_panel_comision');
+            const abrir = forzarEstado !== null ? forzarEstado : !panel.classList.contains('abierto');
+
+            if (abrir) {
+                panel.classList.add('abierto');
+                if (icon) icon.innerText = '▲';
+            } else {
+                panel.classList.remove('abierto');
+                if (icon) icon.innerText = '▼';
+            }
+            this.actualizarPreviewComision();
+        },
+
+        alternarCamposComision() {
+            const tipoProd = document.getElementById('form_prod_tipo').value;
+            const activa = tipoProd !== 'materia_prima' && document.getElementById('form_comision_activa').checked;
+            document.getElementById('campos_comision_detalle').style.display = activa ? 'grid' : 'none';
+            this.actualizarPreviewComision();
+        },
+
+        actualizarPreviewComision() {
+            const tipoProd = document.getElementById('form_prod_tipo').value;
+            const activa = tipoProd !== 'materia_prima' && document.getElementById('form_comision_activa').checked;
+            const modal = document.getElementById('form_comision_tipo').value;
+            const valor = parseFloat(document.getElementById('form_comision_valor').value) || 0;
+            const precioCaja = parseFloat(document.getElementById('form_prod_base').value) || 0;
+            const moneda = document.getElementById('form_prod_moneda').value || (AppMotor.estadoGlobal.sistemaMonetario?.moneda_base || 'USD');
+
+            const lblValor = document.getElementById('lbl_valor_comision');
+            const preview = document.getElementById('preview_comision_empleado');
+
+            if (modal === 'monto_exacto') {
+                lblValor.innerText = `Monto exacto de comisión (${moneda}):`;
+            } else {
+                lblValor.innerText = 'Comisión por venta (%):';
+            }
+
+            if (!activa) {
+                preview.innerHTML = '<span style="color:#666;">Comisión de venta deshabilitada.</span>';
+                return;
+            }
+
+            if (modal === 'monto_exacto') {
+                preview.innerHTML = `✅ Comisión habilitada: <strong>${moneda} ${valor.toFixed(2)}</strong> por unidad vendida.`;
+            } else {
+                const estimado = (precioCaja * (valor / 100)).toFixed(2);
+                preview.innerHTML = `✅ Comisión habilitada: <strong>${valor}%</strong> sobre precio de caja → <strong>${moneda} ${estimado}</strong> estimados por venta.`;
+            }
+        },
+
         limpiarFormProducto() {
-            ['edit_prod_uuid','form_prod_nom','form_prod_codigo_barras','form_prod_base','form_prod_stock','form_prod_fuente'].forEach(id => {
+            ['edit_prod_uuid','form_prod_nom','form_prod_codigo_barras','form_prod_base','form_prod_stock','form_prod_fuente','form_comision_valor'].forEach(id => {
                 let el = document.getElementById(id);
                 if (el) el.value = "";
             });
+            document.getElementById('form_prod_u_rojo').value = "0";
+            document.getElementById('form_prod_u_amarillo').value = "5";
+            document.getElementById('form_prod_impuesto_ganancia').value = "todos";
+            this.actualizarResumenImpuestoProducto();
+
+            document.getElementById('form_comision_activa').checked = false;
+            document.getElementById('form_comision_tipo').value = 'porcentaje';
+            this.togglePanelComisionEmpleado(false);
+            this.alternarCamposComision();
+
             document.getElementById('ingredientes-container').innerHTML = '';
             document.getElementById('lotes-container').innerHTML = '';
+            this.recalcularStockTotalPorLotes();
             document.getElementById('btn_guardar_producto').innerText = "💾 CONSOLIDAR EN CATÁLOGO SUPABASE";
             document.getElementById('btn_cancelar_edit').style.display = "none";
-            
-            // Restablecer el selector de tipo de referencia al modo "Escoger" por defecto
+
             document.getElementById('form_prod_tipo').value = "";
             this.alternarTipoProducto();
-            
+            this.recogerTodosSubMenusProducto();
+
             const conf = AppMotor.estadoGlobal.configuracion || {};
-            const regimenGlobalDefecto = conf.fiscal?.regimen_cobranza || 'estandar';
+            const regimenGlobalDefecto = conf.impuesto?.regimen_cobranza || conf.fiscal?.regimen_cobranza || 'estandar';
             const selectCondicion = document.getElementById('form_prod_condicion_iva');
-            if (selectCondicion) selectCondicion.value = regimenGlobalDefecto;
+            if (selectCondicion && Array.from(selectCondicion.options).some(o => o.value === regimenGlobalDefecto)) {
+                selectCondicion.value = regimenGlobalDefecto;
+            }
         },
 
         async recargarDatosSupabase() {
@@ -816,13 +1268,10 @@
             } else {
                 el.style.display = 'block';
                 if (icon) icon.innerText = '▲';
+                if (id === 'sec_mercancia' && !document.getElementById('edit_prod_uuid').value) {
+                    this.recogerTodosSubMenusProducto();
+                }
             }
-        },
-
-        actualizarMonedaBaseUI() {
-            const mb = AppMotor.estadoGlobal.sistemaMonetario?.moneda_base || 'USD';
-            const el = document.getElementById('label_moneda_base_actual');
-            if (el) el.innerText = mb;
         },
 
         poblarSelectorMonedasProducto() {
@@ -836,13 +1285,14 @@
             }
             const select = document.getElementById('form_prod_moneda');
             if (select) select.innerHTML = lista.map(m => `<option value="${m}">${m}</option>`).join('');
+            this.actualizarPreviewComision();
         },
 
         poblarSelectorOrigenMayor() {
             const select = document.getElementById('form_prod_origen_mayor');
             if (!select) return;
             let detallados = this.catalogo.filter(p => p.tipo === 'detallado');
-            select.innerHTML = detallados.length 
+            select.innerHTML = detallados.length
                 ? detallados.map(p => `<option value="${p.uuid}">${p.nom} (Stock: ${p.stock} ${p.unidad})</option>`).join('')
                 : '<option value="">No hay productos detallados registrados</option>';
         },
@@ -861,10 +1311,10 @@
             });
             html += "</tbody>";
             document.getElementById('tabla_gestion_categorias').innerHTML = html;
-            
+
             const selectCat = document.getElementById('form_prod_cat');
             if (selectCat) {
-                selectCat.innerHTML = this.categorias.length 
+                selectCat.innerHTML = this.categorias.length
                     ? this.categorias.map(c => `<option value="${c}">${c}</option>`).join('')
                     : `<option value="General">General</option>`;
             }
@@ -925,11 +1375,22 @@
 
         alternarTipoProducto() {
             let tipo = document.getElementById('form_prod_tipo').value;
-            
+
+            const boxComision = document.getElementById('contenedor_comision_empleado');
+            const permiteComision = !!tipo && tipo !== 'materia_prima';
+            if (boxComision) {
+                boxComision.style.display = permiteComision ? 'block' : 'none';
+                if (!permiteComision) {
+                    document.getElementById('form_comision_activa').checked = false;
+                    document.getElementById('form_comision_valor').value = '';
+                    this.togglePanelComisionEmpleado(false);
+                    this.alternarCamposComision();
+                }
+            }
+
             let esInventarioDirecto = (tipo === 'materia_prima' || tipo === 'detallado');
             document.getElementById('contenedor_stock_directo').style.display = esInventarioDirecto ? 'grid' : 'none';
             document.getElementById('contenedor_lotes').style.display = esInventarioDirecto ? 'block' : 'none';
-            document.getElementById('contenedor_umbrales').style.display = esInventarioDirecto ? 'grid' : 'none';
             document.getElementById('contenedor_receta').style.display = tipo === 'compuesto' ? 'block' : 'none';
             document.getElementById('contenedor_al_mayor').style.display = tipo === 'al_mayor' ? 'block' : 'none';
             document.getElementById('contenedor_servicio').style.display = tipo === 'servicio' ? 'block' : 'none';
@@ -949,7 +1410,6 @@
             }
         },
 
-        /* GESTIÓN DE LOTES Y VENCIMIENTOS */
         agregarFilaLote(numLote = '', fechaVenc = '', cantidadLote = 0) {
             let cont = document.getElementById('lotes-container');
             let loteId = 'lote_row_' + Date.now() + '_' + Math.floor(Math.random()*1000);
@@ -987,8 +1447,11 @@
                 let cant = parseFloat(row.querySelector('.lote-cant-input').value) || 0;
                 total += cant;
             });
+            const redondeado = parseFloat(total.toFixed(2));
             let stockInput = document.getElementById('form_prod_stock');
-            if (stockInput) stockInput.value = parseFloat(total.toFixed(2));
+            if (stockInput) stockInput.value = redondeado;
+            let resumenTxt = document.getElementById('resumen_stock_lotes_txt');
+            if (resumenTxt) resumenTxt.innerText = `(Stock total: ${redondeado})`;
         },
 
         agregarFilaIngrediente(selectedUuid = '', selectedCant = 1) {
@@ -1047,7 +1510,7 @@
             if (!listContainer) return;
 
             let materias = [...this.catalogo].filter(p => p.tipo === 'materia_prima');
-            
+
             if (ordenMode === 'cat') {
                 materias.sort((a, b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
             } else {
@@ -1108,6 +1571,22 @@
             input.value = val;
         },
 
+        obtenerEstructuraImpuestoProducto() {
+            const modo = document.getElementById('form_prod_impuesto_ganancia')?.value || 'todos';
+            let impuestosAplicables = [];
+            if (modo === 'todos') {
+                impuestosAplicables = this.impuestosGananciaConfig;
+            } else if (modo.startsWith('imp_')) {
+                const idx = parseInt(modo.replace('imp_', ''), 10);
+                if (this.impuestosGananciaConfig[idx]) impuestosAplicables = [this.impuestosGananciaConfig[idx]];
+            }
+            return {
+                impuesto_ganancia_modo: modo,
+                impuesto_ganancia_config: impuestosAplicables,
+                impuesto_destino_clave: 'impuesto'
+            };
+        },
+
         async guardarProductoSupabase() {
             let tipoProd = document.getElementById('form_prod_tipo').value;
             if (!tipoProd) return alert("⚠️ Debe seleccionar el tipo de referencia o servicio antes de consolidar el producto.");
@@ -1141,10 +1620,15 @@
                 });
             }
 
-            let precioBaseVal = parseFloat(document.getElementById('form_prod_base').value) || 0; 
-            let costoFuenteVal = parseFloat(document.getElementById('form_prod_fuente').value) || 0; 
+            let precioCajaVal = parseFloat(document.getElementById('form_prod_base').value) || 0;
+            let costoFuenteVal = parseFloat(document.getElementById('form_prod_fuente').value) || 0;
             let monSeleccionada = document.getElementById('form_prod_moneda').value || 'USD';
             let stockTotalFinal = parseFloat(document.getElementById('form_prod_stock').value) || 0;
+
+            const comisionActiva = tipoProd !== 'materia_prima' && document.getElementById('form_comision_activa').checked;
+            const comisionTipo = comisionActiva ? document.getElementById('form_comision_tipo').value : 'porcentaje';
+            const comisionValor = comisionActiva ? (parseFloat(document.getElementById('form_comision_valor').value) || 0) : 0;
+            const infoImpuesto = this.obtenerEstructuraImpuestoProducto();
 
             let payload = {
                 local_id: AppMotor.estadoGlobal.local_id,
@@ -1153,7 +1637,9 @@
                 tipo: tipoProd,
                 codigo_barras: document.getElementById('form_prod_codigo_barras').value.trim(),
                 condicion_iva: document.getElementById('form_prod_condicion_iva').value,
-                precio_base: precioBaseVal,
+                impuesto_ganancia_modo: infoImpuesto.impuesto_ganancia_modo,
+                impuesto_ganancia_config: infoImpuesto.impuesto_ganancia_config,
+                precio_base: precioCajaVal,
                 moneda_base: monSeleccionada,
                 costo_fuente: costoFuenteVal,
                 stock: (tipoProd === 'materia_prima' || tipoProd === 'detallado') ? stockTotalFinal : 0,
@@ -1164,6 +1650,9 @@
                 lotes: lotesArr,
                 origen_mayor_id: tipoProd === 'al_mayor' ? document.getElementById('form_prod_origen_mayor').value : null,
                 factor_mayor: tipoProd === 'al_mayor' ? (parseFloat(document.getElementById('form_prod_factor_mayor').value) || 1) : 1,
+                comision_empleado_activa: comisionActiva,
+                comision_empleado_tipo: comisionTipo,
+                comision_empleado_valor: comisionValor,
                 activo: true
             };
 
@@ -1173,7 +1662,7 @@
                     let { error } = await AppMotor.supabase.from('catalogo').update(payload).eq('id', uuid);
                     if (error) throw error;
                 } else {
-                    let { dataInserted, error } = await AppMotor.supabase.from('catalogo').insert([payload]).select().single();
+                    let { data: dataInserted, error } = await AppMotor.supabase.from('catalogo').insert([payload]).select().single();
                     if (error) throw error;
                     if (dataInserted) this.ultimoUuidEditado = dataInserted.id;
                 }
@@ -1194,11 +1683,14 @@
             document.getElementById('edit_prod_uuid').value = p.uuid || '';
             document.getElementById('form_prod_tipo').value = p.tipo || 'detallado';
             this.alternarTipoProducto();
-            
+
             document.getElementById('form_prod_nom').value = p.nom;
             document.getElementById('form_prod_cat').value = p.cat;
             document.getElementById('form_prod_codigo_barras').value = p.codigoBarras || '';
             document.getElementById('form_prod_condicion_iva').value = p.condicionIva || 'estandar';
+            document.getElementById('form_prod_impuesto_ganancia').value = p.impuestoGananciaModo || 'todos';
+            this.actualizarResumenImpuestoProducto();
+
             document.getElementById('form_prod_moneda').value = p.mBase || 'USD';
             document.getElementById('form_prod_base').value = p.base;
             document.getElementById('form_prod_fuente').value = p.fuente;
@@ -1206,6 +1698,14 @@
             document.getElementById('form_prod_unidad').value = p.unidad || 'Unidad';
             document.getElementById('form_prod_u_amarillo').value = p.umbralAmarillo || 5;
             document.getElementById('form_prod_u_rojo').value = p.umbralRojo || 0;
+
+            if (p.tipo !== 'materia_prima') {
+                document.getElementById('form_comision_activa').checked = !!p.comisionActiva;
+                document.getElementById('form_comision_tipo').value = p.comisionTipo || 'porcentaje';
+                document.getElementById('form_comision_valor').value = p.comisionValor || '';
+                this.alternarCamposComision();
+                this.togglePanelComisionEmpleado(!!p.comisionActiva);
+            }
 
             if (p.tipo === 'al_mayor') {
                 document.getElementById('form_prod_origen_mayor').value = p.origenMayorId || '';
@@ -1227,13 +1727,38 @@
                     this.agregarFilaLote(l.lote, l.fecha_vencimiento, l.cantidad);
                 });
             }
+            this.recalcularStockTotalPorLotes();
+
+            this.toggleSubSeccion('sub_sec_producto', 'sub_icon_producto', true);
+            this.toggleSubSeccion('sub_sec_inventario', 'sub_icon_inventario', true);
+            this.toggleSubSeccion('sub_sec_cotizacion', 'sub_icon_cotizacion', true);
+            this.toggleSubSeccion('sub_sec_impuesto', 'sub_icon_impuesto', true);
 
             document.getElementById('btn_guardar_producto').innerText = "💾 ACTUALIZAR REGISTRO";
             document.getElementById('btn_cancelar_edit').style.display = "inline-block";
-            
+
             const secMercancia = document.getElementById('sec_mercancia');
             if (secMercancia.style.display !== "block") this.toggleSeccion('sec_mercancia', 'icon_mercancia');
             secMercancia.scrollIntoView({ behavior: 'smooth' });
+        },
+
+        async vaciarStockProductoSupabase(uuid, nombreProd) {
+            if (!confirm(`⚠️ ¿Desea dejar el stock de "${nombreProd}" en 0 y vaciar sus lotes actuales?`)) return;
+            UIBase.mostrarCargando("VACIANDO STOCK", `Dejando stock en 0 para "${nombreProd}"...`);
+            try {
+                const { error } = await AppMotor.supabase
+                    .from('catalogo')
+                    .update({ stock: 0, lotes: [] })
+                    .eq('id', uuid);
+                if (error) throw error;
+                await AppMotor.sincronizarDatosMaestros();
+                this.cargarModulo(AppMotor.estadoGlobal);
+                UIBase.ocultarCargando();
+                alert(`✅ Stock de "${nombreProd}" dejado en 0.`);
+            } catch (err) {
+                UIBase.ocultarCargando();
+                alert("Error al vaciar stock: " + err.message);
+            }
         },
 
         async eliminarProductoSupabase(uuid) {
@@ -1247,8 +1772,81 @@
                 UIBase.ocultarCargando();
             } catch(err) {
                 UIBase.ocultarCargando();
-                alert("Error al eliminar referencia: " + err.message);
+                const msg = err?.message || '';
+                const code = err?.code || '';
+                const esFkVentas = code === '23503' || msg.includes('detalle_ventas_producto_id_fkey') || msg.includes('foreign key constraint');
+
+                if (esFkVentas) {
+                    const desactivar = confirm(
+                        "⚠️ Este producto ya tiene historial en ventas (tabla detalle_ventas), por lo que no puede borrarse físicamente para no alterar reportes.\n\n¿Desea ARCHIVAR / DESACTIVAR el producto para ocultarlo del catálogo?"
+                    );
+                    if (desactivar) {
+                        UIBase.mostrarCargando("ARCHIVANDO", "Desactivando producto en el catálogo...");
+                        try {
+                            const { error: errUpd } = await AppMotor.supabase
+                                .from('catalogo')
+                                .update({ activo: false })
+                                .eq('id', uuid);
+                            if (errUpd) throw errUpd;
+                            await AppMotor.sincronizarDatosMaestros();
+                            this.cargarModulo(AppMotor.estadoGlobal);
+                            UIBase.ocultarCargando();
+                            alert("✅ Producto archivado y retirado del catálogo activo.");
+                        } catch (err2) {
+                            UIBase.ocultarCargando();
+                            alert("Error al archivar producto: " + err2.message);
+                        }
+                    }
+                } else {
+                    alert("Error al eliminar referencia: " + msg);
+                }
             }
+        },
+
+        /* MODAL FILTRO POR TIPO DE MERCANCÍA */
+        abrirModalFiltroTipos() {
+            const checkboxes = document.querySelectorAll('#lista_checkbox_tipos_mercancia .chk-filtro-tipo');
+            checkboxes.forEach(chk => {
+                chk.checked = this.tiposSeleccionadosFiltro.includes(chk.value);
+            });
+            document.getElementById('modal_filtro_tipos').style.display = 'flex';
+        },
+
+        cerrarModalFiltroTipos() {
+            document.getElementById('modal_filtro_tipos').style.display = 'none';
+        },
+
+        toggleTodosTiposFiltro(marcar) {
+            const checkboxes = document.querySelectorAll('#lista_checkbox_tipos_mercancia .chk-filtro-tipo');
+            checkboxes.forEach(chk => { chk.checked = marcar; });
+            this.aplicarFiltroTiposEnVivo();
+        },
+
+        aplicarFiltroTiposEnVivo() {
+            const seleccionados = Array.from(document.querySelectorAll('#lista_checkbox_tipos_mercancia .chk-filtro-tipo:checked'))
+                .map(chk => chk.value);
+            this.tiposSeleccionadosFiltro = seleccionados;
+            this.actualizarBadgeFiltroTipos();
+            this.renderTablaGestionProductos();
+        },
+
+        actualizarBadgeFiltroTipos() {
+            const badge = document.getElementById('badge_filtro_tipos_count');
+            if (!badge) return;
+            if (this.tiposSeleccionadosFiltro.length === 0) {
+                badge.innerText = '(0 marcados)';
+            } else {
+                badge.innerText = `(${this.tiposSeleccionadosFiltro.length} marcados)`;
+            }
+        },
+
+        cambiarModoOrdenHistorial() {
+            this.renderTablaGestionProductos();
+        },
+
+        toggleGrupoHistorial(keyGrupo) {
+            this.gruposAbiertos[keyGrupo] = !this.gruposAbiertos[keyGrupo];
+            this.renderTablaGestionProductos();
         },
 
         calcularProduccionPosible(p) {
@@ -1277,42 +1875,79 @@
 
         renderTablaGestionProductos() {
             let ord = document.getElementById('orden_gestion_prod') ? document.getElementById('orden_gestion_prod').value : "alfabetico";
-            let q = document.getElementById('buscar_gestion_prod') ? document.getElementById('buscar_gestion_prod').value.toLowerCase() : "";
+            let q = document.getElementById('buscar_gestion_prod') ? document.getElementById('buscar_gestion_prod').value.trim().toLowerCase() : "";
+            const hayBusqueda = q.length > 0;
+            const hayFiltroTipoActivo = this.tiposSeleccionadosFiltro.length > 0;
 
-            let arr = [...this.catalogo].filter(p => p.nom.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(q)));
+            let arr = [...this.catalogo].filter(p => {
+                const coincideTipo = !hayFiltroTipoActivo || this.tiposSeleccionadosFiltro.includes(p.tipo || 'detallado');
+                const coincideTexto = !hayBusqueda
+                    || p.nom.toLowerCase().includes(q)
+                    || p.cat.toLowerCase().includes(q)
+                    || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(q));
+                return coincideTipo && coincideTexto;
+            });
+
             let tbodyHtml = "";
 
-            if (ord === 'alfabetico') {
-                arr.sort((a, b) => a.nom.localeCompare(b.nom));
-                let letraActual = "";
-                arr.forEach((p) => {
-                    let inicial = p.nom.charAt(0).toUpperCase();
-                    if (inicial !== letraActual) {
-                        letraActual = inicial;
-                        tbodyHtml += `<tr><td colspan="4" class="tr-separador-alfabetico">🔤 LETRA: ${letraActual}</td></tr>`;
-                    }
-                    tbodyHtml += this.generarFilaTablaProducto(p);
-                });
-            } else {
-                arr.sort((a, b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
-                let categoriaActual = "";
-                arr.forEach((p) => {
-                    if (p.cat !== categoriaActual) {
-                        categoriaActual = p.cat;
-                        tbodyHtml += `<tr><td colspan="4" class="tr-separador-alfabetico">📁 CATEGORÍA: ${categoriaActual.toUpperCase()}</td></tr>`;
-                    }
-                    tbodyHtml += this.generarFilaTablaProducto(p);
-                });
-            }
-
             if (arr.length === 0) {
-                tbodyHtml = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #777;">No se encontraron registros en el catálogo.</td></tr>`;
+                tbodyHtml = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #777;">No se encontraron registros con el filtro actual.</td></tr>`;
+            } else {
+                const gruposMap = new Map();
+
+                if (ord === 'alfabetico') {
+                    arr.sort((a, b) => a.nom.localeCompare(b.nom));
+                    arr.forEach((p) => {
+                        const inicial = p.nom.charAt(0).toUpperCase() || '#';
+                        const key = `let_${inicial}`;
+                        if (!gruposMap.has(key)) {
+                            gruposMap.set(key, { key, titulo: `🔤 LETRA: ${inicial}`, items: [] });
+                        }
+                        gruposMap.get(key).items.push(p);
+                    });
+                } else {
+                    arr.sort((a, b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
+                    arr.forEach((p) => {
+                        const catNom = p.cat || 'General';
+                        const key = `cat_${catNom}`;
+                        if (!gruposMap.has(key)) {
+                            gruposMap.set(key, { key, titulo: `📁 CATEGORÍA: ${catNom.toUpperCase()}`, items: [] });
+                        }
+                        gruposMap.get(key).items.push(p);
+                    });
+                }
+
+                gruposMap.forEach((grupo) => {
+                    const estaAbierto = hayBusqueda ? true : !!this.gruposAbiertos[grupo.key];
+                    const flecha = estaAbierto ? '▲' : '▼';
+                    const keyEscapado = grupo.key.replace(/'/g, "\\'");
+
+                    tbodyHtml += `
+                        <tr>
+                            <td colspan="4" class="tr-separador-desplegable" onclick="UICatalogo.toggleGrupoHistorial('${keyEscapado}')">
+                                <div class="grupo-header-inner">
+                                    <span>${grupo.titulo}</span>
+                                    <span>
+                                        <span class="grupo-contador-badge">${grupo.items.length} ${grupo.items.length === 1 ? 'ítem' : 'ítems'}</span>
+                                        <span>${flecha}</span>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+
+                    if (estaAbierto) {
+                        grupo.items.forEach((p) => {
+                            tbodyHtml += this.generarFilaTablaProducto(p);
+                        });
+                    }
+                });
             }
 
             let html = `<thead>
                 <tr>
                     <th>Referencia / Tipo / Código de Barras</th>
-                    <th>Costos y Fiscalidad</th>
+                    <th>Costos, Caja y Fiscalidad</th>
                     <th style="text-align:center;">Stock / Lotes y Vencimientos</th>
                     <th style="text-align:center;">Acciones</th>
                 </tr>
@@ -1323,7 +1958,7 @@
 
         generarFilaTablaProducto(p) {
             let idxOriginal = this.catalogo.findIndex(x => x.uuid === p.uuid);
-            
+
             let badgeClass = 'badge-detallado';
             let tipoTxt = 'Detallado';
             let stockDisplay = `${p.stock} <small style='font-size:0.75rem;'>${p.unidad}</small>`;
@@ -1347,10 +1982,19 @@
                 stockDisplay = 'N/A (Servicio)';
             }
 
-            let ivaBadge = '';
-            if (p.condicionIva === 'diferido') ivaBadge = '<span style="color:var(--warning); font-size:0.75rem; display:block;">🤝 Pago Diferido (Sin IVA Inicial)</span>';
-            else if (p.condicionIva === 'retencion') ivaBadge = '<span style="color:var(--primary); font-size:0.75rem; display:block;">🏛️ Sujeto a Retención Fiscal</span>';
-            else ivaBadge = '<span style="color:#555; font-size:0.75rem; display:block;">🧾 Cobro Inmediato Estándar</span>';
+            let ivaBadge = `<span style="color:#555; font-size:0.75rem; display:block;">📌 Estatus: ${p.condicionIva}</span>`;
+            let comisionBadge = '';
+            if (p.tipo !== 'materia_prima' && p.comisionActiva && p.comisionValor > 0) {
+                const descCom = p.comisionTipo === 'monto_exacto'
+                    ? `${p.mBase} ${p.comisionValor.toFixed(2)}`
+                    : `${p.comisionValor}%`;
+                comisionBadge = `<span class="badge-comision">👤 Comisión venta: ${descCom}</span>`;
+            }
+
+            let impGanBadge = '';
+            if (p.impuestoGananciaModo !== 'ninguno' && Array.isArray(p.impuestoGananciaConfig) && p.impuestoGananciaConfig.length > 0) {
+                impGanBadge = `<span class="badge-imp-ganancia">⚖️ Imp. Ganancia (${p.impuestoGananciaConfig.length})</span>`;
+            }
 
             let lotesHtml = '';
             if (Array.isArray(p.lotes) && p.lotes.length > 0) {
@@ -1363,6 +2007,7 @@
             }
 
             let codigoBarrasTxt = p.codigoBarras ? `<small style="color:#666; display:block;">barcode: ${p.codigoBarras}</small>` : '';
+            const nomEscapado = p.nom.replace(/'/g, "\\'");
 
             return `
             <tr id="row_prod_${p.uuid}">
@@ -1375,17 +2020,20 @@
                 </td>
                 <td>
                     <span class="cost-tag">Costo: ${p.mBase} ${p.fuente.toFixed(2)}</span>
-                    <span class="price-tag">Venta: ${p.mBase} ${p.base.toFixed(2)}</span>
+                    <span class="price-tag">Caja: ${p.mBase} ${p.base.toFixed(2)}</span>
                     ${ivaBadge}
+                    ${comisionBadge}
+                    ${impGanBadge}
                 </td>
                 <td style="text-align:center; font-weight:bold; font-size:1.00rem;">
                     ${stockDisplay}
                     ${lotesHtml}
                 </td>
                 <td style="text-align:center;">
-                    <div style="display:flex; justify-content:center; gap:5px;">
-                        <button type="button" class="btn-info" style="padding:5px 10px; font-size:0.8rem; width:auto;" onclick="UICatalogo.editarProducto(${idxOriginal})">✏️ EDITAR</button>
-                        <button type="button" class="btn-danger" style="padding:5px 8px; font-size:0.8rem; width:auto;" onclick="UICatalogo.eliminarProductoSupabase('${p.uuid}')">🗑️</button>
+                    <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">
+                        <button type="button" class="btn-info" style="padding:5px 9px; font-size:0.78rem; width:auto;" onclick="UICatalogo.editarProducto(${idxOriginal})" title="Editar producto">✏️ EDITAR</button>
+                        <button type="button" class="btn-warning" style="padding:5px 9px; font-size:0.78rem; width:auto;" onclick="UICatalogo.vaciarStockProductoSupabase('${p.uuid}', '${nomEscapado}')" title="Dejar stock en 0">0️⃣ STOCK</button>
+                        <button type="button" class="btn-danger" style="padding:5px 8px; font-size:0.78rem; width:auto;" onclick="UICatalogo.eliminarProductoSupabase('${p.uuid}')" title="Eliminar producto">🗑️</button>
                     </div>
                 </td>
             </tr>`;
@@ -1393,13 +2041,15 @@
 
         exportarCopiaSeguridad() {
             if (this.catalogo.length === 0) return alert("No hay productos en el catálogo para exportar.");
-            
+
             let copia = this.catalogo.map(p => ({
                 nombre: p.nom,
                 categoria: p.cat,
                 tipo: p.tipo,
                 codigo_barras: p.codigoBarras,
                 condicion_iva: p.condicionIva,
+                impuesto_ganancia_modo: p.impuestoGananciaModo,
+                impuesto_ganancia_config: p.impuestoGananciaConfig,
                 precio_base: p.base,
                 moneda_base: p.mBase,
                 costo_fuente: p.fuente,
@@ -1411,6 +2061,9 @@
                 lotes: [],
                 origen_mayor_id: p.origenMayorId,
                 factor_mayor: p.factorMayor,
+                comision_empleado_activa: p.tipo !== 'materia_prima' ? !!p.comisionActiva : false,
+                comision_empleado_tipo: p.comisionTipo || 'porcentaje',
+                comision_empleado_valor: p.tipo !== 'materia_prima' ? (p.comisionValor || 0) : 0,
                 activo: true
             }));
 
@@ -1447,6 +2100,8 @@
                         tipo: p.tipo || "detallado",
                         codigo_barras: p.codigo_barras || '',
                         condicion_iva: p.condicion_iva || 'estandar',
+                        impuesto_ganancia_modo: p.impuesto_ganancia_modo || 'todos',
+                        impuesto_ganancia_config: p.impuesto_ganancia_config || this.impuestosGananciaConfig,
                         precio_base: p.precio_base || 0,
                         moneda_base: p.moneda_base || 'USD',
                         costo_fuente: p.costo_fuente || 0,
@@ -1458,6 +2113,9 @@
                         lotes: [],
                         origen_mayor_id: p.origen_mayor_id || null,
                         factor_mayor: p.factor_mayor || 1,
+                        comision_empleado_activa: (p.tipo || 'detallado') !== 'materia_prima' ? !!p.comision_empleado_activa : false,
+                        comision_empleado_tipo: p.comision_empleado_tipo || 'porcentaje',
+                        comision_empleado_valor: (p.tipo || 'detallado') !== 'materia_prima' ? (parseFloat(p.comision_empleado_valor) || 0) : 0,
                         activo: true
                     }));
 
