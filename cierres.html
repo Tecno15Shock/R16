@@ -104,7 +104,20 @@
             display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(30,132,73,0.5);
             margin-top: 10px; animation: pulseBadge 1.5s infinite alternate;
         }
+        .caja-sin-cuadrar-badge {
+            background: #990000; color: #FFFFFF; padding: 8px 15px; border-radius: 20px;
+            font-size: 0.95rem; font-weight: bold; font-family: 'Roboto', sans-serif;
+            display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(153,0,0,0.5);
+            margin-top: 10px;
+        }
         @keyframes pulseBadge { 0% { transform: scale(1); } 100% { transform: scale(1.03); } }
+
+        .autocompensar-controles {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .autocompensar-controles select {
+            width: auto; min-width: 135px; padding: 6px 10px; margin-top: 0; font-size: 0.85rem;
+        }
 
         .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 100000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .custom-modal-box { 
@@ -247,7 +260,10 @@
             <div style="border: 2px solid var(--border-gold); padding: 14px; margin-bottom: 14px; background: #FFFDF9; border-radius: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <label style="margin-top:0; color: var(--stock-red);">↩️ Vueltos Entregados Extra (Tomados de Caja Fondo):</label>
-                    <button type="button" class="btn-info" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="autoCompensarConVueltoExtra()">⚡ Auto-Compensar Excedente</button>
+                    <div class="autocompensar-controles">
+                        <select id="select_moneda_autocompensar" title="Moneda para auto-compensar excedente"></select>
+                        <button type="button" class="btn-info" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="autoCompensarConVueltoExtra()">⚡ Auto-Compensar Excedente</button>
+                    </div>
                 </div>
                 <div id="lista_vueltos_contenedor" style="margin-top: 8px;"></div>
                 <button type="button" class="btn-danger" style="margin-top:10px;" onclick="agregarLineaVuelto()">+ Añadir Vuelto Extra</button>
@@ -355,7 +371,7 @@
             if (perfil && perfil.local_id) CURRENT_LOCAL_ID = perfil.local_id;
             else {
                 let { data: locales } = await window.supabaseClient.from('locales').select('id').limit(1);
-                if (locales.length > 0) CURRENT_LOCAL_ID = locales[0].id;
+                if (locales && locales.length > 0) CURRENT_LOCAL_ID = locales[0].id;
             }
 
             let { data: conf } = await window.supabaseClient.from('configuraciones').select('*').eq('local_id', CURRENT_LOCAL_ID).single();
@@ -399,7 +415,9 @@
             }
 
             poblarSelectoresEmpleados();
+            poblarSelectorMonedaAutoCompensar();
             renderizarConciliacionesConfiguradas();
+            sanearCarritoDisponible();
             renderizarTablaCarrito();
 
             if (document.getElementById('modal_selector_productos').style.display === 'flex') {
@@ -413,6 +431,57 @@
         }
     }
 
+    function obtenerStockDisponibleProducto(prod) {
+        if (!prod || prod.activo === false) return 0;
+        const tipo = prod.tipo || 'detallado';
+        if (tipo === 'materia_prima') return 0;
+        if (tipo === 'servicio') return Infinity;
+
+        if (tipo === 'compuesto') {
+            const receta = Array.isArray(prod.receta) ? prod.receta : [];
+            if (receta.length === 0) return 0;
+            let minPosible = Infinity;
+            for (const ing of receta) {
+                const cantReq = parseFloat(ing.cant) || 0;
+                if (cantReq <= 0) return 0;
+                const mp = CATALOGO.find(m => m.id === ing.uuid);
+                const stockMp = mp ? (parseFloat(mp.stock) || 0) : 0;
+                const posible = Math.floor(stockMp / cantReq);
+                if (posible < minPosible) minPosible = posible;
+            }
+            return minPosible === Infinity ? 0 : Math.max(0, minPosible);
+        }
+
+        if (tipo === 'al_mayor') {
+            const origen = CATALOGO.find(m => m.id === prod.origen_mayor_id);
+            const factor = parseFloat(prod.factor_mayor) || 1;
+            if (!origen || factor <= 0) return 0;
+            return Math.max(0, Math.floor((parseFloat(origen.stock) || 0) / factor));
+        }
+
+        return Math.max(0, parseFloat(prod.stock) || 0);
+    }
+
+    function esMercanciaVendibleDisponible(prod) {
+        if (!prod || prod.activo === false) return false;
+        const tipo = prod.tipo || 'detallado';
+        if (tipo === 'materia_prima') return false;
+        if (tipo === 'servicio') return true;
+        return obtenerStockDisponibleProducto(prod) > 0;
+    }
+
+    function sanearCarritoDisponible() {
+        carritoActual = carritoActual.filter(item => {
+            const prod = CATALOGO.find(p => p.id === item.id);
+            if (!prod || !esMercanciaVendibleDisponible(prod)) return false;
+            const disp = obtenerStockDisponibleProducto(prod);
+            if (Number.isFinite(disp) && item.cant > disp) {
+                item.cant = disp;
+            }
+            return item.cant > 0;
+        });
+    }
+
     function poblarSelectoresEmpleados() {
         let optsGen = '<option value="" selected>-- SELECCIONAR --</option>' + 
             EMPLEADOS.map(e => `<option value="${e.id}">${e.nombre} ${e.apellido}</option>`).join('');
@@ -423,16 +492,28 @@
         if (selRecibe) selRecibe.innerHTML = optsGen;
     }
 
-    function obtenerOpcionesMonedasDisponibles(monedaSeleccionada = '') {
+    function obtenerListaMonedasConfig() {
         const tasas = CONFIG_GLOBAL.tasas || {};
         const monedaBase = tasas.moneda_base || 'USD';
         const secundarias = tasas.secundarias || [];
-        
-        let listaMonedas = [monedaBase];
+        const listaMonedas = [monedaBase];
         secundarias.forEach(s => {
             if (s.code && !listaMonedas.includes(s.code)) listaMonedas.push(s.code);
         });
+        return listaMonedas;
+    }
 
+    function poblarSelectorMonedaAutoCompensar() {
+        const sel = document.getElementById('select_moneda_autocompensar');
+        if (!sel) return;
+        const prev = sel.value;
+        const lista = obtenerListaMonedasConfig();
+        const base = CONFIG_GLOBAL.tasas?.moneda_base || 'USD';
+        sel.innerHTML = lista.map(m => `<option value="${m}" ${m === (prev || base) ? 'selected' : ''}>${m}</option>`).join('');
+    }
+
+    function obtenerOpcionesMonedasDisponibles(monedaSeleccionada = '') {
+        const listaMonedas = obtenerListaMonedasConfig();
         let html = `<option value="" disabled ${!monedaSeleccionada ? 'selected' : ''}>-- Monedas --</option>`;
         listaMonedas.forEach(m => {
             html += `<option value="${m}" ${monedaSeleccionada === m ? 'selected' : ''}>${m}</option>`;
@@ -453,6 +534,18 @@
         return (sec.operacion === 'dividir') ? (monto * tasa) : (monto / tasa);
     }
 
+    function convertirUSDAMoneda(montoUSD, monedaCodigo) {
+        const tasas = CONFIG_GLOBAL.tasas || {};
+        const monedaBase = tasas.moneda_base || 'USD';
+        if (!monedaCodigo || monedaCodigo === monedaBase) return montoUSD;
+
+        const sec = (tasas.secundarias || []).find(s => s.code === monedaCodigo);
+        if (!sec || !sec.tasa || parseFloat(sec.tasa) === 0) return montoUSD;
+
+        const tasa = parseFloat(sec.tasa);
+        return (sec.operacion === 'dividir') ? (montoUSD / tasa) : (montoUSD * tasa);
+    }
+
     function abrirSelectorProductosModal() {
         filtrarYRenderizarCatalogoSelector();
         document.getElementById('modal_selector_productos').style.display = 'flex';
@@ -466,7 +559,12 @@
         let busq = document.getElementById('buscador_prod_modal').value.toLowerCase();
         let orden = document.getElementById('orden_prod_modal').value;
 
-        let lista = CATALOGO.filter(p => p.nombre.toLowerCase().includes(busq));
+        let lista = CATALOGO.filter(p => {
+            if (!esMercanciaVendibleDisponible(p)) return false;
+            const nomMatch = (p.nombre || '').toLowerCase().includes(busq);
+            const codMatch = (p.codigo_barras || '').toLowerCase().includes(busq);
+            return !busq || nomMatch || codMatch;
+        });
 
         if (orden === 'AZ') lista.sort((a, b) => a.nombre.localeCompare(b.nombre));
         else if (orden === 'ZA') lista.sort((a, b) => b.nombre.localeCompare(a.nombre));
@@ -475,20 +573,31 @@
         let tbody = document.getElementById('tbody_selector_catalogo');
         tbody.innerHTML = '';
 
+        if (lista.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:18px; color:#555;">No hay mercancía disponible para venta en este momento.</td></tr>`;
+            calcularTotalModalSelector();
+            return;
+        }
+
         lista.forEach(prod => {
+            const disp = obtenerStockDisponibleProducto(prod);
+            const esServicio = (prod.tipo === 'servicio');
             let umbralClass = 'stock-verde';
-            if (prod.stock <= (prod.umbral_rojo || 2)) umbralClass = 'stock-rojo';
-            else if (prod.stock <= (prod.umbral_amarillo || 5)) umbralClass = 'stock-amarillo';
+            if (!esServicio) {
+                if (disp <= (prod.umbral_rojo || 2)) umbralClass = 'stock-rojo';
+                else if (disp <= (prod.umbral_amarillo || 5)) umbralClass = 'stock-amarillo';
+            }
 
             let itemEnCarrito = carritoActual.find(c => c.id === prod.id);
             let cantActual = itemEnCarrito ? itemEnCarrito.cant : 0;
+            let stockTexto = esServicio ? 'Servicio' : `${disp}`;
 
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${prod.nombre}</strong></td>
                 <td>${prod.categoria || 'General'}</td>
                 <td>$${parseFloat(prod.precio_base || 0).toFixed(2)}</td>
-                <td><span class="stock-badge ${umbralClass}">${prod.stock}</span></td>
+                <td><span class="stock-badge ${umbralClass}">${stockTexto}</span></td>
                 <td style="white-space:nowrap;">
                     <button class="btn-danger" style="padding:4px 8px; width:auto;" onclick="modificarCantTempSelector('${prod.id}', -1)">-</button>
                     <span id="cant_selector_${prod.id}" style="margin:0 8px; font-weight:bold;">${cantActual}</span>
@@ -503,13 +612,15 @@
 
     function modificarCantTempSelector(prodId, delta) {
         let prod = CATALOGO.find(p => p.id === prodId);
-        if (!prod) return;
+        if (!prod || !esMercanciaVendibleDisponible(prod)) return;
 
+        const disp = obtenerStockDisponibleProducto(prod);
         let item = carritoActual.find(c => c.id === prodId);
         if (!item && delta > 0) {
             item = { 
                 id: prod.id, 
                 nom: prod.nombre, 
+                tipo: prod.tipo || 'detallado',
                 base: parseFloat(prod.precio_base || 0), 
                 fuente: parseFloat(prod.fuente || 0), 
                 cant: 0 
@@ -521,8 +632,8 @@
             item.cant += delta;
             if (item.cant <= 0) {
                 carritoActual = carritoActual.filter(c => c.id !== prodId);
-            } else if (item.cant > prod.stock) {
-                item.cant = prod.stock;
+            } else if (Number.isFinite(disp) && item.cant > disp) {
+                item.cant = disp;
                 alert("⚠️ Supera el stock disponible.");
             }
         }
@@ -574,10 +685,17 @@
 
     function actualizarCantidadDirecta(id, cant) {
         let item = carritoActual.find(c => c.id === id);
-        if (item) {
-            item.cant = parseInt(cant) || 1;
-            renderizarTablaCarrito();
+        if (!item) return;
+        const prod = CATALOGO.find(p => p.id === id);
+        const disp = prod ? obtenerStockDisponibleProducto(prod) : Infinity;
+        let nuevaCant = parseInt(cant, 10) || 1;
+        if (nuevaCant < 1) nuevaCant = 1;
+        if (Number.isFinite(disp) && nuevaCant > disp) {
+            nuevaCant = disp;
+            alert("⚠️ Supera el stock disponible.");
         }
+        item.cant = nuevaCant;
+        renderizarTablaCarrito();
     }
 
     function eliminarProductoCarrito(id) {
@@ -586,6 +704,7 @@
     }
 
     function abrirModalMetodosPago() {
+        poblarSelectorMonedaAutoCompensar();
         document.getElementById('modal_metodos_pago').style.display = 'flex';
         calcularFaltaPorCobrar();
     }
@@ -649,7 +768,6 @@
             return;
         }
 
-        // Asegurar orden alfabético al renderizar por si acaso
         CONCILIACIONES_CFG.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
 
         CONCILIACIONES_CFG.forEach(c => {
@@ -723,9 +841,14 @@
         });
 
         let excedenteUSD = (pagadoUSD - vueltosPreviosUSD) - totalUSD;
-        if (excedenteUSD > 0) {
-            let monedaBase = CONFIG_GLOBAL.tasas?.moneda_base || 'USD';
-            agregarLineaVuelto(excedenteUSD.toFixed(2), monedaBase);
+        if (excedenteUSD > 0.005) {
+            const selMoneda = document.getElementById('select_moneda_autocompensar');
+            const monedaElegida = (selMoneda && selMoneda.value) || (CONFIG_GLOBAL.tasas?.moneda_base || 'USD');
+            const montoEnMoneda = convertirUSDAMoneda(excedenteUSD, monedaElegida);
+            const decimales = monedaElegida === 'COP' ? 0 : 2;
+            agregarLineaVuelto(montoEnMoneda.toFixed(decimales), monedaElegida);
+        } else {
+            alert("ℹ️ No hay excedente pendiente por auto-compensar.");
         }
     }
 
@@ -868,7 +991,7 @@
             if (Math.abs(restaUSD) < 0.01 && totalUSD > 0) {
                 avisoContainer.innerHTML = `<div class="caja-cuadrada-badge">✅ CAJA CUADRADA</div>`;
             } else {
-                avisoContainer.innerHTML = '';
+                avisoContainer.innerHTML = `<div class="caja-sin-cuadrar-badge">⚠️ CAJA SIN CUADRAR</div>`;
             }
         }
     }
@@ -957,7 +1080,7 @@
             if(errLote) throw new Error("Error en lotes_diarios: " + errLote.message);
             let loteIdCodigo = loteRes.id;
 
-            // 2. Registrar Gastos Operativos en Supabase con depuración de errores
+            // 2. Registrar Gastos Operativos en Supabase
             let filasGastos = document.querySelectorAll('#lista_gastos_contenedor .flex-row-justificado');
             for (let div of filasGastos) {
                 let concepto = div.querySelector('.ga-motivo')?.value || '';
@@ -973,14 +1096,11 @@
                         vendedor_id: quienCierra,
                         fecha: new Date().toISOString()
                     }]);
-                    if (errGa) {
-                        console.error("Error guardando gasto operativo:", errGa);
-                        throw new Error("Gasto Operativo Supabase Error: " + errGa.message);
-                    }
+                    if (errGa) throw new Error("Gasto Operativo Supabase Error: " + errGa.message);
                 }
             }
 
-            // 3. Registrar Avances Retirados en Supabase con depuración de errores
+            // 3. Registrar Avances Retirados en Supabase
             let filasAvances = document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado');
             for (let div of filasAvances) {
                 let concepto = div.querySelector('.av-motivo')?.value || '';
@@ -996,10 +1116,7 @@
                         vendedor_id: quienCierra,
                         fecha: new Date().toISOString()
                     }]);
-                    if (errAv) {
-                        console.error("Error guardando avance retirado:", errAv);
-                        throw new Error("Avance Retirado Supabase Error: " + errAv.message);
-                    }
+                    if (errAv) throw new Error("Avance Retirado Supabase Error: " + errAv.message);
                 }
             }
 
@@ -1077,7 +1194,7 @@
             let snapshotInventario = CATALOGO.map(prod => {
                 let item = detallesAgrupados[prod.id];
                 let VP_valor = item ? item.cant : 0;
-                let E_valor = stockAnteriorMap[prod.id] !== undefined ? stockAnteriorMap[prod.id] : (prod.stock + VP_valor);
+                let E_valor = stockAnteriorMap[prod.id] !== undefined ? stockAnteriorMap[prod.id] : ((parseFloat(prod.stock) || 0) + VP_valor);
                 let S_valor = Math.max(0, E_valor - VP_valor);
                 let VT_valor = item ? item.subtotal : (VP_valor * (prod.precio_base || 0));
 
@@ -1097,15 +1214,16 @@
             // 8. Descontar Stock
             for (let item of carritoActual) {
                 let prodActual = CATALOGO.find(p => p.id === item.id);
-                if (prodActual) {
-                    let nuevoStock = Math.max(0, prodActual.stock - item.cant);
+                if (prodActual && prodActual.tipo !== 'servicio') {
+                    let nuevoStock = Math.max(0, (parseFloat(prodActual.stock) || 0) - item.cant);
                     await window.supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', item.id);
                     prodActual.stock = nuevoStock;
                 }
             }
 
-            // 9. Calcular Diferencia y Faltantes (Deuda al empleado)
+            // 9. Calcular Diferencia y Faltantes
             let pagadoUSD = 0;
+            let vueltosExtraList = [];
             document.querySelectorAll('#lista_avances_contenedor .flex-row-justificado').forEach(div => {
                 pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.av-monto')?.value) || 0, div.querySelector('.av-moneda')?.value);
             });
@@ -1120,7 +1238,12 @@
                 pagadoUSD += calcularEquivalenteUSD(parseFloat(div.querySelector('.ef-monto')?.value) || 0, div.querySelector('.ef-moneda')?.value);
             });
             document.querySelectorAll('#lista_vueltos_contenedor .flex-row-justificado').forEach(div => {
-                pagadoUSD -= calcularEquivalenteUSD(parseFloat(div.querySelector('.vu-monto')?.value) || 0, div.querySelector('.vu-moneda')?.value);
+                const mv = parseFloat(div.querySelector('.vu-monto')?.value) || 0;
+                const monV = div.querySelector('.vu-moneda')?.value || (CONFIG_GLOBAL.tasas?.moneda_base || 'USD');
+                if (mv > 0) {
+                    pagadoUSD -= calcularEquivalenteUSD(mv, monV);
+                    vueltosExtraList.push({ monto: mv, moneda: monV });
+                }
             });
 
             let diferenciaUSD = pagadoUSD - totalVentaUSD;
@@ -1159,7 +1282,8 @@
                 turno: turno,
                 fecha: fechaHoy,
                 items: Object.values(detallesAgrupados),
-                total_usd: totalVentaUSD
+                total_usd: totalVentaUSD,
+                vueltos_extra: vueltosExtraList
             };
 
             mostrarModalExitoCierre(loteIdCodigo);
@@ -1174,6 +1298,7 @@
             document.getElementById('lista_efectivo_contenedor').innerHTML = '';
             document.getElementById('lista_vueltos_contenedor').innerHTML = '';
             document.querySelectorAll('#contenedor_conciliaciones_main [id^="contenedor_lineas_conciliacion_"]').forEach(el => el.innerHTML = '');
+            poblarSelectorMonedaAutoCompensar();
             renderizarTablaCarrito();
 
         } catch (e) {
@@ -1230,7 +1355,7 @@
         let monedaSelec = document.getElementById('print_moneda_factura').value || 'USD';
         let dataCierre = ultimoResultadoCierre;
 
-        let totalConvertido = calcularEquivalenteUSD(dataCierre.total_usd, monedaSelec);
+        let totalConvertido = convertirUSDAMoneda(dataCierre.total_usd, monedaSelec);
         let simboloMoneda = monedaSelec === 'VES' ? 'Bs.' : monedaSelec;
 
         let itemsHtml = dataCierre.items.map(i => `
