@@ -138,6 +138,12 @@
         .check-rol { width: 18px; height: 18px; cursor: pointer; accent-color: var(--active-gold); }
 
         .currency-row { display: grid; grid-template-columns: 2fr 1fr 2fr auto; gap: 10px; align-items: center; background: var(--input-bg); padding: 10px; border-radius: var(--border-radius); border-left: 3px solid var(--active-gold); margin-bottom: 10px; }
+        .tax-row { display: grid; grid-template-columns: 2fr 1.2fr 1.2fr auto; gap: 10px; align-items: center; background: #FDFBF7; padding: 10px; border-radius: var(--border-radius); border: 1px solid rgba(212, 175, 55, 0.4); border-left: 4px solid var(--primary); margin-bottom: 10px; }
+        .socio-row { display: grid; grid-template-columns: 2fr 1fr 1.5fr auto; gap: 10px; align-items: center; background: #FDFBF7; padding: 10px; border-radius: var(--border-radius); border: 1px solid rgba(212, 175, 55, 0.4); border-left: 4px solid var(--success); margin-bottom: 10px; }
+        @media(max-width: 768px) { 
+            .tax-row, .socio-row { grid-template-columns: 1fr; }
+        }
+
         .formula-preview { display: block; font-size: 0.8rem; color: var(--success); margin-top: 5px; font-weight: bold; }
         .switch-label { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--input-bg); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: var(--border-radius); margin-bottom: 8px; cursor: pointer; color: var(--text); font-weight: bold; }
 
@@ -147,6 +153,45 @@
             border-radius: var(--border-radius);
             padding: 15px;
             margin-top: 15px;
+        }
+
+        .sub-box-panel {
+            background: rgba(92, 6, 20, 0.02);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            border-radius: var(--border-radius);
+            padding: 18px;
+            margin-top: 20px;
+        }
+
+        .btn-help-status {
+            background: var(--active-gold);
+            color: var(--primary);
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .btn-help-status:hover { transform: scale(1.15); }
+
+        .modal-overlay-custom {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
+            z-index: 9999999; display: none; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-box-custom {
+            background: #FFFFFF; width: 100%; max-width: 550px;
+            border-radius: var(--border-radius); border: 2px solid var(--active-gold);
+            padding: 25px; box-shadow: 0 25px 60px rgba(0,0,0,0.8); position: relative;
+            animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .danger-zone { margin-top: 25px; border: 2px dashed var(--danger); padding: 20px; border-radius: var(--border-radius); background: rgba(139,0,0,0.03); }
@@ -221,7 +266,7 @@
         <!-- 1. IDENTIDAD FISCAL Y PAÍS -->
         <div>
             <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-identidad', 'icon-identidad', this)">
-                <h2 class="acordeon-title">🏛️ 1. Identidad Fiscal y Ubicación (América)</h2>
+                <h2 class="acordeon-title">🏛️ 1. Identidad Fiscal y Ubicación (América del Norte, Centro y Sur)</h2>
                 <span id="icon-identidad" style="color: var(--active-gold);">▼</span>
             </div>
             <div id="sec-identidad" class="acordeon-content">
@@ -238,30 +283,84 @@
 
                 <div class="grid-2" style="margin-top: 15px;">
                     <div>
-                        <label id="lbl_identificacion_fiscal">Identificación Fiscal (RIF / NIT / RUC / RFC):</label>
-                        <input type="text" id="cfg_identificacion_fiscal" placeholder="Ej: J-12345678-0">
+                        <label id="lbl_identificacion_fiscal">Identificación Fiscal:</label>
+                        <input type="text" id="cfg_identificacion_fiscal" placeholder="Ej: RIF / NIT / RUC / RFC / EIN">
                     </div>
                     <div>
-                        <label>Mecanismo Especial de Pago / Crédito de IVA:</label>
-                        <select id="cfg_regimen_cobranza_iva">
-                            <option value="estandar">🧾 Cobro Inmediato Estándar (IVA incluido en factura)</option>
-                            <option value="diferido">🤝 Permite Pago Diferido de IVA (Facturación a crédito / Venta sin IVA inicial)</option>
-                            <option value="retencion">🏛️ Sujeto a Retención Fiscal (Contribuyentes Especiales)</option>
-                        </select>
+                        <label style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Estatus Legal / Tipo de Contribuyente:</span>
+                            <button type="button" class="btn-help-status" onclick="UIConfig.abrirModalAyudaEstatus()" title="¿Cómo funciona el estatus y la cobranza?">?</button>
+                        </label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="cfg_regimen_cobranza_iva" style="flex: 1;" onchange="UIConfig.actualizarDescripcionEstatusSeleccionado()"></select>
+                            <button type="button" class="btn-success" onclick="UIConfig.abrirModalCrearEstatus()" title="Añadir nuevo estatus personalizado" style="width: 44px; margin-top: 6px; padding: 0; font-size: 1.2rem;">＋</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Cuadro informativo dinámico del Impuesto según el país -->
+                <!-- Cuadro informativo dinámico del Impuesto y Estatus según el país -->
                 <div class="fiscal-card-info" id="cuadro_info_fiscal_pais"></div>
 
                 <button class="btn-info" onclick="UIConfig.guardarIdentidadyfiscal()" style="margin-top: 20px;">💾 Guardar Datos Identidad y Fiscalidad</button>
             </div>
         </div>
 
-        <!-- 2. SEGURIDAD Y BLOQUEO DE MÓDULOS -->
+        <!-- 2. IMPUESTO SOBRE LA GANANCIA Y SOCIEDAD (LÍNEA "impuesto" EN SUPABASE) -->
+        <div>
+            <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-impuesto-sociedad', 'icon-impuesto-sociedad', this)">
+                <h2 class="acordeon-title">⚖️ 2. Impuesto sobre Ganancia y Sociedad</h2>
+                <span id="icon-impuesto-sociedad" style="color: var(--active-gold);">▼</span>
+            </div>
+            <div id="sec-impuesto-sociedad" class="acordeon-content">
+                
+                <!-- SUBSECCIÓN A: COBRANZA DE IMPUESTO SOBRE LA GANANCIA GENERADA (1 a 4) -->
+                <div class="sub-box-panel" style="margin-top: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--active-gold); padding-bottom: 10px; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; color: var(--primary); font-family: var(--title-font);">📊 Cobranza: Impuesto sobre la Ganancia Generada</h3>
+                            <span style="font-size: 0.85rem; color: #555;">Añade entre 1 y hasta 4 conceptos/tramos fiscales que se descuentan de la ganancia generada (Ej: ISLR, Alcaldía, Reserva Legal).</span>
+                        </div>
+                        <button type="button" class="btn-success" id="btn_add_impuesto_ganancia" onclick="UIConfig.agregarFilaImpuestoGanancia()" style="width: auto; margin-top: 0; padding: 10px 16px;">➕ Añadir Monto (Máx. 4)</button>
+                    </div>
+                    <div id="contenedor_impuestos_ganancia"></div>
+                </div>
+
+                <!-- SUBSECCIÓN B: SOCIEDAD (DIVISIÓN DE UTILIDAD NETA ENTRE DUEÑOS) -->
+                <div class="sub-box-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--active-gold); padding-bottom: 10px; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; color: var(--primary); font-family: var(--title-font);">🤝 Sociedad (Reparto Neto entre Dueños)</h3>
+                            <span style="font-size: 0.85rem; color: #555;">Divide el porcentaje final restante después de impuestos para saber cuánto le corresponde netamente a cada dueño.</span>
+                        </div>
+                        <button type="button" class="btn-success" onclick="UIConfig.agregarFilaSocio()" style="width: auto; margin-top: 0; padding: 10px 16px;">➕ Añadir Dueño / Socio</button>
+                    </div>
+                    <div id="contenedor_sociedad"></div>
+                    <div id="alerta_porcentaje_sociedad" style="font-size: 0.9rem; font-weight: bold; margin-top: 10px;"></div>
+                </div>
+
+                <!-- SUBSECCIÓN C: SIMULADOR Y VISTA PREVIA DE LO GENERADO Y REPARTIDO -->
+                <div class="fiscal-card-info" style="margin-top: 20px;">
+                    <div style="font-weight: bold; color: var(--primary); font-size: 1.05rem; margin-bottom: 10px;">
+                        🧮 Proyección de Ganancia Generada y Reparto Neto (Guardar en línea <code>impuesto</code>)
+                    </div>
+                    <div class="grid-2" style="align-items: center; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9rem;">Ganancia Bruta Generada (Referencia / Base de Cálculo):</label>
+                            <input type="number" step="0.01" id="cfg_ganancia_referencia" value="1000" oninput="UIConfig.recalcularProyeccionImpuestoSociedad()">
+                        </div>
+                        <div id="resumen_calculo_impuesto" style="background: #FFF; padding: 12px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.4); font-size: 0.9rem;"></div>
+                    </div>
+                    <div id="detalle_reparto_duenos" style="font-size: 0.92rem;"></div>
+                </div>
+
+                <button class="btn-info" onclick="UIConfig.guardarImpuestoYSociedad()" style="margin-top: 20px;">💾 Guardar Impuestos y Sociedad en Supabase</button>
+            </div>
+        </div>
+
+        <!-- 3. SEGURIDAD Y BLOQUEO DE MÓDULOS -->
         <div>
             <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-seguridad', 'icon-seguridad', this)">
-                <h2 class="acordeon-title">🔒 2. Seguridad y Permisos</h2>
+                <h2 class="acordeon-title">🔒 3. Seguridad y Permisos</h2>
                 <span id="icon-seguridad" style="color: var(--active-gold);">▼</span>
             </div>
             <div id="sec-seguridad" class="acordeon-content">
@@ -285,10 +384,10 @@
             </div>
         </div>
 
-        <!-- 3. SISTEMA MONETARIO (AMÉRICA Y EURO) -->
+        <!-- 4. SISTEMA MONETARIO (AMÉRICA Y EURO) -->
         <div>
             <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-monedas', 'icon-monedas', this)">
-                <h2 class="acordeon-title">💵 3. Sistema Monetario</h2>
+                <h2 class="acordeon-title">💵 4. Sistema Monetario</h2>
                 <span id="icon-monedas" style="color: var(--active-gold);">▼</span>
             </div>
             <div id="sec-monedas" class="acordeon-content">
@@ -309,10 +408,10 @@
             </div>
         </div>
 
-        <!-- 4. TELEGRAM Y NOTIFICACIONES -->
+        <!-- 5. TELEGRAM Y NOTIFICACIONES -->
         <div>
             <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-telegram', 'icon-telegram', this)">
-                <h2 class="acordeon-title">🤖 4. Telegram</h2>
+                <h2 class="acordeon-title">🤖 5. Telegram</h2>
                 <span id="icon-telegram" style="color: var(--active-gold);">▼</span>
             </div>
             <div id="sec-telegram" class="acordeon-content">
@@ -332,10 +431,10 @@
             </div>
         </div>
 
-        <!-- 5. MANTENIMIENTO Y BORRADO DE DATOS -->
+        <!-- 6. MANTENIMIENTO Y BORRADO DE DATOS -->
         <div>
             <div class="acordeon-header" onclick="UIConfig.toggleSeccion('sec-borrado', 'icon-borrado', this)">
-                <h2 class="acordeon-title">🗑️ 5. Mantenimiento de Datos</h2>
+                <h2 class="acordeon-title">🗑️ 6. Mantenimiento de Datos</h2>
                 <span id="icon-borrado" style="color: var(--active-gold);">▼</span>
             </div>
             <div id="sec-borrado" class="acordeon-content">
@@ -390,6 +489,42 @@
     </main>
 </div>
 
+<!-- VENTANA MODAL PARA AYUDA DE ESTATUS LEGAL (?) -->
+<div class="modal-overlay-custom" id="modal_ayuda_estatus">
+    <div class="modal-box-custom">
+        <h3 style="color: var(--primary); font-family: var(--title-font); margin-top: 0; border-bottom: 2px solid var(--active-gold); padding-bottom: 8px;">ℹ️ Guía de Cobranza e Ingresos Reales</h3>
+        <div id="contenido_ayuda_estatus_detallado" style="font-size: 0.92rem; color: var(--text); line-height: 1.6; max-height: 55vh; overflow-y: auto; margin-top: 15px;"></div>
+        <button type="button" class="btn-info" onclick="document.getElementById('modal_ayuda_estatus').style.display='none'" style="margin-top: 20px;">Entendido</button>
+    </div>
+</div>
+
+<!-- VENTANA MODAL PARA AÑADIR NUEVO ESTATUS PERSONALIZADO -->
+<div class="modal-overlay-custom" id="modal_crear_estatus">
+    <div class="modal-box-custom">
+        <h3 style="color: var(--primary); font-family: var(--title-font); margin-top: 0; border-bottom: 2px solid var(--active-gold); padding-bottom: 8px;">➕ Añadir Nuevo Estatus Personalizado</h3>
+        <form onsubmit="UIConfig.guardarNuevoEstatus(event)">
+            <label>Nombre del Estatus / Régimen:</label>
+            <input type="text" id="nuevo_estatus_nombre" required placeholder="Ej: Régimen Especial Agropecuario, Exento Local, etc.">
+            
+            <label style="margin-top: 12px;">Comportamiento de Cobranza:</label>
+            <select id="nuevo_estatus_tipo">
+                <option value="estandar">Cobro Inmediato (Gravado directo en caja)</option>
+                <option value="diferido">Pago Diferido / Crédito Fiscal (Sin cobro de impuesto inicial)</option>
+                <option value="retencion">Sujeto a Retención / Agente de Retención</option>
+                <option value="exento">Exento / No Sujeto (Sin recargo fiscal)</option>
+            </select>
+
+            <label style="margin-top: 12px;">Justificación (¿Por qué se añade o se requiere en tus ingresos reales?):</label>
+            <textarea id="nuevo_estatus_justificacion" rows="3" required placeholder="Explica cómo impacta este estatus en el flujo de caja, los ingresos netos o la contabilidad del negocio..."></textarea>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn-success" style="margin-top: 0;">Guardar Estatus</button>
+                <button type="button" class="btn-danger" onclick="document.getElementById('modal_crear_estatus').style.display='none'" style="margin-top: 0;">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     const UIBase = {
         mostrarCargando: function(titulo, subtitulo) {
@@ -420,7 +555,6 @@
                 setTimeout(() => { overlay.style.display = 'none'; }, 500);
             }
         },
-        
         toggleVerPin: function() {
             const input = document.getElementById('pin_ingreso_global');
             const btn = document.getElementById('btn_ojo_pin');
@@ -432,7 +566,6 @@
                 btn.innerText = '🙈';
             }
         },
-
         bloquearPantallaPIN: function(callbackVerificarPIN) {
             const bloqueo = document.getElementById('pantalla_bloqueo_global');
             const main = document.getElementById('main_wrapper');
@@ -475,25 +608,109 @@
     };
 
     const MATRIZ_PAISES_AMERICA = [
-        { code: 'VE', nombre: 'Venezuela 🇻🇪', impuesto: 'IVA', tasaGen: 16.0, tasaRed: 8.0, labelId: 'RIF (Ej: J-12345678-0)', desc: 'SENIAT - Permite ventas gravadas, exentas y diferidas (clientes que compran sin IVA para pago posterior).' },
-        { code: 'CO', nombre: 'Colombia 🇨🇴', impuesto: 'IVA', tasaGen: 19.0, tasaRed: 5.0, labelId: 'NIT (Ej: 900.123.456-1)', desc: 'DIAN - Manejo de ReteIVA y tarifas diferenciales.' },
-        { code: 'MX', nombre: 'México 🇲🇽', impuesto: 'IVA', tasaGen: 16.0, tasaRed: 8.0, labelId: 'RFC (Ej: ABC123456T10)', desc: 'SAT - Impuesto al Valor Agregado con tasa del 8% en frontera norte.' },
-        { code: 'PE', nombre: 'Perú 🇵🇪', impuesto: 'IGV', tasaGen: 18.0, tasaRed: 10.0, labelId: 'RUC (Ej: 20123456789)', desc: 'SUNAT - Impuesto General a las Ventas e IPM.' },
-        { code: 'AR', nombre: 'Argentina 🇦🇷', impuesto: 'IVA', tasaGen: 21.0, tasaRed: 10.5, labelId: 'CUIT (Ej: 30-12345678-9)', desc: 'AFIP - Alícuota general de IVA y percepción según condición del cliente.' },
-        { code: 'CL', nombre: 'Chile 🇨🇱', impuesto: 'IVA', tasaGen: 19.0, tasaRed: 0.0, labelId: 'RUT (Ej: 76.123.456-7)', desc: 'SII - Impuesto a las Ventas y Servicios.' },
-        { code: 'EC', nombre: 'Ecuador 🇪🇨', impuesto: 'IVA', tasaGen: 15.0, tasaRed: 5.0, labelId: 'RUC (Ej: 1791234567001)', desc: 'SRI - Impuesto al Valor Agregado.' },
-        { code: 'DO', nombre: 'Rep. Dominicana 🇩🇴', impuesto: 'ITBIS', tasaGen: 18.0, tasaRed: 16.0, labelId: 'RNC (Ej: 1-01-12345-6)', desc: 'DGII - Impuesto sobre Transferencias de Bienes Industrializados y Servicios.' },
-        { code: 'PA', nombre: 'Panamá 🇵🇦', impuesto: 'ITBMS', tasaGen: 7.0, tasaRed: 10.0, labelId: 'RUC (Ej: 155123-1-654321)', desc: 'DGI - Impuesto de Transferencia de Bienes Muebles y Servicios.' },
-        { code: 'GT', nombre: 'Guatemala 🇬🇹', impuesto: 'IVA', tasaGen: 12.0, tasaRed: 5.0, labelId: 'NIT (Ej: 1234567-8)', desc: 'SAT - Régimen General y Pequeño Contribuyente.' },
-        { code: 'CR', nombre: 'Costa Rica 🇨🇷', impuesto: 'IVA', tasaGen: 13.0, tasaRed: 4.0, labelId: 'Cédula Jurídica / NITE', desc: 'Ministerio de Hacienda - Impuesto sobre el Valor Agregado.' },
-        { code: 'US', nombre: 'Estados Unidos 🇺🇸', impuesto: 'Sales Tax', tasaGen: 7.0, tasaRed: 0.0, labelId: 'EIN / SSN', desc: 'State & Local Sales Tax según condado/estado.' }
+        { code: 'CA', nombre: 'Canadá 🇨🇦', impuesto: 'GST/HST', tasaGen: 5.0, tasaRed: 0.0, labelId: 'BN / GST Number', desc: 'CRA - Goods and Services Tax / Harmonized Sales Tax.', estatusList: [
+            { id: 'gst_registrant', nombre: '🧾 GST/HST Registrant (Standard)', desc: 'Recauda y remite impuestos federales con derecho a créditos fiscales (ITC).' },
+            { id: 'small_supplier', nombre: '👤 Small Supplier (Under $30k)', desc: 'Exento de registro obligatorio por bajo volumen de ventas.' }
+        ]},
+        { code: 'US', nombre: 'Estados Unidos 🇺🇸', impuesto: 'Sales Tax', tasaGen: 7.0, tasaRed: 0.0, labelId: 'EIN / SSN / State Tax ID', desc: 'State & Local Sales Tax Department.', estatusList: [
+            { id: 'sole_proprietorship', nombre: '👤 Sole Proprietorship / LLC (Pass-through)', desc: 'Declaración personal de ingresos con recaudo de Sales Tax estatal.' },
+            { id: 'corporation_c_s', nombre: '🏢 Corporation (C-Corp / S-Corp)', desc: 'Estructura corporativa independiente con obligaciones fiscales estatales y federales.' }
+        ]},
+        { code: 'MX', nombre: 'México 🇲🇽', impuesto: 'IVA', tasaGen: 16.0, tasaRed: 8.0, labelId: 'RFC (Ej: ABC123456T10)', desc: 'SAT - Personas Morales y Personas Físicas (RESICO).', estatusList: [
+            { id: 'moral_general', nombre: '🏢 Persona Moral - Régimen General', desc: 'Sociedades mercantiles con obligaciones corporativas plenas y retenciones.' },
+            { id: 'resico', nombre: '⭐ RESICO (Régimen Simplificado de Confianza)', desc: 'Tasa reducida sobre ingresos efectivamente cobrados para optimizar flujo real.' },
+            { id: 'persona_fisica', nombre: '👤 Persona Física con Actividad Empresarial', desc: 'Negocios unipersonales o comercios minoristas locales.' }
+        ]},
+        { code: 'BZ', nombre: 'Belice 🇧🇿', impuesto: 'GST', tasaGen: 12.5, tasaRed: 0.0, labelId: 'GST Number', desc: 'Belize Tax Service - General Sales Tax.', estatusList: [
+            { id: 'gst_registered_bz', nombre: '🧾 GST Registered Business', desc: 'Comercios obligados a cobrar y reportar el impuesto general a las ventas.' },
+            { id: 'exempt_bz', nombre: '📋 Exempt / Small Trader', desc: 'Negocios exentos o por debajo del umbral de registro.' }
+        ]},
+        { code: 'CR', nombre: 'Costa Rica 🇨🇷', impuesto: 'IVA', tasaGen: 13.0, tasaRed: 4.0, labelId: 'Cédula Jurídica / NITE', desc: 'Ministerio de Hacienda - Régimen Tradicional y Simplificado.', estatusList: [
+            { id: 'tradicional_cr', nombre: '🧾 Régimen Tradicional (IVA 13%)', desc: 'Declaración cuatrimestral o mensual con desglose completo de gastos.' },
+            { id: 'simplificado_cr', nombre: '📊 Tributación Simplificada', desc: 'Pagos trimestrales fijos basados en factores de consumo y personal.' }
+        ]},
+        { code: 'SV', nombre: 'El Salvador 🇸🇻', impuesto: 'IVA', tasaGen: 13.0, tasaRed: 0.0, labelId: 'NIT / NRC', desc: 'MH - Dirección General de Impuestos Internos.', estatusList: [
+            { id: 'contribuyente_iva_sv', nombre: '🧾 Contribuyente de IVA (Régimen General)', desc: 'Obligado a emitir documentos tributarios electrónicos (DTE) y liquidar IVA mensual.' },
+            { id: 'pequeño_contribuyente_sv', nombre: '👤 Pequeño Contribuyente / Inscrito', desc: 'Esquemas simplificados de recaudación.' }
+        ]},
+        { code: 'GT', nombre: 'Guatemala 🇬🇹', impuesto: 'IVA', tasaGen: 12.0, tasaRed: 5.0, labelId: 'NIT (Ej: 1234567-8)', desc: 'SAT - Pequeño Contribuyente y Régimen General.', estatusList: [
+            { id: 'pequeño_contribuyente', nombre: '⭐ Pequeño Contribuyente (5% sobre ventas)', desc: 'Tasa fija mensual sin derecho a crédito fiscal por compras.' },
+            { id: 'general_gt', nombre: '📊 Régimen General (12% IVA)', desc: 'Permite deducción de créditos fiscales por facturas de proveedores.' }
+        ]},
+        { code: 'HN', nombre: 'Honduras 🇭🇳', impuesto: 'ISV', tasaGen: 15.0, tasaRed: 18.0, labelId: 'RTN (Registro Tributario Nacional)', desc: 'SAR - Servicio de Administración de Rentas (Impuesto Sobre Ventas).', estatusList: [
+            { id: 'comerciante_isv', nombre: '🧾 Comerciante Individual / Sociedad (ISV)', desc: 'Recauda el Impuesto Sobre Ventas del 15% (o 18% en alcohol/tabaco).' },
+            { id: 'exento_hn', nombre: '📋 Exonerado / Régimen Especial', desc: 'Actividades con beneficios fiscales aprobados por ley.' }
+        ]},
+        { code: 'NI', nombre: 'Nicaragua 🇳🇮', impuesto: 'IVA', tasaGen: 15.0, tasaRed: 0.0, labelId: 'RUC (Registro Único de Contribuyentes)', desc: 'DGI - Dirección General de Ingresos.', estatusList: [
+            { id: 'cuota_fija_ni', nombre: '⭐ Régimen de Cuota Fija', desc: 'Pequeños negocios que pagan un tributo mensual unificado ante la DGI.' },
+            { id: 'regimen_general_ni', nombre: '📊 Régimen General', desc: 'Empresas con contabilidad formal y declaración mensual de IVA.' }
+        ]},
+        { code: 'PA', nombre: 'Panamá 🇵🇦', impuesto: 'ITBMS', tasaGen: 7.0, tasaRed: 10.0, labelId: 'RUC (Ej: 155123-1-654321)', desc: 'DGI - Persona Natural y Jurídica.', estatusList: [
+            { id: 'general_pa', nombre: '🏢 Contribuyente Comercial Regular', desc: 'Declaración jurada de ITBMS y renta anual.' },
+            { id: 'pequeño_pa', nombre: '👤 Comerciante Minorista / Simplificado', desc: 'Exento o bajo esquemas simplificados de tasa única.' }
+        ]},
+        { code: 'AR', nombre: 'Argentina 🇦🇷', impuesto: 'IVA', tasaGen: 21.0, tasaRed: 10.5, labelId: 'CUIT (Ej: 30-12345678-9)', desc: 'AFIP - Responsable Inscripto y Monotributistas.', estatusList: [
+            { id: 'resp_inscripto', nombre: '🧾 Responsable Inscripto', desc: 'Comercio que liquida IVA mensual y computa créditos fiscales de compras.' },
+            { id: 'monotributo', nombre: '⭐ Monotributista (Régimen Simplificado)', desc: 'Pago integrado de impuestos y aportes previsionales por categoría fija.' },
+            { id: 'exento_ar', nombre: '📋 Exento / No Alcance', desc: 'Actividades sin obligación de repercusión de IVA.' }
+        ]},
+        { code: 'BO', nombre: 'Bolivia 🇧🇴', impuesto: 'IVA', tasaGen: 13.0, tasaRed: 0.0, labelId: 'NIT (Número de Identificación Tributaria)', desc: 'SIN - Servicio Nacional de Impuestos.', estatusList: [
+            { id: 'regimen_general_bo', nombre: '🧾 Régimen General (IVA / IT / IUE)', desc: 'Empresas obligadas a emitir factura con crédito fiscal y presentar DDJJ mensuales.' },
+            { id: 'rc_iva_bo', nombre: '👤 Régimen Complementario al IVA', desc: 'Dependientes y profesionales independientes.' }
+        ]},
+        { code: 'BR', nombre: 'Brasil 🇧🇷', impuesto: 'ICMS/ISS', tasaGen: 18.0, tasaRed: 4.0, labelId: 'CNPJ / CPF', desc: 'Receita Federal - Simples Nacional y Lucro Presumido.', estatusList: [
+            { id: 'simples_nacional', nombre: '⭐ Simples Nacional (Micro y Pequena Empresa)', desc: 'Tributación unificada federal, estadual y municipal en boleto único (DAS).' },
+            { id: 'lucro_presumido', nombre: '🏢 Lucro Presumido / Lucro Real', desc: 'Regímenes corporativos con contabilidad completa e ICMS/PIS/COFINS.' }
+        ]},
+        { code: 'CL', nombre: 'Chile 🇨🇱', impuesto: 'IVA', tasaGen: 19.0, tasaRed: 0.0, labelId: 'RUT (Ej: 76.123.456-7)', desc: 'SII - Primera Categoría y Pro Pyme.', estatusList: [
+            { id: 'propyme', nombre: '📈 Régimen Pro Pyme (General / Transparente)', desc: 'Tasa reducida de Impuesto de Primera Categoría basada en base imponible fluida.' },
+            { id: 'primera_categoria', nombre: '🏢 Renta Efectiva - Contabilidad Completa', desc: 'Grandes contribuyentes obligados a balances comerciales completos.' }
+        ]},
+        { code: 'CO', nombre: 'Colombia 🇨🇴', impuesto: 'IVA', tasaGen: 19.0, tasaRed: 5.0, labelId: 'NIT (Ej: 900.123.456-1)', desc: 'DIAN - Responsable de IVA y No Responsable de IVA.', estatusList: [
+            { id: 'responsable_iva', nombre: '🧾 Responsable de IVA (Régimen Común)', desc: 'Recauda IVA general, emite factura electrónica y liquida ReteIVA.' },
+            { id: 'no_responsable_iva', nombre: '👤 No Responsable de IVA (Régimen Simplificado)', desc: 'Pequeños negocios que no cobran IVA ni generan créditos fiscales.' },
+            { id: 'simple', nombre: '📊 Régimen Simple de Tributación (RST)', desc: 'Modelo unificado que simplifica el impuesto de renta y consolidados mercantiles.' }
+        ]},
+        { code: 'EC', nombre: 'Ecuador 🇪🇨', impuesto: 'IVA', tasaGen: 15.0, tasaRed: 5.0, labelId: 'RUC (Ej: 1791234567001)', desc: 'SRI - Régimen General y RIMPE.', estatusList: [
+            { id: 'rimpe_emprendedor', nombre: '⭐ RIMPE Emprendedor / Negocio Popular', desc: 'Impuesto único sobre ingresos brutos simplificado para pequeños comercios.' },
+            { id: 'general_ec', nombre: '📊 Régimen General (Sociedades)', desc: 'Empresas con agentes de retención y liquidación ordinaria de IVA.' }
+        ]},
+        { code: 'GY', nombre: 'Guyana 🇬🇾', impuesto: 'VAT', tasaGen: 14.0, tasaRed: 0.0, labelId: 'TIN (Taxpayer Identification Number)', desc: 'GRA - Guyana Revenue Authority (Value Added Tax).', estatusList: [
+            { id: 'vat_registered_gy', nombre: '🧾 VAT Registered Commercial Business', desc: 'Obligado a cobrar VAT y presentar declaraciones mensuales.' },
+            { id: 'non_vat_gy', nombre: '📋 Non-VAT Registered Small Business', desc: 'Negocios por debajo del umbral de registro legal.' }
+        ]},
+        { code: 'PY', nombre: 'Paraguay 🇵🇾', impuesto: 'IVA', tasaGen: 10.0, tasaRed: 5.0, labelId: 'RUC (Registro Único de Contribuyentes)', desc: 'SET - Subsecretaría de Estado de Tributación (IRE / IVA).', estatusList: [
+            { id: 'ire_simple_ressimple', nombre: '⭐ RESSIMPLE / IRE Simplificado', desc: 'Régimen simplificado para pequeños comercios con liquidación simplificada.' },
+            { id: 'general_py', nombre: '📊 Régimen General (IVA / IRE General)', desc: 'Contribuyentes con contabilidad formal y liquidación ordinaria de impuestos.' }
+        ]},
+        { code: 'PE', nombre: 'Perú 🇵🇪', impuesto: 'IGV', tasaGen: 18.0, tasaRed: 10.0, labelId: 'RUC (Ej: 20123456789)', desc: 'SUNAT - MYPE Tributario, Régimen General y RUS.', estatusList: [
+            { id: 'mype', nombre: '💼 Régimen MYPE Tributario (RMT)', desc: 'Orientado a micro y pequeñas empresas con tasas escalonadas.' },
+            { id: 'rus', nombre: '🛒 Nuevo Régimen Único Simplificado (NRUS)', desc: 'Cuota fija mensual sin emisión de créditos fiscales detallados.' },
+            { id: 'general_pe', nombre: '📊 Régimen General (Empresas y Corporativos)', desc: 'Sin límite de ingresos, contabilidad completa y retenciones de IGV.' }
+        ]},
+        { code: 'SR', nombre: 'Surinam 🇸🇷', impuesto: 'OM (Omzetbelasting)', tasaGen: 10.0, tasaRed: 0.0, labelId: 'Fiscus / Registratienummer', desc: 'Belastingdienst Suriname (Sales Tax).', estatusList: [
+            { id: 'omzetbelasting_sr', nombre: '🧾 Omzetbelasting Registered Business', desc: 'Comercios que recaudan el impuesto sobre la facturación de bienes y servicios.' },
+            { id: 'small_business_sr', nombre: '👤 Small Business / Vrijgesteld', desc: 'Exento por ley o escala comercial menor.' }
+        ]},
+        { code: 'UY', nombre: 'Uruguay 🇺🇾', impuesto: 'IVA', tasaGen: 22.0, tasaRed: 10.0, labelId: 'RUT (Registro Único Tributario)', desc: 'DGI - Dirección General Impositiva (Literal E / IRAE).', estatusList: [
+            { id: 'literal_e', nombre: '⭐ Literal E (IVA Mínimo / Pequeña Empresa)', desc: 'Régimen simplificado de baja facturación anual con tributación reducida.' },
+            { id: 'irae_general', nombre: '🏢 IRAE - Régimen General (Industria y Comercio)', desc: 'Empresas con contabilidad suficiente y liquidación completa de IVA.' }
+        ]},
+        { code: 'VE', nombre: 'Venezuela 🇻🇪', impuesto: 'IVA', tasaGen: 16.0, tasaRed: 8.0, labelId: 'RIF (Ej: J-12345678-0)', desc: 'SENIAT - Permite ventas gravadas, exentas y diferidas.', estatusList: [
+            { id: 'estandar', nombre: '🧾 Contribuyente Ordinario / Estándar', desc: 'Cobro inmediato del IVA en cada ticket o factura de venta contado.' },
+            { id: 'retencion', nombre: '🏛️ Contribuyente Especial (Agente de Retención)', desc: 'Sujeto a retención obligatoria del IVA (75% o 100%) por parte de grandes clientes, afectando el flujo de caja real.' },
+            { id: 'diferido', nombre: '🤝 Contribuyente con Crédito / Pago Diferido', desc: 'Ventas corporativas a plazo donde el impuesto se declara pero se cobra de forma diferida.' },
+            { id: 'formal', nombre: '📋 Contribuyente Formal / Exento', desc: 'Operaciones exentas o no sujetas sin recargo de impuesto al consumidor.' }
+        ]}
     ];
+
+    let CATALOGO_MODULOS_ESTATUS_CUSTOM = [];
 
     const CATALOGO_MONEDAS = [
         { code: 'USD', name: '🇺🇸 Dólar estadounidense ($)' },
         { code: 'CAD', name: '🇨🇦 Dólar canadiense (CA$)' },
         { code: 'MXN', name: '🇲🇽 Peso mexicano ($)' },
-        { code: 'BZD', name: '🇧ℤ Dólar beliceño (BZ$)' },
+        { code: 'BZD', name: '🇧🇿 Dólar beliceño (BZ$)' },
         { code: 'CRC', name: '🇨🇷 Colón costarricense (₡)' },
         { code: 'GTQ', name: '🇬🇹 Quetzal guatemalteco (Q)' },
         { code: 'HNL', name: '🇭🇳 Lempira hondureño (L)' },
@@ -589,6 +806,7 @@
         poblarSelectoresCatologos() {
             const selectPais = document.getElementById('cfg_pais_fiscal');
             selectPais.innerHTML = '';
+            MATRIZ_PAISES_AMERICA.sort((a,b) => a.nombre.localeCompare(b.nombre));
             MATRIZ_PAISES_AMERICA.forEach(p => selectPais.insertAdjacentHTML('beforeend', `<option value="${p.code}">${p.nombre} [Impuesto: ${p.impuesto} ${p.tasaGen}%]</option>`));
 
             const selectBase = document.getElementById('select_moneda_base');
@@ -596,24 +814,264 @@
             CATALOGO_MONEDAS.forEach(m => selectBase.insertAdjacentHTML('beforeend', `<option value="${m.code}">${m.name}</option>`));
         },
 
-        actualizarInformacionFiscalPais() {
+        actualizarInformacionFiscalPais(forzarEstatusId = null) {
             const codPais = document.getElementById('cfg_pais_fiscal').value;
             const paisObj = MATRIZ_PAISES_AMERICA.find(p => p.code === codPais) || MATRIZ_PAISES_AMERICA[0];
 
             document.getElementById('lbl_identificacion_fiscal').innerText = `Identificación Fiscal (${paisObj.labelId}):`;
             document.getElementById('cfg_identificacion_fiscal').placeholder = `Ej: ${paisObj.labelId}`;
 
+            const selectEstatus = document.getElementById('cfg_regimen_cobranza_iva');
+            const estatusPrevio = forzarEstatusId || selectEstatus.value;
+            selectEstatus.innerHTML = '';
+
+            let listaEstatus = [...paisObj.estatusList, ...CATALOGO_MODULOS_ESTATUS_CUSTOM.filter(e => e.pais === codPais)];
+            listaEstatus.forEach(est => {
+                selectEstatus.insertAdjacentHTML('beforeend', `<option value="${est.id}">${est.nombre}</option>`);
+            });
+
+            if (estatusPrevio && Array.from(selectEstatus.options).some(o => o.value === estatusPrevio)) {
+                selectEstatus.value = estatusPrevio;
+            }
+
+            this.actualizarDescripcionEstatusSeleccionado();
+        },
+
+        actualizarDescripcionEstatusSeleccionado() {
+            const codPais = document.getElementById('cfg_pais_fiscal').value;
+            const paisObj = MATRIZ_PAISES_AMERICA.find(p => p.code === codPais) || MATRIZ_PAISES_AMERICA[0];
+            const selectEstatus = document.getElementById('cfg_regimen_cobranza_iva');
+            const estatusId = selectEstatus.value;
+
+            let todasOpciones = [...paisObj.estatusList, ...CATALOGO_MODULOS_ESTATUS_CUSTOM.filter(e => e.pais === codPais)];
+            const matchEst = todasOpciones.find(e => e.id === estatusId) || todasOpciones[0];
+
             const contInfo = document.getElementById('cuadro_info_fiscal_pais');
             contInfo.innerHTML = `
                 <div style="font-weight:bold; color:var(--primary); font-size:1.05rem; margin-bottom:4px;">
-                    🏛️ Configuración Fiscal Activada: ${paisObj.nombre}
+                    🏛️ Configuración Fiscal Activa: ${paisObj.nombre}
                 </div>
                 <div style="font-size:0.9rem; color:var(--text);">
-                    • <strong>Tipo de Impuesto Nacional:</strong> ${paisObj.impuesto}<br>
-                    • <strong>Alícuota General:</strong> ${paisObj.tasaGen}% | <strong>Alícuota Reducida:</strong> ${paisObj.tasaRed}%<br>
-                    • <strong>Normativa / Ente Regulador:</strong> ${paisObj.desc}
+                    • <strong>Ente Regulador / Impuesto:</strong> ${paisObj.impuesto} (General: ${paisObj.tasaGen}% | Reducida: ${paisObj.tasaRed}%)<br>
+                    • <strong>Estatus Legal / Tipo de Contribuyente:</strong> ${matchEst ? matchEst.nombre : 'Estándar'}<br>
+                    • <strong>Impacto en Cobranza y Declaración:</strong> ${matchEst ? matchEst.desc : paisObj.desc}
                 </div>
             `;
+        },
+
+        abrirModalAyudaEstatus() {
+            const codPais = document.getElementById('cfg_pais_fiscal').value;
+            const paisObj = MATRIZ_PAISES_AMERICA.find(p => p.code === codPais) || MATRIZ_PAISES_AMERICA[0];
+            const selectEstatus = document.getElementById('cfg_regimen_cobranza_iva');
+            const estatusId = selectEstatus.value;
+            let todasOpciones = [...paisObj.estatusList, ...CATALOGO_MODULOS_ESTATUS_CUSTOM.filter(e => e.pais === codPais)];
+            const matchEst = todasOpciones.find(e => e.id === estatusId);
+
+            const contModal = document.getElementById('contenido_ayuda_estatus_detallado');
+            contModal.innerHTML = `
+                <p><strong>País Seleccionado:</strong> ${paisObj.nombre}</p>
+                <p><strong>Estatus Legal Actual:</strong> ${matchEst ? matchEst.nombre : 'Estándar'}</p>
+                <p><strong>Regla de Cobranza e Ingresos Reales:</strong></p>
+                <p style="background: rgba(212,175,55,0.1); padding: 12px; border-left: 4px solid var(--active-gold); border-radius: 4px;">
+                    ${matchEst ? matchEst.desc : paisObj.desc}
+                </p>
+                <p><em>¿Por qué es importante este parámetro?</em> El sistema utiliza este estatus para calcular de manera transparente tus ingresos netos reales al separar el impuesto retenido o diferido de tu flujo de caja operativo diario y optimizar la declaración ante la autoridad fiscal (${paisObj.impuesto}).</p>
+                ${matchEst && matchEst.justificacion ? `<p><strong>Justificación Personalizada Registrada:</strong> "${matchEst.justificacion}"</p>` : ''}
+            `;
+            document.getElementById('modal_ayuda_estatus').style.display = 'flex';
+        },
+
+        abrirModalCrearEstatus() {
+            document.getElementById('nuevo_estatus_nombre').value = '';
+            document.getElementById('nuevo_estatus_justificacion').value = '';
+            document.getElementById('modal_crear_estatus').style.display = 'flex';
+        },
+
+        async guardarNuevoEstatus(event) {
+            event.preventDefault();
+            const nombre = document.getElementById('nuevo_estatus_nombre').value.trim();
+            const tipo = document.getElementById('nuevo_estatus_tipo').value;
+            const justificacion = document.getElementById('nuevo_estatus_justificacion').value.trim();
+            const codPais = document.getElementById('cfg_pais_fiscal').value;
+
+            if(!nombre || !justificacion) return alert("Complete todos los campos.");
+
+            const nuevoId = 'custom_' + Date.now();
+            CATALOGO_MODULOS_ESTATUS_CUSTOM.push({
+                id: nuevoId,
+                pais: codPais,
+                nombre: `✨ ${nombre}`,
+                desc: `Estatus personalizado (${tipo}): ${justificacion}`,
+                justificacion: justificacion
+            });
+
+            document.getElementById('modal_crear_estatus').style.display = 'none';
+            this.actualizarInformacionFiscalPais(nuevoId);
+            await this.guardarIdentidadyfiscal(true);
+            alert("✅ Nuevo estatus legal añadido y guardado en Supabase.");
+        },
+
+        /* =========================================================================
+           NUEVO: GESTIÓN DE IMPUESTOS SOBRE LA GANANCIA (1 A 4) Y SOCIEDAD
+           ========================================================================= */
+        agregarFilaImpuestoGanancia(datos = null) {
+            const cont = document.getElementById('contenedor_impuestos_ganancia');
+            const actuales = cont.querySelectorAll('.tax-row').length;
+            if (actuales >= 4) {
+                return alert("⚠️ Solo se permite añadir un máximo de 4 montos de impuesto sobre la ganancia.");
+            }
+
+            const idx = actuales + 1;
+            const row = document.createElement('div');
+            row.className = 'tax-row';
+            row.innerHTML = `
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: bold;">Concepto / Impuesto #${idx}:</label>
+                    <input type="text" class="inp-imp-nombre" placeholder="Ej: ISLR / Impuesto Renta" value="${datos?.nombre || ''}" oninput="UIConfig.recalcularProyeccionImpuestoSociedad()">
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: bold;">Modalidad:</label>
+                    <select class="sel-imp-tipo" onchange="UIConfig.recalcularProyeccionImpuestoSociedad()">
+                        <option value="porcentaje" ${datos?.tipo !== 'fijo' ? 'selected' : ''}>Porcentaje (%)</option>
+                        <option value="fijo" ${datos?.tipo === 'fijo' ? 'selected' : ''}>Monto Fijo ($)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: bold;">Valor / Tasa:</label>
+                    <input type="number" step="0.01" min="0" class="inp-imp-valor" placeholder="0.00" value="${datos?.valor ?? ''}" oninput="UIConfig.recalcularProyeccionImpuestoSociedad()">
+                </div>
+                <div style="text-align: center; padding-top: 18px;">
+                    <button type="button" class="btn-danger" style="padding: 8px; margin: 0; width: 38px; height: 38px;" onclick="this.closest('.tax-row').remove(); UIConfig.actualizarEstadoBotonImpuesto(); UIConfig.recalcularProyeccionImpuestoSociedad();">🗑️</button>
+                </div>
+            `;
+            cont.appendChild(row);
+            this.actualizarEstadoBotonImpuesto();
+            this.recalcularProyeccionImpuestoSociedad();
+        },
+
+        actualizarEstadoBotonImpuesto() {
+            const cont = document.getElementById('contenedor_impuestos_ganancia');
+            const btn = document.getElementById('btn_add_impuesto_ganancia');
+            const count = cont.querySelectorAll('.tax-row').length;
+            btn.disabled = count >= 4;
+            btn.style.opacity = count >= 4 ? '0.5' : '1';
+            btn.innerText = `➕ Añadir Monto (${count}/4)`;
+        },
+
+        agregarFilaSocio(datos = null) {
+            const cont = document.getElementById('contenedor_sociedad');
+            const row = document.createElement('div');
+            row.className = 'socio-row';
+            row.innerHTML = `
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: bold;">Nombre del Dueño / Socio:</label>
+                    <input type="text" class="inp-socio-nombre" placeholder="Ej: Israel Ríos" value="${datos?.nombre || ''}" oninput="UIConfig.recalcularProyeccionImpuestoSociedad()">
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: bold;">Participación (%):</label>
+                    <input type="number" step="0.01" min="0" max="100" class="inp-socio-pct" placeholder="50" value="${datos?.porcentaje ?? ''}" oninput="UIConfig.recalcularProyeccionImpuestoSociedad()">
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: bold;">Ganancia Neta Estimada:</label>
+                    <div class="lbl-socio-neto" style="padding: 11px; background: #FFF; border: 1px solid #ddd; border-radius: 6px; font-weight: bold; color: var(--success); margin-top: 6px;">0.00</div>
+                </div>
+                <div style="text-align: center; padding-top: 18px;">
+                    <button type="button" class="btn-danger" style="padding: 8px; margin: 0; width: 38px; height: 38px;" onclick="this.closest('.socio-row').remove(); UIConfig.recalcularProyeccionImpuestoSociedad();">🗑️</button>
+                </div>
+            `;
+            cont.appendChild(row);
+            this.recalcularProyeccionImpuestoSociedad();
+        },
+
+        obtenerDatosImpuestoYSociedad() {
+            const gananciaRef = parseFloat(document.getElementById('cfg_ganancia_referencia').value) || 0;
+            const monedaBase = document.getElementById('select_moneda_base')?.value || 'USD';
+
+            const impuestosGanancia = [];
+            let totalImpuestoDeducido = 0;
+
+            document.querySelectorAll('#contenedor_impuestos_ganancia .tax-row').forEach((row, index) => {
+                const nombre = row.querySelector('.inp-imp-nombre').value.trim() || `Impuesto Ganancia #${index + 1}`;
+                const tipo = row.querySelector('.sel-imp-tipo').value;
+                const valor = parseFloat(row.querySelector('.inp-imp-valor').value) || 0;
+                const montoCalculado = tipo === 'porcentaje' ? (gananciaRef * (valor / 100)) : valor;
+                totalImpuestoDeducido += montoCalculado;
+
+                impuestosGanancia.push({
+                    orden: index + 1,
+                    nombre,
+                    tipo,
+                    valor,
+                    monto_estimado: Number(montoCalculado.toFixed(2))
+                });
+            });
+
+            const utilidadNetaRepartible = Math.max(0, gananciaRef - totalImpuestoDeducido);
+            const sociedad = [];
+            let sumaPorcentajeSocios = 0;
+
+            document.querySelectorAll('#contenedor_sociedad .socio-row').forEach((row, index) => {
+                const nombre = row.querySelector('.inp-socio-nombre').value.trim() || `Dueño #${index + 1}`;
+                const porcentaje = parseFloat(row.querySelector('.inp-socio-pct').value) || 0;
+                sumaPorcentajeSocios += porcentaje;
+                const correspondeNeto = utilidadNetaRepartible * (porcentaje / 100);
+
+                const lblNeto = row.querySelector('.lbl-socio-neto');
+                if (lblNeto) lblNeto.innerText = `${monedaBase} ${correspondeNeto.toFixed(2)}`;
+
+                sociedad.push({
+                    dueno: nombre,
+                    porcentaje,
+                    monto_neto_correspondiente: Number(correspondeNeto.toFixed(2))
+                });
+            });
+
+            return {
+                moneda: monedaBase,
+                ganancia_referencia: gananciaRef,
+                impuestos_ganancia: impuestosGanancia,
+                total_impuesto_generado: Number(totalImpuestoDeducido.toFixed(2)),
+                utilidad_neta_repartible: Number(utilidadNetaRepartible.toFixed(2)),
+                sociedad: sociedad,
+                porcentaje_total_asignado: Number(sumaPorcentajeSocios.toFixed(2))
+            };
+        },
+
+        recalcularProyeccionImpuestoSociedad() {
+            const calc = this.obtenerDatosImpuestoYSociedad();
+            const alertaPct = document.getElementById('alerta_porcentaje_sociedad');
+
+            if (calc.sociedad.length > 0) {
+                if (calc.porcentaje_total_asignado === 100) {
+                    alertaPct.style.color = 'var(--success)';
+                    alertaPct.innerText = `✅ Participación societaria cuadrada al 100%.`;
+                } else if (calc.porcentaje_total_asignado < 100) {
+                    alertaPct.style.color = 'var(--warning)';
+                    alertaPct.innerText = `⚠️ Total asignado: ${calc.porcentaje_total_asignado}% (Queda ${(100 - calc.porcentaje_total_asignado).toFixed(2)}% sin asignar a ningún dueño).`;
+                } else {
+                    alertaPct.style.color = 'var(--danger)';
+                    alertaPct.innerText = `❌ Error: La suma de porcentajes (${calc.porcentaje_total_asignado}%) supera el 100%.`;
+                }
+            } else {
+                alertaPct.innerText = '';
+            }
+
+            document.getElementById('resumen_calculo_impuesto').innerHTML = `
+                <div>• <strong>Ganancia Bruta:</strong> ${calc.moneda} ${calc.ganancia_referencia.toFixed(2)}</div>
+                <div style="color: var(--danger);">• <strong>Total Impuestos sobre Ganancia:</strong> - ${calc.moneda} ${calc.total_impuesto_generado.toFixed(2)}</div>
+                <div style="color: var(--success); font-size: 1rem; margin-top: 4px; border-top: 1px dashed #ccc; padding-top: 4px;">
+                    <strong>Utilidad Neta a Dividir: ${calc.moneda} ${calc.utilidad_neta_repartible.toFixed(2)}</strong>
+                </div>
+            `;
+
+            const contDetalle = document.getElementById('detalle_reparto_duenos');
+            if (calc.sociedad.length === 0) {
+                contDetalle.innerHTML = `<em style="color: #666;">No hay dueños registrados en la sociedad aún.</em>`;
+            } else {
+                contDetalle.innerHTML = `<strong>Distribución Neta por Dueño:</strong><ul style="margin: 6px 0 0 0; padding-left: 20px;">` +
+                    calc.sociedad.map(s => `<li><strong>${s.dueno}</strong> (${s.porcentaje}%): <span style="color: var(--success); font-weight: bold;">${calc.moneda} ${s.monto_neto_correspondiente.toFixed(2)}</span> netos</li>`).join('') +
+                    `</ul>`;
+            }
         },
 
         generarTablaModulos() {
@@ -639,9 +1097,7 @@
 
                 [chkAdm, chkSup, chkVend].forEach(chk => {
                     chk.addEventListener('change', () => {
-                        if (chk.checked) {
-                            chkGen.checked = true;
-                        }
+                        if (chk.checked) chkGen.checked = true;
                     });
                 });
 
@@ -656,19 +1112,44 @@
         },
 
         cargarDatosIniciales(conf, local) {
+            // Recuperar estatus personalizados desde la línea 'impuesto' o 'fiscal' de Supabase
+            const bloqueImpuesto = conf?.impuesto || conf?.fiscal || {};
+            if (Array.isArray(bloqueImpuesto.estatus_custom)) {
+                CATALOGO_MODULOS_ESTATUS_CUSTOM = bloqueImpuesto.estatus_custom;
+            }
+
             const nombreLocal = local?.nombre || conf?.identidad?.nombre || '';
             document.getElementById('cfg_nombre_local').value = nombreLocal;
 
-            const paisGuardado = local?.pais_fiscal || conf?.fiscal?.pais || 'VE';
+            const paisGuardado = bloqueImpuesto.pais || local?.pais_fiscal || conf?.fiscal?.pais || 'VE';
             document.getElementById('cfg_pais_fiscal').value = paisGuardado;
-            
-            const idFiscal = local?.identificacion_fiscal || conf?.fiscal?.identificacion_fiscal || '';
+
+            const regimenGuardado = bloqueImpuesto.regimen_cobranza || local?.regimen_cobranza || conf?.fiscal?.regimen_cobranza || 'estandar';
+            this.actualizarInformacionFiscalPais(regimenGuardado);
+
+            const idFiscal = bloqueImpuesto.identificacion_fiscal || local?.identificacion_fiscal || conf?.fiscal?.identificacion_fiscal || '';
             document.getElementById('cfg_identificacion_fiscal').value = idFiscal;
 
-            const regimenIva = conf?.fiscal?.regimen_cobranza || 'diferido';
-            document.getElementById('cfg_regimen_cobranza_iva').value = regimenIva;
+            // Cargar Impuestos sobre la Ganancia y Sociedad desde la línea 'impuesto'
+            if (bloqueImpuesto.ganancia_referencia !== undefined) {
+                document.getElementById('cfg_ganancia_referencia').value = bloqueImpuesto.ganancia_referencia;
+            }
 
-            this.actualizarInformacionFiscalPais();
+            const contImp = document.getElementById('contenedor_impuestos_ganancia');
+            contImp.innerHTML = '';
+            if (Array.isArray(bloqueImpuesto.impuestos_ganancia) && bloqueImpuesto.impuestos_ganancia.length > 0) {
+                bloqueImpuesto.impuestos_ganancia.slice(0, 4).forEach(imp => this.agregarFilaImpuestoGanancia(imp));
+            } else {
+                this.agregarFilaImpuestoGanancia({ nombre: 'ISLR / Impuesto Ganancia', tipo: 'porcentaje', valor: 0 });
+            }
+
+            const contSoc = document.getElementById('contenedor_sociedad');
+            contSoc.innerHTML = '';
+            if (Array.isArray(bloqueImpuesto.sociedad) && bloqueImpuesto.sociedad.length > 0) {
+                bloqueImpuesto.sociedad.forEach(soc => this.agregarFilaSocio({ nombre: soc.dueno || soc.nombre, porcentaje: soc.porcentaje }));
+            }
+
+            this.recalcularProyeccionImpuestoSociedad();
 
             const matriz = conf.permisos_modulos || {};
             document.querySelectorAll('#lista_modulos_bloqueo tr').forEach(tr => {
@@ -693,26 +1174,75 @@
             }
         },
 
-        async guardarIdentidadyfiscal() {
-            const nombre = document.getElementById('cfg_nombre_local').value.trim();
+        construirPayloadLineaImpuesto() {
             const pais = document.getElementById('cfg_pais_fiscal').value;
+            const paisObj = MATRIZ_PAISES_AMERICA.find(p => p.code === pais) || MATRIZ_PAISES_AMERICA[0];
             const idFiscal = document.getElementById('cfg_identificacion_fiscal').value.trim();
             const regimenIva = document.getElementById('cfg_regimen_cobranza_iva').value;
+            const datosCalculo = this.obtenerDatosImpuestoYSociedad();
 
-            if(!nombre) return alert("El nombre comercial no puede estar vacío.");
+            return {
+                pais: pais,
+                impuesto_local_nombre: paisObj.impuesto,
+                tasa_general: paisObj.tasaGen,
+                tasa_reducida: paisObj.tasaRed,
+                identificacion_fiscal: idFiscal,
+                regimen_cobranza: regimenIva,
+                estatus_custom: CATALOGO_MODULOS_ESTATUS_CUSTOM,
+                ...datosCalculo,
+                actualizado_en: new Date().toISOString()
+            };
+        },
 
-            UIBase.mostrarCargando("GUARDANDO", "Sincronizando identidad y país fiscal en Supabase...");
+        async guardarIdentidadyfiscal(silencioso = false) {
+            const nombre = document.getElementById('cfg_nombre_local').value.trim();
+            if(!nombre && !silencioso) return alert("El nombre comercial no puede estar vacío.");
+
+            const payloadImpuesto = this.construirPayloadLineaImpuesto();
+
+            if (!silencioso) UIBase.mostrarCargando("GUARDANDO", "Sincronizando identidad y línea 'impuesto' en Supabase...");
             try { 
-                await AppMotor.actualizarIdentidadYFiscalidad({
-                    nombre: nombre,
-                    pais_fiscal: pais,
-                    identificacion_fiscal: idFiscal,
-                    regimen_cobranza: regimenIva
-                }); 
-                UIBase.ocultarCargando(); 
-                alert("✅ Identidad y Parámetros Fiscales guardados exitosamente."); 
+                if (typeof AppMotor.actualizarIdentidadYFiscalidad === 'function') {
+                    await AppMotor.actualizarIdentidadYFiscalidad({
+                        nombre: nombre,
+                        pais_fiscal: payloadImpuesto.pais,
+                        identificacion_fiscal: payloadImpuesto.identificacion_fiscal,
+                        regimen_cobranza: payloadImpuesto.regimen_cobranza
+                    });
+                }
+                // Guardado garantizado en la línea 'impuesto' y respaldo en 'fiscal'
+                await AppMotor._guardarConfigParcial('impuesto', payloadImpuesto);
+                await AppMotor._guardarConfigParcial('fiscal', payloadImpuesto);
+
+                if (!silencioso) {
+                    UIBase.ocultarCargando(); 
+                    alert("✅ Identidad y Estatus Fiscal guardados permanentemente en Supabase."); 
+                }
             } 
-            catch(e) { UIBase.ocultarCargando(); alert("Error al guardar: " + e.message); }
+            catch(e) { 
+                if (!silencioso) {
+                    UIBase.ocultarCargando(); 
+                    alert("Error al guardar: " + e.message); 
+                }
+            }
+        },
+
+        async guardarImpuestoYSociedad() {
+            const payloadImpuesto = this.construirPayloadLineaImpuesto();
+            if (payloadImpuesto.porcentaje_total_asignado > 100) {
+                return alert("❌ No se puede guardar: La participación de los dueños en Sociedad supera el 100%.");
+            }
+
+            UIBase.mostrarCargando("GUARDANDO", "Registrando impuestos sobre ganancia y reparto de sociedad en línea 'impuesto'...");
+            try {
+                await AppMotor._guardarConfigParcial('impuesto', payloadImpuesto);
+                await AppMotor._guardarConfigParcial('fiscal', payloadImpuesto);
+                UIBase.ocultarCargando();
+                alert("✅ Información guardada en Supabase bajo la línea 'impuesto' (montos generados y reparto neto por dueño).");
+            } catch (e) {
+                UIBase.ocultarCargando();
+                alert("Error al guardar impuestos y sociedad: " + e.message);
+            }
         },
 
         async guardarPinGeneral() {
@@ -763,6 +1293,7 @@
                 const op = row.querySelector('.sel-operacion').value;
                 row.querySelector('.formula-preview').innerText = op === 'multiplicar' ? `1 ${baseCode} ✖️ Tasa = ${secCode}` : `1 ${baseCode} ➗ Tasa = ${secCode}`;
             });
+            this.recalcularProyeccionImpuestoSociedad();
         },
 
         async guardarEstructuraMonetaria() {
