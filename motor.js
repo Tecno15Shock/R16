@@ -1,7 +1,7 @@
 /**
  * motor.js - MOTOR CENTRAL DE DATOS (APP CORE)
  * @description Maneja estado global, peticiones a Supabase, escrituras atómicas y caché del sistema.
- * @version 2.2 (Actualizado con módulo de Proveedores, Motor de Purga, Reseteo e Identidad Fiscal Multi-país)
+ * @version 2.3 (Verificado 254 líneas base + persistencia de línea 'impuesto', ganancia y sociedad)
  */
 
 const AppMotor = {
@@ -52,7 +52,10 @@ const AppMotor = {
                 this.supabase.from('catalogo').select('*').eq('local_id', this.estadoGlobal.local_id)
             ]);
             
-            if (resConf.data) { this.estadoGlobal.configuracion = resConf.data; this.estadoGlobal.sistemaMonetario = resConf.data.tasas || { moneda_base: 'USD', secundarias: [] }; }
+            if (resConf.data) {
+                this.estadoGlobal.configuracion = resConf.data;
+                this.estadoGlobal.sistemaMonetario = resConf.data.tasas || { moneda_base: 'USD', secundarias: [] };
+            }
             if (resLocal.data) this.estadoGlobal.datosLocal = resLocal.data;
             if (resProv.data) this.estadoGlobal.proveedores = resProv.data;
             if (resCat.data) this.estadoGlobal.catalogo = resCat.data;
@@ -67,6 +70,8 @@ const AppMotor = {
         const payload = { local_id: this.estadoGlobal.local_id, [columna]: objetoJson };
         const { error } = await this.supabase.from('configuraciones').upsert(payload, { onConflict: 'local_id' });
         if (error) throw new Error(error.message);
+        if (!this.estadoGlobal.configuracion) this.estadoGlobal.configuracion = {};
+        this.estadoGlobal.configuracion[columna] = objetoJson;
         return true;
     },
 
@@ -75,7 +80,14 @@ const AppMotor = {
      */
     crearProveedor: async function(datos) {
         if (!datos.nombre_empresa) throw new Error("Nombre de empresa obligatorio.");
-        const payload = { local_id: this.estadoGlobal.local_id, nombre_empresa: datos.nombre_empresa, rif_comercial: datos.rif_comercial || 'N/A', telefono: datos.telefono || '', moneda_preferida: datos.moneda_preferida || this.estadoGlobal.sistemaMonetario.moneda_base, activo: true };
+        const payload = {
+            local_id: this.estadoGlobal.local_id,
+            nombre_empresa: datos.nombre_empresa,
+            rif_comercial: datos.rif_comercial || 'N/A',
+            telefono: datos.telefono || '',
+            moneda_preferida: datos.moneda_preferida || this.estadoGlobal.sistemaMonetario.moneda_base,
+            activo: true
+        };
         const { data, error } = await this.supabase.from('proveedores').insert([payload]).select().single();
         if (error) throw new Error(error.message);
         this.estadoGlobal.proveedores.push(data);
@@ -92,7 +104,13 @@ const AppMotor = {
 
         let nuevoStock = parseFloat(prod.stock || 0) + parseFloat(cantidad);
         const { error: errHistorial } = await this.supabase.from('proveedores_historial_entradas').insert([{
-            local_id: this.estadoGlobal.local_id, producto_id: productoId, proveedor_id: proveedorId || null, cantidad: cantidad, costo_total_compra: costoTotal || 0, moneda_operacion: monedaOperacion || this.estadoGlobal.sistemaMonetario.moneda_base, nota: nota || 'Ingreso'
+            local_id: this.estadoGlobal.local_id,
+            producto_id: productoId,
+            proveedor_id: proveedorId || null,
+            cantidad: cantidad,
+            costo_total_compra: costoTotal || 0,
+            moneda_operacion: monedaOperacion || this.estadoGlobal.sistemaMonetario.moneda_base,
+            nota: nota || 'Ingreso'
         }]);
         if (errHistorial) throw new Error(errHistorial.message);
 
@@ -219,12 +237,11 @@ const AppMotor = {
     },
 
     /**
-     * [NOTA] actualizarIdentidadYFiscalidad: Guarda el nombre comercial, el país fiscal seleccionado (con su respectivo régimen de América) y el RIF/NIT/RUC en Supabase.
+     * [NOTA] actualizarIdentidadYFiscalidad: Guarda el nombre comercial, el país fiscal seleccionado, el RIF/NIT/RUC y el régimen de cobranza en Supabase.
      */
     async actualizarIdentidadYFiscalidad(datos) {
         if (!this.estadoGlobal.local_id) throw new Error("No hay local activo.");
 
-        // 1. Actualizar en la tabla 'locales' de Supabase
         const { error: errLocal } = await this.supabase
             .from('locales')
             .update({
@@ -236,7 +253,6 @@ const AppMotor = {
 
         if (errLocal) throw errLocal;
 
-        // 2. Guardar los parámetros fiscales combinados dentro de la columna 'identidad' (que ya existe)
         const identidadActual = this.estadoGlobal.configuracion.identidad || {};
         const identidadFusionada = {
             ...identidadActual,
@@ -246,9 +262,45 @@ const AppMotor = {
             regimen_cobranza: datos.regimen_cobranza
         };
 
-        await this._guardarConfigParcial('identidad', identidadFusionada);
+        const impuestoActual = this.estadoGlobal.configuracion.impuesto || {};
+        const impuestoFusionado = {
+            ...impuestoActual,
+            pais: datos.pais_fiscal,
+            identificacion_fiscal: datos.identificacion_fiscal,
+            regimen_cobranza: datos.regimen_cobranza
+        };
 
-        // 3. Refrescar los datos maestros en memoria
+        await this._guardarConfigParcial('identidad', identidadFusionada);
+        await this._guardarConfigParcial('impuesto', impuestoFusionado);
         await this.sincronizarDatosMaestros();
+    },
+
+    /**
+     * [NOTA] actualizarImpuestoYSociedad: Guarda en la línea 'impuesto' de Supabase los montos/porcentajes
+     * sobre la ganancia generada (1 a 4), el total generado y el reparto neto por dueño en Sociedad.
+     */
+    async actualizarImpuestoYSociedad(payloadImpuesto) {
+        if (!this.estadoGlobal.local_id) throw new Error("No hay local activo.");
+        const actual = this.estadoGlobal.configuracion?.impuesto || {};
+        const fusionado = {
+            ...actual,
+            ...payloadImpuesto,
+            actualizado_en: new Date().toISOString()
+        };
+        await this._guardarConfigParcial('impuesto', fusionado);
+        await this.sincronizarDatosMaestros();
+        return fusionado;
+    },
+
+    /**
+     * [NOTA] obtenerImpuestoYSociedad: Devuelve el objeto guardado en la línea 'impuesto' de configuraciones.
+     */
+    obtenerImpuestoYSociedad: function() {
+        return this.estadoGlobal.configuracion?.impuesto || {
+            impuestos_ganancia: [],
+            sociedad: [],
+            total_impuesto_generado: 0,
+            utilidad_neta_repartible: 0
+        };
     }
 };
