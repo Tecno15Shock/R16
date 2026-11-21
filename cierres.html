@@ -169,7 +169,7 @@
     <div class="loading-box">
         <div class="spinner-luxury"></div>
         <div style="font-family:'Playfair Display'; color:var(--primary); font-size:1.4rem; font-weight:700;">Procesando Cierre de Guardia</div>
-        <div style="color:var(--text); font-size:1rem; font-weight:bold; margin-top:8px;">Calculando inventario, capital y enviando datos a Supabase...</div>
+        <div style="color:var(--text); font-size:1rem; font-weight:bold; margin-top:8px;">Calculando inventario, lotes, capital y enviando datos a Supabase...</div>
     </div>
 </div>
 
@@ -381,7 +381,6 @@
                     ? conf.conciliaciones 
                     : (conf.conciliaciones?.lista || []);
                 
-                // ORDENAR CONCILIACIONES ALFABÉTICAMENTE (A-Z)
                 CONCILIACIONES_CFG.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
             }
 
@@ -401,12 +400,12 @@
             if (reqCat.data) {
                 CATALOGO = reqCat.data.map(p => ({
                     ...p,
+                    lotes: Array.isArray(p.lotes) ? p.lotes : [],
                     fuente: parseFloat(p.costo_fuente || p.fuente || p.costo || p.precio_costo || 0)
                 }));
             }
             if (reqEmp.data) {
                 EMPLEADOS = reqEmp.data;
-                // ORDENAR EMPLEADOS ALFABÉTICAMENTE POR NOMBRE Y APELLIDO (A-Z)
                 EMPLEADOS.sort((a, b) => {
                     let nombreA = `${a.nombre || ''} ${a.apellido || ''}`.trim();
                     let nombreB = `${b.nombre || ''} ${b.apellido || ''}`.trim();
@@ -429,6 +428,91 @@
             console.error("Error al refrescar catálogo:", e);
             if (mostrarAlerta) alert("❌ Error al refrescar datos.");
         }
+    }
+
+    /* Descuenta primero de los lotes próximos a vencer (FEFO) y elimina lotes en 0 */
+    function aplicarDescuentoEnLotesFEFO(lotesActuales, cantidadDescontar, stockActualProducto) {
+        const cant = Math.max(0, parseFloat(cantidadDescontar) || 0);
+        const stockInicial = Math.max(0, parseFloat(stockActualProducto) || 0);
+        const nuevoStockGeneral = Math.max(0, parseFloat((stockInicial - cant).toFixed(4)));
+        const lotesArr = Array.isArray(lotesActuales) ? lotesActuales : [];
+
+        if (lotesArr.length === 0) {
+            return { nuevosLotes: [], nuevoStock: nuevoStockGeneral };
+        }
+
+        const ordenados = [...lotesArr].sort((a, b) => {
+            const fa = a.fecha_vencimiento ? String(a.fecha_vencimiento) : '9999-12-31';
+            const fb = b.fecha_vencimiento ? String(b.fecha_vencimiento) : '9999-12-31';
+            return fa.localeCompare(fb);
+        });
+
+        let restante = cant;
+        let lotesTrasVenta = [];
+
+        for (const lote of ordenados) {
+            const cantLote = parseFloat(lote.cantidad) || 0;
+            if (cantLote <= 0) continue;
+
+            if (restante > 0) {
+                const usado = Math.min(cantLote, restante);
+                const quedan = parseFloat((cantLote - usado).toFixed(4));
+                restante = parseFloat((restante - usado).toFixed(4));
+
+                if (quedan > 0) {
+                    lotesTrasVenta.push({
+                        ...lote,
+                        cantidad: quedan
+                    });
+                }
+                // Si quedan <= 0, se elimina el lote completo (incluyendo número y fecha)
+            } else {
+                lotesTrasVenta.push({
+                    ...lote,
+                    cantidad: cantLote
+                });
+            }
+        }
+
+        const sumaLotes = parseFloat(
+            lotesTrasVenta.reduce((acc, item) => acc + (parseFloat(item.cantidad) || 0), 0).toFixed(4)
+        );
+        const diferencia = parseFloat((sumaLotes - nuevoStockGeneral).toFixed(4));
+
+        if (Math.abs(diferencia) > 0.0001 && lotesTrasVenta.length > 0) {
+            if (diferencia > 0) {
+                // Exceso en lotes respecto al nuevo stock general: descontar desde vencimiento más próximo
+                let exceso = diferencia;
+                const ajustados = [];
+                for (const lote of lotesTrasVenta) {
+                    const cantL = parseFloat(lote.cantidad) || 0;
+                    if (exceso > 0) {
+                        const usado = Math.min(cantL, exceso);
+                        const quedan = parseFloat((cantL - usado).toFixed(4));
+                        exceso = parseFloat((exceso - usado).toFixed(4));
+                        if (quedan > 0) {
+                            ajustados.push({ ...lote, cantidad: quedan });
+                        }
+                    } else {
+                        ajustados.push({ ...lote, cantidad: cantL });
+                    }
+                }
+                lotesTrasVenta = ajustados;
+            } else {
+                // Faltante en lotes respecto al nuevo stock general: ajustar en el último lote
+                const faltante = Math.abs(diferencia);
+                const ultimoIdx = lotesTrasVenta.length - 1;
+                lotesTrasVenta[ultimoIdx] = {
+                    ...lotesTrasVenta[ultimoIdx],
+                    cantidad: parseFloat(((parseFloat(lotesTrasVenta[ultimoIdx].cantidad) || 0) + faltante).toFixed(4))
+                };
+            }
+        }
+
+        return {
+            nuevosLotes: lotesTrasVenta,
+            nuevoStock: nuevoStockGeneral
+        };
     }
 
     function obtenerStockDisponibleProducto(prod) {
@@ -1211,14 +1295,67 @@
                 detalles_json: snapshotInventario
             }]);
 
-            // 8. Descontar Stock
-            for (let item of carritoActual) {
-                let prodActual = CATALOGO.find(p => p.id === item.id);
-                if (prodActual && prodActual.tipo !== 'servicio') {
-                    let nuevoStock = Math.max(0, (parseFloat(prodActual.stock) || 0) - item.cant);
-                    await window.supabaseClient.from('catalogo').update({ stock: nuevoStock }).eq('id', item.id);
-                    prodActual.stock = nuevoStock;
+            // 8. Descontar Stock y lotes (FEFO) para detallado, compuesto (receta) y al_mayor (origen)
+            const descuentosAcumulados = new Map();
+
+            function acumularDescuentoProducto(prodId, cantidad) {
+                const cantNum = parseFloat(cantidad) || 0;
+                if (!prodId || cantNum <= 0) return;
+                const prev = descuentosAcumulados.get(prodId) || 0;
+                descuentosAcumulados.set(prodId, parseFloat((prev + cantNum).toFixed(4)));
+            }
+
+            for (const item of Object.values(detallesAgrupados)) {
+                const prodActual = CATALOGO.find(p => p.id === item.uuid);
+                if (!prodActual) continue;
+
+                const tipo = prodActual.tipo || 'detallado';
+                if (tipo === 'servicio') continue;
+
+                if (tipo === 'compuesto') {
+                    const receta = Array.isArray(prodActual.receta) ? prodActual.receta : [];
+                    for (const ing of receta) {
+                        const cantIng = (parseFloat(ing.cant) || 0) * item.cant;
+                        acumularDescuentoProducto(ing.uuid, cantIng);
+                    }
+                    // Si el producto compuesto también maneja stock propio o lotes, lo sincroniza
+                    if ((parseFloat(prodActual.stock) || 0) > 0 || (Array.isArray(prodActual.lotes) && prodActual.lotes.length > 0)) {
+                        acumularDescuentoProducto(prodActual.id, item.cant);
+                    }
+                } else if (tipo === 'al_mayor') {
+                    const factor = parseFloat(prodActual.factor_mayor) || 1;
+                    const cantOrigen = item.cant * factor;
+                    if (prodActual.origen_mayor_id) {
+                        acumularDescuentoProducto(prodActual.origen_mayor_id, cantOrigen);
+                    } else {
+                        acumularDescuentoProducto(prodActual.id, item.cant);
+                    }
+                } else {
+                    acumularDescuentoProducto(prodActual.id, item.cant);
                 }
+            }
+
+            for (const [prodId, cantDescontar] of descuentosAcumulados.entries()) {
+                const prodObj = CATALOGO.find(p => p.id === prodId);
+                if (!prodObj || prodObj.tipo === 'servicio') continue;
+
+                const { nuevosLotes, nuevoStock } = aplicarDescuentoEnLotesFEFO(
+                    prodObj.lotes,
+                    cantDescontar,
+                    prodObj.stock
+                );
+
+                const { error: errUpdateProd } = await window.supabaseClient
+                    .from('catalogo')
+                    .update({ stock: nuevoStock, lotes: nuevosLotes })
+                    .eq('id', prodId);
+
+                if (errUpdateProd) {
+                    throw new Error(`Error al actualizar stock/lotes de ${prodObj.nombre}: ${errUpdateProd.message}`);
+                }
+
+                prodObj.stock = nuevoStock;
+                prodObj.lotes = nuevosLotes;
             }
 
             // 9. Calcular Diferencia y Faltantes
@@ -1288,7 +1425,6 @@
 
             mostrarModalExitoCierre(loteIdCodigo);
 
-            // Reiniciar casillas y métodos de pago por completo
             carritoActual = [];
             document.getElementById('select_quien_cierra').value = '';
             document.getElementById('select_quien_recibe').value = '';
@@ -1316,7 +1452,7 @@
                 <p style="color: var(--text); font-size: 1.05rem; font-weight: 500; margin-bottom: 20px; line-height: 1.6;">
                     Los datos del cierre, capital, gastos, avances y balance han sido enviados correctamente a los módulos de:<br>
                     <strong>• Balance y Lotes</strong><br>
-                    <strong>• Control de Inventario</strong><br>
+                    <strong>• Control de Inventario (Stock y Lotes actualizados)</strong><br>
                     <strong>• Conciliaciones, Gastos y Caja Fuerte</strong>
                 </p>
 
