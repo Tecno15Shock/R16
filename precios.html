@@ -11,16 +11,10 @@
     <script src="plantilla_base.js"></script>
 
     <style>
-        /* ========================================================= */
-        /* OCULTAR MENÚ LATERAL Y BARRA SUPERIOR DE PLANTILLA_BASE   */
-        /* ========================================================= */
         .top-bar, .sidebar, .sidebar-overlay {
             display: none !important;
         }
 
-        /* ========================================================= */
-        /* BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA              */
-        /* ========================================================= */
         .close-corner-btn {
             position: fixed; top: 20px; right: 25px; z-index: 10000;
             background: rgba(122, 23, 29, 0.95); backdrop-filter: blur(8px);
@@ -32,128 +26,269 @@
         }
         .close-corner-btn:hover { background: var(--danger, #8B0000); transform: scale(1.1) rotate(90deg); }
 
-        /* Estilos específicos de la lista de catálogo adaptados a plantilla_base */
-        .card-busqueda {
-            background: var(--card-bg);
-            padding: 25px;
+        .premium-banner {
+            background: linear-gradient(135deg, #2A050B 0%, #5C0614 55%, #8B0000 100%);
+            border: 2px solid var(--active-gold, #D4AF37);
             border-radius: var(--border-radius);
-            margin-bottom: 25px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 18px 22px;
+            margin-bottom: 20px;
+            color: #FFFFFF;
+            box-shadow: 0 12px 28px rgba(42, 5, 11, 0.18);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .premium-banner h1 {
+            color: var(--active-gold, #D4AF37);
+            font-family: var(--title-font);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 0;
+            font-size: 1.45rem;
+        }
+        .premium-subtitle {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.85rem;
+            margin-top: 3px;
+        }
+
+        .card-busqueda {
+            background: linear-gradient(180deg, #FFFFFF 0%, #FDFBF7 100%);
+            padding: 22px;
+            border-radius: var(--border-radius);
+            margin-bottom: 24px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.07);
+            border: 1px solid rgba(212, 175, 55, 0.45);
             border-top: 4px solid var(--primary);
         }
 
-        .cat-header { 
-            background: linear-gradient(90deg, var(--primary), var(--secondary)); 
-            color: var(--active-gold); 
-            padding: 12px 18px; 
-            margin-top: 20px; 
-            border: 1px solid var(--active-gold); 
-            font-weight: bold; 
-            font-family: var(--title-font);
-            letter-spacing: 1.5px; 
-            font-size: 1.05rem; 
-            border-top-left-radius: var(--border-radius); 
-            border-top-right-radius: var(--border-radius);
-            text-transform: uppercase;
+        .grid-filtros-sup {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr 1fr auto;
+            gap: 14px;
+            align-items: end;
         }
 
-        /* Listado estilo cebra */
-        .zebra-list {
+        .reventa-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 16px;
             border-radius: var(--border-radius);
+            border: 2px solid rgba(212, 175, 55, 0.55);
+            background: #FFFFFF;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.25s ease;
+            min-height: 46px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+        }
+        .reventa-box:hover {
+            border-color: var(--active-gold, #D4AF37);
+            background: rgba(212, 175, 55, 0.08);
+        }
+        .reventa-box.activo {
+            background: linear-gradient(135deg, #5C0614, #8B0000);
+            border-color: var(--active-gold, #D4AF37);
+            color: var(--active-gold, #D4AF37);
+            box-shadow: 0 6px 18px rgba(92, 6, 20, 0.25);
+        }
+        .reventa-box input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            cursor: pointer;
+            accent-color: #D4AF37;
+        }
+        .reventa-simbolo {
+            font-weight: 900;
+            font-size: 1.15rem;
+            line-height: 1;
+        }
+
+        .grupo-bloque {
+            margin-bottom: 16px;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(212, 175, 55, 0.45);
+            background: var(--card-bg);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
             overflow: hidden;
-            border: 1px solid rgba(212, 175, 55, 0.3);
         }
 
-        .zebra-list .consulta-item { 
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2); 
-            padding: 16px 18px; 
-            font-size: 0.95rem; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            gap: 15px; 
-            background-color: var(--card-bg);
+        .cat-header {
+            background: linear-gradient(90deg, #4A0510 0%, #5C0614 55%, #8B0000 100%);
+            color: var(--active-gold, #D4AF37);
+            padding: 13px 18px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.55);
+            font-weight: bold;
+            font-family: var(--title-font);
+            letter-spacing: 1.4px;
+            font-size: 1.02rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: filter 0.2s ease;
+        }
+        .cat-header:hover {
+            filter: brightness(1.08);
+        }
+        .grupo-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .grupo-badge {
+            background: rgba(212, 175, 55, 0.16);
+            border: 1px solid rgba(212, 175, 55, 0.6);
+            color: var(--active-gold, #D4AF37);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-family: var(--main-font);
+            letter-spacing: 0.4px;
+        }
+        .grupo-flecha {
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .zebra-list {
+            display: none;
+        }
+        .zebra-list.abierto {
+            display: block;
+            animation: fadeGrupo 0.22s ease;
+        }
+        @keyframes fadeGrupo {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .zebra-list .consulta-item {
+            border-bottom: 1px solid rgba(212, 175, 55, 0.22);
+            padding: 15px 18px;
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: #FFFFFF;
             transition: background 0.2s ease;
+            cursor: pointer;
+        }
+        .zebra-list .consulta-item:last-child {
+            border-bottom: none;
+        }
+        .zebra-list .consulta-item:nth-child(even) {
+            background-color: #F8F3E8;
+        }
+        .zebra-list .consulta-item:hover {
+            background-color: rgba(212, 175, 55, 0.14);
         }
 
-        .zebra-list .consulta-item:nth-child(even) { 
-            background-color: rgba(212, 175, 55, 0.04); 
+        .item-top-row {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
         }
 
-        .zebra-list .consulta-item:hover { 
-            background-color: rgba(212, 175, 55, 0.12); 
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
-        .item-info { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 4px; 
-        }
-
-        .item-name { 
-            font-weight: bold; 
-            color: var(--text); 
-            font-size: 1.05rem; 
+        .item-name {
+            font-weight: bold;
+            color: var(--text);
+            font-size: 1.05rem;
             font-family: var(--main-font);
         }
 
-        .item-cat { 
-            font-size: 0.8rem; 
-            color: var(--text); 
-            opacity: 0.7;
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
+        .item-cat {
+            font-size: 0.78rem;
+            color: var(--text);
+            opacity: 0.72;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        /* Indicador comercial de stock */
+        .badge-reventa-tag, .badge-comision-pill {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 1px 7px;
+            border-radius: 4px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            vertical-align: middle;
+        }
+        .badge-reventa-tag {
+            background: rgba(92, 6, 20, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(212, 175, 55, 0.65);
+        }
+        .badge-comision-pill {
+            background: rgba(46, 125, 50, 0.12);
+            color: var(--success);
+            border: 1px solid rgba(46, 125, 50, 0.4);
+        }
+
         .stock-indicator {
-            font-size: 0.82rem; 
-            font-style: italic; 
+            font-size: 0.82rem;
+            font-style: italic;
             font-weight: 600;
-            display: inline-block; 
-            padding-bottom: 2px; 
+            display: inline-block;
+            padding-bottom: 2px;
             letter-spacing: 0.5px;
             margin-top: 4px;
         }
         .stock-success { color: var(--success); border-bottom: 2px solid var(--success); }
         .stock-warning { color: var(--warning); border-bottom: 2px solid var(--warning); }
-        .stock-danger { color: var(--danger); border-bottom: 2px solid var(--danger); }
 
-        /* Pila de Precios Multi-moneda */
-        .precio-stack { 
-            text-align: right; 
-            line-height: 1.4; 
-            background: var(--input-bg); 
-            padding: 10px 15px; 
-            border-radius: var(--border-radius); 
-            border: 1px solid rgba(212, 175, 55, 0.4); 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            min-width: 140px;
+        .precio-stack {
+            text-align: right;
+            line-height: 1.4;
+            background: #FFFFFF;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+            min-width: 155px;
+        }
+        .precio-stack.es-reventa {
+            border-color: var(--active-gold, #D4AF37);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.18);
         }
 
         .precio-stack .label-precio {
-            font-size: 0.7rem; 
-            color: var(--text); 
-            opacity: 0.8;
-            font-weight: bold; 
+            font-size: 0.8rem;
+            color: var(--text);
+            opacity: 0.85;
+            font-weight: 900;
             letter-spacing: 1px;
             margin-bottom: 4px;
             text-transform: uppercase;
         }
 
-        .precio-stack .monto-base { 
-            color: var(--primary); 
-            font-size: 1.25rem; 
-            font-family: var(--title-font); 
+        .precio-stack .monto-base {
+            color: var(--primary);
+            font-size: 1.25rem;
+            font-family: var(--title-font);
             font-weight: bold;
-            display: block; 
-            margin-bottom: 4px; 
+            display: block;
+            margin-bottom: 4px;
         }
 
-        .precio-stack .monto-secundario { 
-            font-size: 0.88rem; 
-            font-weight: bold; 
+        .precio-stack .monto-secundario {
+            font-size: 0.88rem;
+            font-weight: bold;
             display: block;
             font-family: var(--main-font);
         }
@@ -163,55 +298,110 @@
         .monto-secundario.c-eur { color: #8e44ad; }
         .monto-secundario.c-gen { color: var(--text); opacity: 0.9; }
 
+        .detalle-precios-click {
+            display: none;
+            width: 100%;
+            background: #FDFBF7;
+            border: 1px solid rgba(212, 175, 55, 0.65);
+            border-left: 4px solid var(--primary);
+            border-radius: var(--border-radius);
+            padding: 12px 14px;
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+        .detalle-precios-click.abierto {
+            display: block;
+            animation: fadeGrupo 0.2s ease;
+        }
+        .comision-venta-box {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: var(--border-radius);
+            background: rgba(46, 125, 50, 0.08);
+            border: 1px solid rgba(46, 125, 50, 0.35);
+        }
+        .comision-venta-titulo {
+            font-weight: 800;
+            color: var(--success);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .comision-venta-detalle {
+            margin-top: 4px;
+            font-size: 0.86rem;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        @media (max-width: 900px) {
+            .grid-filtros-sup {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
         @media (max-width: 600px) {
-            .zebra-list .consulta-item {
+            .grid-filtros-sup {
+                grid-template-columns: 1fr;
+            }
+            .item-top-row {
                 flex-direction: column;
                 align-items: flex-start;
             }
             .precio-stack {
                 width: 100%;
                 text-align: left;
-                margin-top: 8px;
+                margin-top: 6px;
             }
         }
     </style>
 </head>
 <body>
 
-<!-- BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA -->
 <a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
 
 <div class="wrapper" id="main_wrapper" style="display: none; padding-top: 20px;">
     <main class="main-content">
-        
-        <h1 style="color: var(--primary); font-family: var(--title-font); text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--active-gold); padding-bottom: 10px; margin-top: 0;">
-            💰 Consulta General de Precios
-        </h1>
+
+        <div class="premium-banner">
+            <div>
+                <h1>💰 Consulta General de Precios</h1>
+                <div class="premium-subtitle">Lista multimoneda ejecutiva • Stock agotado oculto • Excluye materia prima</div>
+            </div>
+        </div>
 
         <div class="card-busqueda">
-            <div class="grid-2" style="grid-template-columns: 2fr 1fr 1fr; gap: 12px;">
+            <div class="grid-filtros-sup">
                 <div>
-                    <label style="font-weight: bold; font-size: 0.85rem;">Buscar Producto:</label>
-                    <input type="text" id="buscar_caja" placeholder="🔍 Escriba un nombre..." oninput="UIPrecios.renderConsulta()">
+                    <label style="font-weight: bold; font-size: 0.82rem; text-transform: uppercase;">Búsqueda:</label>
+                    <input type="text" id="buscar_caja" placeholder="🔍 Escriba un nombre o código..." oninput="UIPrecios.renderConsulta()">
                 </div>
                 <div>
-                    <label style="font-weight: bold; font-size: 0.85rem;">Ordenamiento:</label>
+                    <label style="font-weight: bold; font-size: 0.82rem; text-transform: uppercase;">Tipo de Orden:</label>
                     <select id="orden_inicial" onchange="UIPrecios.renderConsulta()">
-                        <option value="az" selected>Alfabéticamente (A-Z)</option>
+                        <option value="az" selected>Orden Alfabético (A-Z)</option>
                         <option value="cat">Por Categoría</option>
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight: bold; font-size: 0.85rem;">Filtro de Inventario:</label>
-                    <select id="filtro_stock_caja" onchange="UIPrecios.renderConsulta()">
-                        <option value="con_stock" selected>Solo Disponibles</option>
-                        <option value="todos">Todo el Catálogo</option>
+                    <label style="font-weight: bold; font-size: 0.82rem; text-transform: uppercase;">Tipo de Mercancía:</label>
+                    <select id="filtro_tipo_mercancia" onchange="UIPrecios.renderConsulta()">
+                        <option value="todos" selected>Todos (Sin Materia Prima)</option>
+                        <option value="detallado">📦 Producto Detallado</option>
+                        <option value="al_mayor">📦 Producto al Mayor</option>
+                        <option value="compuesto">☕ Producto Compuesto / Receta</option>
+                        <option value="servicio">🛠️ Servicios o Mano de Obra</option>
                     </select>
+                </div>
+                <div>
+                    <label id="reventa_card_box" class="reventa-box" for="chk_solo_reventa">
+                        <input type="checkbox" id="chk_solo_reventa" onchange="UIPrecios.alternarModoReventa()">
+                        <span class="reventa-simbolo">◈</span>
+                    </label>
                 </div>
             </div>
         </div>
 
-        <div id="lista_inicial_contenido" class="zebra-list">
+        <div id="lista_inicial_contenido">
             <p style="text-align:center; color: var(--text); padding: 30px; font-style: italic;">Preparando el catálogo de productos...</p>
         </div>
 
@@ -222,6 +412,8 @@
     const UIPrecios = {
         catalogo: [],
         configuracion: {},
+        gruposAbiertos: {},
+        itemsExpandidos: {},
 
         async init() {
             UIBase.mostrarCargando("Sincronizando Catálogo", "Cargando precios y tasas del sistema...");
@@ -233,7 +425,6 @@
                 const nombreLocal = estado.datosLocal?.nombre || this.configuracion?.identidad?.nombre || 'Sistema';
                 UIBase.sincronizarNombreLocal(nombreLocal);
 
-                // Verificación de bloqueo configurado desde la matriz de permisos
                 const permisos = this.configuracion.permisos_modulos || {};
                 const moduloBloqueado = permisos.precios && permisos.precios.general;
                 const tienePin = !!this.configuracion.identidad?.admin_pass;
@@ -263,9 +454,111 @@
             }
         },
 
-        /*
-         * Detecta la moneda y calcula con precisión según las reglas de multiplicación o división
-         */
+        alternarModoReventa() {
+            const chk = document.getElementById('chk_solo_reventa');
+            const box = document.getElementById('reventa_card_box');
+            if (box && chk) {
+                box.classList.toggle('activo', chk.checked);
+            }
+            this.renderConsulta();
+        },
+
+        tienePrecioReventa(p) {
+            const raw = p?.precio_reventa ?? p?.reventa_precio ?? p?.precio_revendedor ?? p?.reventa ?? null;
+            if (raw === null || raw === undefined || raw === '') return false;
+            const num = parseFloat(raw);
+            return !isNaN(num) && num > 0;
+        },
+
+        obtenerPrecioReventa(p) {
+            const raw = p?.precio_reventa ?? p?.reventa_precio ?? p?.precio_revendedor ?? p?.reventa ?? 0;
+            const num = parseFloat(raw);
+            return isNaN(num) ? 0 : num;
+        },
+
+        obtenerStockDisponible(p) {
+            const tipo = p?.tipo || 'detallado';
+            if (tipo === 'materia_prima') return 0;
+            if (tipo === 'servicio') return Infinity;
+
+            if (tipo === 'compuesto') {
+                const receta = Array.isArray(p.receta) ? p.receta : [];
+                if (receta.length === 0) return 0;
+                let minPos = Infinity;
+                for (const ing of receta) {
+                    const cantReq = parseFloat(ing.cant) || 0;
+                    if (cantReq <= 0) return 0;
+                    const mp = (this.catalogo || []).find(m => m.id === ing.uuid);
+                    const stockMp = mp ? (parseFloat(mp.stock) || 0) : 0;
+                    const posible = Math.floor(stockMp / cantReq);
+                    if (posible < minPos) minPos = posible;
+                }
+                return minPos === Infinity ? 0 : Math.max(0, minPos);
+            }
+
+            if (tipo === 'al_mayor') {
+                const orig = (this.catalogo || []).find(m => m.id === p.origen_mayor_id);
+                const factor = parseFloat(p.factor_mayor) || 1;
+                if (!orig || factor <= 0) return 0;
+                return Math.max(0, Math.floor((parseFloat(orig.stock) || 0) / factor));
+            }
+
+            return Math.max(0, parseFloat(p.stock) || 0);
+        },
+
+        tieneStockAgotado(p) {
+            const tipo = p?.tipo || 'detallado';
+            if (tipo === 'materia_prima') return true;
+            if (tipo === 'servicio') return false;
+
+            const disp = this.obtenerStockDisponible(p);
+            if (disp <= 0) return true;
+
+            if (tipo === 'detallado') {
+                const uRojo = parseFloat(p.umbral_rojo);
+                if (!isNaN(uRojo) && uRojo > 0 && disp <= uRojo) return true;
+            }
+            return false;
+        },
+
+        // Lee exactamente la estructura guardada en gestion_catalogo_5.html
+        obtenerInfoComisionVenta(p, precioBaseProducto) {
+            const tipoProd = p?.tipo || 'detallado';
+            if (tipoProd === 'materia_prima') return null;
+
+            const activa = p?.comision_empleado_activa === true;
+            const tipoCom = p?.comision_empleado_tipo === 'monto_exacto' ? 'monto_exacto' : 'porcentaje';
+            const valor = parseFloat(p?.comision_empleado_valor ?? 0) || 0;
+
+            if (!activa || valor <= 0) return null;
+
+            const monedaProd = p?.moneda_base || this.configuracion?.tasas?.moneda_base || 'USD';
+            const montoComisionOriginal = tipoCom === 'monto_exacto'
+                ? valor
+                : (parseFloat(precioBaseProducto) || 0) * (valor / 100);
+
+            const conversionesComision = this.convertirYCalcularMonedas(montoComisionOriginal, monedaProd);
+            const resumenMultimoneda = conversionesComision
+                .map(c => `${c.code} ${this.formatearNumero(c.monto, c.code === 'COP' ? 0 : 2)}`)
+                .join(' • ');
+
+            return {
+                activa: true,
+                tipoCom,
+                valor,
+                etiquetaRegla: tipoCom === 'monto_exacto'
+                    ? `Monto exacto: ${monedaProd} ${this.formatearNumero(valor, monedaProd === 'COP' ? 0 : 2)}`
+                    : `Porcentaje: ${valor}% sobre precio de caja`,
+                resumenMultimoneda
+            };
+        },
+
+        toggleItemDetalle(prodId) {
+            if (!prodId) return;
+            this.itemsExpandidos[prodId] = !this.itemsExpandidos[prodId];
+            this.renderConsulta();
+        },
+
         convertirYCalcularMonedas(precioOriginal, monedaProducto) {
             const tasasConfig = this.configuracion.tasas || { moneda_base: 'USD', secundarias: [] };
             const mBaseSistema = tasasConfig.moneda_base || 'USD';
@@ -273,7 +566,6 @@
 
             let precioMBase = parseFloat(precioOriginal) || 0;
 
-            // 1. Si el producto viene en una moneda distinta a la base, convertir a la moneda base del sistema
             if (monedaProducto && monedaProducto !== mBaseSistema) {
                 const configMonedaProd = secundarias.find(s => s.code === monedaProducto);
                 if (configMonedaProd && parseFloat(configMonedaProd.tasa) > 0) {
@@ -286,26 +578,18 @@
                 }
             }
 
-            // 2. Calcular montos para la moneda base y solo las monedas secundarias activas/configuradas
-            const conversiones = [];
-
-            // Moneda Base
-            conversiones.push({
+            const conversiones = [{
                 code: mBaseSistema,
                 monto: precioMBase,
                 esBase: true
-            });
+            }];
 
-            // Monedas secundarias disponibles
             secundarias.forEach(sec => {
                 const tasa = parseFloat(sec.tasa) || 0;
                 if (tasa > 0) {
-                    let montoCalculado = 0;
-                    if (sec.operacion === 'dividir') {
-                        montoCalculado = precioMBase / tasa;
-                    } else { // 'multiplicar'
-                        montoCalculado = precioMBase * tasa;
-                    }
+                    const montoCalculado = (sec.operacion === 'dividir')
+                        ? (precioMBase / tasa)
+                        : (precioMBase * tasa);
 
                     conversiones.push({
                         code: sec.code,
@@ -318,88 +602,180 @@
             return conversiones;
         },
 
+        toggleGrupo(key) {
+            this.gruposAbiertos[key] = !this.gruposAbiertos[key];
+            this.renderConsulta();
+        },
+
         renderConsulta() {
             const query = (document.getElementById('buscar_caja').value || "").toLowerCase().trim();
             const orden = document.getElementById('orden_inicial').value;
-            const filtroStock = document.getElementById('filtro_stock_caja').value;
+            const tipoSeleccionado = document.getElementById('filtro_tipo_mercancia').value;
+            const soloReventa = !!document.getElementById('chk_solo_reventa')?.checked;
+            const hayBusqueda = query.length > 0;
 
-            // Filtrado por búsqueda de texto
-            let items = this.catalogo.filter(p => (p.nombre || "").toLowerCase().includes(query));
+            let items = (this.catalogo || []).filter(p => {
+                if (p.activo === false) return false;
+                const tipoProd = p.tipo || 'detallado';
+                if (tipoProd === 'materia_prima') return false;
+                if (this.tieneStockAgotado(p)) return false;
+                if (tipoSeleccionado !== 'todos' && tipoProd !== tipoSeleccionado) return false;
+                if (soloReventa && !this.tienePrecioReventa(p)) return false;
 
-            // Filtro por stock
-            if (filtroStock === 'con_stock') {
-                items = items.filter(p => parseFloat(p.stock || 0) > 0);
-            }
-
-            // Ordenamiento
-            items.sort((a, b) => {
-                const nomA = this.limpiarNombre(a.nombre);
-                const nomB = this.limpiarNombre(b.nombre);
-                if (orden === 'cat') {
-                    const catA = (a.categoria || "General").toLowerCase();
-                    const catB = (b.categoria || "General").toLowerCase();
-                    return catA.localeCompare(catB) || nomA.localeCompare(nomB);
-                }
-                return nomA.localeCompare(nomB);
+                const nomMatch = (p.nombre || "").toLowerCase().includes(query);
+                const codMatch = (p.codigo_barras || "").toLowerCase().includes(query);
+                const catMatch = (p.categoria || "").toLowerCase().includes(query);
+                return !hayBusqueda || nomMatch || codMatch || catMatch;
             });
 
             const contenedor = document.getElementById('lista_inicial_contenido');
             if (items.length === 0) {
-                contenedor.innerHTML = '<div style="color: var(--text); text-align:center; padding: 25px; font-style: italic; background: var(--card-bg);">No se encontraron productos que coincidan con la búsqueda.</div>';
+                contenedor.innerHTML = '<div style="color: var(--text); text-align:center; padding: 28px; font-style: italic; background: var(--card-bg); border: 1px solid rgba(212,175,55,0.35); border-radius: var(--border-radius);">No hay mercancía disponible con stock que coincida con el filtro seleccionado.</div>';
                 return;
             }
 
-            let html = "";
-            let categoriaActual = "";
+            const gruposMap = new Map();
 
-            items.forEach(p => {
-                const catProducto = p.categoria || "General";
-
-                // Encabezados de categoría en caso de elegir ordenamiento por categoría
-                if (orden === 'cat' && catProducto !== categoriaActual) {
-                    categoriaActual = catProducto;
-                    html += `<div class="cat-header">${categoriaActual}</div>`;
-                }
-
-                // Cálculo de precios e indicadores
-                const preciosCalculados = this.convertirYCalcularMonedas(p.precio_base || 0, p.moneda_base || 'USD');
-                const stockVal = parseFloat(p.stock) || 0;
-                const uAmarillo = parseFloat(p.umbral_amarillo) || 5;
-                const uRojo = parseFloat(p.umbral_rojo) || 0;
-
-                let msgText = "Disponible en Stock";
-                let msgClass = "stock-success";
-
-                if (stockVal <= uRojo) {
-                    msgText = "Mercancía Agotada";
-                    msgClass = "stock-danger";
-                } else if (stockVal <= uAmarillo) {
-                    msgText = "Últimas Unidades";
-                    msgClass = "stock-warning";
-                }
-
-                // Renderizado de lista de precios
-                let stackHtml = '<div class="precio-stack"><div class="label-precio">💰 Precio</div>';
-                
-                preciosCalculados.forEach(c => {
-                    const montoFormateado = this.formatearNumero(c.monto, c.code === 'COP' ? 0 : 2);
-                    if (c.esBase) {
-                        stackHtml += `<strong class="monto-base">${c.code} ${montoFormateado}</strong>`;
-                    } else {
-                        const claseColor = c.code === 'VES' ? 'c-ves' : c.code === 'COP' ? 'c-cop' : c.code === 'EUR' ? 'c-eur' : 'c-gen';
-                        stackHtml += `<span class="monto-secundario ${claseColor}">${c.code} ${montoFormateado}</span>`;
-                    }
+            if (orden === 'cat') {
+                items.sort((a, b) => {
+                    const catA = (a.categoria || "General").toLowerCase();
+                    const catB = (b.categoria || "General").toLowerCase();
+                    return catA.localeCompare(catB) || this.limpiarNombre(a.nombre).localeCompare(this.limpiarNombre(b.nombre));
                 });
-                stackHtml += '</div>';
+
+                items.forEach(p => {
+                    const catNombre = (p.categoria || "General").trim() || "General";
+                    const key = `cat_${catNombre.toLowerCase()}`;
+                    if (!gruposMap.has(key)) {
+                        gruposMap.set(key, {
+                            key,
+                            titulo: `📁 CATEGORÍA: ${catNombre.toUpperCase()}`,
+                            items: []
+                        });
+                    }
+                    gruposMap.get(key).items.push(p);
+                });
+            } else {
+                items.sort((a, b) => this.limpiarNombre(a.nombre).localeCompare(this.limpiarNombre(b.nombre)));
+
+                items.forEach(p => {
+                    const nomLimpio = this.limpiarNombre(p.nombre);
+                    const letra = (nomLimpio.charAt(0) || "#").toUpperCase();
+                    const key = `let_${letra}`;
+                    if (!gruposMap.has(key)) {
+                        gruposMap.set(key, {
+                            key,
+                            titulo: `🔤 LETRA: ${letra}`,
+                            items: []
+                        });
+                    }
+                    gruposMap.get(key).items.push(p);
+                });
+            }
+
+            let html = "";
+
+            gruposMap.forEach(grupo => {
+                const abierto = hayBusqueda || soloReventa ? true : !!this.gruposAbiertos[grupo.key];
+                const flecha = abierto ? '▼' : '▶';
+                const keyEscapado = grupo.key.replace(/'/g, "\\'");
+
+                let filasHtml = "";
+                grupo.items.forEach(p => {
+                    const catProducto = p.categoria || "General";
+                    const esServicio = (p.tipo === 'servicio');
+                    const precioBaseNum = parseFloat(p.precio_base || 0);
+                    const montoReferencia = soloReventa
+                        ? this.obtenerPrecioReventa(p)
+                        : precioBaseNum;
+
+                    const preciosCalculados = this.convertirYCalcularMonedas(montoReferencia, p.moneda_base || 'USD');
+                    const dispVal = this.obtenerStockDisponible(p);
+                    const uAmarillo = parseFloat(p.umbral_amarillo) || 5;
+
+                    let msgText = "Disponible en Stock";
+                    let msgClass = "stock-success";
+
+                    if (esServicio) {
+                        msgText = "Servicio / Mano de Obra";
+                        msgClass = "stock-success";
+                    } else if (dispVal <= uAmarillo) {
+                        msgText = "Últimas Unidades";
+                        msgClass = "stock-warning";
+                    }
+
+                    const tituloPrecio = soloReventa ? '◈' : '💰 Precio';
+                    let stackHtml = `<div class="precio-stack ${soloReventa ? 'es-reventa' : ''}"><div class="label-precio">${tituloPrecio}</div>`;
+
+                    preciosCalculados.forEach(c => {
+                        const montoFormateado = this.formatearNumero(c.monto, c.code === 'COP' ? 0 : 2);
+                        if (c.esBase) {
+                            stackHtml += `<strong class="monto-base">${c.code} ${montoFormateado}</strong>`;
+                        } else {
+                            const claseColor = c.code === 'VES' ? 'c-ves' : c.code === 'COP' ? 'c-cop' : c.code === 'EUR' ? 'c-eur' : 'c-gen';
+                            stackHtml += `<span class="monto-secundario ${claseColor}">${c.code} ${montoFormateado}</span>`;
+                        }
+                    });
+                    stackHtml += '</div>';
+
+                    const badgeReventa = (!soloReventa && this.tienePrecioReventa(p))
+                        ? `<span class="badge-reventa-tag">◈</span>`
+                        : '';
+
+                    const comisionInfo = this.obtenerInfoComisionVenta(p, precioBaseNum);
+                    const badgeComision = comisionInfo
+                        ? `<span class="badge-comision-pill">👤 Comisión</span>`
+                        : '';
+
+                    const itemId = String(p.id || this.limpiarNombre(p.nombre));
+                    const expandido = !!this.itemsExpandidos[itemId];
+                    const itemIdEsc = itemId.replace(/'/g, "\\'");
+
+                    const detallePreciosLinea = preciosCalculados
+                        .map(c => `<strong>${c.code}:</strong> ${this.formatearNumero(c.monto, c.code === 'COP' ? 0 : 2)}`)
+                        .join(' &nbsp;|&nbsp; ');
+
+                    const comisionHtml = comisionInfo
+                        ? `
+                            <div class="comision-venta-box">
+                                <div class="comision-venta-titulo">Comisión por venta</div>
+                                <div class="comision-venta-detalle">
+                                    ${comisionInfo.etiquetaRegla} → <strong>${comisionInfo.resumenMultimoneda}</strong>
+                                </div>
+                            </div>
+                        `
+                        : `<div style="margin-top:8px; font-size:0.82rem; color:#666;">Sin comisión por venta habilitada en este producto.</div>`;
+
+                    filasHtml += `
+                        <div class="consulta-item" onclick="UIPrecios.toggleItemDetalle('${itemIdEsc}')">
+                            <div class="item-top-row">
+                                <div class="item-info">
+                                    <span class="item-name">${this.limpiarNombre(p.nombre)}${badgeReventa}${badgeComision}</span>
+                                    <span class="item-cat">Categoría: ${catProducto} • <small style="opacity:0.8;">${expandido ? 'Ocultar detalle ▲' : 'Clic para ver precios y comisión ▼'}</small></span>
+                                    <div><span class="stock-indicator ${msgClass}">${msgText}</span></div>
+                                </div>
+                                ${stackHtml}
+                            </div>
+                            <div class="detalle-precios-click ${expandido ? 'abierto' : ''}" onclick="event.stopPropagation()">
+                                <div><strong>Precios:</strong> ${detallePreciosLinea}</div>
+                                ${comisionHtml}
+                            </div>
+                        </div>
+                    `;
+                });
 
                 html += `
-                    <div class="consulta-item">
-                        <div class="item-info">
-                            <span class="item-name">${this.limpiarNombre(p.nombre)}</span>
-                            ${orden !== 'cat' ? `<span class="item-cat">Categoría: ${catProducto}</span>` : ''}
-                            <div><span class="stock-indicator ${msgClass}">${msgText}</span></div>
+                    <div class="grupo-bloque">
+                        <div class="cat-header" onclick="UIPrecios.toggleGrupo('${keyEscapado}')">
+                            <span>${grupo.titulo}</span>
+                            <div class="grupo-meta">
+                                <span class="grupo-badge">${grupo.items.length} ${grupo.items.length === 1 ? 'ítem' : 'ítems'}</span>
+                                <span class="grupo-flecha">${flecha}</span>
+                            </div>
                         </div>
-                        ${stackHtml}
+                        <div class="zebra-list ${abierto ? 'abierto' : ''}">
+                            ${filasHtml}
+                        </div>
                     </div>
                 `;
             });
@@ -407,8 +783,8 @@
             contenedor.innerHTML = html;
         },
 
-        limpiarNombre(n) { 
-            return (n || "").replace(/box_-/g, "").trim(); 
+        limpiarNombre(n) {
+            return (n || "").replace(/box_-/g, "").trim();
         },
 
         formatearNumero(valor, decimales = 2) {
