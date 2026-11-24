@@ -11,50 +11,28 @@
     <script src="motor.js"></script>
     
     <style>
-        /* ========================================================= */
-        /* VARIABLES DE ESTILO PREMIUM (Carmesí, Dorado y Negro)     */
-        /* ========================================================= */
         :root {
             --active-gold: #D4AF37; 
             --active-gold-bright: #F5D061; 
-            
-            /* Paleta Carmesí Institucional */
             --crimson: #7A171D;
             --crimson-dark: #4A0E12;
             --crimson-light: #9B222A;
-
-            /* Base y texto */
             --bg: #FDFBF7; 
             --text: #2A2A2A; 
             --text-light: #555555;
             --border: #E8E0D5; 
             --card-bg: #FFFFFF; 
             --input-bg: #FFFFFF;
-            
-            /* Estados Sólidos (para badges) */
             --success: #2E7D32; 
             --warning: #B8860B; 
             --danger: #8B0000;
         }
 
         * { box-sizing: border-box; }
-        
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg); color: var(--text); margin: 0; padding: 0; 
-            line-height: 1.5;
-        }
-
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; }
         .wrapper { display: block; min-height: 100vh; position: relative; padding: 40px 20px 100px 20px; max-width: 1000px; margin: 0 auto; }
-        
-        h1, h2, h3, .serif-font {
-            font-family: 'Georgia', 'Times New Roman', serif;
-            letter-spacing: 0.5px;
-        }
+        h1, h2, h3, .serif-font { font-family: 'Georgia', 'Times New Roman', serif; letter-spacing: 0.5px; }
 
-        /* ========================================================= */
-        /* BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA              */
-        /* ========================================================= */
         .close-corner-btn {
             position: fixed; top: 20px; right: 25px; z-index: 10000;
             background: rgba(122, 23, 29, 0.95); backdrop-filter: blur(8px);
@@ -66,9 +44,6 @@
         }
         .close-corner-btn:hover { background: var(--danger); transform: scale(1.1) rotate(90deg); }
 
-        /* ========================================================= */
-        /* CONTENEDORES, TARJETAS Y COMPONENTES                      */
-        /* ========================================================= */
         .card { 
             background: var(--card-bg); padding: 25px; border-radius: 8px; margin-bottom: 25px; 
             box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 1px solid var(--border);
@@ -78,8 +53,7 @@
         h2 { 
             color: var(--crimson-dark); margin-top: 0; font-size: 1.35rem; 
             border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px;
-            display: flex; align-items: center; gap: 8px; text-transform: uppercase;
-            letter-spacing: 1px;
+            display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px;
         }
 
         .toggle-section-btn {
@@ -92,10 +66,7 @@
             font-family: 'Georgia', serif; box-shadow: 0 6px 15px rgba(90, 17, 26, 0.35);
         }
         .toggle-section-btn:hover { filter: brightness(1.15); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(90, 17, 26, 0.5); }
-
-        .collapsible-content {
-            display: none; padding-top: 25px; animation: fadeIn 0.4s ease;
-        }
+        .collapsible-content { display: none; padding-top: 25px; animation: fadeIn 0.4s ease; }
 
         label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 15px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
         input, select { 
@@ -103,8 +74,6 @@
             background-color: #FAFAFA; transition: all 0.3s ease; color: var(--text); border-left: 4px solid #DDD;
         }
         input:focus, select:focus { outline: none; background-color: #FFF; border-color: var(--active-gold); border-left: 4px solid var(--active-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.25); }
-
-        .grid-vertical { display: flex; flex-direction: column; gap: 15px; }
 
         button.btn-action { 
             background: linear-gradient(135deg, var(--crimson), var(--crimson-dark)); 
@@ -129,8 +98,7 @@
             border-bottom: 1px solid var(--active-gold); 
             border-left: 2px solid var(--active-gold); 
             border-right: 2px solid var(--active-gold); 
-            transition: all 0.2s;
-            background-color: #FFFFFF;
+            transition: all 0.2s; background-color: #FFFFFF;
         }
         
         .row-success { background-color: rgba(46, 125, 50, 0.08) !important; }
@@ -150,18 +118,28 @@
         .badge-stock-danger { background: var(--danger); color: #FFFFFF; border: 1px solid #5a111a; }
 
         .grid-3-filtros {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-            padding: 0 20px 15px 20px;
-            border-bottom: 1px solid var(--border);
+            display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;
+            margin-bottom: 15px; padding: 0 20px 15px 20px; border-bottom: 1px solid var(--border);
         }
-        @media (max-width: 768px) {
-            .grid-3-filtros { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 768px) { .grid-3-filtros { grid-template-columns: 1fr; } }
 
-        /* PANTALLAS DE CARGA Y BLOQUEO AUTÓNOMAS */
+        /* RECUADROS SELECCIONABLES (GRID DE TARJETAS) */
+        .pdf-options-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px;
+        }
+        @media(max-width: 600px) { .pdf-options-grid { grid-template-columns: 1fr; } }
+
+        .pdf-select-card {
+            border: 2px solid var(--border); background: #FAFAFA; padding: 12px 14px;
+            border-radius: 6px; cursor: pointer; transition: all 0.25s ease;
+            display: flex; align-items: flex-start; gap: 10px; position: relative;
+        }
+        .pdf-select-card:hover { border-color: var(--active-gold); background: rgba(212, 175, 55, 0.04); }
+        .pdf-select-card.selected { border-color: var(--crimson); background: rgba(122, 23, 29, 0.04); box-shadow: 0 4px 12px rgba(122, 23, 29, 0.12); }
+        .pdf-select-card input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--crimson); cursor: pointer; }
+        .pdf-card-info h4 { margin: 0 0 2px 0; font-size: 0.9rem; color: var(--crimson-dark); text-transform: uppercase; font-family: 'Georgia', serif; }
+        .pdf-card-info p { margin: 0; font-size: 0.78rem; color: var(--text-light); line-height: 1.3; }
+
         @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spinGold { 100% { transform: rotate(360deg); } }
@@ -177,9 +155,7 @@
             animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
         }
         .pantalla-bloqueo-card {
-            background: var(--card-bg);
-            color: var(--text);
-            border: 2px solid var(--active-gold);
+            background: var(--card-bg); color: var(--text); border: 2px solid var(--active-gold);
             box-shadow: 0 0 25px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(212, 175, 55, 0.1);
         }
         .pin-wrapper { position: relative; width: 100%; margin-top: 15px; }
@@ -222,62 +198,100 @@
         </div>
     </div>
 
-    <!-- BOTÓN X FLOTANTE EN ESQUINA SUPERIOR DERECHA -->
+    <!-- BOTÓN X FLOTANTE -->
     <a href="principal.html" class="close-corner-btn" title="Volver al Menú Principal">✕</a>
 
 <div class="wrapper" id="main_wrapper" style="display: none;">
     <div class="main-content">
         
-        <!-- SECCIÓN DE EXPORTACIÓN PDF -->
+        <!-- SECCIÓN DE EXPORTACIÓN PDF CON MENÚS Y RECUADROS INTERACTIVOS -->
         <div class="card" style="padding: 0; border: none; background: transparent; box-shadow: none;">
             <button class="toggle-section-btn" onclick="toggleSeccion('sec_pdf', 'arrow_pdf')">
-                <span>📄 Exportación de Reportes PDF</span>
+                <span>📄 Exportación de Reportes PDF Avanzada</span>
                 <span id="arrow_pdf">▼</span>
             </button>
             <div id="sec_pdf" class="collapsible-content card" style="border-top: none; margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
                     <div>
-                        <label>Tipo de documento</label>
+                        <label>Qué se va a descargar</label>
                         <select id="sel_pdf_exportar">
-                            <option value="" disabled selected>Seleccione una opción...</option>
-                            <option value="inv">Inventario Físico</option>
-                            <option value="caja">Listado de Precios</option>
-                            <option value="inv_caja">Inventario + Precio</option>
+                            <option value="todo" selected>Todo</option>
+                            <option value="inv">Inventario</option>
+                            <option value="precio">Precio</option>
                         </select>
                     </div>
                     <div>
-                        <label>Moneda a reflejar</label>
-                        <select id="sel_pdf_moneda">
-                            <option value="" disabled selected>Seleccione una opción...</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Orden de Organización</label>
+                        <label>Orden</label>
                         <select id="sel_pdf_orden">
-                            <option value="" disabled selected>Seleccione una opción...</option>
-                            <option value="az">Alfabético A-Z</option>
-                            <option value="cat">Por Categorías</option>
+                            <option value="az" selected>Alfabético de la A-Z</option>
+                            <option value="cat">Por categoría</option>
                         </select>
                     </div>
                     <div>
-                        <label>Filtro de Existencias</label>
+                        <label>Stock agotado</label>
                         <select id="sel_pdf_stock">
-                            <option value="" disabled selected>Seleccione una opción...</option>
-                            <option value="todos">Mostrar Todo el Catálogo</option>
-                            <option value="con_stock">Ocultar Mercancía Agotada</option>
+                            <option value="ocultar" selected>Ocultar los stock agotado</option>
+                            <option value="todo">Ver todo el Catálogo</option>
                         </select>
                     </div>
                 </div>
+
+                <!-- 1. SELECCIÓN DE TIPO DE MERCANCÍA / INVENTARIO (RECUADROS) -->
+                <label style="margin-top: 20px;">📦 Tipo de Inventario / Mercancía a incluir en el PDF (Toque para marcar):</label>
+                <div class="pdf-options-grid">
+                    <div class="pdf-select-card selected" id="card_m_servicio" onclick="togglePdfCard('chk_m_servicio', 'card_m_servicio')">
+                        <input type="checkbox" id="chk_m_servicio" checked onclick="event.stopPropagation(); togglePdfCardDirect('chk_m_servicio', 'card_m_servicio')">
+                        <div class="pdf-card-info">
+                            <h4>🛠️ Servicio o mano de obra</h4>
+                            <p>Incluir tarifas y servicios técnicos o profesionales.</p>
+                        </div>
+                    </div>
+                    <div class="pdf-select-card selected" id="card_m_detallado" onclick="togglePdfCard('chk_m_detallado', 'card_m_detallado')">
+                        <input type="checkbox" id="chk_m_detallado" checked onclick="event.stopPropagation(); togglePdfCardDirect('chk_m_detallado', 'card_m_detallado')">
+                        <div class="pdf-card-info">
+                            <h4>🏷️ Producto detallado</h4>
+                            <p>Incluir artículos unitarios y ventas al detal.</p>
+                        </div>
+                    </div>
+                    <div class="pdf-select-card selected" id="card_m_mayoreo" onclick="togglePdfCard('chk_m_mayoreo', 'card_m_mayoreo')">
+                        <input type="checkbox" id="chk_m_mayoreo" checked onclick="event.stopPropagation(); togglePdfCardDirect('chk_m_mayoreo', 'card_m_mayoreo')">
+                        <div class="pdf-card-info">
+                            <h4>📦 Producto al mayor</h4>
+                            <p>Incluir mercancía comercializada a gran escala o bultos.</p>
+                        </div>
+                    </div>
+                    <div class="pdf-select-card" id="card_m_materia" onclick="togglePdfCard('chk_m_materia', 'card_m_materia')">
+                        <input type="checkbox" id="chk_m_materia" onclick="event.stopPropagation(); togglePdfCardDirect('chk_m_materia', 'card_m_materia')">
+                        <div class="pdf-card-info">
+                            <h4>🧪 Materia prima</h4>
+                            <p>Incluir insumos de producción y stock base.</p>
+                        </div>
+                    </div>
+                    <div class="pdf-select-card selected" id="card_m_compuesto" onclick="togglePdfCard('chk_m_compuesto', 'card_m_compuesto')">
+                        <input type="checkbox" id="chk_m_compuesto" checked onclick="event.stopPropagation(); togglePdfCardDirect('chk_m_compuesto', 'card_m_compuesto')">
+                        <div class="pdf-card-info">
+                            <h4>🔗 Producto compuesto</h4>
+                            <p>Incluir artículos elaborados con múltiples componentes.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. SELECCIÓN INDIVIDUAL DE MONEDAS (RECUADROS) -->
+                <label style="margin-top: 20px;">💱 Seleccione las Monedas a reflejar de forma libre:</label>
+                <div id="contenedor_monedas_recuadros" class="pdf-options-grid">
+                    <!-- Se llena dinámicamente con JS según las monedas del sistema -->
+                </div>
                 
-                <div class="grid-vertical" style="margin-top:20px;">
-                    <button class="btn-action" onclick="ejecutarAccionPDF('descargar')">Descargar Documento PDF</button>
+                <div class="grid-vertical" style="margin-top:25px;">
+                    <button class="btn-action" onclick="ejecutarAccionPDF()">Descargar Documento PDF</button>
                 </div>
             </div>
         </div>
 
-        <!-- SECCIÓN DE INVENTARIO -->
+        <!-- SECCIÓN DE INVENTARIO EN PANTALLA -->
         <div class="card" style="padding: 10px 0 0 0; background: transparent; border: none; box-shadow: none;">
-            <h2 class="serif-font" style="padding: 0 20px;">📦 Inventario</h2>
+            <h2 class="serif-font" style="padding: 0 20px;">📦 Inventario (Al Mayor, Compuestos, Servicios y Detallados)</h2>
             
             <div class="grid-3-filtros">
                 <div>
@@ -294,8 +308,8 @@
                 <div>
                     <label style="font-size:0.8rem; margin:0;">Filtro en tiempo real:</label>
                     <select id="filtro_stock_fisico" onchange="renderInventarioFisico()" style="margin-top:5px; background: white;">
-                        <option value="con_stock" selected>Ocultar Mercancía Agotada</option>
-                        <option value="todos">Mostrar Todo el Catálogo</option>
+                        <option value="con_stock" selected>Ocultar los stock agotados</option>
+                        <option value="todos">Ver todo el Catálogo</option>
                     </select>
                 </div>
             </div>
@@ -390,16 +404,44 @@
         }
     }
 
+    /* GESTIÓN DE RECUADROS INTERACTIVOS */
+    function togglePdfCard(chkId, cardId) {
+        let chk = document.getElementById(chkId);
+        let card = document.getElementById(cardId);
+        if (chk) {
+            chk.checked = !chk.checked;
+            if (chk.checked) card.classList.add('selected');
+            else card.classList.remove('selected');
+        }
+    }
+
+    function togglePdfCardDirect(chkId, cardId) {
+        let chk = document.getElementById(chkId);
+        let card = document.getElementById(cardId);
+        if (chk.checked) card.classList.add('selected');
+        else card.classList.remove('selected');
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
         UIBOX.mostrarCargando("INVENTARIO FÍSICO", "Sincronizando información de mercancía y existencias...");
 
         try {
             const estado = await AppMotor.inicializar();
             CONFIG_GLOBAL = estado.configuracion || {};
-            CATALOGO = (estado.catalogo || []).map(p => ({
+            
+            // FILTRADO AL ENTRAR: Excluye deliberadamente materia prima, mostrando servicios, detallados, al mayor y compuestos.
+            CATALOGO = (estado.catalogo || []).filter(p => {
+                let tipo = (p.tipo || '').toLowerCase();
+                let cat = (p.categoria || '').toLowerCase();
+                if (tipo.includes('materia') || tipo.includes('insumo') || cat.includes('materia prima')) {
+                    return false;
+                }
+                return true;
+            }).map(p => ({
                 uuid: p.id, 
                 nom: p.nombre, 
                 cat: p.categoria || "General", 
+                tipo: (p.tipo || 'detallado').toLowerCase(),
                 base: p.precio_base || 0, 
                 mBase: p.moneda_base || 'USD', 
                 stock: parseFloat(p.stock) || 0, 
@@ -407,10 +449,9 @@
                 umbralRojo: parseFloat(p.umbral_rojo) || 0
             }));
 
-            actualizarSelectoresMonedaExportacion();
+            poblarRecuadrosMonedas();
             renderInventarioFisico();
 
-            // Verificación del bloqueo por PIN para el módulo 'inventario'
             const permisos = CONFIG_GLOBAL.permisos_modulos || {};
             const moduloBloqueado = permisos.inventario && permisos.inventario.general;
             const tienePin = !!CONFIG_GLOBAL.identidad?.admin_pass;
@@ -435,18 +476,50 @@
         }
     });
 
+    function poblarRecuadrosMonedas() {
+        let cont = document.getElementById('contenedor_monedas_recuadros');
+        if (!cont) return;
+
+        let tasasConfig = CONFIG_GLOBAL.tasas || {};
+        let monedaBase = tasasConfig.moneda_base || 'USD';
+        let secundarias = tasasConfig.secundarias || [];
+
+        let monedasList = [{ code: monedaBase, label: `Moneda Base (${monedaBase})` }];
+        secundarias.forEach(s => {
+            if (s.code) monedasList.push({ code: s.code, label: `Moneda ${s.code}` });
+        });
+
+        let html = '';
+        monedasList.forEach((m, idx) => {
+            let chkId = `chk_moneda_${m.code}_${idx}`;
+            let cardId = `card_moneda_${m.code}_${idx}`;
+            let isSelected = idx === 0 ? 'selected' : '';
+            let isChecked = idx === 0 ? 'checked' : '';
+
+            html += `
+                <div class="pdf-select-card ${isSelected}" id="${cardId}" onclick="togglePdfCard('${chkId}', '${cardId}')">
+                    <input type="checkbox" id="${chkId}" ${isChecked} onclick="event.stopPropagation(); togglePdfCardDirect('${chkId}', '${cardId}')">
+                    <div class="pdf-card-info">
+                        <h4>💱 ${m.label}</h4>
+                        <p>Incluir conversiones y valores en ${m.code}.</p>
+                    </div>
+                </div>
+            `;
+        });
+
+        cont.innerHTML = html;
+    }
+
     function renderInventarioFisico() {
         let busqueda = (document.getElementById('buscar_inv_fisico')?.value || "").toLowerCase().trim();
         let ord = document.getElementById('orden_inv_fisico').value; 
         let filtroStock = document.getElementById('filtro_stock_fisico').value;
         let arr = [...CATALOGO]; 
 
-        // Filtrado por término de búsqueda
         if (busqueda !== "") {
             arr = arr.filter(p => p.nom.toLowerCase().includes(busqueda) || p.cat.toLowerCase().includes(busqueda));
         }
 
-        // Filtro de existencias
         if (filtroStock === 'con_stock') {
             arr = arr.filter(p => parseFloat(p.stock) > 0);
         }
@@ -489,53 +562,75 @@
         document.getElementById('inv_lista_readonly').innerHTML = html || '<p style="color:var(--text-light); text-align:center; padding: 20px; font-style:italic; border: 1px solid var(--border);">No se encontraron registros con los filtros actuales.</p>';
     }
 
-    /* SELECTOR DE MONEDAS DINÁMICO PARA EXPORTACIÓN PDF */
-    function actualizarSelectoresMonedaExportacion() {
-        let sel = document.getElementById('sel_pdf_moneda');
-        if (!sel) return;
+    function ejecutarAccionPDF() {
+        let tipoDescarga = document.getElementById('sel_pdf_exportar').value; // 'todo', 'inv', 'precio'
+        let ordenPdf = document.getElementById('sel_pdf_orden').value; // 'az', 'cat'
+        let stockPdf = document.getElementById('sel_pdf_stock').value; // 'ocultar', 'todo'
 
+        // Tipos de mercancía seleccionados mediante clics
+        let incServicio = document.getElementById('chk_m_servicio').checked;
+        let incDetallado = document.getElementById('chk_m_detallado').checked;
+        let incMayoreo = document.getElementById('chk_m_mayoreo').checked;
+        let incMateria = document.getElementById('chk_m_materia').checked;
+        let incCompuesto = document.getElementById('chk_m_compuesto').checked;
+
+        if (!incServicio && !incDetallado && !incMayoreo && !incMateria && !incCompuesto) {
+            return alert("⛔ Error: Debe seleccionar al menos un tipo de inventario/mercancía para exportar.");
+        }
+
+        // Monedas seleccionadas de forma libre
+        let monedasSeleccionadas = [];
         let tasasConfig = CONFIG_GLOBAL.tasas || {};
         let monedaBase = tasasConfig.moneda_base || 'USD';
         let secundarias = tasasConfig.secundarias || [];
+        
+        let monedasList = [{ code: monedaBase }];
+        secundarias.forEach(s => { if (s.code) monedasList.push({ code: s.code }); });
 
-        let html = `<option value="" disabled selected>Seleccione una opción...</option>`;
-        html += `<option value="ALL">Todas las Monedas</option>`;
-        html += `<option value="${monedaBase}">Solo ${monedaBase} (${monedaBase})</option>`;
-
-        secundarias.forEach(s => {
-            if (s.code && parseFloat(s.tasa) > 0) {
-                html += `<option value="${s.code}">Solo ${s.code} (${s.code})</option>`;
+        monedasList.forEach((m, idx) => {
+            let chk = document.getElementById(`chk_moneda_${m.code}_${idx}`);
+            if (chk && chk.checked) {
+                monedasSeleccionadas.push(m.code);
             }
         });
 
-        sel.innerHTML = html;
+        if (tipoDescarga !== 'inv' && monedasSeleccionadas.length === 0) {
+            return alert("⛔ Error: Debe seleccionar al menos una moneda para reflejar en el reporte de precios.");
+        }
+
+        generarPDFInventarioNativo({
+            tipoDescarga,
+            ordenPdf,
+            stockPdf,
+            tiposPermitidos: { incServicio, incDetallado, incMayoreo, incMateria, incCompuesto },
+            monedasSeleccionadas
+        });
     }
 
-    function ejecutarAccionPDF(accion) {
-        let valDoc = document.getElementById('sel_pdf_exportar').value;
-        let modMon = document.getElementById('sel_pdf_moneda').value;
-        let ordPdf = document.getElementById('sel_pdf_orden').value;
-        let filtroStock = document.getElementById('sel_pdf_stock').value; 
-        
-        if(!valDoc || !modMon || !ordPdf || !filtroStock) {
-            return alert("⛔ Error de Procedimiento: Por favor, seleccione todas las opciones obligatorias del documento antes de intentar exportar el reporte.");
-        }
-        
-        if (accion === 'descargar') {
-            generarPDFInventarioNativo(valDoc, modMon, ordPdf, filtroStock);
-        }
-    }
-
-    function generarPDFInventarioNativo(valDoc, modMoneda, ordPdf, filtroStock) {
+    function generarPDFInventarioNativo(opts) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
         let nombreLocal = CONFIG_GLOBAL.identidad?.nombre || 'Panel Empresarial';
-        let showCaja = ["inv_caja", "caja"].includes(valDoc);
-
         let arr = [...CATALOGO];
-        if (filtroStock === 'con_stock') arr = arr.filter(p => parseFloat(p.stock) > 0);
-        arr.sort((a,b) => ordPdf === 'cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)));
+
+        // Filtrar por stock agotado
+        if (opts.stockPdf === 'ocultar') {
+            arr = arr.filter(p => parseFloat(p.stock) > 0);
+        }
+
+        // Filtrar por los tipos de mercancía marcados
+        arr = arr.filter(p => {
+            let t = (p.tipo || 'detallado').toLowerCase();
+            if (t.includes('servicio') || t.includes('mano') || t.includes('labor')) return opts.tiposPermitidos.incServicio;
+            if (t.includes('mayor') || t.includes('bulto')) return opts.tiposPermitidos.incMayoreo;
+            if (t.includes('materia') || t.includes('insumo')) return opts.tiposPermitidos.incMateria;
+            if (t.includes('compuesto') || t.includes('combo')) return opts.tiposPermitidos.incCompuesto;
+            return opts.tiposPermitidos.incDetallado; // por defecto detallado
+        });
+
+        // Orden
+        arr.sort((a,b) => opts.ordenPdf === 'cat' ? a.cat.localeCompare(b.cat) || limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)) : limpiarNombre(a.nom).localeCompare(limpiarNombre(b.nom)));
 
         doc.setFont("Helvetica", "bold");
         doc.setFontSize(16);
@@ -545,7 +640,8 @@
         doc.setFont("Helvetica", "italic");
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
-        doc.text(`Reporte Analítico de Inventario (${valDoc.toUpperCase()}) - ${new Date().toLocaleDateString()}`, 14, 24);
+        let subtitulo = opts.tipoDescarga === 'todo' ? 'Inventario Físico + Precios' : (opts.tipoDescarga === 'inv' ? 'Inventario Físico' : 'Listado de Precios');
+        doc.text(`Reporte ${subtitulo} - ${new Date().toLocaleDateString()}`, 14, 24);
 
         doc.setDrawColor(212, 175, 55); 
         doc.setLineWidth(0.8);
@@ -555,7 +651,7 @@
         let lC = "";
 
         arr.forEach((p, index) => {
-            if (ordPdf === 'cat' && p.cat !== lC) {
+            if (opts.ordenPdf === 'cat' && p.cat !== lC) {
                 if (posY > 265) { doc.addPage(); posY = 20; }
                 doc.setFillColor(122, 23, 29); 
                 doc.rect(14, posY, 182, 7, "F");
@@ -568,8 +664,8 @@
             }
 
             let usdValor = convertirA_USD(p.base, p.mBase);
-            let arrayCaja = showCaja ? obtenerLineasMonedasDinamicas(usdValor, modMoneda) : [];
-            let maxLineas = Math.max(arrayCaja.length, 1);
+            let arrayValores = (opts.tipoDescarga !== 'inv') ? obtenerLineasMonedasLibres(usdValor, opts.monedasSeleccionadas) : [];
+            let maxLineas = Math.max(arrayValores.length, 1);
             let alturaCelda = Math.max(12, 6 + (maxLineas * 4.5));
 
             if (posY + alturaCelda > 280) { doc.addPage(); posY = 20; }
@@ -585,22 +681,24 @@
             doc.setTextColor(40, 40, 40);
             doc.text(pNom, 18, posY + 5);
 
-            doc.setFont("Helvetica", "normal");
-            doc.setFontSize(8.5);
-            doc.setTextColor(90, 90, 90);
-            doc.text(`Stock: ${p.stock} Und.`, 18, posY + 10);
+            if (opts.tipoDescarga !== 'precio') {
+                doc.setFont("Helvetica", "normal");
+                doc.setFontSize(8.5);
+                doc.setTextColor(90, 90, 90);
+                doc.text(`Stock: ${p.stock} Und.`, 18, posY + 10);
+            }
 
-            if (showCaja) {
-                let colX = 145;
+            if (opts.tipoDescarga !== 'inv' && arrayValores.length > 0) {
+                let colX = 135;
                 doc.setFont("Helvetica", "bold");
                 doc.setFontSize(8.5);
                 doc.setTextColor(122, 23, 29); 
-                doc.text("Valores:", colX, posY + 5);
+                doc.text("Precios:", colX, posY + 5);
                 
                 doc.setFont("Helvetica", "normal");
                 doc.setTextColor(60, 60, 60);
                 let offsetV = posY + 9;
-                arrayCaja.forEach(linea => {
+                arrayValores.forEach(linea => {
                     doc.text(linea, colX, offsetV);
                     offsetV += 4.5;
                 });
@@ -612,8 +710,7 @@
         doc.save(`Reporte_Inventario_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`);
     }
 
-    /* OBTENER LÍNEAS DE MONEDAS DINÁMICAS PARA EL PDF */
-    function obtenerLineasMonedasDinamicas(usd, modMoneda) {
+    function obtenerLineasMonedasLibres(usd, monedasSeleccionadas) {
         let lineas = [];
         let tasasConfig = CONFIG_GLOBAL.tasas || {};
         let monedaBase = tasasConfig.moneda_base || 'USD';
@@ -625,18 +722,19 @@
             return (operacion === 'dividir') ? (usd / tasa) : (usd * tasa);
         };
 
-        if (modMoneda === 'ALL' || modMoneda === monedaBase) {
-            lineas.push(`$${formatearNumero(usd)} ${monedaBase}`);
-        }
-
-        secundarias.forEach(sec => {
-            if (sec.code && (modMoneda === 'ALL' || modMoneda === sec.code)) {
-                let tasaVal = parseFloat(sec.tasa) || 0;
-                if (tasaVal > 0) {
-                    let montoConv = calcularMontoEnMoneda(sec.code, tasaVal, sec.operacion);
-                    let dec = (sec.code === 'COP') ? 0 : 2;
-                    let simbolo = sec.code === 'VES' ? 'Bs.' : sec.code;
-                    lineas.push(`${simbolo} ${formatearNumero(montoConv, dec)}`);
+        monedasSeleccionadas.forEach(monCode => {
+            if (monCode === monedaBase) {
+                lineas.push(`$${formatearNumero(usd)} ${monedaBase}`);
+            } else {
+                let sec = secundarias.find(s => s.code === monCode);
+                if (sec) {
+                    let tasaVal = parseFloat(sec.tasa) || 0;
+                    if (tasaVal > 0) {
+                        let montoConv = calcularMontoEnMoneda(sec.code, tasaVal, sec.operacion);
+                        let dec = (sec.code === 'COP') ? 0 : 2;
+                        let simbolo = sec.code === 'VES' ? 'Bs.' : sec.code;
+                        lineas.push(`${simbolo} ${formatearNumero(montoConv, dec)}`);
+                    }
                 }
             }
         });
